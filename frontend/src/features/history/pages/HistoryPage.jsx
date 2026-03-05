@@ -146,9 +146,9 @@ const HistoryPage = () => {
                                             <Calendar className="w-3.5 h-3.5" />
                                             {new Date(booking.created_at).toLocaleDateString('vi-VN')}
                                         </span>
-                                        {booking.Tour?.price && (
+                                        {booking.Tour?.price_adult && (
                                             <span className="font-semibold text-primary">
-                                                {formatPrice(booking.Tour.sale_price || booking.Tour.price)}
+                                                {formatPrice(booking.Tour.sale_price_adult || booking.Tour.price_adult)}
                                             </span>
                                         )}
                                     </div>

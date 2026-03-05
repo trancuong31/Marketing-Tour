@@ -89,10 +89,17 @@ const getAllTours = catchAsync(async (req, res) => {
  * POST /api/admin/tours
  */
 const createTour = catchAsync(async (req, res, next) => {
-    const { category_id, title, summary, content, price, sale_price, departure_point, duration_days, is_featured, status } = req.body;
+    const {
+        category_id, title, summary, content,
+        price_adult, sale_price_adult,
+        price_child, sale_price_child,
+        price_infant, sale_price_infant,
+        departure_point, duration_days, duration_nights,
+        is_featured, status,
+    } = req.body;
 
-    if (!title || !category_id || !price) {
-        return next(new AppError('Tiêu đề, danh mục và giá là bắt buộc', HTTP_CODES.BAD_REQUEST));
+    if (!title || !category_id || !price_adult) {
+        return next(new AppError('Tiêu đề, danh mục và giá người lớn là bắt buộc', HTTP_CODES.BAD_REQUEST));
     }
 
     const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
@@ -107,10 +114,15 @@ const createTour = catchAsync(async (req, res, next) => {
         slug: finalSlug,
         summary: summary || null,
         content: content || null,
-        price,
-        sale_price: sale_price || null,
+        price_adult,
+        sale_price_adult: sale_price_adult || null,
+        price_child: price_child || null,
+        sale_price_child: sale_price_child || null,
+        price_infant: price_infant || null,
+        sale_price_infant: sale_price_infant || null,
         departure_point: departure_point || null,
         duration_days: duration_days || null,
+        duration_nights: duration_nights || null,
         thumbnail_url: null,
         is_featured: is_featured || 0,
         status: status || 'active',
@@ -155,7 +167,14 @@ const updateTour = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
     }
 
-    const { category_id, title, summary, content, price, sale_price, departure_point, duration_days, is_featured, status } = req.body;
+    const {
+        category_id, title, summary, content,
+        price_adult, sale_price_adult,
+        price_child, sale_price_child,
+        price_infant, sale_price_infant,
+        departure_point, duration_days, duration_nights,
+        is_featured, status,
+    } = req.body;
 
     // Nếu đổi title → tạo slug mới
     let newSlug = tour.slug;
@@ -171,10 +190,15 @@ const updateTour = catchAsync(async (req, res, next) => {
         slug: newSlug,
         summary: summary !== undefined ? summary : tour.summary,
         content: content !== undefined ? content : tour.content,
-        price: price || tour.price,
-        sale_price: sale_price !== undefined ? sale_price : tour.sale_price,
+        price_adult: price_adult || tour.price_adult,
+        sale_price_adult: sale_price_adult !== undefined ? sale_price_adult : tour.sale_price_adult,
+        price_child: price_child !== undefined ? price_child : tour.price_child,
+        sale_price_child: sale_price_child !== undefined ? sale_price_child : tour.sale_price_child,
+        price_infant: price_infant !== undefined ? price_infant : tour.price_infant,
+        sale_price_infant: sale_price_infant !== undefined ? sale_price_infant : tour.sale_price_infant,
         departure_point: departure_point !== undefined ? departure_point : tour.departure_point,
         duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
+        duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
         is_featured: is_featured !== undefined ? is_featured : tour.is_featured,
         status: status || tour.status,
     });
@@ -248,7 +272,7 @@ const getBookings = catchAsync(async (req, res) => {
     const bookings = await Booking.findAll({
         where: whereClause,
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'price', 'sale_price'] },
+            { model: Tour, attributes: ['id', 'title', 'slug', 'price_adult', 'sale_price_adult'] },
         ],
         order: [['created_at', 'DESC']],
     });

@@ -76,7 +76,7 @@ const getBookingHistory = catchAsync(async (req, res, next) => {
     const bookings = await Booking.findAll({
         where: whereClause,
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'thumbnail_url', 'price', 'sale_price'] },
+            { model: Tour, attributes: ['id', 'title', 'slug', 'thumbnail_url', 'price_adult', 'sale_price_adult'] },
         ],
         attributes: {
             exclude: ['admin_note'], // Ẩn ghi chú admin khỏi client

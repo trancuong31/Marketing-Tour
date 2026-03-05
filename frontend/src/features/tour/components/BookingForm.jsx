@@ -88,8 +88,17 @@ const BookingForm = ({ tour }) => {
         }
     };
 
-    const hasSale = tour.sale_price && parseFloat(tour.sale_price) < parseFloat(tour.price);
-    const displayPrice = hasSale ? tour.sale_price : tour.price;
+    const hasSaleAdult = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
+    const adultPrice = hasSaleAdult ? parseFloat(tour.sale_price_adult) : parseFloat(tour.price_adult);
+    const childPrice = tour.price_child
+        ? (tour.sale_price_child && parseFloat(tour.sale_price_child) < parseFloat(tour.price_child)
+            ? parseFloat(tour.sale_price_child) : parseFloat(tour.price_child))
+        : 0;
+    const infantPrice = tour.price_infant
+        ? (tour.sale_price_infant && parseFloat(tour.sale_price_infant) < parseFloat(tour.price_infant)
+            ? parseFloat(tour.sale_price_infant) : parseFloat(tour.price_infant))
+        : 0;
+    const totalPrice = (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
 
     // Compute min departure date (tomorrow)
     const tomorrow = new Date();
@@ -101,7 +110,7 @@ const BookingForm = ({ tour }) => {
             <div className="bg-white rounded-2xl border-2 border-primary/20 shadow-lg p-5">
                 <h3 className="text-lg font-bold text-text mb-1">Đặt Tour Ngay</h3>
                 <p className="text-sm text-text-muted mb-5">
-                    Giá từ <span className="font-bold text-primary">{formatPrice(displayPrice)}</span>/người
+                    Giá từ <span className="font-bold text-primary">{formatPrice(adultPrice)}</span>/người lớn
                 </p>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -217,6 +226,29 @@ const BookingForm = ({ tour }) => {
                         <p className="text-xs text-text-muted mt-1.5 text-right">
                             Tổng: <span className="font-semibold text-text">{totalPeople}</span> hành khách
                         </p>
+                        {/* Chi tiết giá */}
+                        <div className="mt-3 pt-3 border-t border-border space-y-1.5">
+                            <div className="flex justify-between text-xs text-text-secondary">
+                                <span>{adults} Người lớn × {formatPrice(adultPrice)}</span>
+                                <span className="font-medium">{formatPrice(adults * adultPrice)}</span>
+                            </div>
+                            {children > 0 && childPrice > 0 && (
+                                <div className="flex justify-between text-xs text-text-secondary">
+                                    <span>{children} Trẻ em × {formatPrice(childPrice)}</span>
+                                    <span className="font-medium">{formatPrice(children * childPrice)}</span>
+                                </div>
+                            )}
+                            {infants > 0 && infantPrice > 0 && (
+                                <div className="flex justify-between text-xs text-text-secondary">
+                                    <span>{infants} Trẻ nhỏ × {formatPrice(infantPrice)}</span>
+                                    <span className="font-medium">{formatPrice(infants * infantPrice)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between text-sm font-bold text-primary pt-2 border-t border-border">
+                                <span>Tổng cộng</span>
+                                <span>{formatPrice(totalPrice)}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Ghi chú */}

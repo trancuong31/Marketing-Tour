@@ -28,13 +28,35 @@ const Tour = sequelize.define('Tour', {
         type: DataTypes.TEXT('long'),
         allowNull: true,
     },
-    price: {
+    price_adult: {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: false,
+        comment: 'Giá người lớn mặc định',
     },
-    sale_price: {
+    sale_price_adult: {
         type: DataTypes.DECIMAL(15, 2),
         allowNull: true,
+        comment: 'Giá khuyến mãi người lớn',
+    },
+    price_child: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+        comment: 'Giá trẻ em',
+    },
+    sale_price_child: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+        comment: 'Giá khuyến mãi trẻ em',
+    },
+    price_infant: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+        comment: 'Giá trẻ nhỏ/em bé',
+    },
+    sale_price_infant: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+        comment: 'Giá khuyến mãi trẻ nhỏ',
     },
     departure_point: {
         type: DataTypes.STRING(255),
@@ -43,6 +65,12 @@ const Tour = sequelize.define('Tour', {
     duration_days: {
         type: DataTypes.INTEGER,
         allowNull: true,
+        comment: 'Số ngày',
+    },
+    duration_nights: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'Số đêm',
     },
     thumbnail_url: {
         type: DataTypes.TEXT,

@@ -10,9 +10,17 @@ const truncateText = (text, maxLen = 159) => {
     return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
 };
 
+/** Hiển thị thời gian tour dạng "3N2Đ" hoặc "3 ngày" */
+const formatDuration = (days, nights) => {
+    if (days && nights) return `${days} Ngày ${nights} Đêm`;
+    if (days) return `${days} ngày`;
+    return null;
+};
+
 const TourCard = ({ tour }) => {
     const thumbnail = tour.thumbnail_url || tour.images?.[0]?.image_url || '/placeholder-tour.jpg';
-    const hasSale = tour.sale_price && parseFloat(tour.sale_price) < parseFloat(tour.price);
+    const hasSale = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
+    const duration = formatDuration(tour.duration_days, tour.duration_nights);
 
     return (
         <Link
@@ -36,10 +44,10 @@ const TourCard = ({ tour }) => {
                 ) : null}
 
                 {/* Badge Duration */}
-                {tour.duration_days && (
+                {duration && (
                     <span className="absolute top-3 right-3 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-full flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {tour.duration_days} ngày
+                        {duration}
                     </span>
                 )}
 
@@ -88,15 +96,15 @@ const TourCard = ({ tour }) => {
                     {hasSale ? (
                         <>
                             <span className="text-sm text-text-muted line-through">
-                                {formatPrice(tour.price)}
+                                {formatPrice(tour.price_adult)}
                             </span>
                             <span className="text-xl font-extrabold text-secondary">
-                                {formatPrice(tour.sale_price)}
+                                {formatPrice(tour.sale_price_adult)}
                             </span>
                         </>
                     ) : (
                         <span className="text-xl font-extrabold text-primary">
-                            {formatPrice(tour.price)}
+                            {formatPrice(tour.price_adult)}
                         </span>
                     )}
                 </div>

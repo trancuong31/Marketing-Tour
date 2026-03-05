@@ -26,7 +26,7 @@ const HomePage = () => {
     }, []);
 
     const featured = tours.filter(t => t.is_featured);
-    const onSale = tours.filter(t => t.sale_price && parseFloat(t.sale_price) < parseFloat(t.price));
+    const onSale = tours.filter(t => t.sale_price_adult && parseFloat(t.sale_price_adult) < parseFloat(t.price_adult));
 
     const SkeletonGrid = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

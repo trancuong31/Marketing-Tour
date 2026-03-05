@@ -220,8 +220,13 @@ const TourDetailPage = () => {
         );
     }
 
-    const hasSale = tour.sale_price && parseFloat(tour.sale_price) < parseFloat(tour.price);
+    const hasSaleAdult = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
+    const hasSaleChild = tour.sale_price_child && tour.price_child && parseFloat(tour.sale_price_child) < parseFloat(tour.price_child);
+    const hasSaleInfant = tour.sale_price_infant && tour.price_infant && parseFloat(tour.sale_price_infant) < parseFloat(tour.price_infant);
     const images = tour.images || [];
+    const durationText = tour.duration_days && tour.duration_nights
+        ? `${tour.duration_days} ngày ${tour.duration_nights} đêm`
+        : tour.duration_days ? `${tour.duration_days} ngày` : null;
 
     return (
         <ClientLayout>
@@ -290,10 +295,10 @@ const TourDetailPage = () => {
 
                         {/* Meta info */}
                         <div className="flex flex-wrap gap-4 text-text-secondary">
-                            {tour.duration_days && (
+                            {durationText && (
                                 <span className="flex items-center gap-1.5 text-sm">
                                     <Clock className="w-4 h-4 text-primary" />
-                                    {tour.duration_days} ngày
+                                    {durationText}
                                 </span>
                             )}
                             {tour.departure_point && (
@@ -304,20 +309,68 @@ const TourDetailPage = () => {
                             )}
                         </div>
 
-                        {/* Giá */}
-                        <div className="flex items-end gap-3 p-4 bg-surface-alt rounded-xl border border-border">
-                            {hasSale ? (
-                                <>
-                                    <span className="text-3xl font-extrabold text-secondary">{formatPrice(tour.sale_price)}</span>
-                                    <span className="text-lg text-text-muted line-through">{formatPrice(tour.price)}</span>
-                                    <span className="px-2 py-0.5 bg-error/10 text-error text-xs font-bold rounded-full">
-                                        -{Math.round((1 - parseFloat(tour.sale_price) / parseFloat(tour.price)) * 100)}%
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="text-3xl font-extrabold text-primary">{formatPrice(tour.price)}</span>
-                            )}
-                            <span className="text-sm text-text-muted">/người</span>
+                        {/* Bảng giá */}
+                        <div className="rounded-xl border border-border overflow-hidden">
+                            <div className="bg-primary/5 px-4 py-3 border-b border-border">
+                                <h3 className="text-sm font-bold text-primary">Bảng giá tour</h3>
+                            </div>
+                            <div className="divide-y divide-border">
+                                {/* Người lớn */}
+                                <div className="flex items-center justify-between px-4 py-3">
+                                    <div>
+                                        <p className="text-sm font-semibold text-text">Người lớn</p>
+                                        <p className="text-xs text-text-muted">Trên 10 tuổi</p>
+                                    </div>
+                                    <div className="text-right">
+                                        {hasSaleAdult ? (
+                                            <>
+                                                <p className="text-lg font-extrabold text-secondary">{formatPrice(tour.sale_price_adult)}</p>
+                                                <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_adult)}</p>
+                                            </>
+                                        ) : (
+                                            <p className="text-lg font-extrabold text-primary">{formatPrice(tour.price_adult)}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                {/* Trẻ em */}
+                                {tour.price_child && (
+                                    <div className="flex items-center justify-between px-4 py-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-text">Trẻ em</p>
+                                            <p className="text-xs text-text-muted">Từ 2 – 10 tuổi</p>
+                                        </div>
+                                        <div className="text-right">
+                                            {hasSaleChild ? (
+                                                <>
+                                                    <p className="text-lg font-bold text-secondary">{formatPrice(tour.sale_price_child)}</p>
+                                                    <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_child)}</p>
+                                                </>
+                                            ) : (
+                                                <p className="text-lg font-bold text-primary">{formatPrice(tour.price_child)}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {/* Trẻ nhỏ */}
+                                {tour.price_infant && (
+                                    <div className="flex items-center justify-between px-4 py-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-text">Trẻ nhỏ / Em bé</p>
+                                            <p className="text-xs text-text-muted">Dưới 2 tuổi</p>
+                                        </div>
+                                        <div className="text-right">
+                                            {hasSaleInfant ? (
+                                                <>
+                                                    <p className="text-lg font-bold text-secondary">{formatPrice(tour.sale_price_infant)}</p>
+                                                    <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_infant)}</p>
+                                                </>
+                                            ) : (
+                                                <p className="text-lg font-bold text-primary">{formatPrice(tour.price_infant)}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Mô tả */}
