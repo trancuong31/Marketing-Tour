@@ -4,6 +4,7 @@ const { bookingController } = require('./bookingController');
 const { voteController } = require('./voteController');
 const { guideController } = require('./guideController');
 const { adminController } = require('./adminController');
+const authController = require('./authController');
 
 module.exports = {
     categoryController,
@@ -12,4 +13,5 @@ module.exports = {
     voteController,
     guideController,
     adminController,
+    authController,
 };

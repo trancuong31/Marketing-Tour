@@ -1,4 +1,5 @@
 const express = require('express');
+const authRoutes = require('./authRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const tourRoutes = require('./tourRoutes');
 const bookingRoutes = require('./bookingRoutes');
@@ -7,6 +8,9 @@ const guideRoutes = require('./guideRoutes');
 const adminRoutes = require('./adminRoutes');
 
 const router = express.Router();
+
+// ── Auth API ──
+router.use('/auth', authRoutes);
 
 // ── Public API ──
 router.use('/categories', categoryRoutes);

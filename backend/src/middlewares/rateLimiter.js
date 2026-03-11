@@ -10,7 +10,7 @@ const apiLimiter = rateLimit({
     max: env.rateLimit.max,
     message: {
         status: 'fail',
-        message: 'Too many requests from this IP, please try again later.',
+        message: 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau.',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -24,7 +24,21 @@ const authLimiter = rateLimit({
     max: 20, // 20 requests per window
     message: {
         status: 'fail',
-        message: 'Too many login attempts, please try again after 15 minutes.',
+        message: 'Quá nhiều lần thử đăng nhập, vui lòng thử lại sau 15 phút.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+/**
+ * OTP rate limiter — stricter for OTP-related routes
+ */
+const otpLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 5, // 5 requests per 10 minutes
+    message: {
+        status: 'fail',
+        message: 'Quá nhiều yêu cầu OTP, vui lòng thử lại sau 10 phút.',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -33,4 +47,5 @@ const authLimiter = rateLimit({
 module.exports = {
     apiLimiter,
     authLimiter,
+    otpLimiter,
 };

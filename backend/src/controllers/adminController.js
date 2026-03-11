@@ -165,7 +165,7 @@ const updateTour = catchAsync(async (req, res, next) => {
 
     if (!tour) {
         return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
-    }
+    }3
 
     const {
         category_id, title, summary, content,
