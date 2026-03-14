@@ -5,6 +5,7 @@ import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
 import zalo from '../../assets/images/zalo-2.png';
 import logo from '../../../public/logo.jpg';
+// import { MessageCircle } from "lucide-react";
 const navLinks = [
     { path: '/', label: 'Trang chủ' },
     { path: '/tours/noi-dia', label: 'Tour Nội Địa', icon: MapPin },
@@ -49,8 +50,8 @@ const ClientLayout = ({ children }) => {
                                         key={link.path}
                                         to={link.path}
                                         className={`px-3.5 py-2 rounded-lg text-base font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-text-secondary hover:bg-surface-alt hover:text-text'
+                                            ? 'bg-primary/10 text-primary'
+                                            : 'text-text-secondary hover:bg-surface-alt hover:text-text'
                                             }`}
                                     >
                                         {link.icon && <link.icon className="w-3.5 h-3.5" />}
@@ -71,6 +72,14 @@ const ClientLayout = ({ children }) => {
                                         </div>
                                         <span>{user?.full_name || 'Người dùng'}</span>
                                     </div>
+                                    {user?.role_id === 1 && (
+                                        <Link
+                                            to="/admin"
+                                            className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-lg hover:opacity-90 transition-opacity"
+                                        >
+                                            Admin
+                                        </Link>
+                                    )}
                                     <button
                                         onClick={logout}
                                         className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors"
@@ -88,13 +97,13 @@ const ClientLayout = ({ children }) => {
                                         <LogIn className="w-4 h-4" />
                                         <span>Đăng nhập</span>
                                     </button>
-                                    <button
+                                    {/* <button
                                         onClick={() => openAuth('register')}
                                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors shadow-sm"
                                     >
                                         <UserPlus className="w-4 h-4" />
                                         <span>Đăng ký</span>
-                                    </button>
+                                    </button> */}
                                 </div>
                             )}
                         </div>
@@ -116,8 +125,8 @@ const ClientLayout = ({ children }) => {
                                     key={link.path}
                                     to={link.path}
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${location.pathname === link.path
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-text-secondary hover:bg-surface-alt'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-text-secondary hover:bg-surface-alt'
                                         }`}
                                     onClick={() => setMenuOpen(false)}
                                 >
@@ -217,6 +226,9 @@ const ClientLayout = ({ children }) => {
                         <Phone className="w-6 h-6 text-white" />
                     </div>
                 </a>
+
+
+
             </div>
 
             {/* ═══ FOOTER — iVIVU Style ═══ */}

@@ -1,448 +1,351 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../../../store';
-import { Button } from '../../../components/ui';
-import { X, Mail, Lock, User, Phone, ArrowLeft, ChevronRight, Shield, KeyRound } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useAuthStore } from "../../../store";
+import { Button } from "../../../components/ui";
+import {
+    X,
+    Mail,
+    Lock,
+    User,
+    Phone,
+    ArrowLeft,
+    Eye,
+    EyeOff,
+} from "lucide-react";
+import { toast } from "sonner";
 
-/**
- * Views: login | register | otp_verify | forgot_password | forgot_otp | reset_password
- */
-const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
-    const { t } = useTranslation();
-    const {
-        isLoading, error, clearError,
-        login, register, verifyEmail, forgotPassword,
-        verifyResetOtp, resetPassword, resendOtp,
-    } = useAuthStore();
+/* =========================
+   INPUT FIELD COMPONENT
+========================= */
 
-    const [view, setView] = useState(initialMode);
-    const [formData, setFormData] = useState({
-        full_name: '', email: '', password: '', confirmPassword: '', phone_number: '',
-    });
-    const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-    const [countdown, setCountdown] = useState(0);
-    const [otpEmail, setOtpEmail] = useState('');
-    const [otpType, setOtpType] = useState('register');
-    const [resetToken, setResetToken] = useState('');
-    const otpRefs = useRef([]);
+const InputField = ({
+    icon,
+    className,
+    showToggle,
+    showPassword,
+    setShowPassword,
+    ...props
+}) => {
+    return (
+        <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
+                {icon}
+            </span>
 
-    // Reset on open/close
-    useEffect(() => {
-        if (!isOpen) {
-            setFormData({ full_name: '', email: '', password: '', confirmPassword: '', phone_number: '' });
-            setOtpDigits(['', '', '', '', '', '']);
-            setCountdown(0);
-            setResetToken('');
-            clearError();
-        }
-    }, [isOpen, clearError]);
+            <input {...props} className={className} />
 
-    useEffect(() => {
-        if (isOpen) setView(initialMode);
-    }, [initialMode, isOpen]);
+            {showToggle && (
+                <button
+                    type="button"
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
+                >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+            )}
+        </div>
+    );
+};
 
-    // Countdown timer for OTP
-    useEffect(() => {
-        if (countdown <= 0) return;
-        const timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
-        return () => clearInterval(timer);
-    }, [countdown]);
+/* =========================
+   OTP INPUT COMPONENT
+========================= */
 
-    // ESC key + body scroll lock
-    useEffect(() => {
-        const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
-        if (isOpen) {
-            document.addEventListener('keydown', handleEsc);
-            document.body.style.overflow = 'hidden';
-        }
-        return () => {
-            document.removeEventListener('keydown', handleEsc);
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen, onClose]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        if (error) clearError();
-    };
-
-    // OTP digit input handlers
-    const handleOtpChange = (index, value) => {
+const OtpInput = ({ otpDigits, setOtpDigits, otpRefs }) => {
+    const handleChange = (index, value) => {
         if (!/^\d*$/.test(value)) return;
+
         const newDigits = [...otpDigits];
         newDigits[index] = value.slice(-1);
         setOtpDigits(newDigits);
-        if (error) clearError();
-        if (value && index < 5) otpRefs.current[index + 1]?.focus();
+
+        if (value && index < 5) {
+            otpRefs.current[index + 1]?.focus();
+        }
     };
 
-    const handleOtpKeyDown = (index, e) => {
-        if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+    const handleKeyDown = (index, e) => {
+        if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
             otpRefs.current[index - 1]?.focus();
         }
     };
 
-    const handleOtpPaste = (e) => {
+    const handlePaste = (e) => {
         e.preventDefault();
-        const pasteData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-        if (!pasteData) return;
+
+        const paste = e.clipboardData
+            .getData("text")
+            .replace(/\D/g, "")
+            .slice(0, 6);
+
+        if (!paste) return;
+
         const newDigits = [...otpDigits];
-        pasteData.split('').forEach((d, i) => { newDigits[i] = d; });
+
+        paste.split("").forEach((d, i) => {
+            newDigits[i] = d;
+        });
+
         setOtpDigits(newDigits);
-        const focusIndex = Math.min(pasteData.length, 5);
-        otpRefs.current[focusIndex]?.focus();
     };
 
-    const startCountdown = () => setCountdown(300); // 5 minutes
+    return (
+        <div className="flex justify-center gap-2.5 my-6">
+            {otpDigits.map((digit, i) => (
+                <input
+                    key={i}
+                    ref={(el) => (otpRefs.current[i] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleChange(i, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(i, e)}
+                    onPaste={i === 0 ? handlePaste : undefined}
+                    className="w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 border-border bg-surface-alt focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+            ))}
+        </div>
+    );
+};
 
-    const switchView = useCallback((newView) => {
-        setView(newView);
-        setOtpDigits(['', '', '', '', '', '']);
-        clearError();
-    }, [clearError]);
+/* =========================
+   AUTH MODAL
+========================= */
 
-    // ── Form Submissions ──
+const AuthModal = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const { login, register, isLoading } = useAuthStore();
+
+    const [view, setView] = useState("login");
+
+    const [formData, setFormData] = useState({
+        full_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone_number: "",
+    });
+
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+    const otpRefs = useRef([]);
+
+    const inputCls =
+        "w-full pl-11 pr-11 py-3 bg-surface-alt border border-border rounded-xl text-text text-base focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15";
+
+    useEffect(() => {
+        const esc = (e) => {
+            if (e.key === "Escape") onClose();
+        };
+
+        document.addEventListener("keydown", esc);
+        return () => document.removeEventListener("keydown", esc);
+    }, [onClose]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    /* =========================
+       LOGIN
+    ========================= */
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
         const result = await login(formData.email, formData.password);
+
         if (result.success) {
+            toast.success("Đăng nhập thành công");
             onClose();
-            toast.success(t('auth.loginSuccess'));
+
+            // Admin → redirect to /admin
+            if (result.data?.user?.role_id === 1) {
+                navigate('/admin');
+            }
         }
     };
+
+    /* =========================
+       REGISTER
+    ========================= */
 
     const handleRegister = async (e) => {
         e.preventDefault();
-        const result = await register(formData);
-        if (result.success) {
-            setOtpEmail(formData.email);
-            setOtpType('register');
-            startCountdown();
-            switchView('otp_verify');
-            toast.success(t('auth.otpSent'));
-        }
-    };
 
-    const handleVerifyOtp = async () => {
-        const code = otpDigits.join('');
-        if (code.length !== 6) return;
-
-        if (otpType === 'register') {
-            const result = await verifyEmail(otpEmail, code);
-            if (result.success) {
-                onClose();
-                toast.success(t('auth.verifySuccess'));
-            }
-        } else {
-            const result = await verifyResetOtp(otpEmail, code);
-            if (result.success) {
-                setResetToken(result.resetToken);
-                switchView('reset_password');
-            }
-        }
-    };
-
-    const handleForgotPassword = async (e) => {
-        e.preventDefault();
-        const result = await forgotPassword(formData.email);
-        if (result.success) {
-            setOtpEmail(formData.email);
-            setOtpType('reset_password');
-            startCountdown();
-            switchView('forgot_otp');
-            toast.success(t('auth.otpSent'));
-        }
-    };
-
-    const handleResetPassword = async (e) => {
-        e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            toast.error(t('auth.passwordMismatch'));
+            toast.error("Passwords do not match");
             return;
         }
-        const result = await resetPassword(resetToken, formData.password, formData.confirmPassword);
-        if (result.success) {
-            toast.success(t('auth.resetSuccess'));
-            switchView('login');
-            setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-        }
-    };
 
-    const handleResendOtp = async () => {
-        if (countdown > 0) return;
-        const result = await resendOtp(otpEmail, otpType);
+        const result = await register(formData);
+
         if (result.success) {
-            startCountdown();
-            setOtpDigits(['', '', '', '', '', '']);
-            toast.success(t('auth.otpResent'));
+            toast.success("Register success");
+            setView("otp");
         }
     };
 
     if (!isOpen) return null;
 
-    const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-xl text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
-    const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-
-    // ── OTP Input Component ──
-    const OtpInput = () => (
-        <div className="flex justify-center gap-2.5 my-6">
-            {otpDigits.map((digit, i) => (
-                <input
-                    key={i}
-                    ref={el => otpRefs.current[i] = el}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={e => handleOtpChange(i, e.target.value)}
-                    onKeyDown={e => handleOtpKeyDown(i, e)}
-                    onPaste={i === 0 ? handleOtpPaste : undefined}
-                    className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none ${digit
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-border bg-surface-alt text-text'
-                        } focus:border-primary focus:ring-2 focus:ring-primary/20`}
-                    autoFocus={i === 0}
-                />
-            ))}
-        </div>
-    );
-
-    // ── View Renderers ──
-
-    const renderLogin = () => (
-        <form className="flex flex-col gap-4" onSubmit={handleLogin}>
-            {renderError()}
-            <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder={t('auth.enterEmail')} required />
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.enterPassword')} required />
-
-            <div className="flex justify-end">
-                <button type="button" onClick={() => switchView('forgot_password')}
-                    className="text-sm text-primary hover:text-primary-dark hover:underline transition-colors">
-                    {t('auth.forgotPassword')}
-                </button>
-            </div>
-
-            <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full mt-1">
-                {t('auth.signIn')}
-            </Button>
-
-            <p className="text-center text-text-secondary text-sm mt-2">
-                {t('auth.noAccount')}{' '}
-                <button type="button" onClick={() => { switchView('register'); setFormData({ full_name: '', email: '', password: '', confirmPassword: '', phone_number: '' }); }}
-                    className="text-primary font-medium hover:underline">{t('auth.signUp')}</button>
-            </p>
-        </form>
-    );
-
-    const renderRegister = () => (
-        <form className="flex flex-col gap-3.5" onSubmit={handleRegister}>
-            {renderError()}
-            <InputField icon={<User size={18} />} type="text" name="full_name" value={formData.full_name}
-                onChange={handleChange} placeholder={t('auth.enterName')} required minLength={2} />
-            <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder={t('auth.enterEmail')} required />
-            <InputField icon={<Phone size={18} />} type="tel" name="phone_number" value={formData.phone_number}
-                onChange={handleChange} placeholder={t('auth.enterPhone')} />
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.createPassword')} required minLength={8} />
-            <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder={t('auth.confirmPasswordPlaceholder')} required minLength={8} />
-
-            <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full mt-1">
-                {t('auth.register')}
-            </Button>
-
-            <p className="text-center text-text-secondary text-sm mt-1">
-                {t('auth.alreadyHaveAccount')}{' '}
-                <button type="button" onClick={() => { switchView('login'); setFormData(prev => ({ ...prev, password: '', confirmPassword: '' })); }}
-                    className="text-primary font-medium hover:underline">{t('auth.signIn')}</button>
-            </p>
-        </form>
-    );
-
-    const renderOtpVerify = () => (
-        <div className="flex flex-col items-center">
-            {renderError()}
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
-                <Shield className="text-primary" size={32} />
-            </div>
-            <h3 className="text-lg font-semibold mb-1">{t('auth.verifyEmail')}</h3>
-            <p className="text-text-muted text-sm text-center mb-1 max-w-[320px]">
-                {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
-            </p>
-
-            <OtpInput />
-
-            {countdown > 0 && (
-                <p className="text-text-muted text-sm mb-4">
-                    {t('auth.otpExpires')} <span className="font-mono font-semibold text-primary">{formatTime(countdown)}</span>
-                </p>
-            )}
-
-            <Button variant="primary" size="large" loading={isLoading} className="w-full"
-                onClick={handleVerifyOtp} disabled={otpDigits.join('').length !== 6}>
-                {t('auth.verify')}
-            </Button>
-
-            <button type="button" onClick={handleResendOtp}
-                disabled={countdown > 0 || isLoading}
-                className={`mt-4 text-sm transition-colors ${countdown > 0 ? 'text-text-muted cursor-not-allowed' : 'text-primary hover:text-primary-dark hover:underline'
-                    }`}>
-                {countdown > 0 ? t('auth.resendIn', { time: formatTime(countdown) }) : t('auth.resendOtp')}
-            </button>
-        </div>
-    );
-
-    const renderForgotPassword = () => (
-        <form className="flex flex-col gap-4" onSubmit={handleForgotPassword}>
-            {renderError()}
-            <div className="flex flex-col items-center mb-2">
-                <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4">
-                    <KeyRound className="text-secondary" size={32} />
-                </div>
-                <p className="text-text-muted text-sm text-center max-w-[320px]">{t('auth.forgotDesc')}</p>
-            </div>
-
-            <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder={t('auth.enterEmail')} required />
-
-            <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full">
-                {t('auth.sendOtp')}
-            </Button>
-
-            <button type="button" onClick={() => switchView('login')}
-                className="flex items-center justify-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors mt-1">
-                <ArrowLeft size={16} /> {t('auth.backToLogin')}
-            </button>
-        </form>
-    );
-
-    const renderForgotOtp = () => (
-        <div className="flex flex-col items-center">
-            {renderError()}
-            <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4">
-                <KeyRound className="text-secondary" size={32} />
-            </div>
-            <h3 className="text-lg font-semibold mb-1">{t('auth.verifyResetOtp')}</h3>
-            <p className="text-text-muted text-sm text-center mb-1 max-w-[320px]">
-                {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
-            </p>
-
-            <OtpInput />
-
-            {countdown > 0 && (
-                <p className="text-text-muted text-sm mb-4">
-                    {t('auth.otpExpires')} <span className="font-mono font-semibold text-secondary">{formatTime(countdown)}</span>
-                </p>
-            )}
-
-            <Button variant="primary" size="large" loading={isLoading} className="w-full"
-                onClick={handleVerifyOtp} disabled={otpDigits.join('').length !== 6}>
-                {t('auth.verify')}
-            </Button>
-
-            <button type="button" onClick={handleResendOtp}
-                disabled={countdown > 0 || isLoading}
-                className={`mt-4 text-sm transition-colors ${countdown > 0 ? 'text-text-muted cursor-not-allowed' : 'text-primary hover:text-primary-dark hover:underline'
-                    }`}>
-                {countdown > 0 ? t('auth.resendIn', { time: formatTime(countdown) }) : t('auth.resendOtp')}
-            </button>
-        </div>
-    );
-
-    const renderResetPassword = () => (
-        <form className="flex flex-col gap-4" onSubmit={handleResetPassword}>
-            {renderError()}
-            <div className="flex flex-col items-center mb-2">
-                <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mb-4">
-                    <Lock className="text-success" size={32} />
-                </div>
-                <p className="text-text-muted text-sm text-center max-w-[320px]">{t('auth.newPasswordDesc')}</p>
-            </div>
-
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.newPassword')} required minLength={8} />
-            <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder={t('auth.confirmNewPassword')} required minLength={8} />
-
-            <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full">
-                {t('auth.resetPassword')}
-            </Button>
-        </form>
-    );
-
-    // ── Shared Components ──
-
-    const renderError = () => error && (
-        <div className="bg-error/5 text-error px-4 py-3 rounded-xl border border-error/20 text-sm animate-fade-in">
-            {error}
-        </div>
-    );
-
-    const InputField = ({ icon, ...props }) => (
-        <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">{icon}</span>
-            <input {...props} className={inputCls} />
-        </div>
-    );
-
-    const viewTitles = {
-        login: { title: t('auth.welcomeBack'), desc: t('auth.signInDesc') },
-        register: { title: t('auth.createAccount'), desc: t('auth.createAccountDesc') },
-        otp_verify: { title: t('auth.verifyEmail'), desc: '' },
-        forgot_password: { title: t('auth.forgotPassword'), desc: '' },
-        forgot_otp: { title: t('auth.verifyResetOtp'), desc: '' },
-        reset_password: { title: t('auth.resetPassword'), desc: '' },
-    };
-
-    const currentView = viewTitles[view] || viewTitles.login;
-    const showBackButton = ['otp_verify', 'forgot_password', 'forgot_otp', 'reset_password'].includes(view);
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-md animate-fade-in" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-            {/* Modal */}
-            <div className="relative w-full max-w-[460px] bg-surface rounded-2xl shadow-2xl border border-border animate-fade-up delay-100 max-h-[90vh] overflow-y-auto scrollbar-hide"
-                onClick={e => e.stopPropagation()}>
-                {/* Close */}
-                <button onClick={onClose}
-                    className="absolute top-4 right-4 z-10 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-xl transition-colors duration-150"
-                    aria-label="Close">
+            <div
+                className="relative w-full max-w-[420px] bg-surface rounded-2xl shadow-xl border border-border"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute right-4 top-4 text-text-muted hover:text-text"
+                >
                     <X size={20} />
                 </button>
 
-                {/* Content */}
                 <div className="p-8">
-                    {/* Header */}
-                    <div className="text-center mb-6">
-                        {showBackButton && view !== 'otp_verify' && view !== 'forgot_otp' && view !== 'reset_password' && (
-                            <button onClick={() => switchView('login')}
-                                className="absolute top-4 left-4 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-xl transition-colors">
-                                <ArrowLeft size={20} />
-                            </button>
-                        )}
-                        {(view === 'login' || view === 'register') && (
-                            <>
-                                <h2 className="text-2xl font-bold mb-1.5">{currentView.title}</h2>
-                                <p className="text-text-muted text-sm">{currentView.desc}</p>
-                            </>
-                        )}
-                    </div>
+                    {view === "login" && (
+                        <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+                            <h2 className="text-2xl font-bold text-center">
+                                {t("auth.signIn")}
+                            </h2>
 
-                    {/* Views */}
-                    {view === 'login' && renderLogin()}
-                    {view === 'register' && renderRegister()}
-                    {view === 'otp_verify' && renderOtpVerify()}
-                    {view === 'forgot_password' && renderForgotPassword()}
-                    {view === 'forgot_otp' && renderForgotOtp()}
-                    {view === 'reset_password' && renderResetPassword()}
+                            <InputField
+                                icon={<Mail size={18} />}
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Email"
+                                className={inputCls}
+                            />
+
+                            <InputField
+                                icon={<Lock size={18} />}
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Password"
+                                className={inputCls}
+                                showToggle
+                                showPassword={showPassword}
+                                setShowPassword={setShowPassword}
+                            />
+
+                            <Button type="submit" loading={isLoading}>
+                                {t("auth.signIn")}
+                            </Button>
+
+                            <p className="text-center text-sm">
+                                No account?{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => setView("register")}
+                                    className="text-primary"
+                                >
+                                    Register
+                                </button>
+                            </p>
+                        </form>
+                    )}
+
+                    {view === "register" && (
+                        <form className="flex flex-col gap-4" onSubmit={handleRegister}>
+                            <h2 className="text-2xl font-bold text-center">
+                                {t("auth.register")}
+                            </h2>
+
+                            <InputField
+                                icon={<User size={18} />}
+                                name="full_name"
+                                value={formData.full_name}
+                                onChange={handleChange}
+                                placeholder="Full name"
+                                className={inputCls}
+                            />
+
+                            <InputField
+                                icon={<Mail size={18} />}
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Email"
+                                className={inputCls}
+                            />
+
+                            <InputField
+                                icon={<Phone size={18} />}
+                                name="phone_number"
+                                value={formData.phone_number}
+                                onChange={handleChange}
+                                placeholder="Phone"
+                                className={inputCls}
+                            />
+
+                            <InputField
+                                icon={<Lock size={18} />}
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Password"
+                                className={inputCls}
+                                showToggle
+                                showPassword={showPassword}
+                                setShowPassword={setShowPassword}
+                            />
+
+                            <InputField
+                                icon={<Lock size={18} />}
+                                type={showConfirmPassword ? "text" : "password"}
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                placeholder="Confirm password"
+                                className={inputCls}
+                                showToggle
+                                showPassword={showConfirmPassword}
+                                setShowPassword={setShowConfirmPassword}
+                            />
+
+                            <Button type="submit" loading={isLoading}>
+                                Register
+                            </Button>
+
+                            <button
+                                type="button"
+                                onClick={() => setView("login")}
+                                className="flex justify-center items-center gap-2 text-sm mt-2"
+                            >
+                                <ArrowLeft size={16} />
+                                Back to login
+                            </button>
+                        </form>
+                    )}
+
+                    {view === "otp" && (
+                        <div className="text-center">
+                            <h2 className="text-xl font-bold mb-2">Verify OTP</h2>
+
+                            <OtpInput
+                                otpDigits={otpDigits}
+                                setOtpDigits={setOtpDigits}
+                                otpRefs={otpRefs}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
