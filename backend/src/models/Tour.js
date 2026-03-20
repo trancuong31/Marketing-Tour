@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const { TOUR_BADGE } = require('../constants/tour_badge');
 
 const Tour = sequelize.define('Tour', {
     id: {
@@ -76,9 +77,9 @@ const Tour = sequelize.define('Tour', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    is_featured: {
-        type: DataTypes.TINYINT,
-        defaultValue: 0,
+    tour_badge: {
+        type: DataTypes.ENUM(...Object.values(TOUR_BADGE)),
+        defaultValue: TOUR_BADGE.NONE,
     },
     status: {
         type: DataTypes.ENUM('active', 'hidden', 'sold_out'),

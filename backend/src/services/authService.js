@@ -62,13 +62,13 @@ const register = async (userData) => {
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user (inactive)
     const user = await User.create({
         full_name,
         email,
-        password: hashedPassword,
+        password: password,
         phone_number: phone_number || null,
         role_id: 2, // default user role
         is_active: 0,
@@ -136,8 +136,8 @@ const login = async (email, password) => {
     }
 
     // Compare password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    // const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (password !== user.password) {
         throw new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED);
     }
 

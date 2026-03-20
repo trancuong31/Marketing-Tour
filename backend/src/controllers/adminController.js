@@ -95,7 +95,7 @@ const createTour = catchAsync(async (req, res, next) => {
         price_child, sale_price_child,
         price_infant, sale_price_infant,
         departure_point, duration_days, duration_nights,
-        is_featured, status,
+        tour_badge, status,
     } = req.body;
 
     if (!title || !category_id || !price_adult) {
@@ -124,7 +124,7 @@ const createTour = catchAsync(async (req, res, next) => {
         duration_days: duration_days || null,
         duration_nights: duration_nights || null,
         thumbnail_url: null,
-        is_featured: is_featured || 0,
+        tour_badge: tour_badge || 'none',
         status: status || 'active',
     });
 
@@ -173,7 +173,7 @@ const updateTour = catchAsync(async (req, res, next) => {
         price_child, sale_price_child,
         price_infant, sale_price_infant,
         departure_point, duration_days, duration_nights,
-        is_featured, status,
+        tour_badge, status,
     } = req.body;
 
     // Nếu đổi title → tạo slug mới
@@ -199,7 +199,7 @@ const updateTour = catchAsync(async (req, res, next) => {
         departure_point: departure_point !== undefined ? departure_point : tour.departure_point,
         duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
         duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
-        is_featured: is_featured !== undefined ? is_featured : tour.is_featured,
+        tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
         status: status || tour.status,
     });
 

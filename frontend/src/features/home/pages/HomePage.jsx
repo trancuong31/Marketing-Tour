@@ -24,9 +24,10 @@ const HomePage = () => {
         };
         fetchTours();
     }, []);
-
-    const featured = tours.filter(t => t.is_featured);
-    const onSale = tours.filter(t => t.sale_price_adult && parseFloat(t.sale_price_adult) < parseFloat(t.price_adult));
+    // get 6 tour featured
+    const featured = tours.filter(t => t.tour_badge === 'featured').slice(0, 6);
+    // get 6 tour sale
+    const onSale = tours.filter(t =>t.tour_badge === 'promotion' && t.sale_price_adult && parseFloat(t.sale_price_adult) < parseFloat(t.price_adult)).slice(0, 6);
 
     const SkeletonGrid = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -92,7 +93,7 @@ const HomePage = () => {
             </section>
 
             {/* ═══ TOUR NỔI BẬT ═══ */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
@@ -115,13 +116,26 @@ const HomePage = () => {
                             </div>
                         ))}
                     </div>
+                    
                 ) : (
                     <p className="text-center text-text-muted py-8">Chưa có tour nổi bật nào</p>
                 )}
+                {featured.length >= 6 && (
+                    <div className="flex justify-center mt-8">
+                        <Link
+                            to="/tours?tour_badge=featured"
+                            className="inline-flex items-center gap-2 px-6 py-3 text-white border border-primary font-bold rounded-xl transition shadow-lg"
+                        >
+                            Xem thêm
+                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+                )}
+                
             </section>
 
             {/* ═══ TOUR SALE ═══ */}
-            {(loading || onSale.length > 0) && (
+            {(loading || onSale.length >= 0) && (
                 <section className="bg-gradient-to-b from-white to-surface-alt py-12">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6">
                         <div className="flex items-center justify-between mb-8">
@@ -130,12 +144,14 @@ const HomePage = () => {
                                     <Sparkles className="w-5 h-5 text-error" />
                                 </div>
                                 <div>
-                                    <h2 className="text-3xl font-bold text-text">Ưu Đãi Hôm Nay</h2>
+                                    <h2 className="text-3xl font-bold text-text">Tour Ưu Đãi Tốt Nhất Hôm Nay</h2>
                                     <p className="text-sm text-text-muted">Tour giảm giá đặc biệt, số lượng có hạn</p>
                                 </div>
                             </div>
                         </div>
-
+                        {onSale.length === 0 && !loading && (
+                            <p className="text-center text-text-muted py-8">Chưa có tour ưu đãi nào</p>
+                        )}
                         {loading ? (
                             <SkeletonGrid />
                         ) : (
@@ -147,40 +163,105 @@ const HomePage = () => {
                                 ))}
                             </div>
                         )}
+                        {onSale.length >= 6 && (
+                            <div className="flex justify-center mt-8">
+                                <Link
+                                    to="/tours?tour_badge=promotion"
+                                    className="inline-flex items-center gap-2 px-6 py-3 text-white border border-primary font-bold rounded-xl transition shadow-lg"
+                                >
+                                    Xem thêm
+                                    <ChevronRight className="w-4 h-4" />
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </section>
             )}
 
             {/* ═══ BROWSE BY TYPE ═══ */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Link
-                        to="/tours/noi-dia"
-                        className="group relative overflow-hidden rounded-2xl bg-[#0068FF] p-8 text-white shadow-lg hover:shadow-xl transition-all"
-                    >
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                        <MapPin className="w-10 h-10 mb-3 opacity-80" />
-                        <h3 className="text-3xl font-extrabold mb-1">Tour Nội Địa</h3>
-                        <p className="text-white/70 text-sm mb-4">Khám phá vẻ đẹp Việt Nam từ Bắc đến Nam</p>
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold group-hover:gap-2 transition-all">
-                            Xem tất cả <ChevronRight className="w-4 h-4" />
-                        </span>
-                    </Link>
+            <section 
+            className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24"
+            aria-labelledby="browse-type-heading"
+        >
+            {/* Header Section - Chuẩn SEO với thẻ H2 */}
+            <div className="text-center mb-10 lg:mb-14">
+                <h2 
+                    id="browse-type-heading" 
+                    className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight"
+                >
+                    Khám Phá Hành Trình Của Bạn
+                </h2>
+                <p className="text-gray-500 max-w-2xl mx-auto text-base sm:text-lg">
+                    Lựa chọn điểm đến lý tưởng cho kỳ nghỉ sắp tới với các tour du lịch đa dạng, chất lượng cao từ trong nước đến quốc tế.
+                </p>
+            </div>
 
-                    <Link
-                        to="/tours/quoc-te"
-                        className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary to-secondary-dark p-8 text-white shadow-lg hover:shadow-xl transition-all"
-                    >
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                        <Globe2 className="w-10 h-10 mb-3 opacity-80" />
-                        <h3 className="text-3xl font-extrabold mb-1">Tour Quốc Tế</h3>
-                        <p className="text-white/70 text-sm mb-4">Trải nghiệm văn hóa đa dạng khắp thế giới</p>
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold group-hover:gap-2 transition-all">
-                            Xem tất cả <ChevronRight className="w-4 h-4" />
+            {/* Grid Layout - Responsive */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+                {/* === CARD: TOUR NỘI ĐỊA === */}
+                <Link
+                    to="/tours/noi-dia"
+                    className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0068FF] to-[#004bbd] p-8 sm:p-10 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between text-white shadow-lg hover:shadow-2xl transition-all duration-300"
+                    aria-label="Xem tất cả Tour Nội Địa"
+                >
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+                    
+                    {/* Content Top */}
+                    <div className="relative z-10">
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <MapPin className="w-7 h-7 text-white" strokeWidth={2.5} />
+                        </div>
+                        <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+                            Tour Nội Địa
+                        </h3>
+                        <p className="text-white/80 text-base sm:text-lg max-w-md line-clamp-2">
+                            Khám phá vẻ đẹp bất tận của Việt Nam từ miền non nước hữu tình đến những bãi biển thơ mộng.
+                        </p>
+                    </div>
+
+                    {/* Content Bottom (Call to action) */}
+                    <div className="relative z-10 mt-8">
+                        <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold bg-white text-[#0068FF] px-6 py-3 rounded-full group-hover:bg-gray-50 transition-colors w-fit shadow-md">
+                            Xem danh sách <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </span>
-                    </Link>
-                </div>
-            </section>
+                    </div>
+                </Link>
+
+                {/* === CARD: TOUR QUỐC TẾ === */}
+                <Link
+                    to="/tours/quoc-te"
+                    className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-700 p-8 sm:p-10 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between text-white shadow-lg hover:shadow-2xl transition-all duration-300"
+                    // Thay from-emerald-500 to-teal-700 bằng from-secondary to-secondary-dark của bạn
+                    aria-label="Xem tất cả Tour Quốc Tế"
+                >
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+                    
+                    {/* Content Top */}
+                    <div className="relative z-10">
+                        <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <Globe2 className="w-7 h-7 text-white" strokeWidth={2.5} />
+                        </div>
+                        <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+                            Tour Quốc Tế
+                        </h3>
+                        <p className="text-white/80 text-base sm:text-lg max-w-md line-clamp-2">
+                            Trải nghiệm văn hóa đa dạng, thưởng thức ẩm thực độc đáo và chinh phục những vùng đất mới khắp thế giới.
+                        </p>
+                    </div>
+
+                    {/* Content Bottom (Call to action) */}
+                    <div className="relative z-10 mt-8">
+                        <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold bg-white text-teal-700 px-6 py-3 rounded-full group-hover:bg-gray-50 transition-colors w-fit shadow-md">
+                            Xem danh sách <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </span>
+                    </div>
+                </Link>
+            </div>
+        </section>
         </ClientLayout>
     );
 };

@@ -25,7 +25,7 @@ const TourCard = ({ tour }) => {
     return (
         <Link
             to={`/tours/${tour.slug}`}
-            className="group block bg-white rounded-2xl overflow-hidden border-2 border-transparent shadow-[0_2px_12px_rgba(0,0,0,0.2)] hover:border-[#26bed6] hover:shadow-2xl transition-all duration-300"
+            className="group block bg-white rounded-2xl overflow-hidden border-2 border-transparent shadow-[0_2px_12px_rgba(0,0,0,0.2)] transition-all duration-300"
         >
             {/* Ảnh */}
             <div className="relative aspect-[16/10] overflow-hidden">
@@ -37,9 +37,9 @@ const TourCard = ({ tour }) => {
                 />
 
                 {/* Badge Featured */}
-                {tour.is_featured ? (
+                {tour.tour_badge === 'featured' ? (
                     <span className="absolute top-3 left-3 px-2.5 py-1 bg-secondary text-white text-xs font-bold rounded-full shadow-lg">
-                        ⭐ Nổi bật
+                        Nổi bật
                     </span>
                 ) : null}
 

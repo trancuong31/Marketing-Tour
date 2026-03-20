@@ -306,7 +306,7 @@ const TourListPage = () => {
                     {/* Backdrop */}
                     <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilter(false)} />
                     {/* Drawer */}
-                    <div className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-white shadow-2xl overflow-y-auto animate-slide-down">
+                    <div className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-white shadow-2xl overflow-y-auto animate-slide-left">
                         <div className="flex items-center justify-between p-4 border-b border-border">
                             <h3 className="font-bold text-text">Bộ lọc tìm kiếm</h3>
                             <button onClick={() => setShowMobileFilter(false)} className="p-1.5 rounded-lg hover:bg-surface-alt transition">

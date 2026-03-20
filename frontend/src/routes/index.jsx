@@ -23,7 +23,7 @@ const Loading = () => (
             <span className="text-text-muted text-sm">Đang tải...</span>
         </div>
     </div>
-);
+);``
 
 const AppRoutes = () => {
     return (

@@ -18,7 +18,7 @@ const TourManagementPage = () => {
         price_child: '', sale_price_child: '',
         price_infant: '', sale_price_infant: '',
         departure_point: '', duration_days: '', duration_nights: '',
-        is_featured: 0, status: 'active',
+        tour_badge: 'none', status: 'active',
     });
     const [files, setFiles] = useState([]);
     const editorRef = useRef(null);
@@ -54,7 +54,7 @@ const TourManagementPage = () => {
             price_child: '', sale_price_child: '',
             price_infant: '', sale_price_infant: '',
             departure_point: '', duration_days: '', duration_nights: '',
-            is_featured: 0, status: 'active',
+            tour_badge: 'none', status: 'active',
         });
         setFiles([]);
         setModal({ open: true, tour: null });
@@ -69,7 +69,7 @@ const TourManagementPage = () => {
             price_infant: tour.price_infant || '', sale_price_infant: tour.sale_price_infant || '',
             departure_point: tour.departure_point || '',
             duration_days: tour.duration_days || '', duration_nights: tour.duration_nights || '',
-            is_featured: tour.is_featured, status: tour.status,
+            tour_badge: tour.tour_badge, status: tour.status,
         });
         setFiles([]);
         setModal({ open: true, tour });
@@ -163,7 +163,9 @@ const TourManagementPage = () => {
                                             )}
                                             <div>
                                                 <p className="font-medium text-text line-clamp-1">{tour.title}</p>
-                                                {tour.is_featured ? <span className="text-xs text-secondary font-bold">⭐ Nổi bật</span> : null}
+                                                {tour.tour_badge === 'featured' ? <span className="text-xs text-secondary font-bold">⭐ Nổi bật</span> : null}
+                                                {tour.tour_badge === 'promotion' ? <span className="text-xs text-secondary font-bold">🏷️ Khuyến mãi</span> : null}
+                                                {tour.tour_badge === 'none' ? <span className="text-xs text-secondary font-bold">Không có</span> : null}
                                             </div>
                                         </div>
                                     </td>
@@ -322,10 +324,20 @@ const TourManagementPage = () => {
 
                             {/* Featured */}
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" checked={formData.is_featured === 1}
-                                    onChange={e => f('is_featured', e.target.checked ? 1 : 0)}
+                                <input type="checkbox" checked={formData.tour_badge === 'featured'}
+                                    onChange={e => f('tour_badge', e.target.checked ? 'featured' : 'none')}
                                     className="w-4 h-4 rounded border-border text-primary" />
-                                <span className="text-sm text-text">Tour nổi bật ⭐</span>
+                                <span className="text-sm text-text">Tour nổi bật</span>
+
+                                <input type="checkbox" checked={formData.tour_badge === 'promotion'}
+                                    onChange={e => f('tour_badge', e.target.checked ? 'promotion' : 'none')}
+                                    className="w-4 h-4 rounded border-border text-primary" />
+                                <span className="text-sm text-text">Tour khuyến mãi</span>
+
+                                <input type="checkbox" checked={formData.tour_badge === 'none'}
+                                    onChange={e => f('tour_badge', e.target.checked ? 'none' : 'none')}
+                                    className="w-4 h-4 rounded border-border text-primary" />
+                                <span className="text-sm text-text">Không có</span>
                             </label>
 
                             {/* Rich Text Editor */}

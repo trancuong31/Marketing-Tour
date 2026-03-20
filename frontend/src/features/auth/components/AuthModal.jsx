@@ -2,8 +2,17 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../store';
 import { Button } from '../../../components/ui';
-import { X, Mail, Lock, User, Phone, ArrowLeft, ChevronRight, Shield, KeyRound } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, ArrowLeft, Shield, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
+
+const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-xl text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
+
+const InputField = ({ icon, ...props }) => (
+    <div className="relative">
+        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">{icon}</span>
+        <input {...props} className={inputCls} />
+    </div>
+);
 
 /**
  * Views: login | register | otp_verify | forgot_password | forgot_otp | reset_password
@@ -183,11 +192,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
     if (!isOpen) return null;
 
-    const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-xl text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
     const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-    // ── OTP Input Component ──
-    const OtpInput = () => (
+    // 2. CHUYỂN THÀNH HÀM RENDER ĐỂ TRÁNH MẤT FOCUS
+    const renderOtpInput = () => (
         <div className="flex justify-center gap-2.5 my-6">
             {otpDigits.map((digit, i) => (
                 <input
@@ -276,7 +284,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
             </p>
 
-            <OtpInput />
+            {renderOtpInput()}
 
             {countdown > 0 && (
                 <p className="text-text-muted text-sm mb-4">
@@ -333,7 +341,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
             </p>
 
-            <OtpInput />
+            {renderOtpInput()}
 
             {countdown > 0 && (
                 <p className="text-text-muted text-sm mb-4">
@@ -381,13 +389,6 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const renderError = () => error && (
         <div className="bg-error/5 text-error px-4 py-3 rounded-xl border border-error/20 text-sm animate-fade-in">
             {error}
-        </div>
-    );
-
-    const InputField = ({ icon, ...props }) => (
-        <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">{icon}</span>
-            <input {...props} className={inputCls} />
         </div>
     );
 

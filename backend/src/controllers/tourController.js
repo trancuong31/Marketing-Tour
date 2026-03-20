@@ -40,7 +40,7 @@ const getTours = catchAsync(async (req, res) => {
             { model: Category, attributes: ['id', 'name', 'slug', 'is_international'] },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], limit: 1, order: [['sort_order', 'ASC']] },
         ],
-        order: [['is_featured', 'DESC'], ['id', 'DESC']],
+        order: [['tour_badge', 'DESC'], ['id', 'DESC']],
     });
 
     res.status(200).json({
