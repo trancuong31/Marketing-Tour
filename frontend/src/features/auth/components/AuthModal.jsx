@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../../store';
 import { Button } from '../../../components/ui';
@@ -19,6 +20,7 @@ const InputField = ({ icon, ...props }) => (
  */
 const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const {
         isLoading, error, clearError,
         login, register, verifyEmail, forgotPassword,
@@ -120,6 +122,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         if (result.success) {
             onClose();
             toast.success(t('auth.loginSuccess'));
+
+            // Redirect admin to /admin after successful login
+            if (result.data?.user?.role_id === 1) {
+                navigate('/admin');
+            }
         }
     };
 
@@ -209,8 +216,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                     onKeyDown={e => handleOtpKeyDown(i, e)}
                     onPaste={i === 0 ? handleOtpPaste : undefined}
                     className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none ${digit
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-border bg-surface-alt text-text'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border bg-surface-alt text-text'
                         } focus:border-primary focus:ring-2 focus:ring-primary/20`}
                     autoFocus={i === 0}
                 />

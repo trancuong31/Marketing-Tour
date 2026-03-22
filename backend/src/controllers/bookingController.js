@@ -3,6 +3,8 @@ const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
 
 /**
  * Tạo sinh booking_code duy nhất
@@ -34,7 +36,24 @@ const createBooking = catchAsync(async (req, res, next) => {
         existing = await Booking.findOne({ where: { booking_code: bookingCode } });
     }
 
+    // Bắt và gán user_id nếu user đang đăng nhập (optional)
+    let user_id = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+            const decoded = jwt.verify(token, env.jwt.secret);
+            user_id = decoded.id;
+            console.log('[Booking] Gán user_id:', user_id);
+        } catch (e) {
+            console.log('[Booking] Token không hợp lệ, tạo booking không gắn user:', e.message);
+        }
+    } else {
+        console.log('[Booking] Không có token, tạo booking guest');
+    }
+
     const booking = await Booking.create({
+        user_id,
         tour_id,
         booking_code: bookingCode,
         customer_name,

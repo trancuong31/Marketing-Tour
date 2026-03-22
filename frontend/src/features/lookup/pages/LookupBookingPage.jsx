@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { userService } from '@/services/userService';
-import { useAuthStore } from '@/store';
+import { useState } from 'react';
+import { bookingService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
-import { Loader2, Calendar, Users, MapPin, ReceiptText, Image as ImageIcon, LogIn } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Search, Phone, Mail, Loader2, Calendar, Users, MapPin, ReceiptText, Image as ImageIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const statusConfig = {
     pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20' },
@@ -57,7 +56,13 @@ const BookingCard = ({ booking, index }) => {
                         </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary mt-4">
+                    {/* Thông tin người đặt */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted mb-3">
+                        <span>Người đặt: <strong className="text-text">{booking.customer_name}</strong></span>
+                        <span>SĐT: <strong className="text-text">{booking.customer_phone}</strong></span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center">
                                 <Calendar className="w-4 h-4 text-primary" />
@@ -94,60 +99,86 @@ const BookingCard = ({ booking, index }) => {
     );
 };
 
-const HistoryPage = () => {
-    const { isAuthenticated } = useAuthStore();
-    const navigate = useNavigate();
-
+const LookupBookingPage = () => {
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [loaded, setLoaded] = useState(false);
+    const [searched, setSearched] = useState(false);
 
-    // Auto fetch bookings khi user đã login
-    useEffect(() => {
-        if (isAuthenticated) {
-            const fetchUserBookings = async () => {
-                setLoading(true);
-                try {
-                    const res = await userService.getBookings();
-                    setBookings(res?.data?.data || []);
-                } catch (err) {
-                    console.error('Lỗi lấy danh sách đặt tour:', err);
-                    setBookings([]);
-                } finally {
-                    setLoaded(true);
-                    setLoading(false);
-                }
-            };
-            fetchUserBookings();
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!email.trim() && !phone.trim()) return;
+        setLoading(true);
+        setSearched(true);
+        try {
+            const params = {};
+            if (email.trim()) params.email = email.trim();
+            if (phone.trim()) params.phone = phone.trim();
+            const res = await bookingService.getHistory(params);
+            setBookings(res.data.data || []);
+        } catch (err) {
+            console.error('Lỗi tra cứu:', err);
+            setBookings([]);
+        } finally {
+            setLoading(false);
         }
-    }, [isAuthenticated]);
-
-    // Nếu chưa login → hiển thị thông báo
-    if (!isAuthenticated) {
-        return (
-            <ClientLayout>
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 md:py-16">
-                    <div className="text-center py-20 px-4 bg-surface rounded-3xl border border-dashed border-border flex flex-col items-center">
-                        <div className="w-20 h-20 bg-surface-alt rounded-full flex items-center justify-center mb-6">
-                            <LogIn className="w-10 h-10 text-text-muted opacity-50" />
-                        </div>
-                        <h3 className="text-xl font-bold text-text mb-2">Bạn cần đăng nhập để xem lịch sử</h3>
-                        <p className="text-text-muted max-w-sm mx-auto mb-6">
-                            Đăng nhập để xem lịch sử đặt tour của bạn. Hoặc sử dụng trang <Link to="/lookup-booking" className="text-primary font-semibold hover:underline">Tra cứu đơn</Link> để tìm kiếm bằng email/SĐT.
-                        </p>
-                    </div>
-                </div>
-            </ClientLayout>
-        );
-    }
+    };
 
     return (
         <ClientLayout>
             <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 md:py-16">
                 {/* Header */}
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Lịch Sử Đặt Tour</h1>
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Tra Cứu Đơn Đặt Tour</h1>
+                    <p className="text-text-muted text-lg max-w-xl mx-auto">
+                        Nhập email và số điện thoại đã sử dụng khi đặt tour để tra cứu lại đơn đặt tour của bạn.
+                    </p>
                 </div>
+
+                {/* Form Tra Cứu */}
+                <form onSubmit={handleSearch} className="bg-surface rounded-3xl border border-border shadow-md p-6 sm:p-8 mb-10 max-w-2xl mx-auto">
+                    <div className="flex flex-col gap-4 mb-5">
+                        {/* Email */}
+                        <div>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-text mb-2">
+                                <Mail className="w-4 h-4 text-primary" />
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Nhập email..."
+                                className="w-full px-5 py-3.5 bg-surface-alt border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+                            />
+                        </div>
+
+                        {/* Số điện thoại */}
+                        <div>
+                            <label className="flex items-center gap-2 text-sm font-semibold text-text mb-2">
+                                <Phone className="w-4 h-4 text-primary" />
+                                Số điện thoại
+                            </label>
+                            <input
+                                type="tel"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                placeholder="Nhập số điện thoại..."
+                                className="w-full px-5 py-3.5 bg-surface-alt border border-border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading || (!email.trim() && !phone.trim())}
+                        className="w-full px-8 py-3.5 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
+                    >
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+                        Tra cứu
+                    </button>
+                </form>
 
                 {/* Kết Quả */}
                 {loading ? (
@@ -170,29 +201,31 @@ const HistoryPage = () => {
                             </div>
                         ))}
                     </div>
-                ) : loaded && bookings.length === 0 ? (
+                ) : searched && bookings.length === 0 ? (
                     <div className="text-center py-20 px-4 bg-surface rounded-3xl border border-dashed border-border flex flex-col items-center">
                         <div className="w-20 h-20 bg-surface-alt rounded-full flex items-center justify-center mb-6">
                             <MapPin className="w-10 h-10 text-text-muted opacity-50" />
                         </div>
-                        <h3 className="text-xl font-bold text-text mb-2">Bạn chưa có chuyến đi nào</h3>
+                        <h3 className="text-xl font-bold text-text mb-2">Không tìm thấy đơn đặt tour</h3>
                         <p className="text-text-muted max-w-sm mx-auto">
-                            Tài khoản của bạn chưa có lịch sử đặt tour nào. Hãy bắt đầu khám phá những điểm đến tuyệt vời!
+                            Vui lòng kiểm tra lại email hoặc số điện thoại bạn đã nhập.
                         </p>
-                        <Link to="/tours/noi-dia" className="mt-6 inline-flex items-center px-6 py-3 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-colors">
-                            Khám phá Tour ngay
-                        </Link>
                     </div>
-                ) : (
-                    <div className="space-y-6">
-                        {bookings.map((booking, i) => (
-                            <BookingCard key={booking.id} booking={booking} index={i} />
-                        ))}
+                ) : bookings.length > 0 ? (
+                    <div>
+                        <h2 className="text-lg font-bold text-text mb-4">
+                            Kết quả ({bookings.length} đơn)
+                        </h2>
+                        <div className="space-y-6">
+                            {bookings.map((booking, i) => (
+                                <BookingCard key={booking.id} booking={booking} index={i} />
+                            ))}
+                        </div>
                     </div>
-                )}
+                ) : null}
             </div>
         </ClientLayout>
     );
 };
 
-export default HistoryPage;
+export default LookupBookingPage;

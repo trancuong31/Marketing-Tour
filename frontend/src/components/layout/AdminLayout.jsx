@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import {
     LayoutDashboard, ShoppingCart, Map, FileText, Star,
-    LogOut, Menu, X, ChevronRight, User
+    LogOut, Menu, X, ChevronRight, User, Home
 } from 'lucide-react';
 
 const menuItems = [
@@ -31,9 +31,8 @@ const AdminLayout = ({ children }) => {
                 <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
             )}
 
-            <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-surface border-r border-border flex flex-col transition-transform duration-300 ${
-                sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-            }`}>
+            <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-surface border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+                }`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2 px-5 h-16 border-b border-border">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -54,11 +53,10 @@ const AdminLayout = ({ children }) => {
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                                    active
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:bg-surface-hover hover:text-text'
-                                }`}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'text-text-secondary hover:bg-surface-hover hover:text-text'
+                                    }`}
                             >
                                 <item.icon className="w-4.5 h-4.5" />
                                 {item.label}
@@ -70,6 +68,12 @@ const AdminLayout = ({ children }) => {
 
                 {/* User info */}
                 <div className="p-3 border-t border-border">
+                    <Link
+                        to="/"
+                        className="mb-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl transition-colors"
+                    >
+                        <Home className="w-4 h-4" /> Về trang chủ
+                    </Link>
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-alt">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                             <User className="w-4 h-4 text-primary" />

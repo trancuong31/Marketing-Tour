@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
-import { adminService } from '@/services/tourService';
+import authService from '@/services/authService';
 import { Globe, Loader2, Lock, Mail } from 'lucide-react';
 
 const AdminLoginPage = () => {
@@ -17,8 +17,15 @@ const AdminLoginPage = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await adminService.login({ email, password });
+            const res = await authService.login({ email, password });
             const { token, user } = res.data.data;
+
+            // Chỉ admin mới được vào
+            if (user.role_id !== 1) {
+                setError('Tài khoản không có quyền admin');
+                return;
+            }
+
             setAuth(token, user);
             navigate('/admin/bookings');
         } catch (err) {

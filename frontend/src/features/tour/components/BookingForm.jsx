@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useAuthStore } from '@/store';
 import { bookingService } from '@/services/tourService';
 import SuccessModal from '@/components/ui/SuccessModal';
 import { User, Phone, Mail, FileText, Loader2, Calendar, Users, Minus, Plus } from 'lucide-react';
@@ -35,6 +36,7 @@ const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0 }) => (
 );
 
 const BookingForm = ({ tour }) => {
+    const { user } = useAuthStore();
     const [submitting, setSubmitting] = useState(false);
     const [modal, setModal] = useState({ open: false, code: '' });
     const [adults, setAdults] = useState(1);
@@ -48,9 +50,9 @@ const BookingForm = ({ tour }) => {
         formState: { errors },
     } = useForm({
         defaultValues: {
-            customer_name: '',
-            customer_phone: '',
-            customer_email: '',
+            customer_name: user?.full_name || '',
+            customer_phone: user?.phone_number || '',
+            customer_email: user?.email || '',
             departure_date: '',
             customer_note: '',
         },

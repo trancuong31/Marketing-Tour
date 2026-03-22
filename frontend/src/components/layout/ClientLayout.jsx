@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Phone, Mail, Globe, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Phone, Mail, Globe, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Key, Shield } from 'lucide-react';
 import { useState } from 'react';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
@@ -9,12 +9,13 @@ const navLinks = [
     { path: '/', label: 'Trang chủ' },
     { path: '/tours/noi-dia', label: 'Tour Nội Địa', icon: MapPin },
     { path: '/tours/quoc-te', label: 'Tour Quốc Tế', icon: Globe2 },
-    { path: '/history', label: 'Tra cứu đơn' },
+    { path: '/lookup-booking', label: 'Tra cứu đơn' },
     { path: '/guides', label: 'Hướng dẫn' },
 ];
 
 const ClientLayout = ({ children }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState('login');
@@ -23,6 +24,11 @@ const ClientLayout = ({ children }) => {
     const openAuth = (mode) => {
         setAuthMode(mode);
         setAuthModalOpen(true);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
     };
 
     return (
@@ -49,8 +55,8 @@ const ClientLayout = ({ children }) => {
                                         key={link.path}
                                         to={link.path}
                                         className={`px-3.5 py-2 rounded-lg text-base font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-text-secondary hover:bg-surface-alt hover:text-text'
+                                            ? 'bg-primary/10 text-primary'
+                                            : 'text-text-secondary hover:bg-surface-alt hover:text-text'
                                             }`}
                                     >
                                         {link.icon && <link.icon className="w-3.5 h-3.5" />}
@@ -64,20 +70,59 @@ const ClientLayout = ({ children }) => {
 
                             {/* Auth buttons */}
                             {isAuthenticated ? (
-                                <div className="flex items-center gap-3">
+                                <div className="relative group cursor-pointer flex items-center gap-3">
                                     <div className="flex items-center gap-2 text-sm font-medium text-text">
-                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                            <UserIcon className="w-4 h-4" />
+                                        {user?.avatar_url ? (
+                                            <img
+                                                src={user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:8888${user.avatar_url}`}
+                                                alt={user.full_name}
+                                                className="w-9 h-9 rounded-full object-cover border border-border"
+                                            />
+                                        ) : (
+                                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                <UserIcon className="w-4 h-4" />
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col">
+                                            <span>{user?.full_name || 'Người dùng'}</span>
+                                            {user?.role_id === 1 && (
+                                                <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Admin</span>
+                                            )}
                                         </div>
-                                        <span>{user?.full_name || 'Người dùng'}</span>
                                     </div>
-                                    <button
-                                        onClick={logout}
-                                        className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-                                        title="Đăng xuất"
-                                    >
-                                        <LogOut className="w-5 h-5" />
-                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-2xl border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col pt-1 pb-1 z-50">
+                                        <div className="px-4 py-3 border-b border-border bg-surface-alt/50 rounded-t-2xl">
+                                            <p className="text-sm font-semibold text-text truncate">{user?.full_name}</p>
+                                            <p className="text-xs text-text-muted truncate">{user?.email}</p>
+                                        </div>
+                                        <div className="py-1.5 flex flex-col px-1.5 gap-1">
+                                            {user?.role_id === 1 && (
+                                                <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors text-text group/item">
+                                                    <Shield className="w-4 h-4 text-text-muted group-hover/item:text-primary transition-colors" />
+                                                    <span className="text-sm font-medium">Trang quản trị</span>
+                                                </Link>
+                                            )}
+                                            <Link to="/profile" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
+                                                <UserIcon className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
+                                                <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+                                            </Link>
+                                            <Link to="/history" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
+                                                <List className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
+                                                <span className="text-sm font-medium">Lịch sử đặt tour</span>
+                                            </Link>
+                                        </div>
+                                        <div className="border-t border-border py-1.5 px-1.5 flex flex-col">
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-error/10 text-error transition-colors group/item"
+                                            >
+                                                <LogOut className="w-4 h-4 text-error/70 group-hover/item:text-error transition-colors" />
+                                                <span className="text-sm font-medium">Đăng xuất</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
@@ -116,8 +161,8 @@ const ClientLayout = ({ children }) => {
                                     key={link.path}
                                     to={link.path}
                                     className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${location.pathname === link.path
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-text-secondary hover:bg-surface-alt'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-text-secondary hover:bg-surface-alt'
                                         }`}
                                     onClick={() => setMenuOpen(false)}
                                 >
@@ -144,7 +189,7 @@ const ClientLayout = ({ children }) => {
                                         {/* Logout bên phải */}
                                         <button
                                             onClick={() => {
-                                                logout();
+                                                handleLogout();
                                                 setMenuOpen(false);
                                             }}
                                             className="flex items-center gap-2 text-error hover:bg-error/5 transition-colors font-medium text-sm px-2 py-1 rounded"
