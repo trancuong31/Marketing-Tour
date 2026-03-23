@@ -1,4 +1,4 @@
-const { Tour, TourImage, Category } = require('../models');
+const { Tour, TourImage, Category, Banner } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -75,4 +75,32 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { getTours, getTourBySlug };
+/**
+ * Lấy banners công khai theo vị trí
+ * GET /api/banners?position=hero|left_home|right_home
+ */
+const getBannersByPosition = catchAsync(async (req, res) => {
+    const { position } = req.query;
+    const whereClause = { is_active: 1 };
+
+    if (position) {
+        whereClause.position = position;
+    }
+    //join tour
+    const banners = await Banner.findAll({
+        where: whereClause,
+        attributes: ['id', 'title', 'image_url', 'target_link', 'position', 'tour_id'],
+        include: [
+            { model: Tour, as: 'tour', attributes: ['slug'], required: false },
+        ],
+        order: [['id', 'DESC']],
+    });
+
+    res.status(200).json({
+        status: 'success',
+        results: banners.length,
+        data: banners,
+    });
+});
+
+module.exports = { getTours, getTourBySlug, getBannersByPosition };

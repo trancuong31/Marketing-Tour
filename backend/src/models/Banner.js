@@ -1,11 +1,16 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
+const Tour = require('./Tour');
 
 const Banner = sequelize.define('Banner', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
+    },
+    tour_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
     },
     title: {
         type: DataTypes.STRING,
@@ -39,5 +44,7 @@ const Banner = sequelize.define('Banner', {
     tableName: 'banners',
     timestamps: false
 });
+
+Banner.belongsTo(Tour, { foreignKey: 'tour_id', as: 'tour' });
 
 module.exports = Banner;

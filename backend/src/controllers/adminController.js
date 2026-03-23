@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const slugify = require('slugify');
-const { User, Role, Tour, TourImage, Booking, Vote, Guide, Category } = require('../models');
+const { User, Role, Tour, TourImage, Booking, Vote, Guide, Category, Banner } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -464,6 +464,125 @@ const deleteTourImage = catchAsync(async (req, res, next) => {
     });
 });
 
+// ══════════════════════════════════════
+// BANNER MANAGEMENT
+// ══════════════════════════════════════
+
+/**
+ * Lấy tất cả banners (admin)
+ * GET /api/admin/banners
+ */
+const getAllBanners = catchAsync(async (req, res) => {
+    const banners = await Banner.findAll({
+        order: [['position', 'ASC'], ['id', 'DESC']],
+    });
+
+    res.status(200).json({
+        status: 'success',
+        results: banners.length,
+        data: banners,
+    });
+});
+
+/**
+ * Tạo banner mới
+ * POST /api/admin/banners
+ */
+const createBanner = catchAsync(async (req, res, next) => {
+    const { title, target_link, position, is_active, tour_id } = req.body;
+
+    if (!title || !position) {
+        return next(new AppError('Tiêu đề và vị trí là bắt buộc', HTTP_CODES.BAD_REQUEST));
+    }
+
+    const validPositions = ['hero', 'left_home', 'right_home'];
+    if (!validPositions.includes(position)) {
+        return next(new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST));
+    }
+
+    if (!req.file) {
+        return next(new AppError('Vui lòng upload ảnh banner', HTTP_CODES.BAD_REQUEST));
+    }
+
+    const banner = await Banner.create({
+        title,
+        image_url: `/uploads/banners/${req.file.filename}`,
+        target_link: target_link || null,
+        position,
+        tour_id: tour_id || null,
+        is_active: is_active !== undefined ? parseInt(is_active) : 1,
+    });
+
+    res.status(201).json({
+        status: 'success',
+        message: 'Tạo banner thành công',
+        data: banner,
+    });
+});
+
+/**
+ * Cập nhật banner
+ * PUT /api/admin/banners/:id
+ */
+const updateBanner = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const banner = await Banner.findByPk(id);
+
+    if (!banner) {
+        return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
+    }
+
+    const { title, target_link, position, is_active } = req.body;
+
+    if (position) {
+        const validPositions = ['hero', 'left_home', 'right_home'];
+        if (!validPositions.includes(position)) {
+            return next(new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST));
+        }
+    }
+
+    const updateData = {
+        title: title || banner.title,
+        target_link: target_link !== undefined ? target_link : banner.target_link,
+        position: position || banner.position,
+        is_active: is_active !== undefined ? parseInt(is_active) : banner.is_active,
+        updated_at: new Date(),
+    };
+
+    // Nếu upload ảnh mới
+    if (req.file) {
+        updateData.image_url = `/uploads/banners/${req.file.filename}`;
+    }
+
+    await banner.update(updateData);
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Cập nhật banner thành công',
+        data: banner,
+    });
+});
+
+/**
+ * Xóa banner
+ * DELETE /api/admin/banners/:id
+ */
+const deleteBanner = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const banner = await Banner.findByPk(id);
+
+    if (!banner) {
+        return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
+    }
+
+    await banner.destroy();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Xóa banner thành công',
+    });
+});
+
 module.exports = {
     login,
     getAllTours,
@@ -478,4 +597,8 @@ module.exports = {
     createGuide,
     updateGuide,
     deleteTourImage,
+    getAllBanners,
+    createBanner,
+    updateBanner,
+    deleteBanner,
 };

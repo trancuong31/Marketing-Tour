@@ -34,6 +34,13 @@ export const guideService = {
 };
 
 // ══════════════════════════════════════
+// BANNERS (Public)
+// ══════════════════════════════════════
+export const bannerService = {
+    getByPosition: (position) => api.get('/banners', { params: position ? { position } : {} }),
+};
+
+// ══════════════════════════════════════
 // ADMIN
 // ══════════════════════════════════════
 export const adminService = {
@@ -58,4 +65,11 @@ export const adminService = {
     getGuides: () => api.get('/admin/guides'),
     createGuide: (data) => api.post('/admin/guides', data),
     updateGuide: (id, data) => api.put(`/admin/guides/${id}`, data),
+
+    // Banners
+    getBanners: () => api.get('/admin/banners'),
+    createBanner: (formData) => api.post('/admin/banners', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    updateBanner: (id, formData) => api.put(`/admin/banners/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
 };
+

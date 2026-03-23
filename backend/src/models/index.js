@@ -7,6 +7,7 @@ const Booking = require('./Booking');
 const Guide = require('./Guide');
 const Vote = require('./Vote');
 const Otp = require('./Otp');
+const Banner = require('./Banner');
 
 // ── Associations ──
 
@@ -44,4 +45,5 @@ module.exports = {
     Guide,
     Vote,
     Otp,
+    Banner,
 };

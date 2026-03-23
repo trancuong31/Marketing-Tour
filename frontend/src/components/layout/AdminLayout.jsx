@@ -3,12 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import {
     LayoutDashboard, ShoppingCart, Map, FileText, Star,
-    LogOut, Menu, X, ChevronRight, User, Home
+    LogOut, Menu, X, ChevronRight, User, Home, Image
 } from 'lucide-react';
 
 const menuItems = [
     { path: '/admin/bookings', label: 'Quản lý Đơn', icon: ShoppingCart },
     { path: '/admin/tours', label: 'Quản lý Tour', icon: Map },
+    { path: '/admin/banners', label: 'Quản lý Banner', icon: Image },
     { path: '/admin/content', label: 'Nội dung', icon: FileText },
 ];
 

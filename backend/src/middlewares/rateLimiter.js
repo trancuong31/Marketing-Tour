@@ -21,7 +21,7 @@ const apiLimiter = rateLimit({
  */
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, // 20 requests per window
+    max: 1000, // 20 requests per window
     message: {
         status: 'fail',
         message: 'Quá nhiều lần thử đăng nhập, vui lòng thử lại sau 15 phút.',
