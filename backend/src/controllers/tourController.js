@@ -91,7 +91,7 @@ const getBannersByPosition = catchAsync(async (req, res) => {
         where: whereClause,
         attributes: ['id', 'title', 'image_url', 'target_link', 'position', 'tour_id'],
         include: [
-            { model: Tour, as: 'tour', attributes: ['slug'], required: false },
+            { model: Tour, as: 'tour', attributes: ['price_adult','slug'], required: false },
         ],
         order: [['id', 'DESC']],
     });

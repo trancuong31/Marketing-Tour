@@ -140,6 +140,7 @@ const BannerManagementPage = () => {
             fd.append('target_link', form.target_link);
             fd.append('position', form.position);
             fd.append('is_active', form.is_active);
+            fd.append('tour_id', selectedTourId || '');
 
             if (imageSource === 'tour' && selectedTourImageUrl) {
                 // Fetch ảnh từ server và convert thành file

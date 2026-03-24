@@ -11,7 +11,13 @@ const HomePage = () => {
     const [heroBanners, setHeroBanners] = useState([]);
     const [heroIndex, setHeroIndex] = useState(0);
     const navigate = useNavigate();
-
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+        }).format(amount);
+    };
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -150,24 +156,24 @@ const HomePage = () => {
                         </div>
                     </div>
 
-                    {/* 3. Banner Title (Lệch phải) */}
+                    {/* 3. Banner Title*/}
                     {heroBanners.length > 0 && heroBanners[heroIndex]?.title && (
                         <div 
-                            className="absolute top-1/2 -translate-y-1/2 right-4 lg:right-12 hidden md:block pointer-events-auto cursor-pointer group"
+                            className="absolute top-1/2 -translate-y-1/2 right-8 lg:right-0 hidden md:block pointer-events-auto cursor-pointer group"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleBannerClick(heroBanners[heroIndex]);
                             }}
                         >
-                            <div className="bg-black/30 backdrop-blur-md border border-white/20 p-5 rounded-2xl shadow-2xl hover:bg-black/50 transition duration-300 max-w-xs xl:max-w-sm hover:-translate-x-2 transform">
+                            <div className="p-5 rounded-2xl shadow-2xl transition duration-300 max-w-sm xl:max-w-md">
                                 <p className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                    Giá chỉ từ 
+                                    <h2 className=" text-lg">Giá chỉ từ <span className="text-3xl font-bold text-orange-500">{formatCurrency(heroBanners[heroIndex].tour?.price_adult)}/ Khách</span></h2>
                                 </p>
                                 <div className="flex items-start gap-4 justify-between">
                                     <h3 className="text-white font-bold text-lg leading-snug line-clamp-3">
                                         {heroBanners[heroIndex].title}
                                     </h3>
-                                    <div className="bg-white/20 p-2 rounded-full group-hover:bg-primary transition-colors flex-shrink-0 mt-0.5">
+                                    <div className="bg-white/20 p-2 rounded-full group-hover:bg-primary transition-colors shrink-0 mt-0.5">
                                         <ChevronRight className="w-5 h-5 text-white" />
                                     </div>
                                 </div>
