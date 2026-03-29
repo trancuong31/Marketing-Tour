@@ -166,7 +166,7 @@ const ContentManagementPage = () => {
                         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
                         onClick={closeGuideModal}
                     />
-                    <div className="relative bg-surface rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-fade-up">
+                    <div className="relative bg-surface rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-fade-upanimate-fade-up">
                         {/* Header */}
                         <div className="sticky top-0 bg-surface z-10 px-6 py-4 border-b border-border flex items-center justify-between">
                             <div>

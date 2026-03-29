@@ -22,10 +22,12 @@ const startServer = async () => {
         // Connect to MariaDB
         await connectDB();
 
-        // Sync chỉ bảng mới (votes) - không alter các bảng đã có
-        const { Vote } = require('./models');
-        await Vote.sync();
-        logger.info('Votes table synced.');
+        // Sync models - chỉ sync nếu cần, không alter vì bảng đã tồn tại
+        if (process.env.NODE_ENV === 'development') {
+            // Nếu muốn tự động tạo bảng mới, dùng sync() không có alter
+            // await sequelize.sync();
+            logger.info('Database connected. Tables should already exist.');
+        }
 
         // Start server
         const server = app.listen(PORT, () => {

@@ -30,10 +30,7 @@ const connectDB = async () => {
         await sequelize.authenticate();
         logger.info('MariaDB connection established successfully.');
 
-        // Sync models - chỉ sync nếu cần, không alter vì bảng đã tồn tại
         if (process.env.NODE_ENV === 'development') {
-            // Nếu muốn tự động tạo bảng mới, dùng sync() không có alter
-            // await sequelize.sync();
             logger.info('Database connected. Tables should already exist.');
         }
     } catch (error) {

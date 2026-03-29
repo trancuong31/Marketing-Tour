@@ -5,6 +5,7 @@ const tourRoutes = require('./tourRoutes');
 const bookingRoutes = require('./bookingRoutes');
 const voteRoutes = require('./voteRoutes');
 const guideRoutes = require('./guideRoutes');
+const bannerRoutes = require('./bannerRoutes');
 const adminRoutes = require('./adminRoutes');
 const userRoutes = require('./userRoutes');
 
@@ -19,6 +20,7 @@ router.use('/tours', tourRoutes);
 router.use('/tours', voteRoutes); // /api/tours/:id/votes
 router.use('/bookings', bookingRoutes);
 router.use('/guides', guideRoutes);
+router.use('/banners', bannerRoutes);
 
 // ── User API ──
 router.use('/users', userRoutes);

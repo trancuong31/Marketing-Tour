@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
+const uploadBanner = require('../middlewares/uploadBanner');
 const {
     login,
     getAllTours,
@@ -15,6 +16,10 @@ const {
     createGuide,
     updateGuide,
     deleteTourImage,
+    getAllBanners,
+    createBanner,
+    updateBanner,
+    deleteBanner,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -45,4 +50,11 @@ router.get('/guides', getAllGuides);
 router.post('/guides', createGuide);
 router.put('/guides/:id', updateGuide);
 
+// ── Banner ──
+router.get('/banners', getAllBanners);
+router.post('/banners', uploadBanner.single('image'), createBanner);
+router.put('/banners/:id', uploadBanner.single('image'), updateBanner);
+router.delete('/banners/:id', deleteBanner);
+
 module.exports = router;
+
