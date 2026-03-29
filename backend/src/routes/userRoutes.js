@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 const { authenticate } = require('../middlewares/auth');
 const uploadAvatar = require('../middlewares/uploadAvatar');
 
-// Bắt buộc đăng nhập cho các routes bên dưới
+// Bắt buộc đăng nhập
 router.use(authenticate);
 
 // Profile
@@ -13,8 +13,5 @@ router.put('/profile', uploadAvatar.single('avatar'), userController.updateProfi
 
 // Password
 router.put('/password', userController.changePassword);
-
-// Bookings
-router.get('/bookings', userController.getBookings);
 
 module.exports = router;

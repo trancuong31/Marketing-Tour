@@ -1,11 +1,15 @@
 const express = require('express');
-const { createBooking, getBookingHistory } = require('../controllers/bookingController');
-const { validate } = require('../middlewares/validate');
-const { createBookingSchema } = require('../validations/bookingValidation');
-
 const router = express.Router();
+const { createBooking, getMyBookings, cancelBooking } = require('../controllers/bookingController');
+const { authenticate } = require('../middlewares/auth');
 
-router.post('/', validate(createBookingSchema), createBooking);
-router.get('/history', getBookingHistory);
+// Tạo booking (guest hoặc login)
+router.post('/', createBooking);
+
+// Lấy booking của user login + chi tiết tour
+router.get('/my', authenticate, getMyBookings);
+
+// Hủy booking nếu pending
+router.put('/:bookingId/cancel', authenticate, cancelBooking);
 
 module.exports = router;

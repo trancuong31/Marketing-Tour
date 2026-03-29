@@ -6,50 +6,35 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
-/**
- * Tạo sinh booking_code duy nhất
- */
+// Sinh booking code duy nhất
 const generateBookingCode = () => {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = crypto.randomBytes(3).toString('hex').toUpperCase();
     return `BK${timestamp}${random}`;
 };
 
-/**
- * Đặt tour mới
- * POST /api/bookings
- */
-const createBooking = catchAsync(async (req, res, next) => {
+// --------- Tạo booking mới ---------
+const createBooking = catchAsync(async (req, res) => {
     const { tour_id, customer_name, customer_phone, customer_email, number_of_people, customer_note } = req.body;
 
-    // Kiểm tra tour tồn tại và active
     const tour = await Tour.findOne({ where: { id: tour_id, status: 'active' } });
-    if (!tour) {
-        return next(new AppError('Tour không tồn tại hoặc đã ngừng', HTTP_CODES.NOT_FOUND));
-    }
+    if (!tour) throw new AppError('Tour không tồn tại hoặc đã ngừng', HTTP_CODES.NOT_FOUND);
 
-    // Tạo booking_code duy nhất
     let bookingCode = generateBookingCode();
-    let existing = await Booking.findOne({ where: { booking_code: bookingCode } });
-    while (existing) {
+    while (await Booking.findOne({ where: { booking_code: bookingCode } })) {
         bookingCode = generateBookingCode();
-        existing = await Booking.findOne({ where: { booking_code: bookingCode } });
     }
 
-    // Bắt và gán user_id nếu user đang đăng nhập (optional)
-    let user_id = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
+    let user_id = req.user ? req.user.id : null;
+    
+    if (!user_id && req.headers.authorization?.startsWith('Bearer')) {
+        const token = req.headers.authorization.split(' ')[1];
         try {
             const decoded = jwt.verify(token, env.jwt.secret);
             user_id = decoded.id;
-            console.log('[Booking] Gán user_id:', user_id);
-        } catch (e) {
-            console.log('[Booking] Token không hợp lệ, tạo booking không gắn user:', e.message);
+        } catch (error) {
+            // Bỏ qua nếu token không hợp lệ
         }
-    } else {
-        console.log('[Booking] Không có token, tạo booking guest');
     }
 
     const booking = await Booking.create({
@@ -68,46 +53,81 @@ const createBooking = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Đặt tour thành công!',
         data: {
-            booking_code: booking.booking_code,
-            tour_title: tour.title,
-            customer_name: booking.customer_name,
-            number_of_people: booking.number_of_people,
-            status: booking.status,
-        },
+            bookingId: booking.id,
+            bookingCode: booking.booking_code,
+            tourTitle: tour.title,
+            customerName: booking.customer_name,
+            numberOfPeople: booking.number_of_people,
+            status: booking.status
+        }
     });
 });
 
-/**
- * Tra cứu lịch sử đặt tour
- * GET /api/bookings/history?phone=xxx&email=yyy
- */
-const getBookingHistory = catchAsync(async (req, res, next) => {
-    const { phone, email } = req.query;
-
-    if (!phone && !email) {
-        return next(new AppError('Vui lòng nhập số điện thoại hoặc email để tra cứu', HTTP_CODES.BAD_REQUEST));
-    }
-
-    const whereClause = {};
-    if (phone) whereClause.customer_phone = phone;
-    if (email) whereClause.customer_email = email;
+// --------- Lấy booking theo user login + chi tiết tour ---------
+const getMyBookings = catchAsync(async (req, res) => {
+    const userId = req.user.id;
 
     const bookings = await Booking.findAll({
-        where: whereClause,
+        where: { user_id: userId },
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'thumbnail_url', 'price_adult', 'sale_price_adult'] },
+            { model: Tour, attributes: ['id', 'title', 'slug', 'price_adult', 'sale_price_adult', 'status'] },
         ],
-        attributes: {
-            exclude: ['admin_note'], // Ẩn ghi chú admin khỏi client
-        },
         order: [['created_at', 'DESC']],
     });
 
+    if (!bookings.length) {
+        return res.status(200).json({ status: 'success', message: 'Bạn chưa có booking nào', data: [] });
+    }
+
+    const data = bookings.map(b => ({
+        id: b.id,
+        booking_code: b.booking_code,
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_email: b.customer_email,
+        number_of_people: b.number_of_people,
+        customer_note: b.customer_note,
+        status: b.status,
+        created_at: b.created_at,
+        tour: b.tour ? {
+            id: b.tour.id,
+            title: b.tour.title,
+            slug: b.tour.slug,
+            price_adult: b.tour.price_adult,
+            sale_price_adult: b.tour.sale_price_adult,
+            status: b.tour.status
+        } : null
+    }));
+
     res.status(200).json({
         status: 'success',
-        results: bookings.length,
-        data: bookings,
+        results: data.length,
+        data
     });
 });
 
-module.exports = { createBooking, getBookingHistory };
+// --------- Hủy booking nếu pending ---------
+const cancelBooking = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findOne({ where: { id: bookingId, user_id: userId } });
+    if (!booking) throw new AppError('Booking không tồn tại', HTTP_CODES.NOT_FOUND);
+    if (booking.status !== 'pending') throw new AppError('Chỉ có thể hủy booking đang chờ', HTTP_CODES.BAD_REQUEST);
+
+    booking.status = 'cancelled';
+    await booking.save();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Hủy booking thành công',
+        bookingId: booking.id,
+        newStatus: booking.status
+    });
+});
+
+module.exports = {
+    createBooking,
+    getMyBookings,
+    cancelBooking
+};

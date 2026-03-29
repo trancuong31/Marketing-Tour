@@ -1,192 +1,186 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { userService } from '@/services/userService';
-import { useAuthStore } from '@/store';
 import ClientLayout from '@/components/layout/ClientLayout';
-import { Loader2, Calendar, Users, MapPin, ReceiptText, Image as ImageIcon, LogIn } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-
-const statusConfig = {
-    pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20' },
-    contacted: { label: 'Đã liên hệ', className: 'bg-info/10 text-info border-info/20' },
-    approved: { label: 'Đã duyệt', className: 'bg-success/10 text-success border-success/20' },
-    cancelled: { label: 'Đã hủy', className: 'bg-error/10 text-error border-error/20' },
-};
-
-const formatPrice = (price) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-const BookingCard = ({ booking, index }) => {
-    const status = statusConfig[booking.status] || statusConfig.pending;
-    const tour = booking.Tour || {};
-    const unitPrice = parseFloat(tour.sale_price_adult || tour.price_adult || 0);
-    const totalPrice = unitPrice * (booking.number_of_people || 1);
-
-    return (
-        <div
-            className="bg-surface rounded-2xl border border-border p-5 md:p-6 hover:shadow-lg transition-all animate-fade-up flex flex-col sm:flex-row gap-6"
-            style={{ animationDelay: `${index * 80}ms` }}
-        >
-            {/* Ảnh Tour */}
-            <div className="w-full sm:w-40 h-32 rounded-xl overflow-hidden bg-surface-alt flex-shrink-0 border border-border relative">
-                {tour.cover_image ? (
-                    <img
-                        src={tour.cover_image.startsWith('http') ? tour.cover_image : `http://localhost:8888${tour.cover_image}`}
-                        alt={tour.title}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-text-muted">
-                        <ImageIcon className="w-8 h-8 opacity-50 mb-1" />
-                        <span className="text-xs">No image</span>
-                    </div>
-                )}
-                <div className="absolute top-2 left-2 px-2.5 py-1 bg-surface/90 backdrop-blur rounded-lg shadow-sm border border-border text-xs font-bold text-text">
-                    {booking.booking_code}
-                </div>
-            </div>
-
-            {/* Thông tin */}
-            <div className="flex-1 flex flex-col justify-between">
-                <div>
-                    <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-                        <Link to={tour.slug ? `/tours/${tour.slug}` : '#'} className="font-bold text-lg text-text hover:text-primary transition-colors line-clamp-2 pr-4 flex-1">
-                            {tour.title || 'Tour không xác định'}
-                        </Link>
-                        <span className={`px-3 py-1.5 text-xs font-bold rounded-full border whitespace-nowrap ${status.className}`}>
-                            {status.label}
-                        </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-text-secondary mt-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center">
-                                <Calendar className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-text-muted">Ngày đặt</p>
-                                <p className="font-medium text-text">{new Date(booking.created_at).toLocaleDateString('vi-VN')}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center">
-                                <Users className="w-4 h-4 text-secondary" />
-                            </div>
-                            <div>
-                                <p className="text-xs text-text-muted">Số lượng</p>
-                                <p className="font-medium text-text">{booking.number_of_people} người</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 mt-2 sm:mt-0 sm:ml-auto">
-                            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-                                <ReceiptText className="w-4 h-4 text-success" />
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-text-muted">Tổng tiền</p>
-                                <p className="font-bold text-lg text-primary">{formatPrice(totalPrice)}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { Loader2, Ticket, MapPin, Calendar, Clock, User, Users, FileText, Ban } from 'lucide-react';
 
 const HistoryPage = () => {
-    const { isAuthenticated } = useAuthStore();
-    const navigate = useNavigate();
-
     const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [loaded, setLoaded] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Auto fetch bookings khi user đã login
-    useEffect(() => {
-        if (isAuthenticated) {
-            const fetchUserBookings = async () => {
-                setLoading(true);
-                try {
-                    const res = await userService.getBookings();
-                    setBookings(res?.data?.data || []);
-                } catch (err) {
-                    console.error('Lỗi lấy danh sách đặt tour:', err);
-                    setBookings([]);
-                } finally {
-                    setLoaded(true);
-                    setLoading(false);
-                }
-            };
-            fetchUserBookings();
+    const fetchBookings = async () => {
+        try {
+            setLoading(true);
+            const res = await userService.getBookings();
+            setBookings(res.data?.data || []);
+            setError('');
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || 'Lỗi khi lấy lịch sử đặt tour. Vui lòng thử lại sau.');
+        } finally {
+            setLoading(false);
         }
-    }, [isAuthenticated]);
+    };
 
-    // Nếu chưa login → hiển thị thông báo
-    if (!isAuthenticated) {
-        return (
-            <ClientLayout>
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 md:py-16">
-                    <div className="text-center py-20 px-4 bg-surface rounded-3xl border border-dashed border-border flex flex-col items-center">
-                        <div className="w-20 h-20 bg-surface-alt rounded-full flex items-center justify-center mb-6">
-                            <LogIn className="w-10 h-10 text-text-muted opacity-50" />
-                        </div>
-                        <h3 className="text-xl font-bold text-text mb-2">Bạn cần đăng nhập để xem lịch sử</h3>
-                        <p className="text-text-muted max-w-sm mx-auto mb-6">
-                            Đăng nhập để xem lịch sử đặt tour của bạn. Hoặc sử dụng trang <Link to="/lookup-booking" className="text-primary font-semibold hover:underline">Tra cứu đơn</Link> để tìm kiếm bằng email/SĐT.
-                        </p>
-                    </div>
-                </div>
-            </ClientLayout>
-        );
-    }
+    useEffect(() => {
+        fetchBookings();
+    }, []);
+
+    const handleCancel = async (bookingId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn hủy booking này không? Thao tác không thể hoàn tác.')) return;
+
+        try {
+            await userService.cancelBooking(bookingId);
+            toast.success('Hủy booking thành công!');
+            setBookings(prevBookings =>
+                prevBookings.map(b =>
+                    b.id === bookingId ? { ...b, status: 'cancelled' } : b
+                )
+            );
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Hủy booking thất bại.');
+        }
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    };
+
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'confirmed': return 'bg-blue-100 text-blue-800 border-blue-200';
+            case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+            case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'pending': return 'Đang xử lý';
+            case 'confirmed': return 'Đã xác nhận';
+            case 'completed': return 'Hoàn thành';
+            case 'cancelled': return 'Đã hủy';
+            default: return status;
+        }
+    };
 
     return (
         <ClientLayout>
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 md:py-16">
-                {/* Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Lịch Sử Đặt Tour</h1>
+            <div className="max-w-5xl mx-auto py-10 px-4 md:px-6">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-3 bg-primary/10 rounded-xl relative">
+                        <Ticket className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Lịch sử đặt tour</h1>
+                        <p className="text-gray-500 mt-1">Quản lý và theo dõi các chuyến đi của bạn</p>
+                    </div>
                 </div>
 
-                {/* Kết Quả */}
                 {loading ? (
-                    <div className="space-y-6">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="bg-surface rounded-2xl border border-border p-6 animate-pulse flex flex-col sm:flex-row gap-6">
-                                <div className="w-full sm:w-40 h-32 bg-surface-alt rounded-xl flex-shrink-0" />
-                                <div className="flex-1 space-y-4">
-                                    <div className="flex justify-between">
-                                        <div className="h-6 bg-surface-alt rounded w-1/2" />
-                                        <div className="h-6 bg-surface-alt rounded-full w-24" />
-                                    </div>
-                                    <div className="h-4 bg-surface-alt rounded w-1/4" />
-                                    <div className="pt-4 flex gap-4">
-                                        <div className="h-10 bg-surface-alt rounded w-24" />
-                                        <div className="h-10 bg-surface-alt rounded w-24" />
-                                        <div className="h-10 bg-surface-alt rounded w-32 ml-auto" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <span className="ml-3 text-lg text-gray-500 font-medium">Đang tải lịch sử...</span>
                     </div>
-                ) : loaded && bookings.length === 0 ? (
-                    <div className="text-center py-20 px-4 bg-surface rounded-3xl border border-dashed border-border flex flex-col items-center">
-                        <div className="w-20 h-20 bg-surface-alt rounded-full flex items-center justify-center mb-6">
-                            <MapPin className="w-10 h-10 text-text-muted opacity-50" />
-                        </div>
-                        <h3 className="text-xl font-bold text-text mb-2">Bạn chưa có chuyến đi nào</h3>
-                        <p className="text-text-muted max-w-sm mx-auto">
-                            Tài khoản của bạn chưa có lịch sử đặt tour nào. Hãy bắt đầu khám phá những điểm đến tuyệt vời!
-                        </p>
-                        <Link to="/tours/noi-dia" className="mt-6 inline-flex items-center px-6 py-3 bg-primary/10 text-primary font-bold rounded-xl hover:bg-primary/20 transition-colors">
-                            Khám phá Tour ngay
-                        </Link>
+                ) : error ? (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-5 rounded-2xl shadow-sm text-center">
+                        <p className="font-semibold">{error}</p>
+                    </div>
+                ) : !bookings.length ? (
+                    <div className="bg-white border text-center border-gray-100 rounded-3xl p-12 shadow-sm flex flex-col items-center">
+                        <img src="/assets/images/empty_booking.svg" alt="Trống" className="w-48 h-48 opacity-50 mb-6 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                        <h3 className="text-2xl font-bold text-gray-800">Chưa có chuyến đi nào</h3>
+                        <p className="text-gray-500 mt-2 max-w-md">Bạn chưa đặt tour nào. Đừng bỏ lỡ các ưu đãi tuyệt vời, hãy bắt đầu chuyến hành trình của mình ngay hôm nay!</p>
+                        <a href="/" className="mt-6 px-6 py-3 bg-primary hover:bg-primary-dark transition text-white rounded-xl font-bold tracking-wide shadow-lg shadow-primary/30">
+                            Khám phá tour ngay
+                        </a>
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        {bookings.map((booking, i) => (
-                            <BookingCard key={booking.id} booking={booking} index={i} />
+                        {bookings.map((b) => (
+                            <div key={b.id} className="bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col md:flex-row">
+                                {/* Left Side - Tour Info */}
+                                <div className="bg-gray-50/50 p-6 md:w-[40%] border-b md:border-b-0 md:border-r border-gray-100 flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <span className="text-xs font-bold px-3 py-1 bg-gray-200 text-gray-600 rounded-lg uppercase tracking-wider">
+                                                {b.booking_code}
+                                            </span>
+                                            <span className={`text-xs font-bold px-3 py-1 rounded-lg border uppercase tracking-wider ${getStatusStyle(b.status)}`}>
+                                                {getStatusText(b.status)}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-2">
+                                            {b.tour?.title || 'Tour ưu đãi chưa cập nhật tên'}
+                                        </h3>
+                                        <div className="mt-4 space-y-2">
+                                            <div className="flex items-center text-sm text-gray-600">
+                                                <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                                                <span>Đặt ngày: <span className="font-medium text-gray-800">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'N/A'}</span></span>
+                                            </div>
+                                            <div className="flex items-center text-sm text-gray-600">
+                                                <Users className="w-4 h-4 mr-2 text-gray-400" />
+                                                <span>Số người: <span className="font-medium text-gray-800">{b.number_of_people} khách</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 pt-4 border-t border-gray-200">
+                                        <p className="text-sm text-gray-500 mb-1">Tổng tiền ước tính</p>
+                                        <div className="flex items-end gap-2">
+                                            {b.tour?.sale_price_adult > 0 ? (
+                                                <>
+                                                    <span className="text-2xl font-black text-rose-600">{formatPrice(b.tour.sale_price_adult * b.number_of_people)}</span>
+                                                    <span className="text-sm text-gray-400 line-through pb-1">{formatPrice((b.tour.price_adult || 0) * b.number_of_people)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-2xl font-black text-primary">{b.tour?.price_adult ? formatPrice(b.tour.price_adult * b.number_of_people) : 'Liên hệ'}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Side - Booking Details */}
+                                <div className="p-6 md:w-[60%] flex flex-col justify-between bg-white relative">
+                                    <div className="grid grid-cols-2 gap-y-4 gap-x-6">
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Người liên hệ</p>
+                                            <p className="text-sm font-semibold text-gray-900">{b.customer_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Số điện thoại</p>
+                                            <p className="text-sm font-semibold text-gray-900">{b.customer_phone}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Email liên hệ</p>
+                                            <p className="text-sm font-semibold text-gray-900">{b.customer_email}</p>
+                                        </div>
+                                        {b.customer_note && (
+                                            <div className="col-span-2 p-3 bg-amber-50 rounded-xl border border-amber-100/50">
+                                                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1"><FileText className="w-3 h-3" /> Ghi chú từ bạn</p>
+                                                <p className="text-sm text-gray-800 italic">"{b.customer_note}"</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-8 flex justify-end">
+                                        {b.status === 'pending' && (
+                                            <button
+                                                onClick={() => handleCancel(b.id)}
+                                                className="group inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border-2 border-red-100 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-95 focus:ring-4 focus:ring-red-100"
+                                            >
+                                                <Ban className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
+                                                Hủy chuyến đi
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

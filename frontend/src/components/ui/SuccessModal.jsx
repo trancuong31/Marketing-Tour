@@ -1,4 +1,4 @@
-const SuccessModal = ({ isOpen, onClose, title, message, bookingCode }) => {
+const SuccessModal = ({ isOpen, onClose, title, message, bookingCode, totalAmount }) => {
     if (!isOpen) return null;
 
     return (
@@ -27,15 +27,25 @@ const SuccessModal = ({ isOpen, onClose, title, message, bookingCode }) => {
                     <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4 text-center">
                         <p className="text-sm text-text-secondary mb-1">Mã đặt tour của bạn</p>
                         <p className="text-2xl font-bold text-primary tracking-wider">{bookingCode}</p>
-                        <p className="text-xs text-text-muted mt-1">Vui lòng lưu lại mã này để tra cứu</p>
+                        
+                        {totalAmount > 0 && (
+                            <div className="mt-3 pt-3 border-t border-primary/10">
+                                <p className="text-sm text-text-secondary mb-1">Số tiền cần thanh toán</p>
+                                <p className="text-2xl font-extrabold text-[#f44336] tracking-tight">
+                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount)}
+                                </p>
+                            </div>
+                        )}
+                        
+                        <p className="text-xs text-text-muted mt-3">Vui lòng lưu lại mã này để tra cứu</p>
                     </div>
                 )}
 
                 <button
                     onClick={onClose}
-                    className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                    className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
                 >
-                    Đóng
+                    Đóng và xem lịch sử
                 </button>
             </div>
         </div>

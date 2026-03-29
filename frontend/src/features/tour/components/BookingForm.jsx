@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store';
 import { bookingService } from '@/services/tourService';
 import SuccessModal from '@/components/ui/SuccessModal';
 import { User, Phone, Mail, FileText, Loader2, Calendar, Users, Minus, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -37,8 +38,9 @@ const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0 }) => (
 
 const BookingForm = ({ tour }) => {
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
-    const [modal, setModal] = useState({ open: false, code: '' });
+    const [modal, setModal] = useState({ open: false, code: '', amount: 0 });
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
@@ -57,6 +59,18 @@ const BookingForm = ({ tour }) => {
             customer_note: '',
         },
     });
+
+    const hasSaleAdult = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
+    const adultPrice = hasSaleAdult ? parseFloat(tour.sale_price_adult) : parseFloat(tour.price_adult);
+    const childPrice = tour.price_child
+        ? (tour.sale_price_child && parseFloat(tour.sale_price_child) < parseFloat(tour.price_child)
+            ? parseFloat(tour.sale_price_child) : parseFloat(tour.price_child))
+        : 0;
+    const infantPrice = tour.price_infant
+        ? (tour.sale_price_infant && parseFloat(tour.sale_price_infant) < parseFloat(tour.price_infant)
+            ? parseFloat(tour.sale_price_infant) : parseFloat(tour.price_infant))
+        : 0;
+    const totalPrice = (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
 
     const totalPeople = adults + children + infants;
 
@@ -77,7 +91,7 @@ const BookingForm = ({ tour }) => {
             };
             delete payload.departure_date;
             const res = await bookingService.create(payload);
-            setModal({ open: true, code: res.data.data.booking_code });
+            setModal({ open: true, code: res.data.data.booking_code, amount: totalPrice });
             reset();
             setAdults(1);
             setChildren(0);
@@ -90,17 +104,10 @@ const BookingForm = ({ tour }) => {
         }
     };
 
-    const hasSaleAdult = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
-    const adultPrice = hasSaleAdult ? parseFloat(tour.sale_price_adult) : parseFloat(tour.price_adult);
-    const childPrice = tour.price_child
-        ? (tour.sale_price_child && parseFloat(tour.sale_price_child) < parseFloat(tour.price_child)
-            ? parseFloat(tour.sale_price_child) : parseFloat(tour.price_child))
-        : 0;
-    const infantPrice = tour.price_infant
-        ? (tour.sale_price_infant && parseFloat(tour.sale_price_infant) < parseFloat(tour.price_infant)
-            ? parseFloat(tour.sale_price_infant) : parseFloat(tour.price_infant))
-        : 0;
-    const totalPrice = (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
+    const handleCloseModal = () => {
+        setModal({ open: false, code: '', amount: 0 });
+        navigate('/history');
+    };
 
     // Compute min departure date (tomorrow)
     const tomorrow = new Date();
@@ -287,10 +294,11 @@ const BookingForm = ({ tour }) => {
 
             <SuccessModal
                 isOpen={modal.open}
-                onClose={() => setModal({ open: false, code: '' })}
+                onClose={handleCloseModal}
                 title="Đặt Tour Thành Công!"
                 message="Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất."
                 bookingCode={modal.code}
+                totalAmount={modal.amount}
             />
         </>
     );
