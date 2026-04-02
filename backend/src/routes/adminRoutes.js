@@ -20,6 +20,7 @@ const {
     createBanner,
     updateBanner,
     deleteBanner,
+    deleteBooking,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -40,6 +41,7 @@ router.delete('/tour-images/:id', deleteTourImage);
 // ── Booking ──
 router.get('/bookings', getBookings);
 router.put('/bookings/:id/status', updateBookingStatus);
+router.delete('/bookings/:id', deleteBooking);
 
 // ── Vote ──
 router.get('/votes', getVotes);

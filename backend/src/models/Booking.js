@@ -40,6 +40,26 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    departure_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+    },
+    adult_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 1,
+    },
+    child_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    infant_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    total_price: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+    },
     status: {
         type: DataTypes.ENUM('pending', 'contacted', 'approved', 'cancelled'),
         defaultValue: 'pending',

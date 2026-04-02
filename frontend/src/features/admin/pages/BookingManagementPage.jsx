@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Loader2, Phone, Mail, Users, Calendar, X, CheckCircle2, Eye, Filter } from 'lucide-react';
+import { Loader2, Phone, Mail, Users, Calendar, X, CheckCircle2, Eye, Filter, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusConfig = {
     pending:   { label: 'Đang chờ',   className: 'bg-warning/10 text-warning border-warning/20' },
@@ -13,6 +13,8 @@ const statusConfig = {
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
+const ITEMS_PER_PAGE = 10;
+
 const BookingManagementPage = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,11 +22,23 @@ const BookingManagementPage = () => {
     const [detail, setDetail] = useState(null);
     const [updating, setUpdating] = useState(null);
 
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+
     const fetchBookings = async () => {
         setLoading(true);
         try {
-            const res = await adminService.getBookings(filter || undefined);
+            const params = {
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                ...(filter ? { status: filter } : {})
+            };
+            const res = await adminService.getBookings(params);
             setBookings(res.data.data || []);
+            setTotalPages(res.data.totalPages || 1);
+            setTotalItems(res.data.totalItems || 0);
         } catch (err) {
             console.error('Lỗi tải đơn:', err);
         } finally {
@@ -32,7 +46,33 @@ const BookingManagementPage = () => {
         }
     };
 
-    useEffect(() => { fetchBookings(); }, [filter]);
+    useEffect(() => { setCurrentPage(1); }, [filter]);
+    useEffect(() => { fetchBookings(); }, [filter, currentPage]);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        setCurrentPage(page);
+    };
+
+    const handleDeleteBooking = async (id) => {
+        if (!window.confirm('Bạn có chắc chắn muốn xóa đơn đặt này?')) return;
+        try {
+            await adminService.deleteBooking(id);
+            await fetchBookings();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Lỗi xóa đơn');
+        }
+    };
+
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+    };
 
     const handleUpdateStatus = async (id, status) => {
         setUpdating(id);
@@ -133,6 +173,15 @@ const BookingManagementPage = () => {
                                                         }
                                                     </button>
                                                 )}
+                                                {booking.status === 'cancelled' && (
+                                                    <button
+                                                        onClick={() => handleDeleteBooking(booking.id)}
+                                                        className="p-1.5 rounded-lg hover:bg-error/10 transition"
+                                                        title="Xóa"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-error" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -144,6 +193,48 @@ const BookingManagementPage = () => {
                     {bookings.length === 0 && (
                         <div className="text-center py-12 text-text-muted">Không có đơn đặt nào</div>
                     )}
+                </div>
+            )}
+
+            {/* Pagination Logic */}
+            {!loading && totalPages > 1 && (
+                <div className="mt-8 flex flex-col items-center">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="hidden sm:inline">Trước</span>
+                        </button>
+
+                        {getPageNumbers().map(page => (
+                            <button
+                                key={page}
+                                onClick={() => handlePageChange(page)}
+                                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition ${
+                                    page === currentPage
+                                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
+                                        : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="hidden sm:inline">Sau</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <p className="mt-3 text-xs text-text-muted">
+                        Trang {currentPage} / {totalPages} • Tổng {totalItems} đơn đặt
+                    </p>
                 </div>
             )}
 
@@ -201,6 +292,15 @@ const BookingManagementPage = () => {
 
                         {/* Action buttons */}
                         <div className="flex gap-2 mt-5">
+                            {detail.status === 'cancelled' && (
+                                <button
+                                    onClick={() => { handleDeleteBooking(detail.id); setDetail(null); }}
+                                    className="flex-1 py-2.5 bg-error/10 text-error font-semibold rounded-xl hover:bg-error hover:text-white transition text-sm flex justify-center items-center gap-2"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Xóa đơn
+                                </button>
+                            )}
                             {detail.status !== 'approved' && detail.status !== 'cancelled' && (
                                 <button
                                     onClick={() => { handleUpdateStatus(detail.id, 'approved'); setDetail(null); }}

@@ -262,25 +262,34 @@ const deleteTour = catchAsync(async (req, res, next) => {
 
 /**
  * Lấy danh sách đơn đặt tour (admin)
- * GET /api/admin/bookings?status=pending|contacted|approved|cancelled
+ * GET /api/admin/bookings?status=pending|contacted|approved|cancelled&page=1&limit=10
  */
 const getBookings = catchAsync(async (req, res) => {
-    const { status } = req.query;
+    const { status, page = 1, limit = 10 } = req.query;
     const whereClause = {};
     if (status) whereClause.status = status;
 
-    const bookings = await Booking.findAll({
+    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { count, rows } = await Booking.findAndCountAll({
         where: whereClause,
         include: [
             { model: Tour, attributes: ['id', 'title', 'slug', 'price_adult', 'sale_price_adult'] },
         ],
         order: [['created_at', 'DESC']],
+        limit: limitNum,
+        offset: offset,
     });
 
     res.status(200).json({
         status: 'success',
-        results: bookings.length,
-        data: bookings,
+        results: rows.length,
+        totalItems: count,
+        totalPages: Math.ceil(count / limitNum),
+        currentPage: pageNum,
+        data: rows,
     });
 });
 
@@ -311,6 +320,30 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Cập nhật trạng thái thành công',
         data: booking,
+    });
+});
+
+/**
+ * Xóa đơn đặt (chỉ cho phép khi ở trạng thái cancelled)
+ * DELETE /api/admin/bookings/:id
+ */
+const deleteBooking = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+
+    const booking = await Booking.findByPk(id);
+    if (!booking) {
+        return next(new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND));
+    }
+
+    if (booking.status !== 'cancelled') {
+        return next(new AppError('Chỉ có thể xóa các đơn đặt đã bị hủy', HTTP_CODES.BAD_REQUEST));
+    }
+
+    await booking.destroy();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Xóa đơn đặt thành công',
     });
 });
 
@@ -591,6 +624,7 @@ module.exports = {
     deleteTour,
     getBookings,
     updateBookingStatus,
+    deleteBooking,
     getVotes,
     updateVoteStatus,
     getAllGuides,

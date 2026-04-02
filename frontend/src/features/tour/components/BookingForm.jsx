@@ -78,20 +78,20 @@ const BookingForm = ({ tour }) => {
         setSubmitting(true);
         try {
             const payload = {
-                ...data,
                 tour_id: tour.id,
+                customer_name: data.customer_name,
+                customer_phone: data.customer_phone,
+                customer_email: data.customer_email,
                 number_of_people: totalPeople,
-                customer_note: [
-                    data.customer_note,
-                    `Ngày khởi hành: ${data.departure_date || 'Chưa chọn'}`,
-                    `Người lớn (>10 tuổi): ${adults}`,
-                    `Trẻ em (2-10 tuổi): ${children}`,
-                    `Trẻ nhỏ (<2 tuổi): ${infants}`,
-                ].filter(Boolean).join(' | '),
+                customer_note: data.customer_note || null,
+                departure_date: data.departure_date || null,
+                adult_count: adults,
+                child_count: children,
+                infant_count: infants,
+                total_price: totalPrice,
             };
-            delete payload.departure_date;
             const res = await bookingService.create(payload);
-            setModal({ open: true, code: res.data.data.booking_code, amount: totalPrice });
+            setModal({ open: true, code: res.data.data.bookingCode, amount: totalPrice });
             reset();
             setAdults(1);
             setChildren(0);
