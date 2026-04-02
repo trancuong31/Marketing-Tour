@@ -9,6 +9,11 @@ const createBookingSchema = Joi.object({
             'any.required': 'Tour ID là bắt buộc',
             'number.base': 'Tour ID phải là số',
         }),
+    departure_id: Joi.number().integer().positive().required()
+        .messages({
+            'any.required': 'Ngày khởi hành là bắt buộc',
+        }),
+    pickup_location_id: Joi.number().integer().positive().allow(null),
     customer_name: Joi.string().trim().min(2).max(100).required()
         .messages({
             'any.required': 'Họ tên là bắt buộc',
@@ -25,12 +30,19 @@ const createBookingSchema = Joi.object({
             'any.required': 'Email là bắt buộc',
             'string.email': 'Email không hợp lệ',
         }),
-    number_of_people: Joi.number().integer().min(1).max(100).default(1)
+    adult_qty: Joi.number().integer().min(1).max(100).default(1)
         .messages({
-            'number.min': 'Số người phải ít nhất 1',
-            'number.max': 'Số người không quá 100',
+            'number.min': 'Phải có ít nhất 1 người lớn',
         }),
+    child_qty: Joi.number().integer().min(0).max(100).default(0),
+    infant_qty: Joi.number().integer().min(0).max(100).default(0),
     customer_note: Joi.string().trim().max(500).allow('', null),
+    selected_options: Joi.array().items(
+        Joi.object({
+            option_id: Joi.number().integer().positive().required(),
+            quantity: Joi.number().integer().min(1).default(1),
+        }),
+    ).default([]),
 });
 
 /**

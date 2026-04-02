@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Clock, MapPin } from 'lucide-react';
-
+import { Clock } from 'lucide-react';
+import { getImageUrl } from '@/utils/imageUrl';
 const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
@@ -17,10 +17,17 @@ const formatDuration = (days, nights) => {
     return null;
 };
 
+/** Lấy giá thấp nhất từ departures */
+const getMinPrice = (tour) => {
+    const departures = tour.departures || [];
+    if (departures.length === 0) return null;
+    return Math.min(...departures.map(d => parseFloat(d.price_adult)));
+};
+
 const TourCard = ({ tour }) => {
-    const thumbnail = tour.thumbnail_url || tour.images?.[0]?.image_url || '/placeholder-tour.jpg';
-    const hasSale = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
+    const thumbnail = getImageUrl(tour.thumbnail_url || tour.images?.[0]?.image_url) || '/placeholder-tour.jpg';
     const duration = formatDuration(tour.duration_days, tour.duration_nights);
+    const minPrice = getMinPrice(tour);
 
     return (
         <Link
@@ -43,18 +50,17 @@ const TourCard = ({ tour }) => {
                     </span>
                 ) : null}
 
+                {tour.tour_badge === 'promotion' ? (
+                    <span className="absolute top-3 left-3 px-2.5 py-1 bg-error text-white text-xs font-bold rounded-full shadow-lg">
+                        Khuyến mãi
+                    </span>
+                ) : null}
+
                 {/* Badge Duration */}
                 {duration && (
                     <span className="absolute top-3 right-3 px-2.5 py-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-full flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {duration}
-                    </span>
-                )}
-
-                {/* Sale badge */}
-                {hasSale && (
-                    <span className="absolute bottom-3 left-3 px-2 py-0.5 bg-error text-white text-xs font-bold rounded-md">
-                        SALE
                     </span>
                 )}
             </div>
@@ -73,14 +79,6 @@ const TourCard = ({ tour }) => {
                     {tour.title}
                 </h3>
 
-                {/* Departure */}
-                {tour.departure_point && (
-                    <div className="flex items-center gap-1.5 mt-2 text-sm text-text-muted">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{tour.departure_point}</span>
-                    </div>
-                )}
-
                 {/* Description */}
                 {tour.summary && (
                     <p className="mt-2 text-sm text-text-secondary leading-relaxed">
@@ -91,21 +89,17 @@ const TourCard = ({ tour }) => {
                 {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Price — bottom right */}
+                {/* Price — từ departures */}
                 <div className="mt-4 flex items-end justify-end gap-2">
-                    {hasSale ? (
-                        <>
-                            <span className="text-sm text-text-muted line-through">
-                                {formatPrice(tour.price_adult)}
+                    {minPrice ? (
+                        <div className="text-right">
+                            <p className="text-xs text-text-muted">Giá từ</p>
+                            <span className="text-xl font-extrabold text-primary">
+                                {formatPrice(minPrice)}
                             </span>
-                            <span className="text-xl font-extrabold text-secondary">
-                                {formatPrice(tour.sale_price_adult)}
-                            </span>
-                        </>
+                        </div>
                     ) : (
-                        <span className="text-xl font-extrabold text-primary">
-                            {formatPrice(tour.price_adult)}
-                        </span>
+                        <span className="text-sm text-text-muted">Liên hệ</span>
                     )}
                 </div>
             </div>

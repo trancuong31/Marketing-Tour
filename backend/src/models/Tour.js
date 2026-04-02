@@ -25,43 +25,30 @@ const Tour = sequelize.define('Tour', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    content: {
-        type: DataTypes.TEXT('long'),
+    highlights: {
+        type: DataTypes.TEXT,
         allowNull: true,
+        comment: 'Điểm nổi bật của tour',
     },
-    price_adult: {
-        type: DataTypes.DECIMAL(15, 2),
-        allowNull: false,
-        comment: 'Giá người lớn mặc định',
-    },
-    sale_price_adult: {
-        type: DataTypes.DECIMAL(15, 2),
+    price_includes: {
+        type: DataTypes.TEXT,
         allowNull: true,
-        comment: 'Giá khuyến mãi người lớn',
+        comment: 'Giá tour bao gồm',
     },
-    price_child: {
-        type: DataTypes.DECIMAL(15, 2),
+    price_excludes: {
+        type: DataTypes.TEXT,
         allowNull: true,
-        comment: 'Giá trẻ em',
+        comment: 'Giá tour không bao gồm',
     },
-    sale_price_child: {
-        type: DataTypes.DECIMAL(15, 2),
+    terms_and_notes: {
+        type: DataTypes.TEXT,
         allowNull: true,
-        comment: 'Giá khuyến mãi trẻ em',
+        comment: 'Điều khoản và lưu ý',
     },
-    price_infant: {
-        type: DataTypes.DECIMAL(15, 2),
+    cancellation_policy: {
+        type: DataTypes.TEXT,
         allowNull: true,
-        comment: 'Giá trẻ nhỏ/em bé',
-    },
-    sale_price_infant: {
-        type: DataTypes.DECIMAL(15, 2),
-        allowNull: true,
-        comment: 'Giá khuyến mãi trẻ nhỏ',
-    },
-    departure_point: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
+        comment: 'Quy định hoàn hủy',
     },
     duration_days: {
         type: DataTypes.INTEGER,

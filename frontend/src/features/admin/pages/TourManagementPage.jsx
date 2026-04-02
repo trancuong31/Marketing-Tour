@@ -1,27 +1,24 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { adminService, categoryService } from '@/services/tourService';
+import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Plus, Edit2, Trash2, Loader2, X, Image, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, MapPin, Settings, List, Navigation } from 'lucide-react';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-const TourManagementPage = () => {
-    const [tours, setTours] = useState([]);
-    const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [modal, setModal] = useState({ open: false, tour: null });
-    const [submitting, setSubmitting] = useState(false);
-    const [formData, setFormData] = useState({
-        category_id: '', title: '', summary: '', content: '',
-        price_adult: '', sale_price_adult: '',
-        price_child: '', sale_price_child: '',
-        price_infant: '', sale_price_infant: '',
-        departure_point: '', duration_days: '', duration_nights: '',
-        tour_badge: 'none', status: 'active',
-    });
-    const [files, setFiles] = useState([]);
-    const editorRef = useRef(null);
+// ═══ TAB NAVIGATION ═══
+const TABS = [
+    { key: 'general', label: 'Thông tin chung', icon: Settings },
+    { key: 'itineraries', label: 'Lịch trình', icon: List },
+    { key: 'departures', label: 'Lịch khởi hành', icon: Calendar },
+    { key: 'pickups', label: 'Điểm đón', icon: Navigation },
+    { key: 'options', label: 'Tùy chọn', icon: Settings },
+];
+
+// ═══ RICH TEXT EDITOR WRAPPER ═══
+const RichTextEditor = ({ value, onChange, label, placeholder }) => {
     const [ReactQuill, setReactQuill] = useState(null);
 
     useEffect(() => {
@@ -29,7 +26,478 @@ const TourManagementPage = () => {
         import('react-quill-new/dist/quill.snow.css');
     }, []);
 
-    const fetchData = async () => {
+    return (
+        <div>
+            {label && <label className="text-sm font-medium text-text mb-1 block">{label}</label>}
+            {ReactQuill ? (
+                <ReactQuill
+                    theme="snow"
+                    value={value || ''}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className="bg-surface rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
+                />
+            ) : (
+                <textarea
+                    value={value || ''}
+                    onChange={e => onChange(e.target.value)}
+                    rows={4}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                    placeholder={placeholder}
+                />
+            )}
+        </div>
+    );
+};
+
+// ═══ TAB: THÔNG TIN CHUNG ═══
+const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage }) => (
+    <div className="space-y-4">
+        {/* Category & Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label className="text-sm font-medium text-text mb-1 block">Danh mục *</label>
+                <select
+                    {...register('category_id', { required: true })}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                    <option value="">Chọn danh mục</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="text-sm font-medium text-text mb-1 block">Trạng thái</label>
+                <select
+                    {...register('status')}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                    <option value="active">Hoạt động</option>
+                    <option value="hidden">Ẩn</option>
+                    <option value="sold_out">Hết chỗ</option>
+                </select>
+            </div>
+        </div>
+
+        {/* Title */}
+        <div>
+            <label className="text-sm font-medium text-text mb-1 block">Tên tour *</label>
+            <input
+                {...register('title', { required: true })}
+                className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+        </div>
+
+        {/* Summary */}
+        <div>
+            <label className="text-sm font-medium text-text mb-1 block">Tóm tắt</label>
+            <textarea
+                {...register('summary')}
+                rows={2}
+                className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            />
+        </div>
+
+        {/* Duration */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+                <label className="text-sm font-medium text-text mb-1 block">Số ngày</label>
+                <input
+                    type="number"
+                    {...register('duration_days')}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="VD: 3"
+                />
+            </div>
+            <div>
+                <label className="text-sm font-medium text-text mb-1 block">Số đêm</label>
+                <input
+                    type="number"
+                    {...register('duration_nights')}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="VD: 2"
+                />
+            </div>
+            <div>
+                <label className="text-sm font-medium text-text mb-1 block">Nhãn tour</label>
+                <select
+                    {...register('tour_badge')}
+                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                    <option value="none">Không có</option>
+                    <option value="featured">Nổi bật</option>
+                    <option value="promotion">Khuyến mãi</option>
+                </select>
+            </div>
+        </div>
+
+        {/* 5 Rich Text Fields */}
+        <RichTextEditor
+            value={watch('highlights')}
+            onChange={val => setValue('highlights', val)}
+            label="Điểm nổi bật"
+            placeholder="Các điểm nổi bật của tour..."
+        />
+        <RichTextEditor
+            value={watch('price_includes')}
+            onChange={val => setValue('price_includes', val)}
+            label="Giá tour bao gồm"
+            placeholder="Vé tham quan, khách sạn, xe đưa đón..."
+        />
+        <RichTextEditor
+            value={watch('price_excludes')}
+            onChange={val => setValue('price_excludes', val)}
+            label="Giá tour không bao gồm"
+            placeholder="Chi phí cá nhân, tip HDV..."
+        />
+        <RichTextEditor
+            value={watch('terms_and_notes')}
+            onChange={val => setValue('terms_and_notes', val)}
+            label="Điều khoản và lưu ý"
+            placeholder="Quy định, lưu ý quan trọng..."
+        />
+        <RichTextEditor
+            value={watch('cancellation_policy')}
+            onChange={val => setValue('cancellation_policy', val)}
+            label="Quy định hoàn hủy"
+            placeholder="Chính sách hoàn hủy tour..."
+        />
+
+        {/* Existing Images */}
+        {modal.tour?.images?.length > 0 && (
+            <div>
+                <label className="text-sm font-medium text-text mb-2 block">Ảnh hiện tại</label>
+                <div className="flex flex-wrap gap-2">
+                    {modal.tour.images.map(img => (
+                        <div key={img.id} className="relative group">
+                            <img src={getImageUrl(img.image_url)} alt="" className="w-20 h-15 object-cover rounded-lg" />
+                            <button type="button" onClick={() => handleDeleteImage(img.id)}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* Upload */}
+        <div>
+            <label className="text-sm font-medium text-text mb-1 block">Thêm ảnh mới</label>
+            <label className="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition text-sm text-text-muted">
+                <Upload className="w-5 h-5" />
+                <span>{files.length > 0 ? `${files.length} ảnh đã chọn` : 'Chọn ảnh upload'}</span>
+                <input type="file" multiple accept="image/*" className="hidden" onChange={e => setFiles([...e.target.files])} />
+            </label>
+        </div>
+    </div>
+);
+
+// ═══ TAB: LỊCH TRÌNH ═══
+const ItinerariesTab = ({ control, register, watch, setValue }) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'itineraries' });
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text">Lịch trình từng ngày</h4>
+                <button
+                    type="button"
+                    onClick={() => append({ day_number: fields.length + 1, title: '', content: '' })}
+                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition flex items-center gap-1"
+                >
+                    <Plus className="w-3.5 h-3.5" /> Thêm ngày
+                </button>
+            </div>
+
+            {fields.length === 0 && (
+                <p className="text-sm text-text-muted text-center py-8 bg-surface-alt rounded-xl">
+                    Chưa có lịch trình. Nhấn "Thêm ngày" để bắt đầu.
+                </p>
+            )}
+
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 bg-surface-alt rounded-xl border border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-primary">Ngày {index + 1}</span>
+                        <button type="button" onClick={() => remove(index)}
+                            className="p-1 rounded-lg hover:bg-error/10 transition" title="Xóa ngày">
+                            <Trash2 className="w-4 h-4 text-error" />
+                        </button>
+                    </div>
+                    <input type="hidden" {...register(`itineraries.${index}.day_number`)} value={index + 1} />
+                    <div>
+                        <label className="text-xs font-medium text-text-secondary mb-1 block">Tiêu đề ngày</label>
+                        <input
+                            {...register(`itineraries.${index}.title`, { required: true })}
+                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            placeholder="VD: Đón khách - Tham quan phố cổ"
+                        />
+                    </div>
+                    <RichTextEditor
+                        value={watch(`itineraries.${index}.content`)}
+                        onChange={val => setValue(`itineraries.${index}.content`, val)}
+                        label="Chi tiết hoạt động"
+                        placeholder="Mô tả chi tiết các hoạt động trong ngày..."
+                    />
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ═══ TAB: LỊCH KHỞI HÀNH ═══
+const DeparturesTab = ({ control, register }) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'departures' });
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text">Lịch khởi hành & Giá</h4>
+                <button
+                    type="button"
+                    onClick={() => append({ departure_date: '', price_adult: '', price_child: 0, price_infant: 0, available_seats: 20, status: 'open' })}
+                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition flex items-center gap-1"
+                >
+                    <Plus className="w-3.5 h-3.5" /> Thêm ngày khởi hành
+                </button>
+            </div>
+
+            {fields.length === 0 && (
+                <p className="text-sm text-text-muted text-center py-8 bg-surface-alt rounded-xl">
+                    Chưa có lịch khởi hành. Nhấn "Thêm ngày khởi hành" để bắt đầu.
+                </p>
+            )}
+
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 bg-surface-alt rounded-xl border border-border space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-primary">Khởi hành #{index + 1}</span>
+                        <button type="button" onClick={() => remove(index)}
+                            className="p-1 rounded-lg hover:bg-error/10 transition" title="Xóa">
+                            <Trash2 className="w-4 h-4 text-error" />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Ngày khởi hành *</label>
+                            <input
+                                type="date"
+                                {...register(`departures.${index}.departure_date`, { required: true })}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Giá người lớn (VNĐ) *</label>
+                            <input
+                                type="number"
+                                {...register(`departures.${index}.price_adult`, { required: true, min: 0 })}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="3500000"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Giá trẻ em</label>
+                            <input
+                                type="number"
+                                {...register(`departures.${index}.price_child`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="0"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Giá em bé</label>
+                            <input
+                                type="number"
+                                {...register(`departures.${index}.price_infant`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="0"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Số chỗ tối đa</label>
+                            <input
+                                type="number"
+                                {...register(`departures.${index}.available_seats`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="20"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Trạng thái</label>
+                            <select
+                                {...register(`departures.${index}.status`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                <option value="open">Mở bán</option>
+                                <option value="full">Hết chỗ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ═══ TAB: ĐIỂM ĐÓN ═══
+const PickupsTab = ({ control, register }) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'pickup_locations' });
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text">Điểm đón khách</h4>
+                <button
+                    type="button"
+                    onClick={() => append({ location_name: '', pickup_time: '', surcharge_amount: 0 })}
+                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition flex items-center gap-1"
+                >
+                    <Plus className="w-3.5 h-3.5" /> Thêm điểm đón
+                </button>
+            </div>
+
+            {fields.length === 0 && (
+                <p className="text-sm text-text-muted text-center py-8 bg-surface-alt rounded-xl">
+                    Chưa có điểm đón. Nhấn "Thêm điểm đón" để bắt đầu.
+                </p>
+            )}
+
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 bg-surface-alt rounded-xl border border-border">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold text-primary">Điểm đón #{index + 1}</span>
+                        <button type="button" onClick={() => remove(index)}
+                            className="p-1 rounded-lg hover:bg-error/10 transition" title="Xóa">
+                            <Trash2 className="w-4 h-4 text-error" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Tên điểm đón *</label>
+                            <input
+                                {...register(`pickup_locations.${index}.location_name`, { required: true })}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="VD: Khách sạn Saigon"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Giờ đón</label>
+                            <input
+                                type="time"
+                                {...register(`pickup_locations.${index}.pickup_time`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Phụ thu (VNĐ)</label>
+                            <input
+                                type="number"
+                                {...register(`pickup_locations.${index}.surcharge_amount`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ═══ TAB: TÙY CHỌN ═══
+const OptionsTab = ({ control, register }) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'options' });
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-text">Tùy chọn (Add-ons)</h4>
+                <button
+                    type="button"
+                    onClick={() => append({ option_name: '', price: 0, charge_type: 'quantity' })}
+                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition flex items-center gap-1"
+                >
+                    <Plus className="w-3.5 h-3.5" /> Thêm tùy chọn
+                </button>
+            </div>
+
+            {fields.length === 0 && (
+                <p className="text-sm text-text-muted text-center py-8 bg-surface-alt rounded-xl">
+                    Chưa có tùy chọn. Nhấn "Thêm tùy chọn" để bắt đầu.
+                </p>
+            )}
+
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-4 bg-surface-alt rounded-xl border border-border">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-bold text-primary">Tùy chọn #{index + 1}</span>
+                        <button type="button" onClick={() => remove(index)}
+                            className="p-1 rounded-lg hover:bg-error/10 transition" title="Xóa">
+                            <Trash2 className="w-4 h-4 text-error" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Tên dịch vụ *</label>
+                            <input
+                                {...register(`options.${index}.option_name`, { required: true })}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="VD: Phụ thu phòng đơn"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Giá (VNĐ)</label>
+                            <input
+                                type="number"
+                                {...register(`options.${index}.price`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                placeholder="0"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-text-secondary mb-1 block">Cách tính</label>
+                            <select
+                                {...register(`options.${index}.charge_type`)}
+                                className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                <option value="per_person">Theo người</option>
+                                <option value="per_booking">Theo đơn</option>
+                                <option value="quantity">Số lượng</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+// ═══ MAIN PAGE ═══
+const TourManagementPage = () => {
+    const [tours, setTours] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [modal, setModal] = useState({ open: false, tour: null });
+    const [submitting, setSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState('general');
+    const [files, setFiles] = useState([]);
+
+    const defaultValues = {
+        category_id: '', title: '', summary: '',
+        highlights: '', price_includes: '', price_excludes: '',
+        terms_and_notes: '', cancellation_policy: '',
+        duration_days: '', duration_nights: '',
+        tour_badge: 'none', status: 'active',
+        itineraries: [],
+        departures: [],
+        pickup_locations: [],
+        options: [],
+    };
+
+    const { register, handleSubmit, control, watch, setValue, reset } = useForm({ defaultValues });
+
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             const [toursRes, catsRes] = await Promise.all([
@@ -43,46 +511,98 @@ const TourManagementPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     const openCreate = () => {
-        setFormData({
-            category_id: categories[0]?.id || '', title: '', summary: '', content: '',
-            price_adult: '', sale_price_adult: '',
-            price_child: '', sale_price_child: '',
-            price_infant: '', sale_price_infant: '',
-            departure_point: '', duration_days: '', duration_nights: '',
-            tour_badge: 'none', status: 'active',
+        reset({
+            ...defaultValues,
+            category_id: categories[0]?.id || '',
         });
         setFiles([]);
+        setActiveTab('general');
         setModal({ open: true, tour: null });
     };
 
-    const openEdit = (tour) => {
-        setFormData({
-            category_id: tour.category_id, title: tour.title, summary: tour.summary || '',
-            content: tour.content || '',
-            price_adult: tour.price_adult || '', sale_price_adult: tour.sale_price_adult || '',
-            price_child: tour.price_child || '', sale_price_child: tour.sale_price_child || '',
-            price_infant: tour.price_infant || '', sale_price_infant: tour.sale_price_infant || '',
-            departure_point: tour.departure_point || '',
-            duration_days: tour.duration_days || '', duration_nights: tour.duration_nights || '',
-            tour_badge: tour.tour_badge, status: tour.status,
-        });
-        setFiles([]);
-        setModal({ open: true, tour });
+    const openEdit = async (tour) => {
+        try {
+            // Lấy chi tiết đầy đủ từ API
+            const res = await adminService.getTourById(tour.id);
+            const detail = res.data.data;
+
+            reset({
+                category_id: detail.category_id,
+                title: detail.title,
+                summary: detail.summary || '',
+                highlights: detail.highlights || '',
+                price_includes: detail.price_includes || '',
+                price_excludes: detail.price_excludes || '',
+                terms_and_notes: detail.terms_and_notes || '',
+                cancellation_policy: detail.cancellation_policy || '',
+                duration_days: detail.duration_days || '',
+                duration_nights: detail.duration_nights || '',
+                tour_badge: detail.tour_badge || 'none',
+                status: detail.status || 'active',
+                itineraries: (detail.itineraries || []).map(it => ({
+                    day_number: it.day_number,
+                    title: it.title,
+                    content: it.content,
+                })),
+                departures: (detail.departures || []).map(d => ({
+                    departure_date: d.departure_date,
+                    price_adult: d.price_adult,
+                    price_child: d.price_child || 0,
+                    price_infant: d.price_infant || 0,
+                    available_seats: d.available_seats,
+                    status: d.status,
+                })),
+                pickup_locations: (detail.pickupLocations || []).map(p => ({
+                    location_name: p.location_name,
+                    pickup_time: p.pickup_time || '',
+                    surcharge_amount: p.surcharge_amount || 0,
+                })),
+                options: (detail.options || []).map(o => ({
+                    option_name: o.option_name,
+                    price: o.price || 0,
+                    charge_type: o.charge_type || 'quantity',
+                })),
+            });
+
+            setFiles([]);
+            setActiveTab('general');
+            setModal({ open: true, tour: detail });
+        } catch (err) {
+            alert('Lỗi tải chi tiết tour');
+        }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const onSubmit = async (data) => {
         setSubmitting(true);
         try {
             const fd = new FormData();
-            Object.entries(formData).forEach(([key, val]) => {
-                if (val !== '' && val !== null && val !== undefined) fd.append(key, val);
+
+            // Thông tin chung
+            const generalFields = [
+                'category_id', 'title', 'summary',
+                'highlights', 'price_includes', 'price_excludes',
+                'terms_and_notes', 'cancellation_policy',
+                'duration_days', 'duration_nights',
+                'tour_badge', 'status',
+            ];
+            generalFields.forEach(key => {
+                if (data[key] !== '' && data[key] !== null && data[key] !== undefined) {
+                    fd.append(key, data[key]);
+                }
             });
+
+            // Satellite data → JSON strings
+            fd.append('itineraries', JSON.stringify(data.itineraries || []));
+            fd.append('departures', JSON.stringify(data.departures || []));
+            fd.append('pickup_locations', JSON.stringify(data.pickup_locations || []));
+            fd.append('options', JSON.stringify(data.options || []));
+
+            // Images
             files.forEach(f => fd.append('images', f));
 
             if (modal.tour) {
@@ -113,12 +633,17 @@ const TourManagementPage = () => {
         try {
             await adminService.deleteTourImage(imageId);
             await fetchData();
-        } catch (err) {
+        } catch {
             alert('Lỗi xóa ảnh');
         }
     };
 
-    const f = (key, value) => setFormData(p => ({ ...p, [key]: value }));
+    // Lấy giá thấp nhất từ departures
+    const getMinPrice = (tour) => {
+        const departures = tour.departures || [];
+        if (departures.length === 0) return null;
+        return Math.min(...departures.map(d => parseFloat(d.price_adult)));
+    };
 
     return (
         <AdminLayout>
@@ -143,248 +668,144 @@ const TourManagementPage = () => {
                             <tr className="bg-surface-alt border-b border-border">
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary">Tour</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden md:table-cell">Danh mục</th>
-                                <th className="px-4 py-3 text-left font-semibold text-text-secondary">Giá người lớn</th>
+                                <th className="px-4 py-3 text-left font-semibold text-text-secondary">Giá từ</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden lg:table-cell">Thời gian</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden sm:table-cell">Trạng thái</th>
                                 <th className="px-4 py-3 text-right font-semibold text-text-secondary">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {tours.map(tour => (
-                                <tr key={tour.id} className="border-b border-border last:border-0 hover:bg-surface-alt/50 transition">
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center gap-3">
-                                            {tour.thumbnail_url ? (
-                                                <img src={tour.thumbnail_url} alt="" className="w-12 h-9 object-cover rounded-lg" />
-                                            ) : (
-                                                <div className="w-12 h-9 bg-surface-alt rounded-lg flex items-center justify-center">
-                                                    <Image className="w-4 h-4 text-text-muted" />
+                            {tours.map(tour => {
+                                const minPrice = getMinPrice(tour);
+                                return (
+                                    <tr key={tour.id} className="border-b border-border last:border-0 hover:bg-surface-alt/50 transition">
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                                {tour.thumbnail_url ? (
+                                                    <img src={getImageUrl(tour.thumbnail_url)} alt="" className="w-12 h-9 object-cover rounded-lg" />
+                                                ) : (
+                                                    <div className="w-12 h-9 bg-surface-alt rounded-lg flex items-center justify-center">
+                                                        <Image className="w-4 h-4 text-text-muted" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-medium text-text line-clamp-1">{tour.title}</p>
+                                                    {tour.tour_badge === 'featured' && <span className="text-xs text-secondary font-bold">⭐ Nổi bật</span>}
+                                                    {tour.tour_badge === 'promotion' && <span className="text-xs text-secondary font-bold">🏷️ Khuyến mãi</span>}
                                                 </div>
-                                            )}
-                                            <div>
-                                                <p className="font-medium text-text line-clamp-1">{tour.title}</p>
-                                                {tour.tour_badge === 'featured' ? <span className="text-xs text-secondary font-bold">⭐ Nổi bật</span> : null}
-                                                {tour.tour_badge === 'promotion' ? <span className="text-xs text-secondary font-bold">🏷️ Khuyến mãi</span> : null}
-                                                {tour.tour_badge === 'none' ? <span className="text-xs text-secondary font-bold">Không có</span> : null}
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-3 hidden md:table-cell text-text-secondary">{tour.Category?.name}</td>
-                                    <td className="px-4 py-3">
-                                        <p className="font-semibold text-primary">{formatPrice(tour.price_adult)}</p>
-                                        {tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult) && (
-                                            <p className="text-xs text-error line-through">{formatPrice(tour.sale_price_adult)}</p>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 hidden lg:table-cell text-text-secondary text-sm">
-                                        {tour.duration_days && tour.duration_nights
-                                            ? `${tour.duration_days}N${tour.duration_nights}Đ`
-                                            : tour.duration_days ? `${tour.duration_days} ngày` : '—'}
-                                    </td>
-                                    <td className="px-4 py-3 hidden sm:table-cell">
-                                        <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-                                            tour.status === 'active' ? 'bg-success/10 text-success' :
-                                            tour.status === 'hidden' ? 'bg-warning/10 text-warning' :
-                                            'bg-error/10 text-error'
-                                        }`}>
-                                            {tour.status === 'active' ? 'Hoạt động' : tour.status === 'hidden' ? 'Ẩn' : 'Hết chỗ'}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <button onClick={() => openEdit(tour)} className="p-1.5 rounded-lg hover:bg-primary/10 transition" title="Sửa">
-                                                <Edit2 className="w-4 h-4 text-primary" />
-                                            </button>
-                                            <button onClick={() => handleDelete(tour.id)} className="p-1.5 rounded-lg hover:bg-error/10 transition" title="Xóa">
-                                                <Trash2 className="w-4 h-4 text-error" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className="px-4 py-3 hidden md:table-cell text-text-secondary">{tour.Category?.name}</td>
+                                        <td className="px-4 py-3">
+                                            {minPrice ? (
+                                                <p className="font-semibold text-primary">{formatPrice(minPrice)}</p>
+                                            ) : (
+                                                <p className="text-text-muted text-xs">Chưa có giá</p>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 hidden lg:table-cell text-text-secondary text-sm">
+                                            {tour.duration_days && tour.duration_nights
+                                                ? `${tour.duration_days}N${tour.duration_nights}Đ`
+                                                : tour.duration_days ? `${tour.duration_days} ngày` : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 hidden sm:table-cell">
+                                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                                                tour.status === 'active' ? 'bg-success/10 text-success' :
+                                                tour.status === 'hidden' ? 'bg-warning/10 text-warning' :
+                                                'bg-error/10 text-error'
+                                            }`}>
+                                                {tour.status === 'active' ? 'Hoạt động' : tour.status === 'hidden' ? 'Ẩn' : 'Hết chỗ'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <button onClick={() => openEdit(tour)} className="p-1.5 rounded-lg hover:bg-primary/10 transition" title="Sửa">
+                                                    <Edit2 className="w-4 h-4 text-primary" />
+                                                </button>
+                                                <button onClick={() => handleDelete(tour.id)} className="p-1.5 rounded-lg hover:bg-error/10 transition" title="Xóa">
+                                                    <Trash2 className="w-4 h-4 text-error" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                     {tours.length === 0 && <div className="text-center py-12 text-text-muted">Chưa có tour nào</div>}
                 </div>
             )}
 
-            {/* ═══ MODAL FORM ═══ */}
+            {/* ═══ MULTI-TAB MODAL FORM ═══ */}
             {modal.open && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setModal({ open: false, tour: null })} />
-                    <div className="relative bg-surface rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-fade-up">
-                        <div className="sticky top-0 bg-surface z-10 px-6 py-4 border-b border-border flex items-center justify-between">
+                    <div className="relative bg-surface rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-up">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-surface z-10 px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
                             <h3 className="text-lg font-bold text-text">{modal.tour ? 'Sửa Tour' : 'Thêm Tour Mới'}</h3>
                             <button onClick={() => setModal({ open: false, tour: null })} className="p-1 rounded-lg hover:bg-surface-hover">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            {/* Category & Status */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-1 block">Danh mục *</label>
-                                    <select value={formData.category_id} onChange={e => f('category_id', e.target.value)}
-                                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required>
-                                        <option value="">Chọn danh mục</option>
-                                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-1 block">Trạng thái</label>
-                                    <select value={formData.status} onChange={e => f('status', e.target.value)}
-                                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                                        <option value="active">Hoạt động</option>
-                                        <option value="hidden">Ẩn</option>
-                                        <option value="sold_out">Hết chỗ</option>
-                                    </select>
-                                </div>
-                            </div>
+                        {/* Tab Navigation */}
+                        <div className="px-6 pt-3 border-b border-border flex gap-1 overflow-x-auto shrink-0">
+                            {TABS.map(tab => {
+                                const Icon = tab.icon;
+                                return (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${
+                                            activeTab === tab.key
+                                                ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
+                                                : 'text-text-muted hover:text-text hover:bg-surface-alt'
+                                        }`}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {tab.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                            {/* Title */}
-                            <div>
-                                <label className="text-sm font-medium text-text mb-1 block">Tên tour *</label>
-                                <input value={formData.title} onChange={e => f('title', e.target.value)}
-                                    className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required />
-                            </div>
-
-                            {/* Summary */}
-                            <div>
-                                <label className="text-sm font-medium text-text mb-1 block">Tóm tắt</label>
-                                <textarea value={formData.summary} onChange={e => f('summary', e.target.value)}
-                                    rows={2} className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
-                            </div>
-
-                            {/* ═══ GIÁ TOUR ═══ */}
-                            <div className="p-4 bg-surface-alt rounded-xl border border-border space-y-3">
-                                <h4 className="text-sm font-bold text-text">Bảng giá tour</h4>
-
-                                {/* Người lớn */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá người lớn (VNĐ) *</label>
-                                        <input type="number" value={formData.price_adult} onChange={e => f('price_adult', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" required placeholder="VD: 3500000" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá KM người lớn</label>
-                                        <input type="number" value={formData.sale_price_adult} onChange={e => f('sale_price_adult', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Để trống nếu không KM" />
-                                    </div>
-                                </div>
-
-                                {/* Trẻ em */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá trẻ em (2-10 tuổi)</label>
-                                        <input type="number" value={formData.price_child} onChange={e => f('price_child', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="VD: 2000000" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá KM trẻ em</label>
-                                        <input type="number" value={formData.sale_price_child} onChange={e => f('sale_price_child', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Để trống nếu không KM" />
-                                    </div>
-                                </div>
-
-                                {/* Trẻ nhỏ */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá trẻ nhỏ (dưới 2 tuổi)</label>
-                                        <input type="number" value={formData.price_infant} onChange={e => f('price_infant', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="VD: 500000" />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-text-secondary mb-1 block">Giá KM trẻ nhỏ</label>
-                                        <input type="number" value={formData.sale_price_infant} onChange={e => f('sale_price_infant', e.target.value)}
-                                            className="w-full px-3 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="Để trống nếu không KM" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Thời gian & Khởi hành */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-1 block">Số ngày</label>
-                                    <input type="number" value={formData.duration_days} onChange={e => f('duration_days', e.target.value)}
-                                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="VD: 3" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-1 block">Số đêm</label>
-                                    <input type="number" value={formData.duration_nights} onChange={e => f('duration_nights', e.target.value)}
-                                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="VD: 2" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-1 block">Khởi hành từ</label>
-                                    <input value={formData.departure_point} onChange={e => f('departure_point', e.target.value)}
-                                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="VD: TP.HCM" />
-                                </div>
-                            </div>
-
-                            {/* Featured */}
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" checked={formData.tour_badge === 'featured'}
-                                    onChange={e => f('tour_badge', e.target.checked ? 'featured' : 'none')}
-                                    className="w-4 h-4 rounded border-border text-primary" />
-                                <span className="text-sm text-text">Tour nổi bật</span>
-
-                                <input type="checkbox" checked={formData.tour_badge === 'promotion'}
-                                    onChange={e => f('tour_badge', e.target.checked ? 'promotion' : 'none')}
-                                    className="w-4 h-4 rounded border-border text-primary" />
-                                <span className="text-sm text-text">Tour khuyến mãi</span>
-
-                                <input type="checkbox" checked={formData.tour_badge === 'none'}
-                                    onChange={e => f('tour_badge', e.target.checked ? 'none' : 'none')}
-                                    className="w-4 h-4 rounded border-border text-primary" />
-                                <span className="text-sm text-text">Không có</span>
-                            </label>
-
-                            {/* Rich Text Editor */}
-                            <div>
-                                <label className="text-sm font-medium text-text mb-1 block">Nội dung chi tiết</label>
-                                {ReactQuill ? (
-                                    <ReactQuill ref={editorRef} theme="snow" value={formData.content}
-                                        onChange={val => f('content', val)}
-                                        className="bg-surface rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[150px]" />
-                                ) : (
-                                    <textarea value={formData.content} onChange={e => f('content', e.target.value)}
-                                        rows={6} className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm" placeholder="Nội dung HTML..." />
+                        {/* Tab Content */}
+                        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-6">
+                                {activeTab === 'general' && (
+                                    <GeneralTab
+                                        register={register}
+                                        watch={watch}
+                                        setValue={setValue}
+                                        categories={categories}
+                                        modal={modal}
+                                        files={files}
+                                        setFiles={setFiles}
+                                        handleDeleteImage={handleDeleteImage}
+                                    />
+                                )}
+                                {activeTab === 'itineraries' && (
+                                    <ItinerariesTab control={control} register={register} watch={watch} setValue={setValue} />
+                                )}
+                                {activeTab === 'departures' && (
+                                    <DeparturesTab control={control} register={register} />
+                                )}
+                                {activeTab === 'pickups' && (
+                                    <PickupsTab control={control} register={register} />
+                                )}
+                                {activeTab === 'options' && (
+                                    <OptionsTab control={control} register={register} />
                                 )}
                             </div>
 
-                            {/* Existing Images */}
-                            {modal.tour?.images?.length > 0 && (
-                                <div>
-                                    <label className="text-sm font-medium text-text mb-2 block">Ảnh hiện tại</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {modal.tour.images.map(img => (
-                                            <div key={img.id} className="relative group">
-                                                <img src={img.image_url} alt="" className="w-20 h-15 object-cover rounded-lg" />
-                                                <button type="button" onClick={() => handleDeleteImage(img.id)}
-                                                    className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Upload */}
-                            <div>
-                                <label className="text-sm font-medium text-text mb-1 block">Thêm ảnh mới</label>
-                                <label className="flex items-center justify-center gap-2 px-4 py-6 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 transition text-sm text-text-muted">
-                                    <Upload className="w-5 h-5" />
-                                    <span>{files.length > 0 ? `${files.length} ảnh đã chọn` : 'Chọn ảnh upload'}</span>
-                                    <input type="file" multiple accept="image/*" className="hidden" onChange={e => setFiles([...e.target.files])} />
-                                </label>
-                            </div>
-
                             {/* Actions */}
-                            <div className="flex gap-3 pt-2">
+                            <div className="px-6 py-4 border-t border-border flex gap-3 shrink-0">
                                 <button type="button" onClick={() => setModal({ open: false, tour: null })}
-                                    className="flex-1 py-2.5 bg-surface-alt text-text-secondary font-semibold rounded-xl hover:bg-surface-hover transition text-sm">Hủy</button>
+                                    className="flex-1 py-2.5 bg-surface-alt text-text-secondary font-semibold rounded-xl hover:bg-surface-hover transition text-sm">
+                                    Hủy
+                                </button>
                                 <button type="submit" disabled={submitting}
                                     className="flex-1 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2">
                                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

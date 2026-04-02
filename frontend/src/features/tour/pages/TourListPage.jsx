@@ -106,11 +106,8 @@ const TourListPage = () => {
         setFilters({ budget: null, departure: '', destination: '', departureDate: '', tourLine: null, transport: null });
     }, [type]);
 
-    // Extract unique departure points for the dropdown
-    const departurePoints = useMemo(() => {
-        const set = new Set(tours.map(t => t.departure_point).filter(Boolean));
-        return [...set].sort();
-    }, [tours]);
+    // Không còn departure_point trong tours, bỏ filter này
+    const departurePoints = [];
 
     // Extract unique destinations (could be category name or destination field)
     const destinations = useMemo(() => {
@@ -118,17 +115,17 @@ const TourListPage = () => {
         return [...set].sort();
     }, [tours]);
 
-    // Apply filters
+    // Apply filters — giá lấy từ departures (MIN price_adult)
     const filteredTours = useMemo(() => {
         return tours.filter(tour => {
-            // Budget
+            // Budget — dùng giá thấp nhất từ departures
             if (filters.budget !== null) {
                 const opt = BUDGET_OPTIONS[filters.budget];
-                const price = parseFloat(tour.sale_price || tour.price || 0);
-                if (price < opt.min || price >= opt.max) return false;
+                const departures = tour.departures || [];
+                if (departures.length === 0) return false;
+                const minPrice = Math.min(...departures.map(d => parseFloat(d.price_adult)));
+                if (minPrice < opt.min || minPrice >= opt.max) return false;
             }
-            // Departure point
-            if (filters.departure && tour.departure_point !== filters.departure) return false;
             // Destination
             if (filters.destination) {
                 const dest = tour.destination || tour.Category?.name || '';

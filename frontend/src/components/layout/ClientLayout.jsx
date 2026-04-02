@@ -3,6 +3,7 @@ import { Phone, Mail, Globe, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, Lo
 import { useState } from 'react';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
+import { getImageUrl } from '@/utils/imageUrl';
 import zalo from '../../assets/images/zalo-2.png';
 import logo from '../../../public/logo.jpg';
 const navLinks = [
@@ -43,7 +44,7 @@ const ClientLayout = ({ children }) => {
                                 <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-2xl font-bold text-primary">
-                                Kỳ nghỉ quyến rũ
+                                Kỳ nghỉ tuyệt vời
                             </span>
                         </Link>
 
@@ -74,7 +75,7 @@ const ClientLayout = ({ children }) => {
                                     <div className="flex items-center gap-2 text-sm font-medium text-text">
                                         {user?.avatar_url ? (
                                             <img
-                                                src={user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:8888${user.avatar_url}`}
+                                                src={getImageUrl(user.avatar_url)}
                                                 alt={user.full_name}
                                                 className="w-9 h-9 rounded-full object-cover border border-border"
                                             />

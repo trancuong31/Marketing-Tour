@@ -5,6 +5,7 @@ const uploadBanner = require('../middlewares/uploadBanner');
 const {
     login,
     getAllTours,
+    getTourById,
     createTour,
     updateTour,
     deleteTour,
@@ -33,6 +34,7 @@ router.use(authenticate);
 
 // ── Tour CRUD ──
 router.get('/tours', getAllTours);
+router.get('/tours/:id', getTourById);
 router.post('/tours', upload.array('images', 10), createTour);
 router.put('/tours/:id', upload.array('images', 10), updateTour);
 router.delete('/tours/:id', deleteTour);

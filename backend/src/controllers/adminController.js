@@ -1,8 +1,11 @@
-// const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const slugify = require('slugify');
-const { User, Role, Tour, TourImage, Booking, Vote, Guide, Category, Banner } = require('../models');
+const { sequelize } = require('../config/database');
+const {
+    User, Role, Tour, TourImage, TourItinerary, TourDeparture,
+    TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner,
+} = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -32,13 +35,11 @@ const login = catchAsync(async (req, res, next) => {
         return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
     }
 
-    // const isPasswordValid = await bcrypt.compare(password, user.password);
     const isPasswordValid = password === user.password;
     if (!isPasswordValid) {
         return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
     }
 
-    // Cập nhật last_login
     await user.update({ last_login: new Date() });
 
     const token = jwt.sign({ id: user.id, role: user.Role?.role_name }, env.jwt.secret, {
@@ -61,11 +62,25 @@ const login = catchAsync(async (req, res, next) => {
 });
 
 // ══════════════════════════════════════
+// HELPERS — Parse satellite data từ FormData
+// ══════════════════════════════════════
+
+const parseJsonField = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    try {
+        return JSON.parse(value);
+    } catch {
+        return [];
+    }
+};
+
+// ══════════════════════════════════════
 // TOUR CRUD
 // ══════════════════════════════════════
 
 /**
- * Lấy tất cả tours (admin)
+ * Lấy tất cả tours (admin) - kèm departures để hiện giá
  * GET /api/admin/tours
  */
 const getAllTours = catchAsync(async (req, res) => {
@@ -73,6 +88,7 @@ const getAllTours = catchAsync(async (req, res) => {
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'] },
+            { model: TourDeparture, as: 'departures', attributes: ['id', 'departure_date', 'price_adult', 'available_seats', 'status'] },
         ],
         order: [['id', 'DESC']],
     });
@@ -85,66 +101,156 @@ const getAllTours = catchAsync(async (req, res) => {
 });
 
 /**
- * Tạo tour mới
+ * Lấy chi tiết 1 tour (admin) - kèm tất cả satellite data
+ * GET /api/admin/tours/:id
+ */
+const getTourById = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+
+    const tour = await Tour.findByPk(id, {
+        include: [
+            { model: Category, attributes: ['id', 'name'] },
+            { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], order: [['sort_order', 'ASC']] },
+            { model: TourItinerary, as: 'itineraries', order: [['day_number', 'ASC']] },
+            { model: TourDeparture, as: 'departures', order: [['departure_date', 'ASC']] },
+            { model: TourPickupLocation, as: 'pickupLocations' },
+            { model: TourOption, as: 'options' },
+        ],
+    });
+
+    if (!tour) {
+        return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        data: tour,
+    });
+});
+
+/**
+ * Tạo tour mới (kèm satellite data)
  * POST /api/admin/tours
  */
 const createTour = catchAsync(async (req, res, next) => {
     const {
-        category_id, title, summary, content,
-        price_adult, sale_price_adult,
-        price_child, sale_price_child,
-        price_infant, sale_price_infant,
-        departure_point, duration_days, duration_nights,
+        category_id, title, summary,
+        highlights, price_includes, price_excludes,
+        terms_and_notes, cancellation_policy,
+        duration_days, duration_nights,
         tour_badge, status,
+        itineraries, departures, pickup_locations, options,
     } = req.body;
 
-    if (!title || !category_id || !price_adult) {
-        return next(new AppError('Tiêu đề, danh mục và giá người lớn là bắt buộc', HTTP_CODES.BAD_REQUEST));
+    if (!title || !category_id) {
+        return next(new AppError('Tiêu đề và danh mục là bắt buộc', HTTP_CODES.BAD_REQUEST));
     }
 
     const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
-
-    // Kiểm tra slug trùng
     const existingSlug = await Tour.findOne({ where: { slug } });
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
 
-    const tour = await Tour.create({
-        category_id,
-        title,
-        slug: finalSlug,
-        summary: summary || null,
-        content: content || null,
-        price_adult,
-        sale_price_adult: sale_price_adult || null,
-        price_child: price_child || null,
-        sale_price_child: sale_price_child || null,
-        price_infant: price_infant || null,
-        sale_price_infant: sale_price_infant || null,
-        departure_point: departure_point || null,
-        duration_days: duration_days || null,
-        duration_nights: duration_nights || null,
-        thumbnail_url: null,
-        tour_badge: tour_badge || 'none',
-        status: status || 'active',
+    const result = await sequelize.transaction(async (t) => {
+        // 1. Tạo tour chính
+        const tour = await Tour.create({
+            category_id,
+            title,
+            slug: finalSlug,
+            summary: summary || null,
+            highlights: highlights || null,
+            price_includes: price_includes || null,
+            price_excludes: price_excludes || null,
+            terms_and_notes: terms_and_notes || null,
+            cancellation_policy: cancellation_policy || null,
+            duration_days: duration_days || null,
+            duration_nights: duration_nights || null,
+            thumbnail_url: null,
+            tour_badge: tour_badge || 'none',
+            status: status || 'active',
+        }, { transaction: t });
+
+        // 2. Ảnh upload
+        if (req.files && req.files.length > 0) {
+            const imageRecords = req.files.map((file, index) => ({
+                tour_id: tour.id,
+                image_url: `/uploads/tours/${file.filename}`,
+                sort_order: index,
+            }));
+            await TourImage.bulkCreate(imageRecords, { transaction: t });
+            await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
+        }
+
+        // 3. Lịch trình
+        const parsedItineraries = parseJsonField(itineraries);
+        if (parsedItineraries.length > 0) {
+            await TourItinerary.bulkCreate(
+                parsedItineraries.map((item) => ({
+                    tour_id: tour.id,
+                    day_number: item.day_number,
+                    title: item.title,
+                    content: item.content,
+                })),
+                { transaction: t },
+            );
+        }
+
+        // 4. Lịch khởi hành
+        const parsedDepartures = parseJsonField(departures);
+        if (parsedDepartures.length > 0) {
+            await TourDeparture.bulkCreate(
+                parsedDepartures.map((item) => ({
+                    tour_id: tour.id,
+                    departure_date: item.departure_date,
+                    price_adult: item.price_adult,
+                    price_child: item.price_child || 0,
+                    price_infant: item.price_infant || 0,
+                    available_seats: item.available_seats || 0,
+                    status: item.status || 'open',
+                })),
+                { transaction: t },
+            );
+        }
+
+        // 5. Điểm đón
+        const parsedPickups = parseJsonField(pickup_locations);
+        if (parsedPickups.length > 0) {
+            await TourPickupLocation.bulkCreate(
+                parsedPickups.map((item) => ({
+                    tour_id: tour.id,
+                    location_name: item.location_name,
+                    pickup_time: item.pickup_time || null,
+                    surcharge_amount: item.surcharge_amount || 0,
+                })),
+                { transaction: t },
+            );
+        }
+
+        // 6. Tùy chọn
+        const parsedOptions = parseJsonField(options);
+        if (parsedOptions.length > 0) {
+            await TourOption.bulkCreate(
+                parsedOptions.map((item) => ({
+                    tour_id: tour.id,
+                    option_name: item.option_name,
+                    price: item.price || 0,
+                    charge_type: item.charge_type || 'quantity',
+                })),
+                { transaction: t },
+            );
+        }
+
+        return tour;
     });
 
-    // Xử lý ảnh upload nếu có
-    if (req.files && req.files.length > 0) {
-        const imageRecords = req.files.map((file, index) => ({
-            tour_id: tour.id,
-            image_url: `/uploads/tours/${file.filename}`,
-            sort_order: index,
-        }));
-        await TourImage.bulkCreate(imageRecords);
-
-        // Set thumbnail là ảnh đầu tiên
-        await tour.update({ thumbnail_url: imageRecords[0].image_url });
-    }
-
-    const createdTour = await Tour.findByPk(tour.id, {
+    // Reload tour đầy đủ
+    const createdTour = await Tour.findByPk(result.id, {
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images' },
+            { model: TourItinerary, as: 'itineraries' },
+            { model: TourDeparture, as: 'departures' },
+            { model: TourPickupLocation, as: 'pickupLocations' },
+            { model: TourOption, as: 'options' },
         ],
     });
 
@@ -156,7 +262,7 @@ const createTour = catchAsync(async (req, res, next) => {
 });
 
 /**
- * Cập nhật tour
+ * Cập nhật tour (replace-all cho satellite data)
  * PUT /api/admin/tours/:id
  */
 const updateTour = catchAsync(async (req, res, next) => {
@@ -165,15 +271,15 @@ const updateTour = catchAsync(async (req, res, next) => {
 
     if (!tour) {
         return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
-    }3
+    }
 
     const {
-        category_id, title, summary, content,
-        price_adult, sale_price_adult,
-        price_child, sale_price_child,
-        price_infant, sale_price_infant,
-        departure_point, duration_days, duration_nights,
+        category_id, title, summary,
+        highlights, price_includes, price_excludes,
+        terms_and_notes, cancellation_policy,
+        duration_days, duration_nights,
         tour_badge, status,
+        itineraries, departures, pickup_locations, options,
     } = req.body;
 
     // Nếu đổi title → tạo slug mới
@@ -184,47 +290,118 @@ const updateTour = catchAsync(async (req, res, next) => {
         if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
     }
 
-    await tour.update({
-        category_id: category_id || tour.category_id,
-        title: title || tour.title,
-        slug: newSlug,
-        summary: summary !== undefined ? summary : tour.summary,
-        content: content !== undefined ? content : tour.content,
-        price_adult: price_adult || tour.price_adult,
-        sale_price_adult: sale_price_adult !== undefined ? sale_price_adult : tour.sale_price_adult,
-        price_child: price_child !== undefined ? price_child : tour.price_child,
-        sale_price_child: sale_price_child !== undefined ? sale_price_child : tour.sale_price_child,
-        price_infant: price_infant !== undefined ? price_infant : tour.price_infant,
-        sale_price_infant: sale_price_infant !== undefined ? sale_price_infant : tour.sale_price_infant,
-        departure_point: departure_point !== undefined ? departure_point : tour.departure_point,
-        duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
-        duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
-        tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
-        status: status || tour.status,
-    });
+    await sequelize.transaction(async (t) => {
+        // 1. Update tour chính
+        await tour.update({
+            category_id: category_id || tour.category_id,
+            title: title || tour.title,
+            slug: newSlug,
+            summary: summary !== undefined ? summary : tour.summary,
+            highlights: highlights !== undefined ? highlights : tour.highlights,
+            price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
+            price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
+            terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
+            cancellation_policy: cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
+            duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
+            duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
+            tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
+            status: status || tour.status,
+        }, { transaction: t });
 
-    // Xử lý ảnh mới nếu upload
-    if (req.files && req.files.length > 0) {
-        const currentImages = await TourImage.findAll({ where: { tour_id: id } });
-        const nextOrder = currentImages.length;
+        // 2. Ảnh upload mới
+        if (req.files && req.files.length > 0) {
+            const currentImages = await TourImage.findAll({ where: { tour_id: id } });
+            const nextOrder = currentImages.length;
 
-        const imageRecords = req.files.map((file, index) => ({
-            tour_id: tour.id,
-            image_url: `/uploads/tours/${file.filename}`,
-            sort_order: nextOrder + index,
-        }));
-        await TourImage.bulkCreate(imageRecords);
+            const imageRecords = req.files.map((file, index) => ({
+                tour_id: tour.id,
+                image_url: `/uploads/tours/${file.filename}`,
+                sort_order: nextOrder + index,
+            }));
+            await TourImage.bulkCreate(imageRecords, { transaction: t });
 
-        // Cập nhật thumbnail nếu chưa có
-        if (!tour.thumbnail_url) {
-            await tour.update({ thumbnail_url: imageRecords[0].image_url });
+            if (!tour.thumbnail_url) {
+                await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
+            }
         }
-    }
+
+        // 3. Replace-all satellite data (chỉ khi client gửi dữ liệu)
+        if (itineraries !== undefined) {
+            await TourItinerary.destroy({ where: { tour_id: id }, transaction: t });
+            const parsedItineraries = parseJsonField(itineraries);
+            if (parsedItineraries.length > 0) {
+                await TourItinerary.bulkCreate(
+                    parsedItineraries.map((item) => ({
+                        tour_id: id,
+                        day_number: item.day_number,
+                        title: item.title,
+                        content: item.content,
+                    })),
+                    { transaction: t },
+                );
+            }
+        }
+
+        if (departures !== undefined) {
+            await TourDeparture.destroy({ where: { tour_id: id }, transaction: t });
+            const parsedDepartures = parseJsonField(departures);
+            if (parsedDepartures.length > 0) {
+                await TourDeparture.bulkCreate(
+                    parsedDepartures.map((item) => ({
+                        tour_id: id,
+                        departure_date: item.departure_date,
+                        price_adult: item.price_adult,
+                        price_child: item.price_child || 0,
+                        price_infant: item.price_infant || 0,
+                        available_seats: item.available_seats || 0,
+                        status: item.status || 'open',
+                    })),
+                    { transaction: t },
+                );
+            }
+        }
+
+        if (pickup_locations !== undefined) {
+            await TourPickupLocation.destroy({ where: { tour_id: id }, transaction: t });
+            const parsedPickups = parseJsonField(pickup_locations);
+            if (parsedPickups.length > 0) {
+                await TourPickupLocation.bulkCreate(
+                    parsedPickups.map((item) => ({
+                        tour_id: id,
+                        location_name: item.location_name,
+                        pickup_time: item.pickup_time || null,
+                        surcharge_amount: item.surcharge_amount || 0,
+                    })),
+                    { transaction: t },
+                );
+            }
+        }
+
+        if (options !== undefined) {
+            await TourOption.destroy({ where: { tour_id: id }, transaction: t });
+            const parsedOptions = parseJsonField(options);
+            if (parsedOptions.length > 0) {
+                await TourOption.bulkCreate(
+                    parsedOptions.map((item) => ({
+                        tour_id: id,
+                        option_name: item.option_name,
+                        price: item.price || 0,
+                        charge_type: item.charge_type || 'quantity',
+                    })),
+                    { transaction: t },
+                );
+            }
+        }
+    });
 
     const updatedTour = await Tour.findByPk(id, {
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images' },
+            { model: TourItinerary, as: 'itineraries' },
+            { model: TourDeparture, as: 'departures' },
+            { model: TourPickupLocation, as: 'pickupLocations' },
+            { model: TourOption, as: 'options' },
         ],
     });
 
@@ -247,7 +424,6 @@ const deleteTour = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
     }
 
-    // Xóa ảnh liên quan (CASCADE sẽ tự xóa trong DB)
     await tour.destroy();
 
     res.status(200).json({
@@ -276,7 +452,10 @@ const getBookings = catchAsync(async (req, res) => {
     const { count, rows } = await Booking.findAndCountAll({
         where: whereClause,
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'price_adult', 'sale_price_adult'] },
+            { model: Tour, attributes: ['id', 'title', 'slug'] },
+            { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
+            { model: TourPickupLocation, as: 'pickupLocation', attributes: ['id', 'location_name', 'surcharge_amount'] },
+            { model: BookingOption, as: 'bookingOptions' },
         ],
         order: [['created_at', 'DESC']],
         limit: limitNum,
@@ -351,10 +530,6 @@ const deleteBooking = catchAsync(async (req, res, next) => {
 // VOTE MANAGEMENT
 // ══════════════════════════════════════
 
-/**
- * Lấy tất cả votes (admin)
- * GET /api/admin/votes?approved=0|1
- */
 const getVotes = catchAsync(async (req, res) => {
     const { approved } = req.query;
     const whereClause = {};
@@ -362,9 +537,7 @@ const getVotes = catchAsync(async (req, res) => {
 
     const votes = await Vote.findAll({
         where: whereClause,
-        include: [
-            { model: Tour, attributes: ['id', 'title'] },
-        ],
+        include: [{ model: Tour, attributes: ['id', 'title'] }],
         order: [['created_at', 'DESC']],
     });
 
@@ -375,10 +548,6 @@ const getVotes = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Duyệt/Từ chối đánh giá
- * PUT /api/admin/votes/:id
- */
 const updateVoteStatus = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { is_approved } = req.body;
@@ -401,14 +570,8 @@ const updateVoteStatus = catchAsync(async (req, res, next) => {
 // GUIDE MANAGEMENT
 // ══════════════════════════════════════
 
-/**
- * Lấy tất cả guides (admin, bao gồm cả inactive)
- * GET /api/admin/guides
- */
 const getAllGuides = catchAsync(async (req, res) => {
-    const guides = await Guide.findAll({
-        order: [['updated_at', 'DESC']],
-    });
+    const guides = await Guide.findAll({ order: [['updated_at', 'DESC']] });
 
     res.status(200).json({
         status: 'success',
@@ -417,10 +580,6 @@ const getAllGuides = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Tạo bài hướng dẫn mới
- * POST /api/admin/guides
- */
 const createGuide = catchAsync(async (req, res) => {
     const { title, content, is_active } = req.body;
 
@@ -442,10 +601,6 @@ const createGuide = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Cập nhật bài hướng dẫn
- * PUT /api/admin/guides/:id
- */
 const updateGuide = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const guide = await Guide.findByPk(id);
@@ -501,10 +656,6 @@ const deleteTourImage = catchAsync(async (req, res, next) => {
 // BANNER MANAGEMENT
 // ══════════════════════════════════════
 
-/**
- * Lấy tất cả banners (admin)
- * GET /api/admin/banners
- */
 const getAllBanners = catchAsync(async (req, res) => {
     const banners = await Banner.findAll({
         order: [['position', 'ASC'], ['id', 'DESC']],
@@ -517,10 +668,6 @@ const getAllBanners = catchAsync(async (req, res) => {
     });
 });
 
-/**
- * Tạo banner mới
- * POST /api/admin/banners
- */
 const createBanner = catchAsync(async (req, res, next) => {
     const { title, target_link, position, is_active, tour_id } = req.body;
 
@@ -553,10 +700,6 @@ const createBanner = catchAsync(async (req, res, next) => {
     });
 });
 
-/**
- * Cập nhật banner
- * PUT /api/admin/banners/:id
- */
 const updateBanner = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const banner = await Banner.findByPk(id);
@@ -582,7 +725,6 @@ const updateBanner = catchAsync(async (req, res, next) => {
         updated_at: new Date(),
     };
 
-    // Nếu upload ảnh mới
     if (req.file) {
         updateData.image_url = `/uploads/banners/${req.file.filename}`;
     }
@@ -596,10 +738,6 @@ const updateBanner = catchAsync(async (req, res, next) => {
     });
 });
 
-/**
- * Xóa banner
- * DELETE /api/admin/banners/:id
- */
 const deleteBanner = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const banner = await Banner.findByPk(id);
@@ -619,6 +757,7 @@ const deleteBanner = catchAsync(async (req, res, next) => {
 module.exports = {
     login,
     getAllTours,
+    getTourById,
     createTour,
     updateTour,
     deleteTour,

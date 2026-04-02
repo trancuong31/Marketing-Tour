@@ -48,6 +48,7 @@ export const adminService = {
 
     // Tours
     getTours: () => api.get('/admin/tours'),
+    getTourById: (id) => api.get(`/admin/tours/${id}`),
     createTour: (formData) => api.post('/admin/tours', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
     updateTour: (id, formData) => api.put(`/admin/tours/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
     deleteTour: (id) => api.delete(`/admin/tours/${id}`),
@@ -73,4 +74,3 @@ export const adminService = {
     updateBanner: (id, formData) => api.put(`/admin/banners/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
     deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
 };
-

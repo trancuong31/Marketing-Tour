@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Loader2, Phone, Mail, Users, Calendar, X, CheckCircle2, Eye, Filter, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Phone, Mail, Calendar, X, CheckCircle2, Eye, Filter, Users } from 'lucide-react';
 
 const statusConfig = {
     pending:   { label: 'Đang chờ',   className: 'bg-warning/10 text-warning border-warning/20' },
@@ -122,7 +122,8 @@ const BookingManagementPage = () => {
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary">Mã đơn</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary">Khách hàng</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden md:table-cell">Tour</th>
-                                <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden sm:table-cell">Số người</th>
+                                <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden sm:table-cell">Hành khách</th>
+                                <th className="px-4 py-3 text-left font-semibold text-text-secondary hidden lg:table-cell">Tổng tiền</th>
                                 <th className="px-4 py-3 text-left font-semibold text-text-secondary">Trạng thái</th>
                                 <th className="px-4 py-3 text-right font-semibold text-text-secondary">Hành động</th>
                             </tr>
@@ -130,6 +131,7 @@ const BookingManagementPage = () => {
                         <tbody>
                             {bookings.map(booking => {
                                 const status = statusConfig[booking.status] || statusConfig.pending;
+                                const totalPeople = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
                                 return (
                                     <tr key={booking.id} className="border-b border-border last:border-0 hover:bg-surface-alt/50 transition">
                                         <td className="px-4 py-3">
@@ -144,8 +146,24 @@ const BookingManagementPage = () => {
                                         </td>
                                         <td className="px-4 py-3 hidden md:table-cell">
                                             <p className="text-text truncate max-w-[200px]">{booking.Tour?.title}</p>
+                                            {booking.departure && (
+                                                <p className="text-xs text-text-muted mt-0.5">
+                                                    Khởi hành: {new Date(booking.departure.departure_date).toLocaleDateString('vi-VN')}
+                                                </p>
+                                            )}
                                         </td>
-                                        <td className="px-4 py-3 hidden sm:table-cell">{booking.number_of_people}</td>
+                                        <td className="px-4 py-3 hidden sm:table-cell">
+                                            <div className="flex items-center gap-1 text-text-secondary">
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span>{totalPeople}</span>
+                                            </div>
+                                            <p className="text-xs text-text-muted">
+                                                {booking.adult_qty}NL {booking.child_qty > 0 ? `${booking.child_qty}TE ` : ''}{booking.infant_qty > 0 ? `${booking.infant_qty}EB` : ''}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-3 hidden lg:table-cell">
+                                            <span className="font-semibold text-primary">{formatPrice(booking.total_price)}</span>
+                                        </td>
                                         <td className="px-4 py-3">
                                             <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${status.className}`}>
                                                 {status.label}
@@ -258,6 +276,14 @@ const BookingManagementPage = () => {
                                 <span className="text-text-secondary">Tour</span>
                                 <span className="font-medium text-text text-right max-w-[60%]">{detail.Tour?.title}</span>
                             </div>
+                            {detail.departure && (
+                                <div className="flex justify-between p-3 bg-surface-alt rounded-xl">
+                                    <span className="text-text-secondary flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> Ngày khởi hành</span>
+                                    <span className="font-medium text-text">
+                                        {new Date(detail.departure.departure_date).toLocaleDateString('vi-VN')}
+                                    </span>
+                                </div>
+                            )}
                             <div className="flex justify-between p-3 bg-surface-alt rounded-xl">
                                 <span className="text-text-secondary">Khách hàng</span>
                                 <span className="font-medium text-text">{detail.customer_name}</span>
@@ -272,16 +298,58 @@ const BookingManagementPage = () => {
                                 <span className="text-text-secondary flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> Email</span>
                                 <span className="text-text">{detail.customer_email}</span>
                             </div>
-                            <div className="flex justify-between p-3 bg-surface-alt rounded-xl">
-                                <span className="text-text-secondary">Số người</span>
-                                <span className="text-text">{detail.number_of_people}</span>
+
+                            {/* Hành khách */}
+                            <div className="p-3 bg-surface-alt rounded-xl">
+                                <span className="text-text-secondary block mb-2">Hành khách</span>
+                                <div className="flex gap-4 text-text">
+                                    <span>{detail.adult_qty} Người lớn</span>
+                                    {detail.child_qty > 0 && <span>{detail.child_qty} Trẻ em</span>}
+                                    {detail.infant_qty > 0 && <span>{detail.infant_qty} Em bé</span>}
+                                </div>
                             </div>
+
+                            {/* Điểm đón */}
+                            {detail.pickupLocation && (
+                                <div className="flex justify-between p-3 bg-surface-alt rounded-xl">
+                                    <span className="text-text-secondary">Điểm đón</span>
+                                    <span className="text-text">
+                                        {detail.pickupLocation.location_name}
+                                        {parseFloat(detail.pickupLocation.surcharge_amount) > 0 && (
+                                            <span className="text-xs text-text-muted ml-1">(+{formatPrice(detail.pickupLocation.surcharge_amount)}/người)</span>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Booking Options */}
+                            {detail.bookingOptions?.length > 0 && (
+                                <div className="p-3 bg-surface-alt rounded-xl">
+                                    <span className="text-text-secondary block mb-2">Dịch vụ thêm</span>
+                                    <div className="space-y-1">
+                                        {detail.bookingOptions.map((opt, idx) => (
+                                            <div key={idx} className="flex justify-between text-text text-xs">
+                                                <span>{opt.option_name} ×{opt.quantity}</span>
+                                                <span className="font-medium">{formatPrice(opt.total)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {detail.customer_note && (
                                 <div className="p-3 bg-surface-alt rounded-xl">
                                     <span className="text-text-secondary block mb-1">Ghi chú</span>
                                     <p className="text-text">{detail.customer_note}</p>
                                 </div>
                             )}
+
+                            {/* Tổng tiền */}
+                            <div className="flex justify-between p-3 bg-primary/5 border border-primary/20 rounded-xl">
+                                <span className="font-bold text-primary">Tổng tiền</span>
+                                <span className="font-bold text-primary text-lg">{formatPrice(detail.total_price)}</span>
+                            </div>
+
                             <div className="flex justify-between p-3 bg-surface-alt rounded-xl">
                                 <span className="text-text-secondary">Trạng thái</span>
                                 <span className={`px-2.5 py-1 text-xs font-bold rounded-full border ${statusConfig[detail.status]?.className}`}>
