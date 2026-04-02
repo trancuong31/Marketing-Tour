@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { tourService, bannerService } from '@/services/tourService';
+import { getImageUrl } from '@/utils/imageUrl';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { Compass, Star, MapPin, Globe2, ChevronRight, Sparkles, ChevronLeft } from 'lucide-react';
@@ -46,18 +47,7 @@ const HomePage = () => {
     }, [heroBanners.length]);
 
     const featured = tours.filter(t => t.tour_badge === 'featured').slice(0, 6);
-    const onSale = tours.filter(t => t.tour_badge === 'promotion' && t.sale_price_adult && parseFloat(t.sale_price_adult) < parseFloat(t.price_adult)).slice(0, 6);
-
-    const getImageUrl = useCallback((url) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        const hostname = window.location.hostname;
-        const isLocal = hostname === 'localhost' || hostname.startsWith('192.168.');
-        const base = isLocal
-            ? (import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:8888').replace('/api', '')
-            : (import.meta.env.VITE_API_URL_PUBLIC || '').replace('/api', '');
-        return `${base}${url}`;
-    }, []);
+    const onSale = tours.filter(t => t.tour_badge === 'promotion').slice(0, 6);
 
     const handleBannerClick = (banner) => {
         if (banner.target_link) {
@@ -167,7 +157,7 @@ const HomePage = () => {
                         >
                             <div className="p-5 rounded-2xl shadow-2xl transition duration-300 max-w-sm xl:max-w-md">
                                 <p className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                    <h2 className=" text-lg">Giá chỉ từ <span className="text-3xl font-bold text-orange-500">{formatCurrency(heroBanners[heroIndex].tour?.price_adult)}/ Khách</span></h2>
+                                    <h2 className=" text-lg">Giá chỉ từ <span className="text-3xl font-bold text-orange-500">{formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)}/ Khách</span></h2>
                                 </p>
                                 <div className="flex items-start gap-4 justify-between">
                                     <h3 className="text-white font-bold text-lg leading-snug line-clamp-3">

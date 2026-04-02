@@ -17,8 +17,7 @@ const formatPrice = (price) =>
 const BookingCard = ({ booking, index }) => {
     const status = statusConfig[booking.status] || statusConfig.pending;
     const tour = booking.Tour || {};
-    const unitPrice = parseFloat(tour.sale_price_adult || tour.price_adult || 0);
-    const totalPrice = unitPrice * (booking.number_of_people || 1);
+    const totalPrice = parseFloat(booking.total_price || 0);
 
     return (
         <div
@@ -79,7 +78,7 @@ const BookingCard = ({ booking, index }) => {
                             </div>
                             <div>
                                 <p className="text-xs text-text-muted">Số lượng</p>
-                                <p className="font-medium text-text">{booking.number_of_people} người</p>
+                                <p className="font-medium text-text">{(booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0)} người</p>
                             </div>
                         </div>
 

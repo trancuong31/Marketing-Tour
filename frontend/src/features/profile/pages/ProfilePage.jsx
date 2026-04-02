@@ -24,7 +24,7 @@ const ProfilePage = () => {
                 phone_number: user.phone_number || '',
                 email: user.email || ''
             });
-            setAvatarPreview(user.avatar_url ? (user.avatar_url.startsWith('http') ? user.avatar_url : `http://localhost:8888${user.avatar_url}`) : '');
+            setAvatarPreview(user.avatar_url ? getImageUrl(user.avatar_url) : '');
         }
     }, [user]);
 

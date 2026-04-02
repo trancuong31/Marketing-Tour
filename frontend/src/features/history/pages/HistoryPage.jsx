@@ -126,21 +126,14 @@ const HistoryPage = () => {
                                             </div>
                                             <div className="flex items-center text-sm text-gray-600">
                                                 <Users className="w-4 h-4 mr-2 text-gray-400" />
-                                                <span>Số người: <span className="font-medium text-gray-800">{b.number_of_people} khách</span></span>
+                                                <span>Hành khách: <span className="font-medium text-gray-800">{b.adult_qty || 0} NL{b.child_qty > 0 ? `, ${b.child_qty} TE` : ''}{b.infant_qty > 0 ? `, ${b.infant_qty} EB` : ''}</span></span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="mt-6 pt-4 border-t border-gray-200">
-                                        <p className="text-sm text-gray-500 mb-1">Tổng tiền ước tính</p>
+                                        <p className="text-sm text-gray-500 mb-1">Tổng tiền</p>
                                         <div className="flex items-end gap-2">
-                                            {b.tour?.sale_price_adult > 0 ? (
-                                                <>
-                                                    <span className="text-2xl font-black text-rose-600">{formatPrice(b.tour.sale_price_adult * b.number_of_people)}</span>
-                                                    <span className="text-sm text-gray-400 line-through pb-1">{formatPrice((b.tour.price_adult || 0) * b.number_of_people)}</span>
-                                                </>
-                                            ) : (
-                                                <span className="text-2xl font-black text-primary">{b.tour?.price_adult ? formatPrice(b.tour.price_adult * b.number_of_people) : 'Liên hệ'}</span>
-                                            )}
+                                            <span className="text-2xl font-black text-primary">{b.total_price ? formatPrice(b.total_price) : 'Liên hệ'}</span>
                                         </div>
                                     </div>
                                 </div>

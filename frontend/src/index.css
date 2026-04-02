@@ -1,31 +1,31 @@
 @import 'tailwindcss';
 
-/* ═══ Marketing Tour Theme — White ═══ */
+/* ═══ Marketing Tour Theme — Mang Đến Cho Bạn ═══ */
 @theme {
     --font-sans: 'system-ui', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-    --color-primary: #0ea5e9;
-    --color-primary-dark: #0284c7;
-    --color-primary-light: #38bdf8;
-    --color-secondary: #f97316;
-    --color-secondary-dark: #ea580c;
-    --color-accent: #8b5cf6;
+    --color-primary: #1E6FBF;        /* ← Xanh navy — màu chủ đạo mới */
+    --color-primary-dark: #1A4F8A;   /* ← Hover, active state */
+    --color-primary-light: #38A8E0;  /* ← Xanh sáng — shade nhạt */
+    --color-secondary: #E84720;      /* ← Cam lửa — accent nổi bật */
+    --color-secondary-dark: #C73A18; /* ← Cam đậm — hover secondary */
+    --color-accent: #F9C620;         /* ← Vàng nắng — badge, highlight */
 
     --color-background: #ffffff;
     --color-surface: #ffffff;
-    --color-surface-alt: #f8f9fa;
-    --color-surface-hover: #f1f3f5;
+    --color-surface-alt: #EEF4FC;
+    --color-surface-hover: #DDE9F7;
 
-    --color-text: #1a1a2e;
-    --color-text-secondary: #555770;
-    --color-text-muted: #8e8ea0;
-    --color-border: #e9ecef;
+    --color-text: #1A3566;           /* ← Navy đậm hơn cho text — dễ đọc */
+    --color-text-secondary: #4A5568;
+    --color-text-muted: #8A9AB5;
+    --color-border: #C2D8F0;
 
     --color-error: #ef4444;
-    --color-warning: #f59e0b;
-    --color-success: #22c55e;
-    --color-info: #3b82f6;
+    --color-warning: #F9C620;
+    --color-success: #2E8B30;
+    --color-info: #38A8E0;
 }
 
 /* ═══ Base ═══ */
@@ -257,6 +257,11 @@ button {
 
 
 /* ═══ Rich Text Content ═══ */
+.prose-content {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
 .prose-content h1 {
     @apply text-2xl font-bold mt-6 mb-3;
 }

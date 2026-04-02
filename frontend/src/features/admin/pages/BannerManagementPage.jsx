@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { adminService } from '@/services/tourService';
+import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import {
     Image, Plus, Pencil, Trash2, X, Loader2, Upload,
@@ -184,17 +185,6 @@ const BannerManagementPage = () => {
         } finally {
             setDeleting(null);
         }
-    };
-
-    const getImageUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http') || url.startsWith('blob:')) return url;
-        const hostname = window.location.hostname;
-        const isLocal = hostname === 'localhost' || hostname.startsWith('192.168.');
-        const base = isLocal
-            ? (import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:8888').replace('/api', '')
-            : (import.meta.env.VITE_API_URL_PUBLIC || '').replace('/api', '');
-        return `${base}${url}`;
     };
 
     return (

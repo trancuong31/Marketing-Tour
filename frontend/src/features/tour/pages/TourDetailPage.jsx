@@ -10,7 +10,11 @@ import { tourService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
 import BookingForm from '@/features/tour/components/BookingForm';
 import VoteForm from '@/features/tour/components/VoteForm';
-import { Clock, MapPin, Tag, Star, X, ChevronLeft, ChevronRight, ShieldCheck, AlertTriangle, ZoomIn } from 'lucide-react';
+import { getImageUrl } from '@/utils/imageUrl';
+import {
+    Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
+    ChevronDown, CheckCircle, XCircle, ShieldCheck, AlertTriangle, Ban,
+} from 'lucide-react';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -24,10 +28,9 @@ const ReviewsCarousel = ({ votes }) => {
         const el = scrollRef.current;
         if (!el || votes.length === 0) return;
         let pos = 0;
-        const speed = 0.5; // px per frame
+        const speed = 0.5;
         const animate = () => {
             pos += speed;
-            // Each card ~320px + 16px gap = 336px, total original width = votes.length * 336
             const totalW = votes.length * 336;
             if (pos >= totalW) pos = 0;
             el.style.transform = `translateX(-${pos}px)`;
@@ -39,7 +42,6 @@ const ReviewsCarousel = ({ votes }) => {
 
     if (votes.length === 0) return <p className="text-text-muted text-sm py-4">Chưa có đánh giá nào</p>;
 
-    // Duplicate for seamless loop
     const items = [...votes, ...votes, ...votes];
 
     return (
@@ -104,21 +106,11 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                     <X className="w-6 h-6 text-white" />
                 </button>
             </div>
-
-            {/* Counter */}
             <div className="absolute top-4 left-4 text-white/70 text-sm font-medium">
                 {current + 1} / {images.length}
             </div>
-
-            {/* Main image */}
             <div className="relative max-w-5xl w-full mx-4" onClick={e => e.stopPropagation()}>
-                <img
-                    src={images[current]?.image_url}
-                    alt=""
-                    className="w-full max-h-[80vh] object-contain rounded-lg"
-                />
-
-                {/* Nav arrows */}
+                <img src={getImageUrl(images[current]?.image_url)} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
                 {images.length > 1 && (
                     <>
                         <button
@@ -136,8 +128,6 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                     </>
                 )}
             </div>
-
-            {/* Thumbnails */}
             {images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto px-4">
                     {images.map((img, i) => (
@@ -148,11 +138,49 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                                 i === current ? 'border-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
                             }`}
                         >
-                            <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                            <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
                         </button>
                     ))}
                 </div>
             )}
+        </div>
+    );
+};
+
+/* ═══ ITINERARY ACCORDION ═══ */
+const ItineraryAccordion = ({ itineraries }) => {
+    const [openDay, setOpenDay] = useState(0);
+
+    if (!itineraries || itineraries.length === 0) return null;
+
+    return (
+        <div className="space-y-2">
+            <h2 className="text-xl font-bold text-text mb-4">Lịch trình chi tiết</h2>
+            {itineraries.map((item, idx) => (
+                <div key={item.id || idx} className="rounded-xl border border-border overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setOpenDay(openDay === idx ? -1 : idx)}
+                        className="w-full flex items-center justify-between px-4 py-3.5 bg-surface-alt hover:bg-surface-hover transition text-left"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-full bg-primary text-white text-sm font-bold flex items-center justify-center shrink-0">
+                                {item.day_number}
+                            </span>
+                            <span className="text-sm font-semibold text-text">{item.title}</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${openDay === idx ? 'rotate-180' : ''}`} />
+                    </button>
+                    {openDay === idx && (
+                        <div className="px-4 py-4 bg-surface border-t border-border overflow-hidden">
+                            <div
+                                className="prose-content break-words text-sm text-text-secondary leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.content) }}
+                            />
+                        </div>
+                    )}
+                </div>
+            ))}
         </div>
     );
 };
@@ -220,18 +248,22 @@ const TourDetailPage = () => {
         );
     }
 
-    const hasSaleAdult = tour.sale_price_adult && parseFloat(tour.sale_price_adult) < parseFloat(tour.price_adult);
-    const hasSaleChild = tour.sale_price_child && tour.price_child && parseFloat(tour.sale_price_child) < parseFloat(tour.price_child);
-    const hasSaleInfant = tour.sale_price_infant && tour.price_infant && parseFloat(tour.sale_price_infant) < parseFloat(tour.price_infant);
     const images = tour.images || [];
+    const itineraries = tour.itineraries || [];
+    const departures = tour.departures || [];
     const durationText = tour.duration_days && tour.duration_nights
         ? `${tour.duration_days} ngày ${tour.duration_nights} đêm`
         : tour.duration_days ? `${tour.duration_days} ngày` : null;
 
+    // Giá thấp nhất từ departures
+    const minPrice = departures.length > 0
+        ? Math.min(...departures.map(d => parseFloat(d.price_adult)))
+        : null;
+
     return (
         <ClientLayout>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-                {/* ═══ SLIDER ẢNH — Clickable for gallery ═══ */}
+                {/* ═══ SLIDER ẢNH ═══ */}
                 {images.length > 0 ? (
                     <div className="relative group">
                         <Swiper
@@ -244,23 +276,13 @@ const TourDetailPage = () => {
                         >
                             {images.map((img, i) => (
                                 <SwiperSlide key={img.id}>
-                                    <div
-                                        className="relative"
-                                        onClick={() => setGallery({ open: true, index: i })}
-                                    >
-                                        <img
-                                            src={img.image_url}
-                                            alt={tour.title}
-                                            className="w-full aspect-video object-cover"
-                                        />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                        </div>
+                                    <div className="relative" onClick={() => setGallery({ open: true, index: i })}>
+                                        <img src={getImageUrl(img.image_url)} alt={tour.title} className="w-full aspect-video object-cover" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                                     </div>
                                 </SwiperSlide>
                             ))}
                         </Swiper>
-
-                        {/* Image count badge */}
                         <button
                             onClick={() => setGallery({ open: true, index: 0 })}
                             className="absolute bottom-12 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur text-white text-sm rounded-lg flex items-center gap-1.5 hover:bg-black/70 transition"
@@ -270,16 +292,12 @@ const TourDetailPage = () => {
                         </button>
                     </div>
                 ) : tour.thumbnail_url ? (
-                    <img
-                        src={tour.thumbnail_url}
-                        alt={tour.title}
-                        className="w-full aspect-video object-cover rounded-2xl shadow-lg mb-8"
-                    />
+                    <img src={getImageUrl(tour.thumbnail_url)} alt={tour.title} className="w-full aspect-video object-cover rounded-2xl shadow-lg mb-8" />
                 ) : null}
 
                 {/* ═══ THÔNG TIN TOUR ═══ */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Cột trái: thông tin */}
+                    {/* Cột trái */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Category */}
                         {tour.Category && (
@@ -293,7 +311,7 @@ const TourDetailPage = () => {
                             {tour.title}
                         </h1>
 
-                        {/* Meta info */}
+                        {/* Meta */}
                         <div className="flex flex-wrap gap-4 text-text-secondary">
                             {durationText && (
                                 <span className="flex items-center gap-1.5 text-sm">
@@ -301,126 +319,94 @@ const TourDetailPage = () => {
                                     {durationText}
                                 </span>
                             )}
-                            {tour.departure_point && (
+                            {minPrice && (
                                 <span className="flex items-center gap-1.5 text-sm">
-                                    <MapPin className="w-4 h-4 text-primary" />
-                                    Khởi hành: {tour.departure_point}
+                                    <Tag className="w-4 h-4 text-primary" />
+                                    Giá từ <span className="font-bold text-primary">{formatPrice(minPrice)}</span>/người
                                 </span>
                             )}
                         </div>
 
-                        {/* Bảng giá */}
-                        <div className="rounded-xl border border-border overflow-hidden">
-                            <div className="bg-primary/5 px-4 py-3 border-b border-border">
-                                <h3 className="text-sm font-bold text-primary">Bảng giá tour</h3>
-                            </div>
-                            <div className="divide-y divide-border">
-                                {/* Người lớn */}
-                                <div className="flex items-center justify-between px-4 py-3">
-                                    <div>
-                                        <p className="text-sm font-semibold text-text">Người lớn</p>
-                                        <p className="text-xs text-text-muted">Trên 10 tuổi</p>
-                                    </div>
-                                    <div className="text-right">
-                                        {hasSaleAdult ? (
-                                            <>
-                                                <p className="text-lg font-extrabold text-secondary">{formatPrice(tour.sale_price_adult)}</p>
-                                                <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_adult)}</p>
-                                            </>
-                                        ) : (
-                                            <p className="text-lg font-extrabold text-primary">{formatPrice(tour.price_adult)}</p>
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Trẻ em */}
-                                {tour.price_child && (
-                                    <div className="flex items-center justify-between px-4 py-3">
-                                        <div>
-                                            <p className="text-sm font-semibold text-text">Trẻ em</p>
-                                            <p className="text-xs text-text-muted">Từ 2 – 10 tuổi</p>
-                                        </div>
-                                        <div className="text-right">
-                                            {hasSaleChild ? (
-                                                <>
-                                                    <p className="text-lg font-bold text-secondary">{formatPrice(tour.sale_price_child)}</p>
-                                                    <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_child)}</p>
-                                                </>
-                                            ) : (
-                                                <p className="text-lg font-bold text-primary">{formatPrice(tour.price_child)}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Trẻ nhỏ */}
-                                {tour.price_infant && (
-                                    <div className="flex items-center justify-between px-4 py-3">
-                                        <div>
-                                            <p className="text-sm font-semibold text-text">Trẻ nhỏ / Em bé</p>
-                                            <p className="text-xs text-text-muted">Dưới 2 tuổi</p>
-                                        </div>
-                                        <div className="text-right">
-                                            {hasSaleInfant ? (
-                                                <>
-                                                    <p className="text-lg font-bold text-secondary">{formatPrice(tour.sale_price_infant)}</p>
-                                                    <p className="text-xs text-text-muted line-through">{formatPrice(tour.price_infant)}</p>
-                                                </>
-                                            ) : (
-                                                <p className="text-lg font-bold text-primary">{formatPrice(tour.price_infant)}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Mô tả */}
+                        {/* Tóm tắt */}
                         {tour.summary && (
                             <div className="p-4 bg-surface-alt rounded-xl border border-border">
                                 <p className="text-text-secondary leading-relaxed">{tour.summary}</p>
                             </div>
                         )}
 
-                        {/* Nội dung chi tiết (HTML) */}
-                        {tour.content && (
-                            <div className="prose-content">
-                                <h2 className="text-xl font-bold text-text mb-4">Chi tiết hành trình</h2>
-                                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.content) }} />
+                        {/* Điểm nổi bật */}
+                        {tour.highlights && (
+                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
+                                <h3 className="text-lg font-bold text-primary mb-3">✨ Điểm nổi bật</h3>
+                                <div
+                                    className="prose-content break-words text-sm text-text-secondary"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.highlights) }}
+                                />
                             </div>
                         )}
 
-                        {/* ═══ ĐIỀU KHOẢN & LƯU Ý ═══ */}
-                        <div className="space-y-4 pt-2">
-                            {/* Điều khoản */}
-                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <ShieldCheck className="w-5 h-5 text-primary" />
-                                    <h3 className="text-lg font-bold text-primary">Điều khoản</h3>
-                                </div>
-                                <ul className="space-y-2 text-sm text-text-secondary">
-                                    <li className="flex gap-2"><span className="text-primary font-bold">•</span> Giá tour đã bao gồm xe đưa đón, khách sạn, bữa ăn theo chương trình.</li>
-                                    <li className="flex gap-2"><span className="text-primary font-bold">•</span> Trẻ em dưới 2 tuổi miễn phí (không bao gồm giường và suất ăn riêng).</li>
-                                    <li className="flex gap-2"><span className="text-primary font-bold">•</span> Trẻ em 2–10 tuổi tính 75% giá tour người lớn.</li>
-                                    <li className="flex gap-2"><span className="text-primary font-bold">•</span> Hủy tour trước 7 ngày: hoàn 100%. Trước 3 ngày: phạt 50%.</li>
-                                    <li className="flex gap-2"><span className="text-primary font-bold">•</span> Giá tour có thể thay đổi tùy theo thời điểm đặt và tình trạng chỗ.</li>
-                                </ul>
-                            </div>
+                        {/* Lịch trình chi tiết */}
+                        {itineraries.length > 0 && <ItineraryAccordion itineraries={itineraries} />}
 
-                            {/* Lưu ý */}
-                            <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5">
+                        {/* Giá bao gồm / không bao gồm */}
+                        {(tour.price_includes || tour.price_excludes) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {tour.price_includes && (
+                                    <div className="rounded-xl border border-success/20 bg-success/5 p-4 overflow-hidden">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <CheckCircle className="w-5 h-5 text-success" />
+                                            <h3 className="text-sm font-bold text-success">Giá bao gồm</h3>
+                                        </div>
+                                        <div
+                                            className="prose-content break-words text-sm text-text-secondary"
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_includes) }}
+                                        />
+                                    </div>
+                                )}
+                                {tour.price_excludes && (
+                                    <div className="rounded-xl border border-error/20 bg-error/5 p-4 overflow-hidden">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <XCircle className="w-5 h-5 text-error" />
+                                            <h3 className="text-sm font-bold text-error">Giá không bao gồm</h3>
+                                        </div>
+                                        <div
+                                            className="prose-content break-words text-sm text-text-secondary"
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_excludes) }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Điều khoản & lưu ý */}
+                        {tour.terms_and_notes && (
+                            <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-3">
                                     <AlertTriangle className="w-5 h-5 text-warning" />
-                                    <h3 className="text-lg font-bold text-warning">Lưu ý quan trọng</h3>
+                                    <h3 className="text-lg font-bold text-warning">Điều khoản & Lưu ý</h3>
                                 </div>
-                                <ul className="space-y-2 text-sm text-text-secondary">
-                                    <li className="flex gap-2"><span className="text-warning font-bold">•</span> Quý khách vui lòng mang theo CMND/CCCD hoặc hộ chiếu (tour quốc tế).</li>
-                                    <li className="flex gap-2"><span className="text-warning font-bold">•</span> Tập trung đúng giờ tại điểm hẹn. Tour không chờ khách trễ.</li>
-                                    <li className="flex gap-2"><span className="text-warning font-bold">•</span> Không bao gồm chi phí phát sinh cá nhân: đồ uống, minibar, giặt ủi...</li>
-                                    <li className="flex gap-2"><span className="text-warning font-bold">•</span> Lịch trình có thể thay đổi tùy điều kiện thời tiết và thực tế.</li>
-                                </ul>
+                                <div
+                                    className="prose-content break-words text-sm text-text-secondary"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.terms_and_notes) }}
+                                />
                             </div>
-                        </div>
+                        )}
 
-                        {/* ═══ VOTE FORM ═══ */}
+                        {/* Quy định hoàn hủy */}
+                        {tour.cancellation_policy && (
+                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Ban className="w-5 h-5 text-primary" />
+                                    <h3 className="text-lg font-bold text-primary">Quy định hoàn hủy</h3>
+                                </div>
+                                <div
+                                    className="prose-content break-words text-sm text-text-secondary"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.cancellation_policy) }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Vote Form */}
                         <div className="pt-6 border-t border-border">
                             <VoteForm tourId={tour.id} onSuccess={refreshVotes} />
                         </div>
@@ -434,7 +420,7 @@ const TourDetailPage = () => {
                     </div>
                 </div>
 
-                {/* ═══ ĐÁNH GIÁ KHÁCH HÀNG — Auto scroll carousel ═══ */}
+                {/* ═══ ĐÁNH GIÁ KHÁCH HÀNG ═══ */}
                 <div className="mt-12 pt-8 border-t border-border">
                     <div className="flex items-center gap-2 mb-6">
                         <Star className="w-6 h-6 text-secondary fill-secondary" />
@@ -444,7 +430,7 @@ const TourDetailPage = () => {
                 </div>
             </div>
 
-            {/* ═══ GALLERY MODAL ═══ */}
+            {/* Gallery Modal */}
             {gallery.open && images.length > 0 && (
                 <GalleryModal
                     images={images}

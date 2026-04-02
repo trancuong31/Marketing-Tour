@@ -15,6 +15,16 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    departure_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        comment: 'ID của ngày khởi hành khách chọn',
+    },
+    pickup_location_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: 'ID điểm đón khách chọn',
+    },
     booking_code: {
         type: DataTypes.STRING(20),
         allowNull: false,
@@ -32,9 +42,21 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.STRING(15),
         allowNull: false,
     },
-    number_of_people: {
+    adult_qty: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         defaultValue: 1,
+        comment: 'Số người lớn',
+    },
+    child_qty: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: 'Số trẻ em',
+    },
+    infant_qty: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: 'Số em bé',
     },
     customer_note: {
         type: DataTypes.TEXT,
@@ -43,6 +65,12 @@ const Booking = sequelize.define('Booking', {
     status: {
         type: DataTypes.ENUM('pending', 'contacted', 'approved', 'cancelled'),
         defaultValue: 'pending',
+    },
+    total_price: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: false,
+        defaultValue: 0,
+        comment: 'Tổng tiền thanh toán (Snapshot)',
     },
     admin_note: {
         type: DataTypes.TEXT,
