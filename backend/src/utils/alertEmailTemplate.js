@@ -1,6 +1,3 @@
-/**
- * Format date to Vietnamese format: dd/MM/yyyy HH:mm:ss
- */
 const formatDate = (date, includeYear = true) => {
     const d = new Date(date);
     const pad = (n) => String(n).padStart(2, '0');

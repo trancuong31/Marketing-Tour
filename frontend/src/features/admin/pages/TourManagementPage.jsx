@@ -5,6 +5,8 @@ import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, MapPin, Settings, List, Navigation } from 'lucide-react';
 
+
+
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
@@ -48,7 +50,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder }) => {
             )}
         </div>
     );
-};
+};  
 
 // ═══ TAB: THÔNG TIN CHUNG ═══
 const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage }) => (

@@ -324,7 +324,7 @@ const ClientLayout = ({ children }) => {
                             </div>
                             <div className="flex items-center gap-2 text-text-secondary mb-2">
                                 <Mail className="w-4 h-4 text-primary" />
-                                <span>info@kynghiquyenru.vn</span>
+                                <span>info@kynghituyetvoi.vn</span>
                             </div>
                             {/* Social Icons */}
                             <div className="flex gap-2 mt-4">

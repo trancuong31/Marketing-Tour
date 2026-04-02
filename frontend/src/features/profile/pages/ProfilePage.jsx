@@ -4,7 +4,7 @@ import { userService } from '@/services/userService';
 import { toast } from 'sonner';
 import { User, Camera, Loader2, Save, Lock, Mail, Shield } from 'lucide-react';
 import ClientLayout from '@/components/layout/ClientLayout';
-
+import { getImageUrl } from '@/utils/imageUrl';
 const ProfilePage = () => {
     const { user, setAuth, token } = useAuthStore();
     const [loading, setLoading] = useState(false);

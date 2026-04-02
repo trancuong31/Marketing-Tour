@@ -85,7 +85,6 @@ const HomePage = () => {
                 <div 
                     className="absolute inset-0 cursor-pointer z-0"
                     onClick={() => heroBanners.length > 0 && handleBannerClick(heroBanners[heroIndex])}
-                    title="Xem chi tiết ưu đãi này"
                 >
                     {heroBanners.length > 0 ? (
                         <>

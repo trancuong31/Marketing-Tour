@@ -156,7 +156,7 @@ const createBooking = catchAsync(async (req, res) => {
     });
 });
 
-// --------- Lấy booking theo user login ---------
+// --------- Lấy lịch sử booking theo user login ---------
 const getMyBookings = catchAsync(async (req, res) => {
     const userId = req.user.id;
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -186,13 +186,15 @@ const getMyBookings = catchAsync(async (req, res) => {
         infant_qty: b.infant_qty,
         total_price: b.total_price,
         customer_note: b.customer_note,
-        departure_date: b.departure_date,
-        adult_count: b.adult_count,
-        child_count: b.child_count,
-        infant_count: b.infant_count,
-        total_price: b.total_price,
         status: b.status,
         created_at: b.created_at,
+        
+        // Legacy fields for backward compatibility with frontend
+        adult_count: b.adult_qty,
+        child_count: b.child_qty,
+        infant_count: b.infant_qty,
+        departure_date: b.departure?.departure_date || null,
+
         tour: b.Tour ? {
             id: b.Tour.id,
             title: b.Tour.title,
