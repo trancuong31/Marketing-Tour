@@ -1,10 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import DOMPurify from 'dompurify';
 import { tourService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
@@ -13,7 +8,7 @@ import VoteForm from '@/features/tour/components/VoteForm';
 import { getImageUrl } from '@/utils/imageUrl';
 import {
     Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
-    ChevronDown, CheckCircle, XCircle, ShieldCheck, AlertTriangle, Ban,
+    ChevronDown, CheckCircle, XCircle, AlertTriangle, Ban,
 } from 'lucide-react';
 
 const formatPrice = (price) =>
@@ -263,37 +258,79 @@ const TourDetailPage = () => {
     return (
         <ClientLayout>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-                {/* ═══ SLIDER ẢNH ═══ */}
-                {images.length > 0 ? (
-                    <div className="relative group">
-                        <Swiper
-                            modules={[Navigation, Pagination, Autoplay]}
-                            navigation
-                            pagination={{ clickable: true }}
-                            autoplay={{ delay: 4000, disableOnInteraction: false }}
-                            loop={images.length > 1}
-                            className="rounded-2xl overflow-hidden shadow-lg mb-8 cursor-pointer"
-                        >
-                            {images.map((img, i) => (
-                                <SwiperSlide key={img.id}>
-                                    <div className="relative" onClick={() => setGallery({ open: true, index: i })}>
-                                        <img src={getImageUrl(img.image_url)} alt={tour.title} className="w-full aspect-video object-cover" />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                                    </div>
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
-                        <button
+                {/* ═══ BỐ CỤC ẢNH GRID THÔNG MINH ═══ */}
+                {(images.length > 0 || tour.thumbnail_url) && (
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px]">
+                        
+                        {/* ẢNH CHÍNH (BÊN TRÁI) */}
+                        <div 
+                            className={`relative group cursor-pointer h-full ${images.length > 1 ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} rounded-2xl overflow-hidden shadow-sm`}
                             onClick={() => setGallery({ open: true, index: 0 })}
-                            className="absolute bottom-12 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur text-white text-sm rounded-lg flex items-center gap-1.5 hover:bg-black/70 transition"
                         >
-                            <ZoomIn className="w-4 h-4" />
-                            {images.length} ảnh
-                        </button>
+                            <img 
+                                src={getImageUrl(images.length > 0 ? images[0].image_url : tour.thumbnail_url)} 
+                                alt={tour.title} 
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" 
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                            
+                            {/* Nhãn giảm giá / Badge (Nếu có) */}
+                            {tour.tour_badge === 'promotion' ? (
+                                <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
+                                    Tour Ưu Đãi
+                                </div>
+                            ) : tour.tour_badge === 'featured' ? (
+                                <div className="absolute top-4 left-0 bg-primary text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
+                                    Tour Nổi Bật
+                                </div>
+                            ) : null}
+
+                            {/* Nút đếm ảnh nổi */}
+                            {images.length > 0 && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setGallery({ open: true, index: 0 }); }}
+                                    className="absolute bottom-4 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-sm font-medium rounded-lg flex items-center gap-1.5 hover:bg-black/80 transition"
+                                >
+                                    <ZoomIn className="w-4 h-4" />
+                                    {images.length} ảnh
+                                </button>
+                            )}
+                        </div>
+
+                        {/* GRID ẢNH PHỤ (BÊN PHẢI) - Chỉ hiện khi có >1 ảnh, trên Desktop */}
+                        {images.length > 1 && (
+                            <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full ${
+                                images.length === 2 ? 'grid-cols-1 grid-rows-1' :
+                                images.length === 3 ? 'grid-cols-1 grid-rows-2' :
+                                'grid-cols-2 grid-rows-2'
+                            }`}>
+                                {images.slice(1, 5).map((img, i) => {
+                                    // Tính toán lưới khi có số lẻ ảnh phụ
+                                    let itemClass = '';
+                                    if (images.length === 4 && i === 2) {
+                                        // 4 ảnh tổng cộng: 1 chính + 3 phụ => Ảnh thứ 3 nằm full hàng dưới
+                                        itemClass = 'col-span-2';
+                                    }
+
+                                    return (
+                                        <div 
+                                            key={img.id || i}
+                                            className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-sm ${itemClass}`}
+                                            onClick={() => setGallery({ open: true, index: i + 1 })}
+                                        >
+                                            <img 
+                                                src={getImageUrl(img.image_url)} 
+                                                alt={`${tour.title} - ${i+1}`} 
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
-                ) : tour.thumbnail_url ? (
-                    <img src={getImageUrl(tour.thumbnail_url)} alt={tour.title} className="w-full aspect-video object-cover rounded-2xl shadow-lg mb-8" />
-                ) : null}
+                )}
 
                 {/* ═══ THÔNG TIN TOUR ═══ */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

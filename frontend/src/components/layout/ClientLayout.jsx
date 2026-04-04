@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Phone, Mail, Globe, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Key, Shield } from 'lucide-react';
+import { Phone, Mail, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
 import { useState } from 'react';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';

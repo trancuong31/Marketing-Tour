@@ -43,10 +43,6 @@ body {
     display: none;
 }
 
-a {
-    @apply text-primary no-underline transition-colors duration-150 hover:text-primary-dark;
-}
-
 button {
     @apply cursor-pointer font-[inherit];
 }
