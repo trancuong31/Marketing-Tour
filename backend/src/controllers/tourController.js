@@ -93,15 +93,11 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     });
 });
 
-/**
- * Lấy banners công khai theo vị trí
- * Giá hiển thị = giá thấp nhất từ departures
- * GET /api/banners?position=hero|left_home|right_home
- */
 const getBannersByPosition = catchAsync(async (req, res) => {
     const { position } = req.query;
     const whereClause = { is_active: 1 };
-
+    const today = new Date();
+    const formattedToday = today.toISOString().split('T')[0];
     if (position) {
         whereClause.position = position;
     }
@@ -119,11 +115,10 @@ const getBannersByPosition = catchAsync(async (req, res) => {
                     {
                         model: TourDeparture,
                         as: 'departures',
-                        attributes: ['price_adult'],
-                        where: { status: 'open', departure_date: { [Op.gte]: new Date() } },
+                        attributes: ['id', 'tour_id', 'price_adult'],
+                        where: { status: 'open', departure_date: { [Op.gte]: formattedToday } },
                         required: false,
-                        order: [['price_adult', 'ASC']],
-                        limit: 1,
+                        order: [['price_adult', 'ASC']]
                     },
                 ],
             },

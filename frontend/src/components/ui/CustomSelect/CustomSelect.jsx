@@ -103,7 +103,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, icon, label }) =>
             {/* Dropdown */}
             <div
                 className={`
-                    absolute z-50 w-full mt-1.5 rounded-xl shadow-lg overflow-hidden
+                    absolute z-[9999] w-full mt-1.5 rounded-xl shadow-lg overflow-hidden
                     transition-all duration-200 ease-in-out origin-top
                     bg-surface border border-border 
                     ${isOpen
@@ -112,7 +112,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, icon, label }) =>
                     }
                 `}
             >
-                <div className="overflow-y-auto max-h-60 scrollbar-hide">
+                <div className="overflow-y-auto max-h-60 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
                     {options.map((option, index) => {
                         const isSelected = value === option.value;
                         const isHighlighted = highlightedIndex === index;
