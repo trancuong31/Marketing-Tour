@@ -22,6 +22,9 @@ const {
     updateBanner,
     deleteBanner,
     deleteBooking,
+    getTopRatedTours,
+    getReviewStats,
+    deleteVote,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -46,7 +49,10 @@ router.put('/bookings/:id/status', updateBookingStatus);
 router.delete('/bookings/:id', deleteBooking);
 
 // ── Vote ──
+router.get('/votes/top', getTopRatedTours);
+router.get('/votes/stats', getReviewStats);
 router.get('/votes', getVotes);
+router.delete('/votes/:id', deleteVote);
 router.put('/votes/:id', updateVoteStatus);
 
 // ── Guide ──

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Loader2, Phone, Mail, Calendar, X, CheckCircle2, Eye, Filter, Users, ChevronLeft, ChevronRight, Trash2  } from 'lucide-react';
+import { toast } from 'sonner';
 
 const statusConfig = {
     pending:   { label: 'Đang chờ',   className: 'bg-warning/10 text-warning border-warning/20' },
@@ -54,14 +55,28 @@ const BookingManagementPage = () => {
         setCurrentPage(page);
     };
 
-    const handleDeleteBooking = async (id) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa đơn đặt này?')) return;
+    const performDeleteBooking = async (id) => {
         try {
             await adminService.deleteBooking(id);
+            toast.success('Xóa đơn đặt thành công!');
             await fetchBookings();
         } catch (err) {
-            alert(err.response?.data?.message || 'Lỗi xóa đơn');
+            toast.error(err.response?.data?.message || 'Lỗi xóa đơn');
         }
+    };
+
+    const handleDeleteBooking = (id) => {
+        toast('Xác nhận xóa', {
+            description: 'Bạn có chắc chắn muốn xóa đơn đặt này?',
+            action: {
+                label: 'Xóa',
+                onClick: () => performDeleteBooking(id)
+            },
+            cancel: {
+                label: 'Hủy'
+            },
+            duration: 5000,
+        });
     };
 
     const getPageNumbers = () => {
@@ -82,8 +97,9 @@ const BookingManagementPage = () => {
             if (detail?.id === id) {
                 setDetail(prev => ({ ...prev, status }));
             }
+            toast.success('Cập nhật trạng thái thành công!');
         } catch (err) {
-            alert(err.response?.data?.message || 'Lỗi cập nhật');
+            toast.error(err.response?.data?.message || 'Lỗi cập nhật');
         } finally {
             setUpdating(null);
         }

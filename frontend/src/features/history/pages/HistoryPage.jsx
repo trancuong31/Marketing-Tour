@@ -7,7 +7,7 @@ import { vi } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import {
     Loader2, Ticket, Calendar, Clock, User, Users, FileText, Ban,
-    DollarSign, ChevronRight, Baby, UserCheck, ChevronLeft
+    DollarSign, ChevronRight, Baby, UserCheck, ChevronLeft, Trash2
 } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
@@ -19,6 +19,7 @@ const HistoryPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [expandedId, setExpandedId] = useState(null);
     const navigate = useNavigate();
 
     const fetchBookings = async (page = 1) => {
@@ -50,9 +51,7 @@ const HistoryPage = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleCancel = async (bookingId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy booking này không? Thao tác không thể hoàn tác.')) return;
-
+    const performCancel = async (bookingId) => {
         try {
             await userService.cancelBooking(bookingId);
             toast.success('Hủy booking thành công!');
@@ -67,6 +66,46 @@ const HistoryPage = () => {
         }
     };
 
+    const handleCancel = (bookingId) => {
+        toast('Xác nhận hủy', {
+            description: 'Bạn có chắc chắn muốn hủy booking này không? Thao tác không thể hoàn tác.',
+            action: {
+                label: 'Hủy',
+                onClick: () => performCancel(bookingId)
+            },
+            cancel: {
+                label: 'Quay lại'
+            },
+            duration: 5000,
+        });
+    };
+
+    const performDelete = async (bookingId) => {
+        try {
+            await userService.deleteBooking(bookingId);
+            toast.success('Xóa lịch sử thành công!');
+            setBookings(prevBookings => prevBookings.filter(b => b.id !== bookingId));
+            setTotalItems(prev => prev - 1);
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Xóa lịch sử thất bại.');
+        }
+    };
+
+    const handleDelete = (bookingId) => {
+        toast('Xác nhận xóa', {
+            description: 'Bạn có chắc chắn muốn xóa lịch sử này không?',
+            action: {
+                label: 'Xóa',
+                onClick: () => performDelete(bookingId)
+            },
+            cancel: {
+                label: 'Hủy'
+            },
+            duration: 5000,
+        });
+    };
+
     const formatPrice = (price) => {
         if (!price && price !== 0) return 'Liên hệ';
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -78,7 +117,7 @@ const HistoryPage = () => {
             case 'confirmed':
             case 'contacted': return { bg: '#DBEAFE', text: '#1E40AF', border: '#BFDBFE', icon: '✅' };
             case 'completed':
-            case 'approved': return { bg: '#D1FAE5', text: '#065F46', border: '#A7F3D0', icon: '🎉' };
+            case 'approved': return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋' };
             case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', icon: '❌' };
             default: return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋' };
         }
@@ -216,148 +255,134 @@ const HistoryPage = () => {
                                 const departureDate = getDepartureDate(b);
                                 const total = computeTotal(b);
                                 const cleanNote = getCleanNote(b);
-                                const totalPeople = passengers.adults + passengers.children + passengers.infants;
+                                const duration = (b.tour?.duration_days && b.tour?.duration_nights)
+                                    ? `${b.tour.duration_days} ngày ${b.tour.duration_nights} đêm`
+                                    : (b.tour?.duration_days ? `${b.tour.duration_days} ngày` : 'Chưa cập nhật');
 
                                 return (
                                     <div
                                         key={b.id}
                                         id={`booking-${b.id}`}
-                                        className="bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
+                                        className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden"
                                     >
-                                        {/* Top bar */}
-                                        <div className="flex items-center justify-between px-6 py-3 bg-gray-50/70 border-b border-gray-100">
-                                            <span className="text-xs font-bold px-3 py-1 bg-gray-200 text-gray-600 rounded-lg uppercase tracking-wider">
+                                        {/* Header */}
+                                        <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-100">
+                                            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
                                                 {b.booking_code}
                                             </span>
+                                            <span
+                                                className="text-xs font-bold px-3 py-1 rounded-md border uppercase tracking-wider"
+                                                style={{ backgroundColor: status.bg, color: status.text, borderColor: status.border }}
+                                            >
+                                                {status.icon} {getStatusText(b.status)}
+                                            </span>
+                                        </div>
+
+                                        {/* Clickable Tour Block */}
+                                        <div
+                                            className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                                            onClick={() => handleTourClick(b)}
+                                        >
+                                            <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-1 mb-2 group-hover:text-primary transition-colors">
+                                                {b.tour?.title || 'Tour ưu đãi chưa cập nhật tên'}
+                                            </h3>
                                             <div className="flex items-center gap-2">
-                                                <Clock className="w-3.5 h-3.5 text-gray-400" />
-                                                <span className="text-xs text-gray-500">
-                                                    {b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'N/A'}
-                                                </span>
-                                                <span
-                                                    className="text-xs font-bold px-3 py-1 rounded-lg border uppercase tracking-wider ml-2"
-                                                    style={{ backgroundColor: status.bg, color: status.text, borderColor: status.border }}
-                                                >
-                                                    {status.icon} {getStatusText(b.status)}
+                                                <Calendar className="w-4 h-4 text-gray-400" />
+                                                <span className="text-sm font-medium text-gray-600">
+                                                    Khởi hành: {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        {/* Main content */}
-                                        <div className="flex flex-col md:flex-row">
-                                            {/* Left: Tour info */}
-                                            <div className="p-6 md:w-[55%] md:border-r border-gray-100">
-                                                {/* 1. Tên tour (click được) */}
+                                        {/* Action Buttons */}
+                                        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-start gap-3 bg-white">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setExpandedId(expandedId === b.id ? null : b.id); }}
+                                                className="px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition-colors text-sm"
+                                            >
+                                                {expandedId === b.id ? 'Thu gọn' : 'Xem chi tiết'}
+                                            </button>
+
+                                            {b.status !== 'cancelled' && b.status !== 'completed' && (
                                                 <button
-                                                    type="button"
-                                                    onClick={() => handleTourClick(b)}
-                                                    className="group text-left w-full mb-4"
-                                                    disabled={!b.tour?.slug && !b.tour?.id}
+                                                    onClick={(e) => { e.stopPropagation(); handleCancel(b.id); }}
+                                                    className="px-4 py-2 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg transition-colors text-sm flex items-center gap-1.5"
                                                 >
-                                                    <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-200">
-                                                        {b.tour?.title || 'Tour ưu đãi chưa cập nhật tên'}
-                                                        {(b.tour?.slug || b.tour?.id) && (
-                                                            <ChevronRight className="inline-block w-5 h-5 ml-1 text-gray-400 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200" />
-                                                        )}
-                                                    </h3>
+                                                    <Ban className="w-4 h-4" /> Hủy
                                                 </button>
+                                            )}
 
-                                                {/* 2. Số người */}
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <Users className="w-4 h-4 text-primary/60" />
-                                                    <span className="text-sm font-medium text-gray-700">
-                                                        Số người: <span className="font-bold text-gray-900">{totalPeople} khách</span>
-                                                    </span>
-                                                </div>
-
-                                                {/* 3. Ngày khởi hành | Người lớn | Trẻ em | Trẻ nhỏ */}
-                                                <div className="bg-gray-50 rounded-xl p-3 mb-4">
-                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Khởi hành</p>
-                                                                <p className="text-sm font-bold text-gray-800">
-                                                                    {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <UserCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Người lớn</p>
-                                                                <p className="text-sm font-bold text-gray-800">{passengers.adults}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Trẻ em</p>
-                                                                <p className="text-sm font-bold text-gray-800">{passengers.children}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Baby className="w-4 h-4 text-pink-500 flex-shrink-0" />
-                                                            <div>
-                                                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Trẻ nhỏ</p>
-                                                                <p className="text-sm font-bold text-gray-800">{passengers.infants}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* 4. Tổng tiền ước tính */}
-                                                <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/10">
-                                                    <DollarSign className="w-5 h-5 text-primary" />
-                                                    <div>
-                                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tổng tiền ước tính</p>
-                                                        <p className="text-xl font-black text-primary">
-                                                            {total !== null ? formatPrice(total) : 'Liên hệ'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Right: Contact info + actions */}
-                                            <div className="p-6 md:w-[45%] flex flex-col justify-between bg-white">
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                            <User className="w-3 h-3" /> Người liên hệ
-                                                        </p>
-                                                        <p className="text-sm font-semibold text-gray-900">{b.customer_name}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Số điện thoại</p>
-                                                        <p className="text-sm font-semibold text-gray-900">{b.customer_phone}</p>
-                                                    </div>
-                                                    <div className="sm:col-span-2">
-                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Email liên hệ</p>
-                                                        <p className="text-sm font-semibold text-gray-900">{b.customer_email}</p>
-                                                    </div>
-                                                    {cleanNote && (
-                                                        <div className="sm:col-span-2 p-3 bg-amber-50 rounded-xl border border-amber-100/50">
-                                                            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                                <FileText className="w-3 h-3" /> Ghi chú từ bạn
-                                                            </p>
-                                                            <p className="text-sm text-gray-800 italic">"{cleanNote}"</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="mt-6 flex justify-end">
-                                                    {b.status === 'pending' && (
-                                                        <button
-                                                            onClick={() => handleCancel(b.id)}
-                                                            className="group inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border-2 border-red-100 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-200 transition-all active:scale-95 focus:ring-4 focus:ring-red-100"
-                                                        >
-                                                            <Ban className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
-                                                            Hủy chuyến đi
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            {(b.status === 'cancelled' || b.status === 'completed') && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }}
+                                                    className="px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition-colors text-sm flex items-center gap-1.5"
+                                                >
+                                                    <Trash2 className="w-4 h-4" /> Xóa
+                                                </button>
+                                            )}
                                         </div>
+
+                                        {/* Booking Detail (Expand) */}
+                                        {expandedId === b.id && (
+                                            <div className="p-6 bg-gray-50 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-300" onClick={(e) => e.stopPropagation()}>
+                                                <h4 className="font-bold text-gray-900 mb-4 inline-flex items-center gap-2">
+                                                    <span className="text-primary text-xs">▼</span> Chi tiết đặt tour
+                                                </h4>
+
+                                                <p className="text-sm font-semibold text-gray-900 mb-6">Tên tour: {b.tour?.title || 'Chưa cập nhật'}</p>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                    {/* Chi tiết tour */}
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📍 Chi tiết tour</p>
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Khởi hành:</span> {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}</p>
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Thời lượng:</span> {duration}</p>
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || 'Không có'}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Hành khách */}
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">👥 Hành khách</p>
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Người lớn:</span> {passengers.adults}</p>
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ em:</span> {passengers.children}</p>
+                                                            <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ nhỏ:</span> {passengers.infants}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Người liên hệ */}
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📞 Người liên hệ</p>
+                                                        <div className="space-y-1">
+                                                            <p className="text-sm text-gray-700">{b.customer_name}</p>
+                                                            <p className="text-sm text-gray-700">{b.customer_phone}</p>
+                                                            <p className="text-sm text-gray-700">{b.customer_email}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Ngày đặt & Tổng tiền */}
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📅 Ngày đặt</p>
+                                                        <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy') : 'N/A'}</p>
+                                                        <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
+                                                            <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1 flex items-center gap-1">💰 Tổng tiền</p>
+                                                            <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : 'Liên hệ'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {cleanNote && (
+                                                    <div className="mt-6 p-4 bg-white rounded-xl border border-gray-100">
+                                                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                            <FileText className="w-3 h-3" /> Ghi chú từ bạn
+                                                        </p>
+                                                        <p className="text-sm text-gray-800 italic">"{cleanNote}"</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

@@ -84,19 +84,31 @@ const parseJsonField = (value) => {
  * GET /api/admin/tours
  */
 const getAllTours = catchAsync(async (req, res) => {
-    const tours = await Tour.findAll({
+    const { page = 1, limit = 10 } = req.query;
+
+    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { count, rows } = await Tour.findAndCountAll({
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'] },
             { model: TourDeparture, as: 'departures', attributes: ['id', 'departure_date', 'price_adult', 'available_seats', 'status'] },
         ],
         order: [['id', 'DESC']],
+        limit: limitNum,
+        offset: offset,
+        distinct: true,
     });
 
     res.status(200).json({
         status: 'success',
-        results: tours.length,
-        data: tours,
+        results: rows.length,
+        totalItems: count,
+        totalPages: Math.ceil(count / limitNum),
+        currentPage: pageNum,
+        data: rows,
     });
 });
 
@@ -530,21 +542,50 @@ const deleteBooking = catchAsync(async (req, res, next) => {
 // VOTE MANAGEMENT
 // ══════════════════════════════════════
 
-const getVotes = catchAsync(async (req, res) => {
-    const { approved } = req.query;
-    const whereClause = {};
-    if (approved !== undefined) whereClause.is_approved = parseInt(approved);
+const getTimeFilter = (time) => {
+    if (time === '7days') {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        return { [Op.gte]: d };
+    }
+    if (time === 'month') {
+        const d = new Date();
+        d.setDate(1);
+        d.setHours(0, 0, 0, 0);
+        return { [Op.gte]: d };
+    }
+    return null;
+};
 
-    const votes = await Vote.findAll({
+const getVotes = catchAsync(async (req, res) => {
+    const { approved, tour_id, time, page = 1, limit = 10 } = req.query;
+    const whereClause = {};
+    
+    if (approved !== undefined) whereClause.is_approved = parseInt(approved);
+    if (tour_id) whereClause.tour_id = tour_id;
+    
+    const timeFilter = getTimeFilter(time);
+    if (timeFilter) whereClause.created_at = timeFilter;
+
+    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10);
+    const offset = (pageNum - 1) * limitNum;
+
+    const { count, rows } = await Vote.findAndCountAll({
         where: whereClause,
-        include: [{ model: Tour, attributes: ['id', 'title'] }],
+        include: [{ model: Tour, attributes: ['id', 'title', 'slug'] }],
         order: [['created_at', 'DESC']],
+        limit: limitNum,
+        offset: offset,
     });
 
     res.status(200).json({
         status: 'success',
-        results: votes.length,
-        data: votes,
+        results: rows.length,
+        totalItems: count,
+        totalPages: Math.ceil(count / limitNum),
+        currentPage: pageNum,
+        data: rows,
     });
 });
 
@@ -553,9 +594,7 @@ const updateVoteStatus = catchAsync(async (req, res, next) => {
     const { is_approved } = req.body;
 
     const vote = await Vote.findByPk(id);
-    if (!vote) {
-        return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
-    }
+    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
 
     await vote.update({ is_approved: is_approved ? 1 : 0 });
 
@@ -563,6 +602,71 @@ const updateVoteStatus = catchAsync(async (req, res, next) => {
         status: 'success',
         message: is_approved ? 'Đã duyệt đánh giá' : 'Đã từ chối đánh giá',
         data: vote,
+    });
+});
+
+const deleteVote = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const vote = await Vote.findByPk(id);
+    
+    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
+
+    await vote.destroy();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Đã xóa đánh giá thành công',
+    });
+});
+
+const getTopRatedTours = catchAsync(async (req, res) => {
+    const { time } = req.query;
+    const whereClause = {};
+
+    const timeFilter = getTimeFilter(time);
+    if (timeFilter) whereClause.created_at = timeFilter;
+
+    // Lấy top 5 tour có xếp hạng trung bình cao nhất (điều kiện có ít nhất 1 rating)
+    const topTours = await Vote.findAll({
+        where: whereClause,
+        attributes: [
+            'tour_id',
+            [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
+            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount']
+        ],
+        include: [{ model: Tour, attributes: ['id', 'title'] }],
+        group: ['tour_id', 'Tour.id', 'Tour.title'],
+        order: [[sequelize.literal('avgRating'), 'DESC'], [sequelize.literal('reviewCount'), 'DESC']],
+        limit: 5
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: topTours,
+    });
+});
+
+const getReviewStats = catchAsync(async (req, res) => {
+    const { tour_id, time } = req.query;
+    const whereClause = {};
+    
+    if (tour_id) whereClause.tour_id = tour_id;
+    const timeFilter = getTimeFilter(time);
+    if (timeFilter) whereClause.created_at = timeFilter;
+
+    const stats = await Vote.findAll({
+        where: whereClause,
+        attributes: [
+            'rating',
+            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'count']
+        ],
+        group: ['rating'],
+        order: [['rating', 'DESC']]
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: stats,
     });
 });
 
@@ -774,4 +878,7 @@ module.exports = {
     createBanner,
     updateBanner,
     deleteBanner,
+    deleteVote,
+    getTopRatedTours,
+    getReviewStats,
 };

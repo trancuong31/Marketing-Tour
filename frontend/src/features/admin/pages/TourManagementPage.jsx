@@ -3,7 +3,8 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { adminService, categoryService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, MapPin, Settings, List, Navigation } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, MapPin, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 
 
@@ -475,6 +476,8 @@ const OptionsTab = ({ control, register }) => {
     );
 };
 
+const ITEMS_PER_PAGE = 10;
+
 // ═══ MAIN PAGE ═══
 const TourManagementPage = () => {
     const [tours, setTours] = useState([]);
@@ -484,6 +487,11 @@ const TourManagementPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [files, setFiles] = useState([]);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     const defaultValues = {
         category_id: '', title: '', summary: '',
@@ -503,19 +511,36 @@ const TourManagementPage = () => {
         setLoading(true);
         try {
             const [toursRes, catsRes] = await Promise.all([
-                adminService.getTours(),
+                adminService.getTours({ page: currentPage, limit: ITEMS_PER_PAGE }),
                 categoryService.getAll(),
             ]);
             setTours(toursRes.data.data || []);
+            setTotalPages(toursRes.data.totalPages || 1);
+            setTotalItems(toursRes.data.totalItems || 0);
             setCategories(catsRes.data.data || []);
         } catch (err) {
             console.error('Lỗi tải dữ liệu:', err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [currentPage]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    const handlePageChange = (page) => {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        setCurrentPage(page);
+    };
+
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+    };
 
     const openCreate = () => {
         reset({
@@ -575,7 +600,7 @@ const TourManagementPage = () => {
             setActiveTab('general');
             setModal({ open: true, tour: detail });
         } catch (err) {
-            alert('Lỗi tải chi tiết tour');
+            toast.error('Lỗi tải chi tiết tour');
         }
     };
 
@@ -609,35 +634,66 @@ const TourManagementPage = () => {
 
             if (modal.tour) {
                 await adminService.updateTour(modal.tour.id, fd);
+                toast.success('Cập nhật tour thành công!');
             } else {
                 await adminService.createTour(fd);
+                toast.success('Thêm tour mới thành công!');
             }
             setModal({ open: false, tour: null });
             await fetchData();
         } catch (err) {
-            alert(err.response?.data?.message || 'Lỗi lưu tour');
+            toast.error(err.response?.data?.message || 'Lỗi lưu tour');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Bạn có chắc muốn xóa tour này?')) return;
+    const performDelete = async (id) => {
         try {
             await adminService.deleteTour(id);
+            toast.success('Xóa tour thành công!');
             await fetchData();
         } catch (err) {
-            alert(err.response?.data?.message || 'Lỗi xóa tour');
+            toast.error(err.response?.data?.message || 'Lỗi xóa tour');
         }
     };
 
-    const handleDeleteImage = async (imageId) => {
+    const handleDelete = (id) => {
+        toast('Xác nhận xóa', {
+            description: 'Bạn có chắc chắn muốn xóa tour này?',
+            action: {
+                label: 'Xóa',
+                onClick: () => performDelete(id)
+            },
+            cancel: {
+                label: 'Hủy'
+            },
+            duration: 5000,
+        });
+    };
+
+    const performDeleteImage = async (imageId) => {
         try {
             await adminService.deleteTourImage(imageId);
+            toast.success('Xóa ảnh thành công!');
             await fetchData();
         } catch {
-            alert('Lỗi xóa ảnh');
+            toast.error('Lỗi xóa ảnh');
         }
+    };
+
+    const handleDeleteImage = (imageId) => {
+        toast('Xác nhận xóa ảnh', {
+            description: 'Bạn có chắc chắn muốn xóa ảnh này?',
+            action: {
+                label: 'Xóa',
+                onClick: () => performDeleteImage(imageId)
+            },
+            cancel: {
+                label: 'Hủy'
+            },
+            duration: 5000,
+        });
     };
 
     // Lấy giá thấp nhất từ departures
@@ -735,6 +791,48 @@ const TourManagementPage = () => {
                         </tbody>
                     </table>
                     {tours.length === 0 && <div className="text-center py-12 text-text-muted">Chưa có tour nào</div>}
+                </div>
+            )}
+
+            {/* Pagination Logic */}
+            {!loading && totalPages > 1 && (
+                <div className="mt-8 flex flex-col items-center">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="hidden sm:inline">Trước</span>
+                        </button>
+
+                        {getPageNumbers().map(page => (
+                            <button
+                                key={page}
+                                onClick={() => handlePageChange(page)}
+                                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition ${
+                                    page === currentPage
+                                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
+                                        : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
+                                }`}
+                            >
+                                {page}
+                            </button>
+                        ))}
+
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="hidden sm:inline">Sau</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <p className="mt-3 text-xs text-text-muted">
+                        Trang {currentPage} / {totalPages} • Tổng {totalItems} tour
+                    </p>
                 </div>
             )}
 

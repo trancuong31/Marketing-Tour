@@ -47,7 +47,7 @@ export const adminService = {
     login: (data) => api.post('/admin/login', data),
 
     // Tours
-    getTours: () => api.get('/admin/tours'),
+    getTours: (params) => api.get('/admin/tours', { params }),
     getTourById: (id) => api.get(`/admin/tours/${id}`),
     createTour: (formData) => api.post('/admin/tours', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
     updateTour: (id, formData) => api.put(`/admin/tours/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
@@ -60,8 +60,11 @@ export const adminService = {
     deleteBooking: (id) => api.delete(`/admin/bookings/${id}`),
 
     // Votes
-    getVotes: (approved) => api.get('/admin/votes', { params: approved !== undefined ? { approved } : {} }),
+    getVotes: (params) => api.get('/admin/votes', { params }), // updated to accept full params
     updateVote: (id, data) => api.put(`/admin/votes/${id}`, data),
+    deleteVote: (id) => api.delete(`/admin/votes/${id}`),
+    getTopRatedTours: (params) => api.get('/admin/votes/top', { params }),
+    getReviewStats: (params) => api.get('/admin/votes/stats', { params }),
 
     // Guides
     getGuides: () => api.get('/admin/guides'),

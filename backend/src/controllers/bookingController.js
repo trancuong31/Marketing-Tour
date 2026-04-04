@@ -166,8 +166,9 @@ const getMyBookings = catchAsync(async (req, res) => {
     const { count, rows: bookings } = await Booking.findAndCountAll({
         where: { user_id: userId },
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'status'] },
+            { model: Tour, attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'] },
             { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
+            { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
             { model: BookingOption, as: 'bookingOptions' },
         ],
         order: [['created_at', 'DESC']],
@@ -200,11 +201,16 @@ const getMyBookings = catchAsync(async (req, res) => {
             title: b.Tour.title,
             slug: b.Tour.slug,
             status: b.Tour.status,
+            duration_days: b.Tour.duration_days,
+            duration_nights: b.Tour.duration_nights,
         } : null,
         departure: b.departure ? {
             id: b.departure.id,
             departure_date: b.departure.departure_date,
             price_adult: b.departure.price_adult,
+        } : null,
+        pickupLocation: b.pickupLocation ? {
+            location_name: b.pickupLocation.location_name
         } : null,
         bookingOptions: b.bookingOptions || [],
     }));
@@ -236,8 +242,25 @@ const cancelBooking = catchAsync(async (req, res) => {
     });
 });
 
+// --------- Xóa booking ---------
+const deleteMyBooking = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findOne({ where: { id: bookingId, user_id: userId } });
+    if (!booking) throw new AppError('Booking không tồn tại', HTTP_CODES.NOT_FOUND);
+
+    await booking.destroy();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Xóa booking thành công',
+    });
+});
+
 module.exports = {
     createBooking,
     getMyBookings,
     cancelBooking,
+    deleteMyBooking,
 };
