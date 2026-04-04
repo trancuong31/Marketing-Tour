@@ -59,7 +59,7 @@ const SearchBar = () => {
     return (
         <form
             onSubmit={handleSearch}
-            className="w-full bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-white/50 flex flex-col lg:flex-row items-stretch gap-1"
+            className="w-full bg-white/95 backdrop-blur-xl rounded-sm sm:rounded-xl shadow-2xl border border-white/50 flex flex-col lg:flex-row items-stretch gap-1"
         >
             {/* Điểm đến */}
             <div className="group flex-1 flex items-center gap-3 px-4 py-3.5 rounded-xl sm:rounded-2xl hover:bg-primary/5 transition-colors duration-200 border-b border-slate-100 lg:border-b-0">

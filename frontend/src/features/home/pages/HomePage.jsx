@@ -135,7 +135,7 @@ const HomePage = () => {
                             <div className="flex flex-wrap justify-center xl:justify-start gap-4 pointer-events-auto">
                                 <Link
                                     to="/tours/noi-dia"
-                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-primary-light/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl hover:-translate-y-1 duration-300 backdrop-blur-sm"
+                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-primary-light/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl duration-300 backdrop-blur-sm"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <MapPin className="w-4 h-4" />
@@ -144,7 +144,7 @@ const HomePage = () => {
                                 </Link>
                                 <Link
                                     to="/tours/quoc-te"
-                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-secondary/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl hover:-translate-y-1 duration-300 backdrop-blur-sm"
+                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-secondary/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl duration-300 backdrop-blur-sm"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <Globe2 className="w-4 h-4" />
@@ -163,7 +163,7 @@ const HomePage = () => {
                                     handleBannerClick(heroBanners[heroIndex]);
                                 }}
                             >
-                                <div className="p-2 2xl:p-8 rounded-xl shadow-2xl transition duration-500 backdrop-blur-md bg-black/20 border border-white/10 hover:bg-black/30 hover:-translate-y-2 hover:shadow-primary/20 hover:border-primary/50">
+                                <div className="p-2 2xl:p-8 rounded-xl shadow-2xl transition duration-500 backdrop-blur-md bg-black/20 border border-white/10">
                                     <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-3 flex flex-col gap-1.5">
                                         <span className="text-lg normal-case font-medium text-white/80">Giá chỉ từ</span> 
                                         <span className="text-[2.5rem] 2xl:text-5xl font-extrabold text-orange-400 drop-shadow-xl leading-none">
