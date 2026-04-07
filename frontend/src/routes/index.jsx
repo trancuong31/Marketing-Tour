@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import AdminRoute from './AdminRoute';
+import PrivateRoute from './PrivateRoute';
 
 // Client pages
 const HomePage = lazy(() => import('../features/home/pages/HomePage'));
@@ -39,9 +40,9 @@ const AppRoutes = () => {
                 <Route path="/tours/noi-dia" element={<TourListPage />} />
                 <Route path="/tours/quoc-te" element={<TourListPage />} />
                 <Route path="/tours/:slug" element={<TourDetailPage />} />
-                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
                 <Route path="/lookup-booking" element={<LookupBookingPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 <Route path="/guides" element={<GuidePage />} />
                 <Route path="/guides/:slug" element={<GuidePage />} />
 

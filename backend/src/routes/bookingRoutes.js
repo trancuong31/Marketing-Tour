@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, getMyBookings, cancelBooking, deleteMyBooking } = require('../controllers/bookingController');
+const { createBooking, getMyBookings, cancelBooking, deleteMyBooking, lookupBooking } = require('../controllers/bookingController');
 const { authenticate } = require('../middlewares/auth');
 
 // Tạo booking (guest hoặc login)
 router.post('/', createBooking);
+
+// Tra cứu booking (Public)
+router.get('/lookup', lookupBooking);
 
 // Lấy booking của user login + chi tiết tour
 router.get('/my', authenticate, getMyBookings);
