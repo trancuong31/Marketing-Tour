@@ -43,8 +43,8 @@ const ClientLayout = ({ children }) => {
                             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
                                 <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-2xl font-bold text-primary">
-                                Kỳ nghỉ tuyệt vời
+                            <span className="text-3xl text-primary font-pacifico">
+                                <i>Kỳ nghỉ tuyệt vời</i>
                             </span>
                         </Link>
 

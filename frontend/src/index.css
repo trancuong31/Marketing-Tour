@@ -33,7 +33,9 @@ body {
     @apply bg-background text-text font-sans antialiased;
     min-height: 100vh;
 }
-
+@theme {
+  --font-pacifico: 'Pacifico', cursive;
+}
 .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
