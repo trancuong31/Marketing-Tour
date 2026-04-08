@@ -84,13 +84,19 @@ const parseJsonField = (value) => {
  * GET /api/admin/tours
  */
 const getAllTours = catchAsync(async (req, res) => {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search } = req.query;
 
     const limitNum = parseInt(limit, 10);
     const pageNum = parseInt(page, 10);
     const offset = (pageNum - 1) * limitNum;
 
+    const whereClause = {};
+    if (search && search.trim()) {
+        whereClause.title = { [Op.like]: `%${search.trim()}%` };
+    }
+
     const { count, rows } = await Tour.findAndCountAll({
+        where: whereClause,
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'] },
@@ -543,6 +549,8 @@ const deleteBooking = catchAsync(async (req, res, next) => {
 // ══════════════════════════════════════
 
 const getTimeFilter = (time) => {
+    if (!time) return null;
+
     if (time === '7days') {
         const d = new Date();
         d.setDate(d.getDate() - 7);
@@ -554,6 +562,52 @@ const getTimeFilter = (time) => {
         d.setHours(0, 0, 0, 0);
         return { [Op.gte]: d };
     }
+    if (time === 'quarter') {
+        const d = new Date();
+        const currentMonth = d.getMonth();
+        const startOfQuarter = currentMonth - (currentMonth % 3);
+        d.setMonth(startOfQuarter, 1);
+        d.setHours(0, 0, 0, 0);
+        return { [Op.gte]: d };
+    }
+    if (time === 'year') {
+        const d = new Date();
+        d.setMonth(0, 1);
+        d.setHours(0, 0, 0, 0);
+        return { [Op.gte]: d };
+    }
+
+    // Dynamic exact year (e.g. year_2024)
+    if (time.startsWith('year_')) {
+        const year = parseInt(time.split('_')[1], 10);
+        if (!isNaN(year)) {
+            const start = new Date(year, 0, 1);
+            const end = new Date(year + 1, 0, 1);
+            return {
+                [Op.gte]: start,
+                [Op.lt]: end
+            }; 
+        }
+    }
+
+    // Dynamic exact quarter (e.g. q1_2024)
+    if (time.startsWith('q')) {
+        const parts = time.split('_');
+        const q = parseInt(parts[0].replace('q', ''), 10);
+        const year = parseInt(parts[1], 10);
+
+        if (!isNaN(q) && !isNaN(year) && q >= 1 && q <= 4) {
+            const startMonth = (q - 1) * 3;
+            // new Date correctly rolls over if endMonth is 12 -> Jan next year
+            const start = new Date(year, startMonth, 1);
+            const end = new Date(year, startMonth + 3, 1); 
+            return {
+                [Op.gte]: start,
+                [Op.lt]: end
+            };
+        }
+    }
+
     return null;
 };
 
