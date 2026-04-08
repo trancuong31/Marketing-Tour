@@ -22,7 +22,8 @@ export const tourService = {
 // ══════════════════════════════════════
 export const bookingService = {
     create: (data) => api.post('/bookings', data),
-    getHistory: (params) => api.get('/bookings/history', { params }),
+    getHistory: (params) => api.get('/bookings/my', { params }), // For logged in users
+    lookup: (params) => api.get('/bookings/lookup', { params }), // For lookup public guest
 };
 
 // ══════════════════════════════════════

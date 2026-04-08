@@ -1,17 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { adminService } from '@/services/tourService';
-import { Loader2, Trash2, Calendar, Map, Star, MessageSquare, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Loader2, Trash2, Calendar, Map, Star, MessageSquare, ChevronLeft, ChevronRight, Filter, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { format } from 'date-fns';
+import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
+import { useThemeStore } from '@/store';
 import { vi } from 'date-fns/locale';
 
 export default function ReviewManagementPage() {
     const [selectedTour, setSelectedTour] = useState('');
+    const [selectedTourLabel, setSelectedTourLabel] = useState('');
     const [selectedTime, setSelectedTime] = useState('');
     const [tours, setTours] = useState([]);
+    const [toursLoading, setToursLoading] = useState(false);
+    const [tourSearchTerm, setTourSearchTerm] = useState('');
+    const [showTourSuggestions, setShowTourSuggestions] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const tourSearchRef = useRef(null);
+    const suggestionsRef = useRef(null);
+    const debounceRef = useRef(null);
+    const { theme } = useThemeStore();
+    const isDark = theme === 'dark';
     
     // Pagination for table
     const [currentPage, setCurrentPage] = useState(1);
@@ -24,17 +36,145 @@ export default function ReviewManagementPage() {
     
     const [loading, setLoading] = useState(true);
 
-    // Fetch dropdown list of tours
-    const fetchToursDropdown = async () => {
+    // Time filter options for CustomSelect - Dynamically generated for last few years
+    const timeOptions = useMemo(() => {
+        const options = [
+            { value: '', label: 'Tất cả thời gian' },
+            { value: '7days', label: '7 ngày qua' },
+            { value: 'month', label: 'Tháng này' },
+            { value: 'quarter', label: 'Quý này' },
+            { value: 'year', label: 'Năm nay' },
+        ];
+
+        const d = new Date();
+        const currentYear = d.getFullYear();
+        const currentQuarter = Math.floor(d.getMonth() / 3) + 1;
+
+        // Add remaining quarters for the current year
+        for (let q = currentQuarter - 1; q >= 1; q--) {
+            options.push({ value: `q${q}_${currentYear}`, label: `Quý ${q}/${currentYear}` });
+        }
+
+        // Add the previous 2 years and their quarters
+        for (let y = currentYear - 1; y >= currentYear - 2; y--) {
+            options.push({ value: `year_${y}`, label: `Nguyên năm ${y}` });
+            options.push({ value: `q4_${y}`, label: `Quý 4/${y}` });
+            options.push({ value: `q3_${y}`, label: `Quý 3/${y}` });
+            options.push({ value: `q2_${y}`, label: `Quý 2/${y}` });
+            options.push({ value: `q1_${y}`, label: `Quý 1/${y}` });
+        }
+        return options;
+    }, []);
+
+    // Fetch tours with search term (debounced)
+    const fetchToursDropdown = useCallback(async (searchTerm = '') => {
+        setToursLoading(true);
         try {
-            const res = await adminService.getTours({ limit: 1000 }); // Get max
+            const params = { limit: 15 };
+            if (searchTerm.trim()) {
+                params.search = searchTerm.trim();
+            }
+            const res = await adminService.getTours(params);
             if (res.data?.data) {
                 setTours(res.data.data);
             }
         } catch (error) {
             console.error('Error fetching tours:', error);
+        } finally {
+            setToursLoading(false);
         }
-    };
+    }, []);
+
+    // Handle tour search input change with debounce
+    const handleTourInputChange = useCallback((value) => {
+        setTourSearchTerm(value);
+        setShowTourSuggestions(true);
+        setHighlightedIndex(-1);
+        
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            fetchToursDropdown(value);
+        }, 400);
+    }, [fetchToursDropdown]);
+
+    // Select a tour from suggestions
+    const handleSelectTour = useCallback((tour) => {
+        setSelectedTour(String(tour.id));
+        setSelectedTourLabel(tour.title);
+        setTourSearchTerm(tour.title);
+        setShowTourSuggestions(false);
+        setCurrentPage(1);
+    }, []);
+
+    // Clear tour selection
+    const handleClearTour = useCallback(() => {
+        setSelectedTour('');
+        setSelectedTourLabel('');
+        setTourSearchTerm('');
+        setShowTourSuggestions(false);
+        setCurrentPage(1);
+        fetchToursDropdown('');
+    }, [fetchToursDropdown]);
+
+    // Keyboard navigation for suggestions
+    const handleTourKeyDown = useCallback((e) => {
+        if (!showTourSuggestions || tours.length === 0) {
+            if (e.key === 'ArrowDown') {
+                setShowTourSuggestions(true);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setHighlightedIndex(prev => prev < tours.length - 1 ? prev + 1 : prev);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (highlightedIndex >= 0 && tours[highlightedIndex]) {
+                    handleSelectTour(tours[highlightedIndex]);
+                }
+                break;
+            case 'Escape':
+                setShowTourSuggestions(false);
+                break;
+            default:
+                break;
+        }
+    }, [showTourSuggestions, tours, highlightedIndex, handleSelectTour]);
+
+    // Scroll highlighted item into view
+    useEffect(() => {
+        if (highlightedIndex >= 0 && suggestionsRef.current) {
+            const items = suggestionsRef.current.querySelectorAll('[data-suggestion]');
+            if (items[highlightedIndex]) {
+                items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [highlightedIndex]);
+
+    // Close suggestions on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (tourSearchRef.current && !tourSearchRef.current.contains(e.target)) {
+                setShowTourSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Cleanup debounce timer
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, []);
 
     // Main fetch data logic
     const fetchData = useCallback(async () => {
@@ -71,8 +211,8 @@ export default function ReviewManagementPage() {
     }, [selectedTour, selectedTime, currentPage]);
 
     useEffect(() => {
-        fetchToursDropdown();
-    }, []);
+        fetchToursDropdown(); // Load initial tours
+    }, [fetchToursDropdown]);
 
     useEffect(() => {
         fetchData();
@@ -150,34 +290,120 @@ export default function ReviewManagementPage() {
                     <span className="font-semibold text-text">Bộ Lọc</span>
                 </div>
                 
-                <div className="flex-1 flex flex-wrap gap-4 max-w-2xl">
-                    {/* Tour Filter */}
-                    <div className="relative flex-1 min-w-[200px]">
-                        <Map className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                        <select
-                            value={selectedTour}
-                            onChange={(e) => { setSelectedTour(e.target.value); setCurrentPage(1); }}
-                            className="w-full pl-9 pr-4 py-2 bg-surface-alt border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none"
-                        >
-                            <option value="">Tất cả Tour hệ thống</option>
-                            {tours.map(t => (
-                                <option key={t.id} value={t.id}>{t.title}</option>
-                            ))}
-                        </select>
+                <div className="flex-1 flex flex-wrap gap-4 max-w-3xl">
+                    {/* Tour Filter — Autocomplete Search Input */}
+                    <div ref={tourSearchRef} className="flex-1 min-w-[300px] relative">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                            <input
+                                type="text"
+                                value={tourSearchTerm}
+                                onChange={(e) => handleTourInputChange(e.target.value)}
+                                onFocus={() => { setShowTourSuggestions(true); if (!tourSearchTerm) fetchToursDropdown(''); }}
+                                onKeyDown={handleTourKeyDown}
+                                placeholder="Nhập tên tour để tìm kiếm..."
+                                className={`
+                                    w-full pl-9 pr-10 py-2 rounded-lg border text-sm
+                                    transition-all duration-200 ease-in-out bg-transparent text-text
+                                    border-border hover:border-primary/40
+                                    focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50
+                                    placeholder:text-text-muted
+                                    ${selectedTour ? 'border-primary/50 bg-primary/5' : ''}
+                                `}
+                            />
+                            {/* Loading or Clear button */}
+                            {toursLoading ? (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                </div>
+                            ) : (tourSearchTerm || selectedTour) ? (
+                                <button
+                                    type="button"
+                                    onClick={handleClearTour}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                                    title="Xóa bộ lọc tour"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            ) : null}
+                        </div>
+
+                        {/* Selected tour badge */}
+                        {selectedTour && selectedTourLabel && (
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                                    <Map className="w-3 h-3" />
+                                    {selectedTourLabel}
+                                    <button onClick={handleClearTour} className="ml-0.5 hover:text-error transition-colors">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Suggestions Dropdown */}
+                        {showTourSuggestions && (
+                            <div className="absolute z-[9999] w-full mt-1.5 rounded-xl shadow-lg overflow-hidden bg-surface border border-border animate-in fade-in slide-in-from-top-1 duration-200">
+                                <div
+                                    ref={suggestionsRef}
+                                    className="overflow-y-auto max-h-64 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
+                                >
+                                    {toursLoading ? (
+                                        <div className="px-3 py-6 text-center text-sm text-text-muted flex flex-col items-center gap-2">
+                                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                            <span>Đang tìm kiếm tour...</span>
+                                        </div>
+                                    ) : tours.length > 0 ? (
+                                        tours.map((tour, index) => {
+                                            const isSelected = selectedTour === String(tour.id);
+                                            const isHighlighted = highlightedIndex === index;
+                                            return (
+                                                <button
+                                                    key={tour.id}
+                                                    type="button"
+                                                    data-suggestion
+                                                    onClick={() => handleSelectTour(tour)}
+                                                    onMouseEnter={() => setHighlightedIndex(index)}
+                                                    className={`
+                                                        w-full px-3 py-2.5 text-left text-sm transition-colors duration-150 flex items-center gap-2
+                                                        ${isSelected
+                                                            ? 'bg-primary text-white font-medium'
+                                                            : isHighlighted
+                                                                ? (isDark ? 'bg-surface-hover text-text' : 'bg-surface-alt text-text')
+                                                                : 'text-text-secondary hover:bg-surface-alt'
+                                                        }
+                                                    `}
+                                                >
+                                                    <Map className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-white' : 'text-text-muted'}`} />
+                                                    <span className="truncate">
+                                                        {tourSearchTerm.trim() ? highlightText(tour.title, tourSearchTerm) : tour.title}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })
+                                    ) : tourSearchTerm.trim() ? (
+                                        <div className="px-3 py-6 text-center text-sm text-text-muted">
+                                            Không tìm thấy tour nào cho "{tourSearchTerm}"
+                                        </div>
+                                    ) : (
+                                        <div className="px-3 py-4 text-center text-sm text-text-muted">
+                                            Nhập từ khóa để tìm tour...
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Time Filter */}
-                    <div className="relative min-w-[160px]">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                        <select
+                    {/* Time Filter — CustomSelect */}
+                    <div className="min-w-[180px]">
+                        <CustomSelect
                             value={selectedTime}
-                            onChange={(e) => { setSelectedTime(e.target.value); setCurrentPage(1); }}
-                            className="w-full pl-9 pr-4 py-2 bg-surface-alt border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/30 outline-none"
-                        >
-                            <option value="">Tất cả thời gian</option>
-                            <option value="7days">7 ngày qua</option>
-                            <option value="month">Tháng này</option>
-                        </select>
+                            onChange={(val) => { setSelectedTime(val); setCurrentPage(1); }}
+                            options={timeOptions}
+                            placeholder="Tất cả thời gian"
+                            icon={<Calendar className="w-4 h-4" />}
+                        />
                     </div>
                 </div>
             </div>
@@ -354,5 +580,25 @@ export default function ReviewManagementPage() {
                 </>
             )}
         </AdminLayout>
+    );
+}
+
+/**
+ * Highlight matching text segments in tour name
+ */
+function highlightText(text, term) {
+    if (!term.trim()) return text;
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    return (
+        <span>
+            {parts.map((part, i) =>
+                regex.test(part) ? (
+                    <mark key={i} className="bg-primary/20 text-inherit rounded-sm px-0.5">{part}</mark>
+                ) : (
+                    <span key={i}>{part}</span>
+                )
+            )}
+        </span>
     );
 }

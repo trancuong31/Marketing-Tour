@@ -171,7 +171,7 @@ const getMyBookings = catchAsync(async (req, res) => {
             { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
             { model: BookingOption, as: 'bookingOptions' },
         ],
-        order: [['created_at', 'DESC']],
+        order: [[sequelize.col('Booking.created_at'), 'DESC']],
         limit,
         offset,
     });
@@ -218,6 +218,9 @@ const getMyBookings = catchAsync(async (req, res) => {
     res.status(200).json({
         status: 'success',
         results: data.length,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        totalItems: count,
         data,
     });
 });
@@ -258,9 +261,78 @@ const deleteMyBooking = catchAsync(async (req, res) => {
     });
 });
 
+// --------- Tra cứu booking (Public) ---------
+const lookupBooking = catchAsync(async (req, res, next) => {
+    const { email, phone } = req.query;
+
+    if (!email || !phone) {
+        return next(new AppError('Vui lòng cung cấp đầy đủ email và số điện thoại.', HTTP_CODES.BAD_REQUEST));
+    }
+
+    const bookings = await Booking.findAll({
+        where: {
+            customer_email: email,
+            customer_phone: phone,
+        },
+        include: [
+            { model: Tour, attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'] },
+            { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
+            { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
+            { model: BookingOption, as: 'bookingOptions' },
+        ],
+        order: [[sequelize.col('Booking.created_at'), 'DESC']],
+    });
+
+    const data = bookings.map(b => ({
+        id: b.id,
+        booking_code: b.booking_code,
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_email: b.customer_email,
+        adult_qty: b.adult_qty,
+        child_qty: b.child_qty,
+        infant_qty: b.infant_qty,
+        total_price: b.total_price,
+        customer_note: b.customer_note,
+        status: b.status,
+        created_at: b.created_at,
+        
+        // Legacy fields mapping
+        adult_count: b.adult_qty,
+        child_count: b.child_qty,
+        infant_count: b.infant_qty,
+        departure_date: b.departure?.departure_date || null,
+
+        tour: b.Tour ? {
+            id: b.Tour.id,
+            title: b.Tour.title,
+            slug: b.Tour.slug,
+            status: b.Tour.status,
+            duration_days: b.Tour.duration_days,
+            duration_nights: b.Tour.duration_nights,
+        } : null,
+        departure: b.departure ? {
+            id: b.departure.id,
+            departure_date: b.departure.departure_date,
+            price_adult: b.departure.price_adult,
+        } : null,
+        pickupLocation: b.pickupLocation ? {
+            location_name: b.pickupLocation.location_name
+        } : null,
+        bookingOptions: b.bookingOptions || [],
+    }));
+
+    res.status(200).json({
+        status: 'success',
+        results: data.length,
+        data,
+    });
+});
+
 module.exports = {
     createBooking,
     getMyBookings,
     cancelBooking,
     deleteMyBooking,
+    lookupBooking,
 };

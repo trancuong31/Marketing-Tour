@@ -51,7 +51,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder }) => {
             )}
         </div>
     );
-};  
+};
 
 // ═══ TAB: THÔNG TIN CHUNG ═══
 const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage }) => (
@@ -767,11 +767,10 @@ const TourManagementPage = () => {
                                                 : tour.duration_days ? `${tour.duration_days} ngày` : '—'}
                                         </td>
                                         <td className="px-4 py-3 hidden sm:table-cell">
-                                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-                                                tour.status === 'active' ? 'bg-success/10 text-success' :
-                                                tour.status === 'hidden' ? 'bg-warning/10 text-warning' :
-                                                'bg-error/10 text-error'
-                                            }`}>
+                                            <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${tour.status === 'active' ? 'bg-success/10 text-success' :
+                                                    tour.status === 'hidden' ? 'bg-warning/10 text-warning' :
+                                                        'bg-error/10 text-error'
+                                                }`}>
                                                 {tour.status === 'active' ? 'Hoạt động' : tour.status === 'hidden' ? 'Ẩn' : 'Hết chỗ'}
                                             </span>
                                         </td>
@@ -811,11 +810,10 @@ const TourManagementPage = () => {
                             <button
                                 key={page}
                                 onClick={() => handlePageChange(page)}
-                                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition ${
-                                    page === currentPage
+                                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition ${page === currentPage
                                         ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
                                         : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
-                                }`}
+                                    }`}
                             >
                                 {page}
                             </button>
@@ -858,11 +856,10 @@ const TourManagementPage = () => {
                                         key={tab.key}
                                         type="button"
                                         onClick={() => setActiveTab(tab.key)}
-                                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${
-                                            activeTab === tab.key
+                                        className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-t-lg transition whitespace-nowrap ${activeTab === tab.key
                                                 ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
                                                 : 'text-text-muted hover:text-text hover:bg-surface-alt'
-                                        }`}
+                                            }`}
                                     >
                                         <Icon className="w-3.5 h-3.5" />
                                         {tab.label}
