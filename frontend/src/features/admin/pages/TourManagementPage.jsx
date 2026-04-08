@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { adminService, categoryService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
-import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, MapPin, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 
@@ -803,7 +803,6 @@ const TourManagementPage = () => {
                             className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
-                            <span className="hidden sm:inline">Trước</span>
                         </button>
 
                         {getPageNumbers().map(page => (
@@ -824,7 +823,6 @@ const TourManagementPage = () => {
                             disabled={currentPage === totalPages}
                             className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <span className="hidden sm:inline">Sau</span>
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
