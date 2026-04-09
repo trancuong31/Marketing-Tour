@@ -26,14 +26,15 @@ const typeConfig = {
     },
 };
 
+// 💡 Đổi mảng BUDGET_OPTIONS sang dùng value khớp với backend API
 const BUDGET_OPTIONS = [
-    { label: 'Dưới 5 triệu', min: 0, max: 5000000 },
-    { label: '5 - 10 triệu', min: 5000000, max: 10000000 },
-    { label: '10 - 20 triệu', min: 10000000, max: 20000000 },
-    { label: 'Trên 20 triệu', min: 20000000, max: Infinity },
+    { label: 'Dưới 5 triệu', value: 'under_5M' },
+    { label: '5 - 10 triệu', value: '5M_10M' },
+    { label: '10 - 20 triệu', value: '10M_20M' },
+    { label: 'Trên 20 triệu', value: 'over_20M' },
 ];
 
-const TRANSPORTS = ['Xe', 'Máy bay'];
+const TRANSPORTS = ['Xe máy lạnh', 'Máy bay']; // Tùy chỉnh theo data thực tế
 
 /* ═══ Reusable: chip toggle ═══ */
 const ChipToggle = ({ label, active, onClick }) => (
@@ -73,27 +74,54 @@ const SelectField = ({ label, value, onChange, options }) => (
 const TourListPage = () => {
     const location = useLocation();
     const type = location.pathname.includes('quoc-te') ? 'quoc-te' : 'noi-dia';
-    const [tours, setTours] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showMobileFilter, setShowMobileFilter] = useState(false);
-
     const config = typeConfig[type];
     const Icon = config.icon;
 
+    // 💡 Đọc params từ URL (do SearchBar ở trang chủ truyền sang)
+    const searchParams = new URLSearchParams(location.search);
+    const initialQ = searchParams.get('q') || '';
+    const initialDate = searchParams.get('date') || '';
+    const initialBudget = searchParams.get('budget') || '';
+
+    const [tours, setTours] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showMobileFilter, setShowMobileFilter] = useState(false);
+    const [departurePoints, setDeparturePoints] = useState([]); // List điểm đón
+
     // Filter state
     const [filters, setFilters] = useState({
-        budget: null,        // index in BUDGET_OPTIONS or null
-        departure: '',       // departure_point string
-        destination: '',     // destination string (placeholder — tours may not have this field)
-        departureDate: '',   // ISO date string
-        transport: null,     // string from TRANSPORTS or null
+        budget: initialBudget || '', 
+        departureDate: initialDate || '',
+        departure: '', 
+        destination: '', 
+        transport: '', 
     });
+
+    useEffect(() => {
+        const fetchPickupLocations = async () => {
+            try {
+                const res = await tourService.getPickupLocations();
+                if (res.data?.data) {
+                    setDeparturePoints(res.data.data);
+                }
+            } catch (err) {
+                console.error('Lỗi tải điểm đón:', err);
+            }
+        };
+        fetchPickupLocations();
+    }, []);
 
     useEffect(() => {
         const fetchTours = async () => {
             setLoading(true);
             try {
-                const res = await tourService.getAll(config.apiType);
+                const params = {
+                    type: config.apiType,
+                    q: initialQ, 
+                };
+                if (filters.budget) params.budget = filters.budget;
+                if (filters.departureDate) params.date = filters.departureDate;
+                const res = await tourService.getAll(params);
                 setTours(res.data.data || []);
             } catch (err) {
                 console.error('Lỗi tải tour:', err);
@@ -102,49 +130,46 @@ const TourListPage = () => {
             }
         };
         fetchTours();
-        // Reset filters when type changes
-        setFilters({ budget: null, departure: '', destination: '', departureDate: '', tourLine: null, transport: null });
-    }, [type]);
+    }, [config.apiType, initialQ, filters.budget, filters.departureDate]);
 
-    // Không còn departure_point trong tours, bỏ filter này
-    const departurePoints = [];
 
-    // Extract unique destinations (could be category name or destination field)
+    // Extract unique destinations cho dropdown
     const destinations = useMemo(() => {
-        const set = new Set(tours.map(t => t.destination || t.Category?.name).filter(Boolean));
+        const set = new Set(tours.map(t => t.Category?.name).filter(Boolean));
         return [...set].sort();
     }, [tours]);
 
-    // Apply filters — giá lấy từ departures (MIN price_adult)
+    // 💡 3. Frontend lọc các tiêu chí còn lại
     const filteredTours = useMemo(() => {
         return tours.filter(tour => {
-            // Budget — dùng giá thấp nhất từ departures
-            if (filters.budget !== null) {
-                const opt = BUDGET_OPTIONS[filters.budget];
-                const departures = tour.departures || [];
-                if (departures.length === 0) return false;
-                const minPrice = Math.min(...departures.map(d => parseFloat(d.price_adult)));
-                if (minPrice < opt.min || minPrice >= opt.max) return false;
+            // Lọc theo điểm đón (Pickup Location)
+            if (filters.departure) {
+                const hasLocation = tour.pickupLocations?.some(loc => loc.location_name === filters.departure);
+                if (!hasLocation) return false;
             }
-            // Destination
+
+            // Lọc theo Điểm đến (Dựa vào category name tạm thời)
             if (filters.destination) {
-                const dest = tour.destination || tour.Category?.name || '';
+                const dest = tour.Category?.name || '';
                 if (dest !== filters.destination) return false;
             }
+
+            // Lọc theo phương tiện (Nếu DB bạn có trường lưu phương tiện thì thêm logic vào đây)
+            // if (filters.transport) { ... }
+
             return true;
         });
     }, [tours, filters]);
 
-    const hasActiveFilter = filters.budget !== null || filters.departure || filters.destination || filters.departureDate || filters.tourLine !== null || filters.transport !== null;
+    const hasActiveFilter = filters.budget !== '' || filters.departure !== '' || filters.destination !== '' || filters.departureDate !== '' || filters.transport !== '';
 
     const clearFilters = () => {
-        setFilters({ budget: null, departure: '', destination: '', departureDate: '', tourLine: null, transport: null });
+        setFilters({ budget: '', departure: '', destination: '', departureDate: '', transport: '' });
     };
 
-    /* ═══ Filter sidebar content (shared mobile/desktop) ═══ */
+    /* ═══ Filter sidebar content ═══ */
     const FilterContent = () => (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-[#1a3c6e] uppercase tracking-wide flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" />
@@ -161,18 +186,18 @@ const TourListPage = () => {
             <div>
                 <p className="text-sm font-bold text-text mb-2">Ngân sách</p>
                 <div className="flex flex-wrap gap-2">
-                    {BUDGET_OPTIONS.map((opt, i) => (
+                    {BUDGET_OPTIONS.map((opt) => (
                         <ChipToggle
-                            key={i}
+                            key={opt.value}
                             label={opt.label}
-                            active={filters.budget === i}
-                            onClick={() => setFilters(f => ({ ...f, budget: f.budget === i ? null : i }))}
+                            active={filters.budget === opt.value}
+                            onClick={() => setFilters(f => ({ ...f, budget: f.budget === opt.value ? '' : opt.value }))}
                         />
                     ))}
                 </div>
             </div>
 
-            {/* Điểm khởi hành */}
+            {/* Điểm khởi hành (Fetch từ Backend) */}
             <SelectField
                 label="Điểm khởi hành"
                 value={filters.departure}
@@ -198,6 +223,7 @@ const TourListPage = () => {
                     className="w-full px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
                 />
             </div>
+
             {/* Phương tiện */}
             <div>
                 <p className="text-sm font-bold text-text mb-2">Phương tiện</p>
@@ -207,13 +233,12 @@ const TourListPage = () => {
                             key={t}
                             label={t}
                             active={filters.transport === t}
-                            onClick={() => setFilters(f => ({ ...f, transport: f.transport === t ? null : t }))}
+                            onClick={() => setFilters(f => ({ ...f, transport: f.transport === t ? '' : t }))}
                         />
                     ))}
                 </div>
             </div>
 
-            {/* Áp dụng (mobile only) */}
             <button
                 onClick={() => setShowMobileFilter(false)}
                 className="w-full py-3 bg-[#1a3c6e] text-white font-bold rounded-xl hover:bg-[#15325c] transition lg:hidden"
@@ -239,7 +264,6 @@ const TourListPage = () => {
 
             {/* Content: Sidebar + Grid */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-                {/* Mobile filter toggle */}
                 <button
                     onClick={() => setShowMobileFilter(true)}
                     className="lg:hidden mb-4 inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-medium text-text shadow-sm hover:shadow transition"
@@ -252,14 +276,14 @@ const TourListPage = () => {
                 </button>
 
                 <div className="flex gap-8">
-                    {/* ═══ SIDEBAR FILTER (Desktop) ═══ */}
+                    {/* SIDEBAR FILTER (Desktop) */}
                     <aside className="hidden lg:block w-[280px] shrink-0">
                         <div className="sticky top-20 bg-white rounded-2xl border border-border shadow-sm p-5">
                             <FilterContent />
                         </div>
                     </aside>
 
-                    {/* ═══ TOUR GRID ═══ */}
+                    {/* TOUR GRID */}
                     <div className="flex-1 min-w-0">
                         <p className="text-text-muted text-sm mb-6">
                             {loading ? 'Đang tải...' : `Hiển thị ${filteredTours.length} / ${tours.length} tour`}
@@ -297,12 +321,10 @@ const TourListPage = () => {
                 </div>
             </section>
 
-            {/* ═══ MOBILE FILTER DRAWER ═══ */}
+            {/* MOBILE FILTER DRAWER */}
             {showMobileFilter && (
                 <div className="fixed inset-0 z-[100] lg:hidden">
-                    {/* Backdrop */}
                     <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilter(false)} />
-                    {/* Drawer */}
                     <div className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-white shadow-2xl overflow-y-auto animate-slide-left">
                         <div className="flex items-center justify-between p-4 border-b border-border">
                             <h3 className="font-bold text-text">Bộ lọc tìm kiếm</h3>

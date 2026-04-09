@@ -11,10 +11,11 @@ export const categoryService = {
 // TOURS
 // ══════════════════════════════════════
 export const tourService = {
-    getAll: (type) => api.get('/tours', { params: type ? { type } : {} }),
+    getAll: (params) => api.get('/tours', { params }),
     getBySlug: (slug) => api.get(`/tours/${slug}`),
     getVotes: (id) => api.get(`/tours/${id}/votes`),
     createVote: (id, data) => api.post(`/tours/${id}/votes`, data),
+    getPickupLocations: () => api.get('/tours/pickup-locations'),
 };
 
 // ══════════════════════════════════════
