@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const routes = require('./routes');
 const { errorHandler, apiLimiter } = require('./middlewares');
 const { AppError } = require('./utils/appError');
@@ -15,7 +16,11 @@ app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
+}));
+app.use(cookieParser());
 
 // Rate limiting
 app.use('/api', apiLimiter);

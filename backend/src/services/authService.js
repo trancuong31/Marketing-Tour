@@ -8,7 +8,7 @@ const env = require('../config/env');
 const otpService = require('./otpService');
 
 /**
- * Generate Access Token
+ * Generate JWT token
  */
 const generateAccessToken = (user) => {
     return jwt.sign(
@@ -18,17 +18,6 @@ const generateAccessToken = (user) => {
         },
         env.jwt.secret,
         { expiresIn: env.jwt.expiresIn }
-    );
-};
-
-/**
- * Generate Refresh Token
- */
-const generateRefreshToken = (user) => {
-    return jwt.sign(
-        { id: user.id },
-        env.jwt.refreshSecret,
-        { expiresIn: env.jwt.refreshExpiresIn }
     );
 };
 
@@ -44,10 +33,17 @@ const generateResetToken = (userId) => {
 };
 
 /**
- * Verify token
+ * Verify access token
  */
 const verifyToken = (token) => {
     return jwt.verify(token, env.jwt.secret);
+};
+
+/**
+ * Verify refresh token
+ */
+const verifyRefreshToken = (token) => {
+    return jwt.verify(token, env.jwt.refreshSecret);
 };
 
 /**
@@ -122,7 +118,9 @@ const verifyEmail = async (email, otpCode) => {
         throw new AppError('Lỗi hệ thống khi xác thực email', HTTP_CODES.INTERNAL_SERVER_ERROR);
     }
 
-    return { user: formatUserResponse(user), token: accessToken, refreshToken };
+    const token = generateToken(user);
+
+    return { user: formatUserResponse(user), token };
 };
 
 /**
@@ -165,7 +163,9 @@ const login = async (email, password) => {
         throw new AppError('Lỗi hệ thống khi xử lý đăng nhập', HTTP_CODES.INTERNAL_SERVER_ERROR);
     }
 
-    return { user: formatUserResponse(user), token: accessToken, refreshToken };
+    const token = generateToken(user);
+
+    return { user: formatUserResponse(user), token };
 };
 
 /**
@@ -291,6 +291,7 @@ module.exports = {
     register,
     verifyEmail,
     login,
+    refreshSession,
     forgotPassword,
     verifyResetOtp,
     resetPassword,

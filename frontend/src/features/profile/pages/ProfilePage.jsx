@@ -6,7 +6,7 @@ import { User, Camera, Loader2, Save, Lock, Mail, Shield } from 'lucide-react';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { getImageUrl } from '@/utils/imageUrl';
 const ProfilePage = () => {
-    const { user, setAuth, token } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const [loading, setLoading] = useState(false);
 
     // Profile State
@@ -48,7 +48,7 @@ const ProfilePage = () => {
             const res = await userService.updateProfile(formData);
             if (res.data.status === 'success') {
                 toast.success('Cập nhật hồ sơ thành công!');
-                setAuth(token, res.data.data);
+                updateUser(res.data.data);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Cập nhật thất bại');

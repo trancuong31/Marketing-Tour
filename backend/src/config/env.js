@@ -20,10 +20,10 @@ const envVars = {
     // JWT
     jwt: {
         secret: process.env.JWT_SECRET || 'your-secret-key',
-        expiresIn: process.env.JWT_EXPIRES_IN || '1m',
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
         refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
-        refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
-        cookieExpiresIn: parseInt(process.env.JWT_COOKIE_EXPIRES_IN, 10) || 7,
+        refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+        refreshCookieMaxAge: parseInt(process.env.JWT_REFRESH_COOKIE_DAYS, 10) || 7,
     },
 
     // Email

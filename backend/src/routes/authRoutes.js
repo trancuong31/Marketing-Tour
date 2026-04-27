@@ -16,6 +16,9 @@ router.post('/verify-reset-otp', otpLimiter, validate(authValidation.verifyOtp),
 router.post('/reset-password', authLimiter, validate(authValidation.resetPassword), authController.resetPassword);
 router.post('/resend-otp', otpLimiter, validate(authValidation.resendOtp), authController.resendOtp);
 
+// ── Refresh token (public — uses HttpOnly cookie, not Bearer) ──
+router.post('/refresh', authController.refresh);
+
 // ── Protected routes ──
 router.use(authenticate);
 router.get('/me', authController.getMe);

@@ -20,6 +20,11 @@ const authService = {
     login: (data) => api.post('/auth/login', data),
 
     /**
+     * Refresh access token (uses HttpOnly cookie)
+     */
+    refresh: () => api.post('/auth/refresh'),
+
+    /**
      * Forgot password — request OTP
      */
     forgotPassword: (data) => api.post('/auth/forgot-password', data),
@@ -40,12 +45,12 @@ const authService = {
     resendOtp: (data) => api.post('/auth/resend-otp', data),
 
     /**
-     * Get current user profile
+     * Get current user profile (requires access token)
      */
     getMe: () => api.get('/auth/me'),
 
     /**
-     * Logout
+     * Logout — clears refresh token cookie on server
      */
     logout: () => api.post('/auth/logout'),
 };

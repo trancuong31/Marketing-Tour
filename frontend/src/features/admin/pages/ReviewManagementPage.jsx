@@ -460,7 +460,7 @@ export default function ReviewManagementPage() {
                                                     {t.Tour?.title || 'Tour ẩn'}
                                                 </p>
                                                 <p className="text-xs text-text-muted mt-0.5">
-                                                    ⭐ {Number(t.avgRating).toFixed(1)} / 5 ({t.reviewCount} lượt)
+                                                    {Number(t.avgRating).toFixed(1)} / 5 ({t.reviewCount} lượt)
                                                 </p>
                                             </div>
                                         </div>
