@@ -9,8 +9,8 @@ const AdminRoute = ({ children }) => {
         return <Navigate to="/" replace />;
     }
 
-    // Không phải admin (role_id = 1)
-    if (user?.role_id !== 1) {
+    // Không phải admin (role_id = 1 hoặc 2)
+    if (user?.role_id !== 1 && user?.role_id !== 2) {
         return <Navigate to="/" replace />;
     }
 

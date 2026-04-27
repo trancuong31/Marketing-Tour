@@ -78,20 +78,20 @@ const sendErrorProd = (err, res) => {
  * Global error handling middleware
  */
 const errorHandler = (err, req, res, _next) => {
-    err.statusCode = err.statusCode || HTTP_CODES.INTERNAL_SERVER_ERROR;
-    err.status = err.status || 'error';
+    // Normalize known error types FIRST (before setting statusCode fallback)
+    let error = err;
+    if (err.name === 'JsonWebTokenError') error = handleJWTError();
+    if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
+    if (err.name === 'CastError') error = handleCastError(err);
+    if (err.code === 11000) error = handleDuplicateFieldsError(err);
+    if (err.name === 'ValidationError') error = handleValidationError(err);
+
+    error.statusCode = error.statusCode || HTTP_CODES.INTERNAL_SERVER_ERROR;
+    error.status = error.status || 'error';
 
     if (process.env.NODE_ENV === 'development') {
-        sendErrorDev(err, res);
+        sendErrorDev(error, res);
     } else {
-        let error = { ...err, message: err.message };
-
-        if (err.name === 'CastError') error = handleCastError(err);
-        if (err.code === 11000) error = handleDuplicateFieldsError(err);
-        if (err.name === 'ValidationError') error = handleValidationError(err);
-        if (err.name === 'JsonWebTokenError') error = handleJWTError();
-        if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
-
         sendErrorProd(error, res);
     }
 };

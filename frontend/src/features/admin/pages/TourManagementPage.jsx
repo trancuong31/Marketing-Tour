@@ -707,7 +707,7 @@ const TourManagementPage = () => {
         <AdminLayout>
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-text">Danh sách Tour ({tours.length})</h2>
+                <p className="text-sm text-text-muted">Tổng cộng {totalItems} tour trong hệ thống</p>
                 <button
                     onClick={openCreate}
                     className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition flex items-center gap-2 text-sm"

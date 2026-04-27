@@ -190,21 +190,16 @@ const BannerManagementPage = () => {
     return (
         <AdminLayout>
             {/* ═══ PAGE HEADER ═══ */}
-            <div className="mb-6 animate-fade-up">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-text">Quản lý Banner</h2>
-                        <p className="text-sm text-text-muted mt-1">
-                            Quản lý banner hiển thị trên trang chủ: Hero, Sidebar trái, Sidebar phải
-                        </p>
-                    </div>
-                    <button
-                        onClick={openCreate}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 text-sm"
-                    >
-                        <Plus className="w-4 h-4" /> Thêm Banner
-                    </button>
-                </div>
+            <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-text-muted">
+                    Quản lý banner hiển thị trên trang chủ: Hero, Sidebar trái, Sidebar phải
+                </p>
+                <button
+                    onClick={openCreate}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 text-sm"
+                >
+                    <Plus className="w-4 h-4" /> Thêm Banner
+                </button>
             </div>
 
             {/* ═══ STATS ═══ */}

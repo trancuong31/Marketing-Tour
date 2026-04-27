@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Star, CheckCircle2, XCircle, Search, Filter, Inbox } from 'lucide-react';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const filterOptions = [
     { value: '', label: 'Tất cả' },
@@ -130,6 +131,19 @@ const VoteTable = ({ votes = [], onApprove, onReject }) => {
                                             <p className="text-text-secondary text-xs max-w-[220px] line-clamp-2">
                                                 {vote.comment || '—'}
                                             </p>
+                                            {vote.images && vote.images.length > 0 && (
+                                                <div className="flex gap-1 mt-1.5 overflow-x-auto max-w-[220px] pb-1">
+                                                    {vote.images.map((img, i) => (
+                                                        <div key={i} className="w-10 h-10 shrink-0 rounded border border-border">
+                                                            <img 
+                                                                src={getImageUrl(img)} 
+                                                                alt="review" 
+                                                                className="w-full h-full object-cover rounded"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3.5">
                                             <span className={`inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-full ${

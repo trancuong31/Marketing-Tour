@@ -11,6 +11,8 @@ const Booking = require('./Booking');
 const BookingOption = require('./BookingOption');
 const Guide = require('./Guide');
 const Vote = require('./Vote');
+const VoteLike = require('./VoteLike');
+const Notification = require('./Notification');
 const Otp = require('./Otp');
 const Banner = require('./Banner');
 
@@ -64,9 +66,25 @@ Booking.belongsTo(TourPickupLocation, { foreignKey: 'pickup_location_id', as: 'p
 Booking.hasMany(BookingOption, { foreignKey: 'booking_id', as: 'bookingOptions', onDelete: 'CASCADE' });
 BookingOption.belongsTo(Booking, { foreignKey: 'booking_id' });
 
+// User ↔ Notification
+User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'user_id' });
+
 // Tour ↔ Vote
 Tour.hasMany(Vote, { foreignKey: 'tour_id', as: 'votes' });
 Vote.belongsTo(Tour, { foreignKey: 'tour_id' });
+
+// Vote ↔ Vote (Self-association for replies)
+Vote.hasMany(Vote, { foreignKey: 'parent_id', as: 'replies', onDelete: 'CASCADE' });
+Vote.belongsTo(Vote, { foreignKey: 'parent_id', as: 'parent' });
+
+// Vote ↔ VoteLike
+Vote.hasMany(VoteLike, { foreignKey: 'vote_id', as: 'userLikes' });
+VoteLike.belongsTo(Vote, { foreignKey: 'vote_id' });
+
+// User ↔ VoteLike
+User.hasMany(VoteLike, { foreignKey: 'user_id' });
+VoteLike.belongsTo(User, { foreignKey: 'user_id' });
 
 module.exports = {
     Role,
@@ -82,6 +100,8 @@ module.exports = {
     BookingOption,
     Guide,
     Vote,
+    VoteLike,
+    Notification,
     Otp,
     Banner,
 };

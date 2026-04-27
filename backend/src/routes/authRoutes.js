@@ -10,6 +10,7 @@ const router = express.Router();
 router.post('/register', authLimiter, validate(authValidation.register), authController.register);
 router.post('/verify-email', otpLimiter, validate(authValidation.verifyOtp), authController.verifyEmail);
 router.post('/login', authLimiter, validate(authValidation.login), authController.login);
+router.post('/refresh-token', authController.refreshToken);
 router.post('/forgot-password', authLimiter, validate(authValidation.forgotPassword), authController.forgotPassword);
 router.post('/verify-reset-otp', otpLimiter, validate(authValidation.verifyOtp), authController.verifyResetOtp);
 router.post('/reset-password', authLimiter, validate(authValidation.resetPassword), authController.resetPassword);

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { createBooking, getMyBookings, cancelBooking, deleteMyBooking, lookupBooking } = require('../controllers/bookingController');
-const { authenticate } = require('../middlewares/auth');
+const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
 
 // Tạo booking (guest hoặc login)
-router.post('/', createBooking);
+router.post('/', optionalAuthenticate, createBooking);
 
 // Tra cứu booking (Public)
 router.get('/lookup', lookupBooking);

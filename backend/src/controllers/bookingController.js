@@ -1,4 +1,4 @@
-const { Booking, Tour, TourDeparture, TourPickupLocation, TourOption, BookingOption } = require('../models');
+const { Booking, Tour, TourDeparture, TourPickupLocation, TourOption, BookingOption, Notification } = require('../models');
 const { sequelize } = require('../config/database');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
@@ -101,17 +101,8 @@ const createBooking = catchAsync(async (req, res) => {
         bookingCode = generateBookingCode();
     }
 
-    // 8. Lấy user_id (nếu có token)
-    let user_id = req.user ? req.user.id : null;
-    if (!user_id && req.headers.authorization?.startsWith('Bearer')) {
-        const token = req.headers.authorization.split(' ')[1];
-        try {
-            const decoded = jwt.verify(token, env.jwt.secret);
-            user_id = decoded.id;
-        } catch {
-            // Bỏ qua nếu token không hợp lệ
-        }
-    }
+    // 8. Lấy user_id (nếu có user từ middleware optionalAuthenticate)
+    const user_id = req.user ? req.user.id : null;
 
     // 9. Tạo booking + options trong transaction
     const booking = await sequelize.transaction(async (t) => {
@@ -142,6 +133,18 @@ const createBooking = catchAsync(async (req, res) => {
         return newBooking;
     });
 
+    // 10. Tạo thông báo cho user (nếu có user_id)
+    if (user_id) {
+        await Notification.create({
+            user_id: user_id,
+            type: 'booking',
+            sender_name: 'Hệ thống',
+            message: `bạn đã đặt thành công tour "${tour.title}". Vui lòng chờ nhân viên liên hệ xác nhận.`,
+            related_id: booking.id,
+            related_slug: tour.slug
+        });
+    }
+
     res.status(201).json({
         status: 'success',
         message: 'Đặt tour thành công!',
@@ -171,7 +174,7 @@ const getMyBookings = catchAsync(async (req, res) => {
             { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
             { model: BookingOption, as: 'bookingOptions' },
         ],
-        order: [[sequelize.col('Booking.created_at'), 'DESC']],
+        order: [['created_at', 'DESC']],
         limit,
         offset,
     });

@@ -4,7 +4,7 @@ const slugify = require('slugify');
 const { sequelize } = require('../config/database');
 const {
     User, Role, Tour, TourImage, TourItinerary, TourDeparture,
-    TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner,
+    TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner, Notification,
 } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
@@ -503,15 +503,31 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
         return next(new AppError('Trạng thái không hợp lệ', HTTP_CODES.BAD_REQUEST));
     }
 
-    const booking = await Booking.findByPk(id);
+    const booking = await Booking.findByPk(id, {
+        include: [{ model: Tour, attributes: ['title'] }]
+    });
+    
     if (!booking) {
         return next(new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND));
     }
 
+    const oldStatus = booking.status;
     await booking.update({
         status,
         admin_note: admin_note !== undefined ? admin_note : booking.admin_note,
     });
+
+    // Nếu trạng thái chuyển thành 'approved', tạo thông báo cho user
+    if (status === 'approved' && oldStatus !== 'approved' && booking.user_id) {
+        await Notification.create({
+            user_id: booking.user_id,
+            type: 'booking',
+            sender_name: 'Hệ thống',
+            message: `đơn đặt tour "${booking.Tour?.title}" của bạn đã được duyệt`,
+            related_id: booking.id,
+            related_slug: booking.Tour.slug
+        });
+    }
 
     res.status(200).json({
         status: 'success',
@@ -659,6 +675,25 @@ const updateVoteStatus = catchAsync(async (req, res, next) => {
     });
 });
 
+const replyToVote = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const { reply } = req.body;
+
+    const vote = await Vote.findByPk(id);
+    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
+
+    await vote.update({
+        admin_reply: reply,
+        admin_reply_at: new Date(),
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Đã trả lời đánh giá thành công',
+        data: vote,
+    });
+});
+
 const deleteVote = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const vote = await Vote.findByPk(id);
@@ -684,12 +719,11 @@ const getTopRatedTours = catchAsync(async (req, res) => {
     const topTours = await Vote.findAll({
         where: whereClause,
         attributes: [
-            'tour_id',
             [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
             [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount']
         ],
         include: [{ model: Tour, attributes: ['id', 'title'] }],
-        group: ['tour_id', 'Tour.id', 'Tour.title'],
+        group: ['Vote.tour_id', 'Tour.id', 'Tour.title'],
         order: [[sequelize.literal('avgRating'), 'DESC'], [sequelize.literal('reviewCount'), 'DESC']],
         limit: 5
     });
@@ -933,6 +967,7 @@ module.exports = {
     updateBanner,
     deleteBanner,
     deleteVote,
+    replyToVote,
     getTopRatedTours,
     getReviewStats,
 };

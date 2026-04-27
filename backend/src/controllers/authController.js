@@ -116,6 +116,19 @@ const logout = catchAsync(async (req, res) => {
     });
 });
 
+/**
+ * Refresh Access Token
+ */
+const refreshToken = catchAsync(async (req, res) => {
+    const { refreshToken: token } = req.body;
+    const result = await authService.refreshAccessToken(token);
+
+    res.status(HTTP_CODES.OK).json({
+        status: 'success',
+        data: result,
+    });
+});
+
 module.exports = {
     register,
     verifyEmail,
@@ -126,4 +139,5 @@ module.exports = {
     resendOtp,
     getMe,
     logout,
+    refreshToken,
 };

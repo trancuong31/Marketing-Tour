@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { tourService } from '@/services/tourService';
-import { Star, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { Star, Send, CheckCircle2, Loader2, ImagePlus, X, LogIn } from 'lucide-react';
+import { useAuthStore } from '@/store';
 
 const VoteForm = ({ tourId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
+    const [images, setImages] = useState([]);
+    const { isAuthenticated } = useAuthStore();
 
     const {
         register,
@@ -17,8 +20,6 @@ const VoteForm = ({ tourId, onSuccess }) => {
         formState: { errors },
     } = useForm({
         defaultValues: {
-            customer_name: '',
-            customer_email: '',
             rating: 0,
             comment: '',
         },
@@ -26,13 +27,35 @@ const VoteForm = ({ tourId, onSuccess }) => {
 
     const currentRating = watch('rating');
 
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (images.length + files.length > 5) {
+            alert('Bạn chỉ được tải lên tối đa 5 hình ảnh.');
+            return;
+        }
+        setImages((prev) => [...prev, ...files]);
+    };
+
+    const removeImage = (index) => {
+        setImages((prev) => prev.filter((_, i) => i !== index));
+    };
+
     const onSubmit = async (data) => {
         if (data.rating === 0) return;
         setSubmitting(true);
         try {
-            await tourService.createVote(tourId, data);
+            const formData = new FormData();
+            formData.append('rating', data.rating);
+            if (data.comment) formData.append('comment', data.comment);
+            
+            images.forEach(image => {
+                formData.append('images', image);
+            });
+
+            await tourService.createVote(tourId, formData);
             setSubmitted(true);
             reset();
+            setImages([]);
             if (onSuccess) onSuccess();
         } catch (err) {
             const msg = err.response?.data?.message || 'Có lỗi xảy ra';
@@ -50,6 +73,18 @@ const VoteForm = ({ tourId, onSuccess }) => {
                     <p className="font-semibold text-success">Cảm ơn bạn đã đánh giá!</p>
                     <p className="text-sm text-text-secondary">Đánh giá của bạn đang chờ duyệt và sẽ hiển thị sau khi được phê duyệt.</p>
                 </div>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <div className="mt-6 p-6 bg-surface-alt rounded-xl border border-border text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <LogIn className="w-6 h-6 text-primary" />
+                </div>
+                <h4 className="font-semibold text-text mb-2">Đăng nhập để đánh giá</h4>
+                <p className="text-sm text-text-secondary mb-4">Bạn cần đăng nhập để có thể gửi nhận xét và hình ảnh cho tour này.</p>
             </div>
         );
     }
@@ -91,29 +126,38 @@ const VoteForm = ({ tourId, onSuccess }) => {
                     <input type="hidden" {...register('rating', { required: true, min: 1 })} />
                 </div>
 
-                {/* Name & Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <input
-                            {...register('customer_name', { required: 'Vui lòng nhập tên' })}
-                            className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                            placeholder="Họ tên *"
-                        />
-                        {errors.customer_name && (
-                            <p className="mt-1 text-xs text-error">{errors.customer_name.message}</p>
-                        )}
-                    </div>
-                    <div>
-                        <input
-                            {...register('customer_email', {
-                                required: 'Vui lòng nhập email',
-                                pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email không hợp lệ' },
-                            })}
-                            className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                            placeholder="Email *"
-                        />
-                        {errors.customer_email && (
-                            <p className="mt-1 text-xs text-error">{errors.customer_email.message}</p>
+                {/* Images Upload */}
+                <div>
+                    <label className="text-sm font-medium text-text mb-2 block">Hình ảnh thực tế (tối đa 5 ảnh)</label>
+                    <div className="flex flex-wrap gap-3 mb-2">
+                        {images.map((img, index) => (
+                            <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                                <img
+                                    src={URL.createObjectURL(img)}
+                                    alt="preview"
+                                    className="w-full h-full object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-1 right-1 w-5 h-5 bg-black/50 hover:bg-error text-white rounded-full flex items-center justify-center transition-colors"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                        {images.length < 5 && (
+                            <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center cursor-pointer bg-white transition-colors">
+                                <ImagePlus className="w-6 h-6 text-text-muted mb-1" />
+                                <span className="text-[10px] text-text-muted">Thêm ảnh</span>
+                                <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleImageChange}
+                                />
+                            </label>
                         )}
                     </div>
                 </div>

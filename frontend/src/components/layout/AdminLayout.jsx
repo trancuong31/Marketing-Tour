@@ -10,7 +10,7 @@ const menuItems = [
     { path: '/admin/bookings', label: 'Quản lý Đơn', icon: ShoppingCart },
     { path: '/admin/tours', label: 'Quản lý Tour', icon: Map },
     { path: '/admin/banners', label: 'Quản lý Banner', icon: Image },
-    { path: '/admin/content', label: 'Nội dung', icon: FileText },
+    { path: '/admin/content', label: 'Bài viết', icon: FileText },
     { path: '/admin/reviews', label: 'Quản lý Đánh giá', icon: Star },
 ];
 

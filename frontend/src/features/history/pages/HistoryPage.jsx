@@ -420,11 +420,10 @@ const HistoryPage = () => {
                                     <button
                                         key={page}
                                         onClick={() => handlePageChange(page)}
-                                        className={`w-10 h-10 rounded-xl text-sm font-semibold border transition-all ${
-                                            page === currentPage
+                                        className={`w-10 h-10 rounded-xl text-sm font-semibold border transition-all ${page === currentPage
                                                 ? 'bg-primary text-white border-primary shadow-lg shadow-primary/25 scale-105'
                                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
-                                        }`}
+                                            }`}
                                     >
                                         {page}
                                     </button>

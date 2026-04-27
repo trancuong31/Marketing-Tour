@@ -49,22 +49,9 @@ const createBookingSchema = Joi.object({
  * Schema validation cho đánh giá
  */
 const createVoteSchema = Joi.object({
-    customer_name: Joi.string().trim().min(2).max(100).required()
-        .messages({
-            'any.required': 'Họ tên là bắt buộc',
-        }),
-    customer_email: Joi.string().trim().email().max(150).required()
-        .messages({
-            'any.required': 'Email là bắt buộc',
-            'string.email': 'Email không hợp lệ',
-        }),
-    rating: Joi.number().integer().min(1).max(5).required()
-        .messages({
-            'any.required': 'Đánh giá sao là bắt buộc',
-            'number.min': 'Đánh giá từ 1-5 sao',
-            'number.max': 'Đánh giá từ 1-5 sao',
-        }),
+    rating: Joi.number().integer().min(0).max(5).optional(),
     comment: Joi.string().trim().max(1000).allow('', null),
+    parent_id: Joi.number().integer().positive().allow(null),
 });
 
 module.exports = { createBookingSchema, createVoteSchema };

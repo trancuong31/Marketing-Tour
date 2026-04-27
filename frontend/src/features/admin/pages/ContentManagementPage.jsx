@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
-import ContentStatsBar from '@/features/admin/components/ContentStatsBar';
-import VoteTable from '@/features/admin/components/VoteTable';
 import GuideGrid from '@/features/admin/components/GuideGrid';
-import { Star, FileText, Loader2, X } from 'lucide-react';
-
-const tabs = [
-    { key: 'votes', label: 'Đánh giá', icon: Star },
-    { key: 'guides', label: 'Bài viết', icon: FileText },
-];
+import { FileText, Loader2, X } from 'lucide-react';
 
 const ContentManagementPage = () => {
-    const [tab, setTab] = useState('votes');
-    const [votes, setVotes] = useState([]);
     const [guides, setGuides] = useState([]);
     const [loading, setLoading] = useState(true);
     const [guideModal, setGuideModal] = useState({ open: false, guide: null });
@@ -26,12 +17,7 @@ const ContentManagementPage = () => {
         import('react-quill-new/dist/quill.snow.css');
     }, []);
 
-    const fetchVotes = async () => {
-        try {
-            const res = await adminService.getVotes();
-            setVotes(res.data.data || []);
-        } catch { /* ignore */ }
-    };
+
 
     const fetchGuides = async () => {
         try {
@@ -42,27 +28,8 @@ const ContentManagementPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        Promise.all([fetchVotes(), fetchGuides()]).finally(() => setLoading(false));
+        fetchGuides().finally(() => setLoading(false));
     }, []);
-
-    // ── VOTES ──
-    const handleApproveVote = async (id) => {
-        try {
-            await adminService.updateVote(id, { is_approved: true });
-            await fetchVotes();
-        } catch {
-            alert('Lỗi cập nhật đánh giá');
-        }
-    };
-
-    const handleRejectVote = async (id) => {
-        try {
-            await adminService.updateVote(id, { is_approved: false });
-            await fetchVotes();
-        } catch {
-            alert('Lỗi cập nhật đánh giá');
-        }
-    };
 
     // ── GUIDES ──
     const openGuideCreate = () => {
@@ -97,46 +64,10 @@ const ContentManagementPage = () => {
 
     return (
         <AdminLayout>
-            {/* ═══ PAGE HEADER ═══ */}
-            <div className="mb-6 animate-fade-up">
-                <h2 className="text-2xl font-bold text-text">Quản lý Nội dung</h2>
+            <div className="mb-4">
                 <p className="text-sm text-text-muted mt-1">
-                    Quản lý đánh giá từ khách hàng và bài viết hướng dẫn du lịch
+                    Quản lý danh sách các bài viết hướng dẫn du lịch trên trang web.
                 </p>
-            </div>
-
-            {/* ═══ STATS BAR ═══ */}
-            {!loading && <ContentStatsBar votes={votes} guides={guides} />}
-
-            {/* ═══ TABS ═══ */}
-            <div className="flex items-center gap-1 p-1 bg-surface-alt rounded-2xl w-fit mb-6 animate-fade-up" style={{ animationDelay: '120ms' }}>
-                {tabs.map(t => {
-                    const isActive = tab === t.key;
-                    const count = t.key === 'votes' ? votes.length : guides.length;
-                    return (
-                        <button
-                            key={t.key}
-                            onClick={() => setTab(t.key)}
-                            className={`relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                                isActive
-                                    ? 'bg-surface text-primary shadow-sm'
-                                    : 'text-text-secondary hover:text-text'
-                            }`}
-                        >
-                            <t.icon className={`w-4 h-4 ${isActive ? 'text-primary' : ''}`} />
-                            {t.label}
-                            {!loading && (
-                                <span className={`ml-1 text-xs px-1.5 py-0.5 rounded-full font-bold transition-colors ${
-                                    isActive
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'bg-surface-hover text-text-muted'
-                                }`}>
-                                    {count}
-                                </span>
-                            )}
-                        </button>
-                    );
-                })}
             </div>
 
             {/* ═══ CONTENT ═══ */}
@@ -145,12 +76,6 @@ const ContentManagementPage = () => {
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     <p className="text-sm text-text-muted mt-3">Đang tải dữ liệu...</p>
                 </div>
-            ) : tab === 'votes' ? (
-                <VoteTable
-                    votes={votes}
-                    onApprove={handleApproveVote}
-                    onReject={handleRejectVote}
-                />
             ) : (
                 <GuideGrid
                     guides={guides}

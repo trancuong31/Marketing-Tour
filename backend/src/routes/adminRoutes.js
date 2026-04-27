@@ -25,6 +25,7 @@ const {
     getTopRatedTours,
     getReviewStats,
     deleteVote,
+    replyToVote,
 } = require('../controllers/adminController');
 
 const router = express.Router();
@@ -54,6 +55,7 @@ router.get('/votes/stats', getReviewStats);
 router.get('/votes', getVotes);
 router.delete('/votes/:id', deleteVote);
 router.put('/votes/:id', updateVoteStatus);
+router.post('/votes/:id/reply', replyToVote);
 
 // ── Guide ──
 router.get('/guides', getAllGuides);

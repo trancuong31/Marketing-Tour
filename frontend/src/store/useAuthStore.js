@@ -6,6 +6,7 @@ const useAuthStore = create(
     persist(
         (set, get) => ({
             token: null,
+            refreshToken: null,
             user: null,
             isAuthenticated: false,
             isLoading: false,
@@ -14,8 +15,9 @@ const useAuthStore = create(
             /**
              * Set auth state
              */
-            setAuth: (token, user) => set({
+            setAuth: (token, user, refreshToken) => set({
                 token,
+                refreshToken: refreshToken || get().refreshToken,
                 user,
                 isAuthenticated: true,
                 error: null,
@@ -52,9 +54,10 @@ const useAuthStore = create(
                         email,
                         otp_code: otpCode,
                     });
-                    const { user, token } = data.data;
+                    const { user, token, refreshToken } = data.data;
                     set({
                         token,
+                        refreshToken,
                         user,
                         isAuthenticated: true,
                         isLoading: false,
@@ -74,9 +77,10 @@ const useAuthStore = create(
                 set({ isLoading: true, error: null });
                 try {
                     const { data } = await authService.login({ email, password });
-                    const { user, token } = data.data;
+                    const { user, token, refreshToken } = data.data;
                     set({
                         token,
+                        refreshToken,
                         user,
                         isAuthenticated: true,
                         isLoading: false,
@@ -165,6 +169,7 @@ const useAuthStore = create(
              */
             logout: () => set({
                 token: null,
+                refreshToken: null,
                 user: null,
                 isAuthenticated: false,
                 error: null,
@@ -174,6 +179,7 @@ const useAuthStore = create(
             name: 'auth-storage',
             partialize: (state) => ({
                 token: state.token,
+                refreshToken: state.refreshToken,
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
             }),

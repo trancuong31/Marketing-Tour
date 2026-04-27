@@ -16,14 +16,15 @@ router.use('/auth', authRoutes);
 
 // ── Public API ──
 router.use('/categories', categoryRoutes);
-router.use('/tours', tourRoutes);
-router.use('/tours', voteRoutes); // /api/tours/:id/votes
+router.use('/tours', voteRoutes); // /api/tours/featured-reviews và /api/tours/:id/votes
+router.use('/tours', tourRoutes); // /api/tours/:slug
 router.use('/bookings', bookingRoutes);
 router.use('/guides', guideRoutes);
 router.use('/banners', bannerRoutes);
 
 // ── User API ──
 router.use('/users', userRoutes);
+router.use('/notifications', require('./notificationRoutes'));
 
 // ── Admin API ──
 router.use('/admin', adminRoutes);

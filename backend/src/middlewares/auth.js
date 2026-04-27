@@ -10,18 +10,29 @@ const env = require('../config/env');
  */
 const authenticate = catchAsync(async (req, res, next) => {
     let token;
-    if (req.headers.authorization?.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
+
+    // 1. Lấy token từ header
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+        // Sử dụng regex \s+ để xử lý trường hợp có nhiều khoảng trắng
+        token = authHeader.split(/\s+/)[1];
     }
 
-    if (!token) {
+    // 2. Không có token
+    if (!token || token === 'null' || token === 'undefined') {
         return next(new AppError('Vui lòng đăng nhập để truy cập', HTTP_CODES.UNAUTHORIZED));
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, env.jwt.secret);
+    // 3. Verify token (bắt lỗi rõ ràng)
+    let decoded;
+    try {
+        decoded = jwt.verify(token, env.jwt.secret);
+    } catch (err) {
+        return next(new AppError('Token không hợp lệ hoặc đã hết hạn', HTTP_CODES.UNAUTHORIZED));
+    }
 
-    // Kiểm tra user còn tồn tại và active
+    // 4. Kiểm tra user
     const user = await User.findOne({
         where: { id: decoded.id, is_active: 1 },
         include: [{ model: Role, attributes: ['role_name'] }],
@@ -31,7 +42,9 @@ const authenticate = catchAsync(async (req, res, next) => {
         return next(new AppError('Tài khoản không tồn tại hoặc đã bị khóa', HTTP_CODES.UNAUTHORIZED));
     }
 
+    // 5. Gán user vào request
     req.user = user;
+
     next();
 });
 
@@ -40,12 +53,46 @@ const authenticate = catchAsync(async (req, res, next) => {
  */
 const authorize = (...roles) => {
     return (req, res, next) => {
-        const userRole = req.user.Role?.role_name;
+        const userRole = req.user?.Role?.role_name;
+
+        if (!userRole) {
+            return next(new AppError('Không xác định được quyền người dùng', HTTP_CODES.FORBIDDEN));
+        }
+
         if (!roles.includes(userRole)) {
             return next(new AppError('Bạn không có quyền thực hiện hành động này', HTTP_CODES.FORBIDDEN));
         }
+
         next();
     };
 };
 
-module.exports = { authenticate, authorize };
+/**
+ * Middleware xác thực tùy chọn (nếu có token thì gán req.user, nếu không thì bỏ qua)
+ */
+const optionalAuthenticate = catchAsync(async (req, res, next) => {
+    let token;
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+
+    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+        token = authHeader.split(/\s+/)[1];
+    }
+
+    if (!token || token === 'null' || token === 'undefined') {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, env.jwt.secret);
+        const user = await User.findOne({
+            where: { id: decoded.id, is_active: 1 },
+            include: [{ model: Role, attributes: ['role_name'] }],
+        });
+        if (user) req.user = user;
+    } catch (err) {
+        // Bỏ qua lỗi token nếu dùng optional
+    }
+    next();
+});
+
+module.exports = { authenticate, authorize, optionalAuthenticate };

@@ -8,9 +8,9 @@ const env = require('../config/env');
 const otpService = require('./otpService');
 
 /**
- * Generate JWT token
+ * Generate Access Token
  */
-const generateToken = (user) => {
+const generateAccessToken = (user) => {
     return jwt.sign(
         {
             id: user.id,
@@ -18,6 +18,17 @@ const generateToken = (user) => {
         },
         env.jwt.secret,
         { expiresIn: env.jwt.expiresIn }
+    );
+};
+
+/**
+ * Generate Refresh Token
+ */
+const generateRefreshToken = (user) => {
+    return jwt.sign(
+        { id: user.id },
+        env.jwt.refreshSecret,
+        { expiresIn: env.jwt.refreshExpiresIn }
     );
 };
 
@@ -96,13 +107,22 @@ const verifyEmail = async (email, otpCode) => {
         throw new AppError('Tài khoản đã kích hoạt', HTTP_CODES.BAD_REQUEST);
     }
 
-    await user.update({
-        is_active: 1,
-    });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const token = generateToken(user);
+    try {
+        await User.update({
+            is_active: 1,
+            refresh_token: refreshToken
+        }, {
+            where: { id: user.id }
+        });
+    } catch (updateError) {
+        console.error('Lỗi khi cập nhật verifyEmail token vào DB:', updateError);
+        throw new AppError('Lỗi hệ thống khi xác thực email', HTTP_CODES.INTERNAL_SERVER_ERROR);
+    }
 
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), token: accessToken, refreshToken };
 };
 
 /**
@@ -128,13 +148,24 @@ const login = async (email, password) => {
         throw new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED);
     }
 
-    await user.update({
-        last_login: new Date(),
-    });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const token = generateToken(user);
+    try {
+        // Cập nhật last_login và refresh_token cùng một lúc
+        await User.update({
+            last_login: new Date(),
+            refresh_token: refreshToken
+        }, {
+            where: { id: user.id }
+        });
+    } catch (updateError) {
+        require('fs').appendFileSync('login_errors.log', `${new Date().toISOString()} - ${updateError.stack}\n`);
+        console.error('Lỗi khi cập nhật token vào DB:', updateError);
+        throw new AppError('Lỗi hệ thống khi xử lý đăng nhập', HTTP_CODES.INTERNAL_SERVER_ERROR);
+    }
 
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), token: accessToken, refreshToken };
 };
 
 /**
@@ -219,6 +250,43 @@ const resendOtp = async (email, type) => {
     return { message: 'OTP mới đã được gửi' };
 };
 
+/**
+ * REFRESH ACCESS TOKEN
+ */
+const refreshAccessToken = async (refreshToken) => {
+    if (!refreshToken) {
+        throw new AppError('Refresh token không tồn tại', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(refreshToken, env.jwt.refreshSecret);
+    } catch (err) {
+        throw new AppError('Refresh token không hợp lệ hoặc đã hết hạn', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    const user = await User.findOne({
+        where: { id: decoded.id, is_active: 1, refresh_token: refreshToken },
+        include: [{ model: Role, attributes: ['role_name'] }],
+    });
+
+    if (!user) {
+        throw new AppError('Tài khoản không tồn tại hoặc refresh token đã bị thu hồi', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    const newAccessToken = generateAccessToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    // Quay vòng refresh token (Rotate)
+    await User.update({ 
+        refresh_token: newRefreshToken 
+    }, {
+        where: { id: user.id }
+    });
+
+    return { token: newAccessToken, refreshToken: newRefreshToken };
+};
+
 module.exports = {
     register,
     verifyEmail,
@@ -227,6 +295,8 @@ module.exports = {
     verifyResetOtp,
     resetPassword,
     resendOtp,
-    generateToken,
+    generateAccessToken,
+    generateRefreshToken,
+    refreshAccessToken,
     verifyToken,
 };

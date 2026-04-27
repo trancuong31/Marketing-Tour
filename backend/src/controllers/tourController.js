@@ -104,18 +104,18 @@ const getBannersByPosition = catchAsync(async (req, res) => {
 
     const banners = await Banner.findAll({
         where: whereClause,
-        attributes: ['id', 'title', 'image_url', 'target_link', 'position', 'tour_id'],
+        attributes: ['id', 'title', 'image_url', 'target_link', 'position'],
         include: [
             {
                 model: Tour,
                 as: 'tour',
-                attributes: ['slug'],
+                attributes: ['id', 'slug'],
                 required: false,
                 include: [
                     {
                         model: TourDeparture,
                         as: 'departures',
-                        attributes: ['id', 'tour_id', 'price_adult'],
+                        attributes: ['id', 'price_adult'],
                         where: { status: 'open', departure_date: { [Op.gte]: formattedToday } },
                         required: false,
                         order: [['price_adult', 'ASC']]

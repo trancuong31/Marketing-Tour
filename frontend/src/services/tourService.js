@@ -14,7 +14,10 @@ export const tourService = {
     getAll: (type) => api.get('/tours', { params: type ? { type } : {} }),
     getBySlug: (slug) => api.get(`/tours/${slug}`),
     getVotes: (id) => api.get(`/tours/${id}/votes`),
-    createVote: (id, data) => api.post(`/tours/${id}/votes`, data),
+    getFeaturedVotes: () => api.get('/tours/featured-reviews'),
+    likeVote: (id) => api.post(`/tours/votes/${id}/like`),
+    createVote: (id, formData) => api.post(`/tours/${id}/votes`, formData),
+    deleteVote: (id) => api.delete(`/tours/votes/${id}`),
 };
 
 // ══════════════════════════════════════
@@ -42,6 +45,15 @@ export const bannerService = {
 };
 
 // ══════════════════════════════════════
+// NOTIFICATIONS
+// ══════════════════════════════════════
+export const notificationService = {
+    getAll: () => api.get('/notifications'),
+    markAsRead: () => api.patch('/notifications/mark-as-read'),
+    markOneAsRead: (id) => api.patch(`/notifications/${id}/mark-as-read`),
+};
+
+// ══════════════════════════════════════
 // ADMIN
 // ══════════════════════════════════════
 export const adminService = {
@@ -50,8 +62,8 @@ export const adminService = {
     // Tours
     getTours: (params) => api.get('/admin/tours', { params }),
     getTourById: (id) => api.get(`/admin/tours/${id}`),
-    createTour: (formData) => api.post('/admin/tours', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    updateTour: (id, formData) => api.put(`/admin/tours/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    createTour: (formData) => api.post('/admin/tours', formData),
+    updateTour: (id, formData) => api.put(`/admin/tours/${id}`, formData),
     deleteTour: (id) => api.delete(`/admin/tours/${id}`),
     deleteTourImage: (id) => api.delete(`/admin/tour-images/${id}`),
 
@@ -63,6 +75,7 @@ export const adminService = {
     // Votes
     getVotes: (params) => api.get('/admin/votes', { params }), // updated to accept full params
     updateVote: (id, data) => api.put(`/admin/votes/${id}`, data),
+    replyToVote: (id, reply) => api.post(`/admin/votes/${id}/reply`, { reply }),
     deleteVote: (id) => api.delete(`/admin/votes/${id}`),
     getTopRatedTours: (params) => api.get('/admin/votes/top', { params }),
     getReviewStats: (params) => api.get('/admin/votes/stats', { params }),
@@ -74,7 +87,7 @@ export const adminService = {
 
     // Banners
     getBanners: () => api.get('/admin/banners'),
-    createBanner: (formData) => api.post('/admin/banners', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    updateBanner: (id, formData) => api.put(`/admin/banners/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    createBanner: (formData) => api.post('/admin/banners', formData),
+    updateBanner: (id, formData) => api.put(`/admin/banners/${id}`, formData),
     deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
 };

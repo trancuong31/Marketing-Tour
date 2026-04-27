@@ -96,9 +96,9 @@ const HomePage = () => {
                                     key={banner.id}
                                     src={getImageUrl(banner.image_url)}
                                     alt={banner.title}
-                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-1000 ${
+                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-all duration-[10000ms] ease-linear transform-gpu will-change-transform ${
                                         idx === heroIndex ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
-                                    } duration-[10s]`}
+                                    }`}
                                 />
                             ))}
                         </>
@@ -359,7 +359,7 @@ const HomePage = () => {
                         <img 
                             src={banahill} 
                             alt="Tour Nội Địa" 
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
                         />
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
@@ -388,7 +388,7 @@ const HomePage = () => {
                         <img 
                             src={tokyo} 
                             alt="Tour Quốc Tế" 
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
                         />
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />

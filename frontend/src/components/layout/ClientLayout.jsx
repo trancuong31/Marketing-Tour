@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Phone, Mail, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
 import { getImageUrl } from '@/utils/imageUrl';
 import zalo from '../../assets/images/zalo-2.png';
 import logo from '../../../public/logo.jpg';
+import NotificationBell from '../NotificationBell';
 const navLinks = [
     { path: '/', label: 'Trang chủ' },
     { path: '/tours/noi-dia', label: 'Tour Nội Địa', icon: MapPin },
@@ -20,7 +21,26 @@ const ClientLayout = ({ children }) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState('login');
+    const [mobileMenuUserOpen, setMobileMenuUserOpen] = useState(false);
     const { isAuthenticated, user, logout } = useAuthStore();
+    const ignoreScrollRef = useRef(false);
+
+    useEffect(() => {
+        let lastScrollY = window.scrollY;
+        const handleScroll = () => {
+            if (ignoreScrollRef.current) {
+                lastScrollY = window.scrollY;
+                return;
+            }
+            if (Math.abs(window.scrollY - lastScrollY) > 20) {
+                setMenuOpen(false);
+                setMobileMenuUserOpen(false);
+            }
+            lastScrollY = window.scrollY;
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const openAuth = (mode) => {
         setAuthMode(mode);
@@ -69,61 +89,69 @@ const ClientLayout = ({ children }) => {
                             {/* Divider line */}
                             <div className="w-px h-6 bg-border mx-2"></div>
 
-                            {/* Auth buttons */}
+                            {/* Auth buttons & Notifications */}
                             {isAuthenticated ? (
-                                <div className="relative group cursor-pointer flex items-center gap-3">
-                                    <div className="flex items-center gap-2 text-sm font-medium text-text">
-                                        {user?.avatar_url ? (
-                                            <img
-                                                src={getImageUrl(user.avatar_url)}
-                                                alt={user.full_name}
-                                                className="w-9 h-9 rounded-full object-cover border border-border"
-                                            />
-                                        ) : (
-                                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                <UserIcon className="w-4 h-4" />
-                                            </div>
-                                        )}
-                                        <div className="flex flex-col">
-                                            <span>{user?.full_name || 'Người dùng'}</span>
-                                            {user?.role_id === 1 && (
-                                                <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Admin</span>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative group cursor-pointer flex items-center gap-3">
+                                        <div className="flex items-center gap-2 text-sm font-medium text-text">
+                                            {user?.avatar_url ? (
+                                                <img
+                                                    src={getImageUrl(user.avatar_url)}
+                                                    alt={user.full_name}
+                                                    className="w-9 h-9 rounded-full object-cover border border-border"
+                                                />
+                                            ) : (
+                                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                    <UserIcon className="w-4 h-4" />
+                                                </div>
                                             )}
+                                            <div className="flex flex-col">
+                                                <span>{user?.full_name || 'Người dùng'}</span>
+                                                {(user?.role_id === 1 || user?.role_id === 2) && (
+                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Admin</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Dropdown Menu */}
+                                        <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-2xl border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col pt-1 pb-1 z-50">
+                                            <div className="px-4 py-3 border-b border-border bg-surface-alt/50 rounded-t-2xl">
+                                                <p className="text-sm font-semibold text-text truncate">{user?.full_name}</p>
+                                                <p className="text-xs text-text-muted truncate">{user?.email}</p>
+                                            </div>
+                                            <div className="py-1.5 flex flex-col px-1.5 gap-1">
+                                                {(user?.role_id === 1 || user?.role_id === 2) && (
+                                                    <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors text-text group/item">
+                                                        <Shield className="w-4 h-4 text-text-muted group-hover/item:text-primary transition-colors" />
+                                                        <span className="text-sm font-medium">Trang quản trị</span>
+                                                    </Link>
+                                                )}
+                                                <Link to="/profile" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
+                                                    <UserIcon className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
+                                                    <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+                                                </Link>
+                                                <Link to="/history" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
+                                                    <List className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
+                                                    <span className="text-sm font-medium">Lịch sử đặt tour</span>
+                                                </Link>
+                                            </div>
+                                            <div className="border-t border-border py-1.5 px-1.5 flex flex-col">
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-error/10 text-error transition-colors group/item"
+                                                >
+                                                    <LogOut className="w-4 h-4 text-error/70 group-hover/item:text-error transition-colors" />
+                                                    <span className="text-sm font-medium">Đăng xuất</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Dropdown Menu */}
-                                    <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-2xl border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col pt-1 pb-1 z-50">
-                                        <div className="px-4 py-3 border-b border-border bg-surface-alt/50 rounded-t-2xl">
-                                            <p className="text-sm font-semibold text-text truncate">{user?.full_name}</p>
-                                            <p className="text-xs text-text-muted truncate">{user?.email}</p>
-                                        </div>
-                                        <div className="py-1.5 flex flex-col px-1.5 gap-1">
-                                            {user?.role_id === 1 && (
-                                                <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors text-text group/item">
-                                                    <Shield className="w-4 h-4 text-text-muted group-hover/item:text-primary transition-colors" />
-                                                    <span className="text-sm font-medium">Trang quản trị</span>
-                                                </Link>
-                                            )}
-                                            <Link to="/profile" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
-                                                <UserIcon className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
-                                                <span className="text-sm font-medium">Hồ sơ cá nhân</span>
-                                            </Link>
-                                            <Link to="/history" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
-                                                <List className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
-                                                <span className="text-sm font-medium">Lịch sử đặt tour</span>
-                                            </Link>
-                                        </div>
-                                        <div className="border-t border-border py-1.5 px-1.5 flex flex-col">
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-error/10 text-error transition-colors group/item"
-                                            >
-                                                <LogOut className="w-4 h-4 text-error/70 group-hover/item:text-error transition-colors" />
-                                                <span className="text-sm font-medium">Đăng xuất</span>
-                                            </button>
-                                        </div>
-                                    </div>
+                                    {/* Divider */}
+                                    <div className="w-px h-6 bg-border mx-0.5"></div>
+
+                                    {/* Notifications */}
+                                    <NotificationBell />
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
@@ -145,13 +173,21 @@ const ClientLayout = ({ children }) => {
                             )}
                         </div>
 
-                        {/* Mobile menu button */}
-                        <button
-                            className="md:hidden p-2 rounded-lg hover:bg-surface-alt transition"
-                            onClick={() => setMenuOpen(!menuOpen)}
-                        >
-                            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </button>
+                        {/* Mobile Right Icons */}
+                        <div className="md:hidden flex items-center gap-3">
+                            {isAuthenticated && <NotificationBell />}
+                            <button
+                                className="p-2 rounded-lg hover:bg-surface-alt transition"
+                                onClick={() => {
+                                    ignoreScrollRef.current = true;
+                                    setMenuOpen(!menuOpen);
+                                    if (menuOpen) setMobileMenuUserOpen(false);
+                                    setTimeout(() => { ignoreScrollRef.current = false; }, 400);
+                                }}
+                            >
+                                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mobile Nav */}
@@ -175,31 +211,84 @@ const ClientLayout = ({ children }) => {
                             <div className="my-2 border-t border-border"></div>
 
                             {isAuthenticated ? (
-                                <>
-                                    <div className="flex items-center justify-between px-4">
-                                        {/* User bên trái */}
+                                <div className="px-4 py-2">
+                                    <div 
+                                        className="flex items-center justify-between bg-surface-alt/50 p-3 rounded-xl cursor-pointer hover:bg-surface-alt transition-colors"
+                                        onClick={() => {
+                                            ignoreScrollRef.current = true;
+                                            setMobileMenuUserOpen(!mobileMenuUserOpen);
+                                            setTimeout(() => { ignoreScrollRef.current = false; }, 400);
+                                        }}
+                                    >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                <UserIcon className="w-5 h-5" />
+                                            {user?.avatar_url ? (
+                                                <img
+                                                    src={getImageUrl(user.avatar_url)}
+                                                    alt={user.full_name}
+                                                    className="w-10 h-10 rounded-full object-cover border border-border"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                    <UserIcon className="w-5 h-5" />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-text text-sm">
+                                                    {user?.full_name || 'Người dùng'}
+                                                </span>
+                                                <span className="text-xs text-text-muted">{user?.email}</span>
                                             </div>
-                                            <span className="font-medium text-text">
-                                                {user?.full_name || 'Người dùng'}
-                                            </span>
                                         </div>
+                                        <svg className={`w-5 h-5 text-text-muted transition-transform duration-200 ${mobileMenuUserOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
 
-                                        {/* Logout bên phải */}
+                                    {/* Mobile Dropdown Menu */}
+                                    <div className={`overflow-hidden transition-all duration-300 ${mobileMenuUserOpen ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                                        <div className="flex flex-col px-2 gap-1 bg-surface-alt/30 rounded-xl p-2 border border-border/50">
+                                            {user?.role_id === 1 && (
+                                                <Link 
+                                                    to="/admin" 
+                                                    onClick={() => setMenuOpen(false)} 
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                                >
+                                                    <Shield className="w-4 h-4 text-text-muted" />
+                                                    <span className="text-sm font-medium">Trang quản trị</span>
+                                                </Link>
+                                            )}
+                                            <Link 
+                                                to="/profile" 
+                                                onClick={() => setMenuOpen(false)} 
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                            >
+                                                <UserIcon className="w-4 h-4 text-text-muted" />
+                                                <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+                                            </Link>
+                                            <Link 
+                                                to="/history" 
+                                                onClick={() => setMenuOpen(false)} 
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                            >
+                                                <List className="w-4 h-4 text-text-muted" />
+                                                <span className="text-sm font-medium">Lịch sử đặt tour</span>
+                                            </Link>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 border-t border-border pt-2 px-1">
                                         <button
                                             onClick={() => {
                                                 handleLogout();
                                                 setMenuOpen(false);
                                             }}
-                                            className="flex items-center gap-2 text-error hover:bg-error/5 transition-colors font-medium text-sm px-2 py-1 rounded"
+                                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-colors shadow-sm"
                                         >
                                             <LogOut className="w-4 h-4" />
-                                            Đăng xuất
+                                            <span className="font-semibold text-sm">Đăng xuất</span>
                                         </button>
                                     </div>
-                                </>
+                                </div>
                             ) : (
                                 <div className="flex flex-col gap-2 px-4 py-2">
                                     <button
