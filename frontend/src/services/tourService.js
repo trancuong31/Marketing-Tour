@@ -12,6 +12,7 @@ export const categoryService = {
 // ══════════════════════════════════════
 export const tourService = {
     getAll: (params) => api.get('/tours', { params }),
+    getPickupLocations: () => api.get('/tours/pickup-locations'),
     getBySlug: (slug) => api.get(`/tours/${slug}`),
     getVotes: (id) => api.get(`/tours/${id}/votes`),
     getFeaturedVotes: () => api.get('/tours/featured-reviews'),

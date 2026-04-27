@@ -836,7 +836,20 @@ const deleteTourImage = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy ảnh', HTTP_CODES.NOT_FOUND));
     }
 
+    const tourId = image.tour_id;
+    const imageUrl = image.image_url;
+
     await image.destroy();
+
+    // Nếu ảnh bị xóa là thumbnail -> cập nhật thumbnail mới (nếu còn ảnh khác)
+    const tour = await Tour.findByPk(tourId);
+    if (tour && tour.thumbnail_url === imageUrl) {
+        const nextImage = await TourImage.findOne({ 
+            where: { tour_id: tourId },
+            order: [['sort_order', 'ASC']]
+        });
+        await tour.update({ thumbnail_url: nextImage ? nextImage.image_url : null });
+    }
 
     res.status(200).json({
         status: 'success',
