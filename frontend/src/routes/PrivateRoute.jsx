@@ -7,7 +7,7 @@ const PrivateRoute = ({ children }) => {
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuthStore();
 
-  // Show loading while checking auth status
+  // Show loading while an auth action is in progress
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

@@ -8,7 +8,7 @@ const env = require('../config/env');
 const otpService = require('./otpService');
 
 /**
- * Generate JWT token
+ * Generate short-lived access token (15m default)
  */
 const generateToken = (user) => {
     return jwt.sign(
@@ -18,6 +18,20 @@ const generateToken = (user) => {
         },
         env.jwt.secret,
         { expiresIn: env.jwt.expiresIn }
+    );
+};
+
+/**
+ * Generate long-lived refresh token (7d default)
+ */
+const generateRefreshToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id,
+            purpose: 'refresh',
+        },
+        env.jwt.refreshSecret,
+        { expiresIn: env.jwt.refreshExpiresIn }
     );
 };
 
@@ -33,10 +47,17 @@ const generateResetToken = (userId) => {
 };
 
 /**
- * Verify token
+ * Verify access token
  */
 const verifyToken = (token) => {
     return jwt.verify(token, env.jwt.secret);
+};
+
+/**
+ * Verify refresh token
+ */
+const verifyRefreshToken = (token) => {
+    return jwt.verify(token, env.jwt.refreshSecret);
 };
 
 /**
@@ -100,9 +121,10 @@ const verifyEmail = async (email, otpCode) => {
         is_active: 1,
     });
 
-    const token = generateToken(user);
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), accessToken, refreshToken };
 };
 
 /**
@@ -132,9 +154,42 @@ const login = async (email, password) => {
         last_login: new Date(),
     });
 
-    const token = generateToken(user);
+    const accessToken = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), accessToken, refreshToken };
+};
+
+/**
+ * REFRESH SESSION — verify refresh token, return new access token + user
+ */
+const refreshSession = async (refreshTokenStr) => {
+    let decoded;
+
+    try {
+        decoded = verifyRefreshToken(refreshTokenStr);
+    } catch {
+        throw new AppError('Refresh token không hợp lệ hoặc đã hết hạn', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    if (decoded.purpose !== 'refresh') {
+        throw new AppError('Token không hợp lệ', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    const user = await User.findOne({
+        where: { id: decoded.id, is_active: 1 },
+        include: [{ model: Role, attributes: ['role_name'] }],
+    });
+
+    if (!user) {
+        throw new AppError('Tài khoản không tồn tại hoặc đã bị khóa', HTTP_CODES.UNAUTHORIZED);
+    }
+
+    const accessToken = generateToken(user);
+    // Rotate refresh token for extra security
+    const newRefreshToken = generateRefreshToken(user);
+
+    return { user: formatUserResponse(user), accessToken, refreshToken: newRefreshToken };
 };
 
 /**
@@ -223,6 +278,7 @@ module.exports = {
     register,
     verifyEmail,
     login,
+    refreshSession,
     forgotPassword,
     verifyResetOtp,
     resetPassword,

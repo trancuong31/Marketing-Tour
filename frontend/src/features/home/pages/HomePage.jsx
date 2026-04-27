@@ -184,7 +184,7 @@ const HomePage = () => {
                         )}
                     </div>
 
-                    {/* HÀNG DƯỚI: Search Bar - Đã ném ra ngoài Cột Trái để có thể mở rộng tối đa (max-w lớn hơn) */}
+                    {/* HÀNG DƯỚI: Search Bar*/}
                     <div className="relative z-20 pointer-events-auto w-full max-w-[1000px] mx-auto xl:mx-0 mt-4 xl:mt-8">
                         <SearchBar />
                     </div>

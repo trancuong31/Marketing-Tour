@@ -18,7 +18,7 @@ const AdminLoginPage = () => {
         setError('');
         try {
             const res = await authService.login({ email, password });
-            const { token, user } = res.data.data;
+            const { accessToken, user } = res.data.data;
 
             // Chỉ admin mới được vào
             if (user.role_id !== 1) {
@@ -26,7 +26,7 @@ const AdminLoginPage = () => {
                 return;
             }
 
-            setAuth(token, user);
+            setAuth(accessToken, user);
             navigate('/admin/bookings');
         } catch (err) {
             setError(err.response?.data?.message || 'Đăng nhập thất bại');

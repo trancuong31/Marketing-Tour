@@ -1,6 +1,36 @@
 const authService = require('../services/authService');
 const { catchAsync } = require('../utils/catchAsync');
 const { HTTP_CODES } = require('../constants/httpCodes');
+const env = require('../config/env');
+
+/**
+ * Cookie options for refresh token
+ */
+const getRefreshCookieOptions = () => ({
+    httpOnly: true,
+    secure: env.nodeEnv === 'production',
+    sameSite: env.nodeEnv === 'production' ? 'strict' : 'lax',
+    path: '/api/auth',
+    maxAge: env.jwt.refreshCookieMaxAge * 24 * 60 * 60 * 1000, // days → ms
+});
+
+/**
+ * Set refresh token as HttpOnly cookie and return access token in body
+ */
+const sendTokenResponse = (res, statusCode, message, result) => {
+    // Set refresh token in HttpOnly cookie
+    res.cookie('refreshToken', result.refreshToken, getRefreshCookieOptions());
+
+    // Return access token + user in response body (FE stores in memory)
+    res.status(statusCode).json({
+        status: 'success',
+        message,
+        data: {
+            user: result.user,
+            accessToken: result.accessToken,
+        },
+    });
+};
 
 /**
  * Register a new user
@@ -22,11 +52,7 @@ const verifyEmail = catchAsync(async (req, res) => {
     const { email, otp_code } = req.body;
     const result = await authService.verifyEmail(email, otp_code);
 
-    res.status(HTTP_CODES.OK).json({
-        status: 'success',
-        message: 'Xác thực email thành công. Tài khoản đã được kích hoạt.',
-        data: result,
-    });
+    sendTokenResponse(res, HTTP_CODES.OK, 'Xác thực email thành công. Tài khoản đã được kích hoạt.', result);
 });
 
 /**
@@ -36,10 +62,34 @@ const login = catchAsync(async (req, res) => {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
 
+    sendTokenResponse(res, HTTP_CODES.OK, 'Đăng nhập thành công', result);
+});
+
+/**
+ * Refresh access token using refresh token from cookie
+ */
+const refresh = catchAsync(async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(HTTP_CODES.UNAUTHORIZED).json({
+            status: 'fail',
+            message: 'Không tìm thấy refresh token',
+        });
+    }
+
+    const result = await authService.refreshSession(refreshToken);
+
+    sendTokenResponse(res, HTTP_CODES.OK, 'Làm mới token thành công', result);
+});
+
+/**
+ * Get current user profile
+ */
+const getMe = catchAsync(async (req, res) => {
     res.status(HTTP_CODES.OK).json({
         status: 'success',
-        message: 'Đăng nhập thành công',
-        data: result,
+        data: { user: req.user },
     });
 });
 
@@ -97,19 +147,16 @@ const resendOtp = catchAsync(async (req, res) => {
 });
 
 /**
- * Get current user profile
- */
-const getMe = catchAsync(async (req, res) => {
-    res.status(HTTP_CODES.OK).json({
-        status: 'success',
-        data: { user: req.user },
-    });
-});
-
-/**
- * Logout user
+ * Logout user — clear refresh token cookie
  */
 const logout = catchAsync(async (req, res) => {
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: env.nodeEnv === 'production',
+        sameSite: env.nodeEnv === 'production' ? 'strict' : 'lax',
+        path: '/api/auth',
+    });
+
     res.status(HTTP_CODES.OK).json({
         status: 'success',
         message: 'Đăng xuất thành công',
@@ -120,6 +167,7 @@ module.exports = {
     register,
     verifyEmail,
     login,
+    refresh,
     forgotPassword,
     verifyResetOtp,
     resetPassword,
