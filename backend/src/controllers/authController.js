@@ -78,7 +78,7 @@ const refresh = catchAsync(async (req, res) => {
         });
     }
 
-    const result = await authService.refreshSession(refreshToken);
+    const result = await authService.refreshAccessToken(refreshToken);
 
     sendTokenResponse(res, HTTP_CODES.OK, 'Làm mới token thành công', result);
 });

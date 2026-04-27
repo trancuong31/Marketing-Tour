@@ -12,9 +12,6 @@ const api = axios.create({
     baseURL,
     timeout: API_TIMEOUT,
     withCredentials: true, // gửi cookie (refresh token) mỗi request
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 // ─── Token management (in-memory only, no localStorage) ──────────────────────

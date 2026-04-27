@@ -270,7 +270,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                             const previewUrl = URL.createObjectURL(file);
                             return (
                                 <div key={idx} className="relative group rounded-lg overflow-hidden border border-border shadow-sm">
-                                    <img src={previewUrl} alt="" className="w-24 h-24 object-cover" onLoad={() => URL.revokeObjectURL(previewUrl)} />
+                                    <img src={previewUrl} alt="" className="w-24 h-24 object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <button type="button" onClick={() => removeFile(idx)}
                                             className="w-8 h-8 bg-error text-white rounded-full flex items-center justify-center shadow-md transform hover:scale-110 transition-transform" title="Hủy ảnh này">
@@ -692,10 +692,7 @@ const TourManagementPage = () => {
     };
 
     const openCreate = () => {
-        reset({
-            ...defaultValues,
-            category_id: categories.length > 0 ? String(categories[0].id) : '',
-        });
+        reset(defaultValues);
         setFiles([]);
         setActiveTab('general');
         setModal({ open: true, tour: null });
@@ -811,6 +808,7 @@ const TourManagementPage = () => {
                 await adminService.createTour(fd);
                 toast.success('Thêm tour mới thành công!');
             }
+            setFiles([]);
             setModal({ open: false, tour: null });
             await fetchData();
         } catch (err) {
@@ -848,6 +846,16 @@ const TourManagementPage = () => {
         try {
             await adminService.deleteTourImage(imageId);
             toast.success('Xóa ảnh thành công!');
+            // Update local state for modal
+            if (modal.tour) {
+                setModal(prev => ({
+                    ...prev,
+                    tour: {
+                        ...prev.tour,
+                        images: prev.tour.images.filter(img => img.id !== imageId)
+                    }
+                }));
+            }
             await fetchData();
         } catch {
             toast.error('Lỗi xóa ảnh');

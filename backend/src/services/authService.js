@@ -22,6 +22,20 @@ const generateAccessToken = (user) => {
 };
 
 /**
+ * Generate Refresh Token
+ */
+const generateRefreshToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id,
+            role_id: user.role_id,
+        },
+        env.jwt.refreshSecret,
+        { expiresIn: env.jwt.refreshExpiresIn || '7d' }
+    );
+};
+
+/**
  * Generate reset token (10 minutes)
  */
 const generateResetToken = (userId) => {
@@ -37,13 +51,6 @@ const generateResetToken = (userId) => {
  */
 const verifyToken = (token) => {
     return jwt.verify(token, env.jwt.secret);
-};
-
-/**
- * Verify refresh token
- */
-const verifyRefreshToken = (token) => {
-    return jwt.verify(token, env.jwt.refreshSecret);
 };
 
 /**
@@ -106,21 +113,11 @@ const verifyEmail = async (email, otpCode) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    try {
-        await User.update({
-            is_active: 1,
-            refresh_token: refreshToken
-        }, {
-            where: { id: user.id }
-        });
-    } catch (updateError) {
-        console.error('Lỗi khi cập nhật verifyEmail token vào DB:', updateError);
-        throw new AppError('Lỗi hệ thống khi xác thực email', HTTP_CODES.INTERNAL_SERVER_ERROR);
-    }
+    await user.update({
+        is_active: 1,
+    });
 
-    const token = generateToken(user);
-
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), accessToken, refreshToken };
 };
 
 /**
@@ -149,23 +146,11 @@ const login = async (email, password) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    try {
-        // Cập nhật last_login và refresh_token cùng một lúc
-        await User.update({
-            last_login: new Date(),
-            refresh_token: refreshToken
-        }, {
-            where: { id: user.id }
-        });
-    } catch (updateError) {
-        require('fs').appendFileSync('login_errors.log', `${new Date().toISOString()} - ${updateError.stack}\n`);
-        console.error('Lỗi khi cập nhật token vào DB:', updateError);
-        throw new AppError('Lỗi hệ thống khi xử lý đăng nhập', HTTP_CODES.INTERNAL_SERVER_ERROR);
-    }
+    await user.update({
+        last_login: new Date(),
+    });
 
-    const token = generateToken(user);
-
-    return { user: formatUserResponse(user), token };
+    return { user: formatUserResponse(user), accessToken, refreshToken };
 };
 
 /**
@@ -266,32 +251,24 @@ const refreshAccessToken = async (refreshToken) => {
     }
 
     const user = await User.findOne({
-        where: { id: decoded.id, is_active: 1, refresh_token: refreshToken },
+        where: { id: decoded.id, is_active: 1 },
         include: [{ model: Role, attributes: ['role_name'] }],
     });
 
     if (!user) {
-        throw new AppError('Tài khoản không tồn tại hoặc refresh token đã bị thu hồi', HTTP_CODES.UNAUTHORIZED);
+        throw new AppError('Tài khoản không tồn tại hoặc đã bị khóa', HTTP_CODES.UNAUTHORIZED);
     }
 
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
-    // Quay vòng refresh token (Rotate)
-    await User.update({ 
-        refresh_token: newRefreshToken 
-    }, {
-        where: { id: user.id }
-    });
-
-    return { token: newAccessToken, refreshToken: newRefreshToken };
+    return { user: formatUserResponse(user), accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 
 module.exports = {
     register,
     verifyEmail,
     login,
-    refreshSession,
     forgotPassword,
     verifyResetOtp,
     resetPassword,
