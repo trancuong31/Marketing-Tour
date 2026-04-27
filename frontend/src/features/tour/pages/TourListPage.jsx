@@ -46,8 +46,8 @@ const BUDGET_OPTIONS = [
 
 const BADGE_OPTIONS = [
     { label: 'Tất cả', value: '' },
-    { label: '⭐ Tour nổi bật', value: 'featured' },
-    { label: '🎁 Tour ưu đãi', value: 'promotion' },
+    { label: 'Tour nổi bật', value: 'featured' },
+    { label: 'Tour ưu đãi', value: 'promotion' },
 ];
 
 const SORT_OPTIONS = [
