@@ -39,6 +39,7 @@ const AppRoutes = () => {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/tours/noi-dia" element={<TourListPage />} />
                 <Route path="/tours/quoc-te" element={<TourListPage />} />
+                <Route path="/tours" element={<TourListPage />} />
                 <Route path="/tours/:slug" element={<TourDetailPage />} />
                 <Route path="/history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
                 <Route path="/lookup-booking" element={<LookupBookingPage />} />

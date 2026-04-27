@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { tourService, bannerService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -52,6 +52,18 @@ const HomePage = () => {
     const featured = tours.filter(t => t.tour_badge === 'featured').slice(0, 6);
     const onSale = tours.filter(t => t.tour_badge === 'promotion').slice(0, 6);
 
+    const departurePriceMap = useMemo(() => {
+        const map = {};
+        tours.forEach(tour => {
+            (tour.departures || []).forEach(dep => {
+                const d = dep.departure_date;
+                const p = parseFloat(dep.price_adult);
+                if (!map[d] || p < map[d]) map[d] = p;
+            });
+        });
+        return map;
+    }, [tours]);
+
     const handleBannerClick = (banner) => {
         if (banner.target_link) {
             if (banner.target_link.startsWith('http')) {
@@ -82,7 +94,7 @@ const HomePage = () => {
     return (
         <ClientLayout>
             {/* ═══ HERO BANNER ═══ */}
-            <section className="relative py-10 sm:py-28 px-4 min-h-[450px] flex items-center justify-center group/hero z-30">
+            <section className="relative py-12 sm:py-20 px-4 min-h-[400px] lg:min-h-[500px] flex items-center justify-center group/hero z-30">
                 
                 {/* 1. Background (Clickable) */}
                 <div 
@@ -106,77 +118,56 @@ const HomePage = () => {
                         <div className="w-full h-full bg-gradient-to-br from-primary via-primary-dark to-accent" />
                     )}
                 </div>
-                {/* Cấu trúc Content linh hoạt: chia phần Banner và SearchBar riêng biệt để SearchBar dài mượt hơn */}
-                <div className="relative z-10 w-full max-w-[1600px] mx-auto pointer-events-none flex flex-col gap-8 xl:gap-12 px-4 sm:px-6 lg:px-12 mt-6 xl:mt-10 mb-8 xl:mb-12">
+                {/* Cấu trúc Content linh hoạt */}
+                <div className="relative z-10 w-full max-w-[1400px] mx-auto pointer-events-none flex flex-col gap-6 xl:gap-8 px-2 sm:px-6 mt-4 mb-6">
                     
                     {/* HÀNG TRÊN: Cột Trái (Slogan) & Cột Phải (Banner Info) */}
-                    <div className="flex flex-col xl:flex-row items-center justify-between gap-12 xl:gap-10 w-full">
-                        {/* Cột Trái: Slogan & Thanh công cụ (Tự động canh giữa trên màn nhỏ, vuốt sang trái trên màn to) */}
-                        <div className="text-center xl:text-left w-full max-w-4xl xl:max-w-5xl mx-auto xl:mx-0 flex-1">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-sm font-medium mb-6 text-white drop-shadow-md">
+                    <div className="flex flex-col xl:flex-row items-center justify-between gap-8 xl:gap-10 w-full">
+                        {/* Cột Trái: Slogan */}
+                        <div className="text-center xl:text-left w-full max-w-3xl xl:max-w-4xl mx-auto xl:mx-0 flex-1">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs sm:text-sm font-medium mb-4 text-white drop-shadow-md">
                                 <Compass className="w-4 h-4" />
                                 Khám phá thế giới cùng chúng tôi
                             </div>
 
                             {/* Title cố định */}
-                            <div className="max-w-3xl mx-auto xl:mx-0">
-                                <h1 className="text-4xl sm:text-5xl lg:text-[5rem] xl:text-6xl 2xl:text-7xl font-extrabold leading-tight mb-4 text-white drop-shadow-lg tracking-tight">
+                            <div className="max-w-2xl mx-auto xl:mx-0">
+                                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 text-white drop-shadow-lg tracking-tight">
                                     Hành trình đáng nhớ
                                     <br />
                                     <span className="bg-gradient-to-r from-secondary to-yellow-300 bg-clip-text text-transparent drop-shadow-md">
                                         bắt đầu từ đây
                                     </span>
                                 </h1>
-                                <p className="text-lg sm:text-xl text-white/90 mb-8 drop-shadow-md font-medium max-w-2xl mx-auto xl:mx-0">
+                                <p className="text-base sm:text-lg text-white/90 mb-4 drop-shadow-md font-medium max-w-xl mx-auto xl:mx-0">
                                     Tour du lịch nội địa và quốc tế chất lượng cao với giá tốt nhất trên thị trường.
                                 </p>
                             </div>
-
-                            <div className="flex flex-wrap justify-center xl:justify-start gap-4 pointer-events-auto">
-                                <Link
-                                    to="/tours/noi-dia"
-                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-primary-light/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl duration-300 backdrop-blur-sm"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <MapPin className="w-4 h-4" />
-                                    Tour Nội Địa
-                                    <ChevronRight className="w-4 h-4 opacity-70" />
-                                </Link>
-                                <Link
-                                    to="/tours/quoc-te"
-                                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-secondary/90 text-white font-semibold rounded-xl hover:bg-white/20 transition border border-white/30 text-sm shadow-xl duration-300 backdrop-blur-sm"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <Globe2 className="w-4 h-4" />
-                                    Tour Quốc Tế
-                                    <ChevronRight className="w-4 h-4 opacity-70" />
-                                </Link>
-                            </div>                        
                         </div>
 
-                        {/* Cột Phải: 3. Banner Title (Chỉ hiển thị trên màn hình máy tính xl để tránh chật chội) */}
+                        {/* Cột Phải: Banner Title */}
                         {heroBanners.length > 0 && heroBanners[heroIndex]?.title && (
                             <div 
-                                className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm 2xl:max-w-md shrink-0 xl:mt-0 delay-150 animate-fade-in-up"
+                                className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm shrink-0 animate-fade-in-up"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleBannerClick(heroBanners[heroIndex]);
                                 }}
                             >
-                                <div className="p-2 2xl:p-8 rounded-xl shadow-2xl transition duration-500 backdrop-blur-md bg-black/20 border border-white/10">
-                                    <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-3 flex flex-col gap-1.5">
-                                        <span className="text-lg normal-case font-medium text-white/80">Giá chỉ từ</span> 
-                                        <span className="text-[2.5rem] 2xl:text-5xl font-extrabold text-orange-400 drop-shadow-xl leading-none">
+                                <div className="p-5 rounded-2xl shadow-2xl transition duration-500 backdrop-blur-md bg-black/20 border border-white/10">
+                                    <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-2 flex flex-col gap-1">
+                                        <span className="text-base normal-case font-medium text-white/80">Giá chỉ từ</span> 
+                                        <span className="text-4xl font-extrabold text-orange-400 drop-shadow-xl leading-none">
                                             {formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)} 
-                                            <span className="text-lg font-medium text-white/70 ml-1">/ Khách</span>
+                                            <span className="text-base font-medium text-white/70 ml-1">/ Khách</span>
                                         </span>
                                     </div>
-                                    <div className="flex items-end gap-6 justify-between mt-6">
-                                        <h3 className="text-white font-bold text-xl 2xl:text-2xl leading-snug line-clamp-3 drop-shadow-md">
+                                    <div className="flex items-end gap-4 justify-between mt-4">
+                                        <h3 className="text-white font-bold text-lg leading-snug line-clamp-2 drop-shadow-md">
                                             {heroBanners[heroIndex].title}
                                         </h3>
-                                        <div className="bg-white/10 p-3 rounded-full group-hover:bg-primary transition-all duration-300 shrink-0 border border-white/10 group-hover:border-transparent">
-                                            <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-1 transition-transform duration-300" />
+                                        <div className="bg-white/10 p-2.5 rounded-full group-hover:bg-primary transition-all duration-300 shrink-0 border border-white/10 group-hover:border-transparent">
+                                            <ChevronRight className="w-5 h-5 text-white transition-transform duration-300" />
                                         </div>
                                     </div>
                                 </div>
@@ -185,8 +176,8 @@ const HomePage = () => {
                     </div>
 
                     {/* HÀNG DƯỚI: Search Bar*/}
-                    <div className="relative z-20 pointer-events-auto w-full max-w-[1000px] mx-auto xl:mx-0 mt-4 xl:mt-8">
-                        <SearchBar />
+                    <div className="relative z-20 pointer-events-auto w-full max-w-4xl mx-auto xl:mx-0 mt-2">
+                        <SearchBar departurePriceMap={departurePriceMap} />
                     </div>
                 </div>
 

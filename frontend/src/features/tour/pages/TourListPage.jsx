@@ -4,11 +4,8 @@ import { tourService } from '@/services/tourService';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
-import { format } from 'date-fns';
-import {
-    MapPin, Globe2, Loader2, X, Filter, SlidersHorizontal,
-    CalendarDays, Star, Sparkles, ChevronLeft, ChevronRight,
-} from 'lucide-react';
+import { MapPin, Globe2, Loader2, X, Filter, SlidersHorizontal, Star, Sparkles, Search } from 'lucide-react';
+import DepartureCalendar from '../../../components/ui/DepartureCalendar';
 import banahill from '../../../assets/images/banahill.webp';
 import tokyo from '../../../assets/images/tokyo.webp';
 
@@ -28,6 +25,14 @@ const typeConfig = {
         gradient: 'from-secondary-400 to-secondary-dark',
         apiType: 'international',
         img: tokyo,
+    },
+    'all': {
+        label: 'Kết quả tìm kiếm',
+        description: 'Khám phá những hành trình phù hợp nhất với bạn',
+        icon: Search,
+        gradient: 'from-slate-600 to-slate-800',
+        apiType: '',
+        img: banahill,
     },
 };
 
@@ -52,160 +57,10 @@ const SORT_OPTIONS = [
     { label: 'Ngày khởi hành gần nhất', value: 'date_asc' },
 ];
 
-const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-const DAY_HEADERS = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
-
-/* ═══ Helpers ═══ */
-const getMinPrice = (tour) => {
-    const deps = tour.departures || [];
-    if (!deps.length) return Infinity;
-    return Math.min(...deps.map(d => parseFloat(d.price_adult)));
-};
-
-const getEarliestDate = (tour) => {
-    const deps = tour.departures || [];
-    if (!deps.length) return '9999-12-31';
-    return deps.reduce((m, d) => (d.departure_date < m ? d.departure_date : m), deps[0].departure_date);
-};
-
-/** 32900000 → "32,9tr" */
-const formatShortPrice = (price) => {
-    const m = price / 1000000;
-    return m.toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'tr';
-};
-
-/* ═══ Custom Departure Calendar ═══ */
-const DepartureCalendar = ({ label, value, onChange, departurePriceMap }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [displayMonth, setDisplayMonth] = useState(() => new Date());
-    const ref = useRef(null);
-
-    useEffect(() => {
-        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setIsOpen(false); };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
-
-    const year = displayMonth.getFullYear();
-    const month = displayMonth.getMonth();
-    const startDow = (new Date(year, month, 1).getDay() + 6) % 7;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const weeks = useMemo(() => {
-        const result = [];
-        let week = new Array(startDow).fill(null);
-        for (let d = 1; d <= daysInMonth; d++) {
-            week.push(d);
-            if (week.length === 7) { result.push(week); week = []; }
-        }
-        if (week.length) { while (week.length < 7) week.push(null); result.push(week); }
-        return result;
-    }, [startDow, daysInMonth]);
-
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-
-    // Find min price in this month for green highlight
-    const monthMinPrice = useMemo(() => {
-        let min = Infinity;
-        for (let d = 1; d <= daysInMonth; d++) {
-            const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            if (departurePriceMap[key] && departurePriceMap[key] < min) min = departurePriceMap[key];
-        }
-        return min;
-    }, [departurePriceMap, year, month, daysInMonth]);
-
-    const handleDayClick = (day) => {
-        const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
-        onChange(dateStr === value ? '' : dateStr);
-        setIsOpen(false);
-    };
-
-    return (
-        <div ref={ref} className="relative">
-            <p className="text-sm font-bold text-text mb-2">{label}</p>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm transition-all duration-200 bg-transparent text-text border-border hover:border-primary/40 focus:outline-none ${isOpen ? 'ring-2 ring-primary/30 border-primary/50' : ''}`}
-            >
-                <span className={`flex items-center gap-2 truncate ${!value ? 'text-text-muted' : ''}`}>
-                    <CalendarDays className="w-4 h-4 text-text-muted shrink-0" />
-                    {value ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN') : 'Chọn ngày'}
-                </span>
-                {value && (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); onChange(''); }} className="p-0.5 rounded hover:bg-surface-alt transition">
-                        <X className="w-3.5 h-3.5 text-text-muted" />
-                    </button>
-                )}
-            </button>
-
-            {isOpen && (
-                <div className="absolute top-full left-0 z-[9999] mt-1.5 bg-white rounded-2xl shadow-2xl shadow-black/15 border border-gray-100 p-4 w-[340px]">
-                    {/* Month navigation */}
-                    <div className="flex items-center justify-between mb-3">
-                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month - 1, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-500">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <span className="font-bold text-lg text-text">{MONTH_NAMES[month]} {year}</span>
-                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month + 1, 1))} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-500">
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 mb-1">
-                        {DAY_HEADERS.map(d => (
-                            <div key={d} className="text-center text-xs font-semibold text-gray-400 py-1.5">{d}</div>
-                        ))}
-                    </div>
-
-                    {/* Day cells */}
-                    {weeks.map((week, wi) => (
-                        <div key={wi} className="grid grid-cols-7">
-                            {week.map((day, di) => {
-                                if (!day) return <div key={di} className="h-12" />;
-                                const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
-                                const dateObj = new Date(year, month, day);
-                                const isPast = dateObj < today;
-                                const isSelected = value === dateStr;
-                                const price = departurePriceMap[dateStr];
-                                const hasDep = !!price;
-                                const isCheapest = hasDep && price === monthMinPrice;
-
-                                return (
-                                    <button
-                                        key={di}
-                                        type="button"
-                                        disabled={isPast || !hasDep}
-                                        onClick={() => handleDayClick(day)}
-                                        className={`h-12 flex flex-col items-center justify-center rounded-lg text-sm transition-all
-                                            ${isSelected ? 'bg-primary text-white shadow-md' : ''}
-                                            ${isPast ? 'text-gray-200 cursor-default' : ''}
-                                            ${!hasDep && !isPast ? 'text-gray-300 cursor-default' : ''}
-                                            ${hasDep && !isSelected && !isPast ? 'text-gray-700 font-semibold hover:bg-primary/10 cursor-pointer' : ''}
-                                        `}
-                                    >
-                                        <span className="leading-none">{day}</span>
-                                        {hasDep && (
-                                            <span className={`text-[10px] leading-tight mt-0.5 ${isSelected ? 'text-white/80' : isCheapest ? 'text-green-500 font-bold' : 'text-gray-400'}`}>
-                                                {formatShortPrice(price)}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
-
 /* ═══ Main Page ═══ */
 const TourListPage = () => {
     const location = useLocation();
-    const type = location.pathname.includes('quoc-te') ? 'quoc-te' : 'noi-dia';
+    const type = location.pathname.includes('quoc-te') ? 'quoc-te' : location.pathname.includes('noi-dia') ? 'noi-dia' : 'all';
     const config = typeConfig[type];
     const Icon = config.icon;
 

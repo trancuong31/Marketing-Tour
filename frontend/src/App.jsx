@@ -4,6 +4,7 @@ import AppRoutes from './routes';
 import './App.css';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './store';
+import ScrollToTop from './components/layout/ScrollToTop';
 
 function App() {
   const initAuth = useAuthStore((s) => s.initAuth);
@@ -28,6 +29,7 @@ function App() {
   return (
     <BrowserRouter>    
       <Toaster richColors position="top-center" />
+      <ScrollToTop />
       <AppRoutes />
     </BrowserRouter>
   );
