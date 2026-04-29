@@ -3,38 +3,69 @@ import { useForm } from 'react-hook-form';
 import { useAuthStore } from '@/store';
 import { bookingService } from '@/services/tourService';
 import SuccessModal from '@/components/ui/SuccessModal';
-import { User, Phone, Mail, FileText, Loader2, Calendar, Users, Minus, Plus, MapPin, Settings } from 'lucide-react';
+import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { CustomSelect } from '@/components/ui';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99 }) => (
-    <div className="flex items-center justify-between py-2">
+const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99, price }) => (
+    <div className="flex items-center justify-between py-2.5">
         <div>
-            <p className="text-sm font-medium text-text">{label}</p>
+            <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-sm font-semibold text-text">{label}</p>
+                {price > 0 && (
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        {formatPrice(price)}
+                    </span>
+                )}
+            </div>
             <p className="text-xs text-text-muted">{ageDesc}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
             <button
                 type="button"
                 onClick={() => onChange(Math.max(min, count - 1))}
                 disabled={count <= min}
-                className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-surface-alt transition disabled:opacity-30"
+                className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-surface-alt hover:border-primary/50 transition-all disabled:opacity-30 disabled:hover:border-border"
             >
                 <Minus className="w-3.5 h-3.5" />
             </button>
-            <span className="w-8 text-center font-semibold text-text">{count}</span>
+            <span className="w-6 text-center text-sm font-bold text-text">{count}</span>
             <button
                 type="button"
                 onClick={() => onChange(Math.min(max, count + 1))}
                 disabled={count >= max}
-                className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/5 transition disabled:opacity-30"
+                className="w-8 h-8 rounded-full bg-primary/5 border border-primary/30 text-primary flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-30"
             >
                 <Plus className="w-3.5 h-3.5" />
             </button>
         </div>
     </div>
+);
+
+const CustomCheckbox = ({ checked, onChange, label, className = '' }) => (
+    <label className={`flex items-center gap-3 cursor-pointer group select-none ${className}`}>
+        <div className="relative flex items-center justify-center">
+            <input 
+                type="checkbox" 
+                className="absolute opacity-0 w-0 h-0" 
+                checked={checked} 
+                onChange={onChange} 
+            />
+            <div className={`
+                w-5 h-5 rounded flex items-center justify-center border transition-all duration-200 ease-in-out
+                ${checked 
+                    ? 'bg-primary border-primary text-white shadow-[0_0_10px_rgba(var(--color-primary),0.2)]' 
+                    : 'bg-surface-alt border-border text-transparent group-hover:border-primary/50'
+                }
+            `}>
+                <Check className={`w-3.5 h-3.5 transition-transform duration-200 ${checked ? 'scale-100' : 'scale-50 opacity-0'}`} strokeWidth={3} />
+            </div>
+        </div>
+        {label && <span className={`text-sm transition-colors ${checked ? 'text-text font-medium' : 'text-text group-hover:text-text-secondary'}`}>{label}</span>}
+    </label>
 );
 
 const BookingForm = ({ tour }) => {
@@ -65,6 +96,17 @@ const BookingForm = ({ tour }) => {
     const departures = (tour.departures || []).filter(d => d.status === 'open');
     const pickupLocations = tour.pickupLocations || [];
     const tourOptions = tour.options || [];
+
+    // Options for CustomSelect
+    const departureOptions = useMemo(() => departures.map(d => ({
+        value: String(d.id),
+        label: `${new Date(d.departure_date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} · ${formatPrice(d.price_adult)}/người lớn ${d.available_seats > 0 ? ` · Còn ${d.available_seats} chỗ` : ''}`
+    })), [departures]);
+
+    const pickupOptions = useMemo(() => pickupLocations.map(p => ({
+        value: String(p.id),
+        label: `${p.location_name}${p.pickup_time ? ` · ${p.pickup_time}` : ''}${parseFloat(p.surcharge_amount) > 0 ? ` · +${formatPrice(p.surcharge_amount)}/người` : ''}`
+    })), [pickupLocations]);
 
     // Departure đã chọn
     const selectedDeparture = useMemo(
@@ -211,56 +253,19 @@ const BookingForm = ({ tour }) => {
                             <Calendar className="w-3.5 h-3.5 text-text-muted" />
                             Ngày khởi hành <span className="text-error">*</span>
                         </label>
-                        <select
+                        <CustomSelect
                             value={selectedDepartureId}
-                            onChange={e => {
-                                setSelectedDepartureId(e.target.value);
+                            onChange={val => {
+                                setSelectedDepartureId(val);
                                 // Reset passengers khi đổi departure
                                 setAdults(1);
                                 setChildren(0);
                                 setInfants(0);
                             }}
-                            className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                            required
-                        >
-                            <option value="">— Chọn ngày khởi hành —</option>
-                            {departures.map(d => (
-                                <option key={d.id} value={d.id}>
-                                    {new Date(d.departure_date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                    {' · '}
-                                    {formatPrice(d.price_adult)}/người lớn
-                                    {d.available_seats > 0 ? ` · Còn ${d.available_seats} chỗ` : ''}
-                                </option>
-                            ))}
-                        </select>
+                            options={departureOptions}
+                            placeholder="— Chọn ngày khởi hành —"
+                        />
                     </div>
-
-                    {/* Hiện giá theo departure đã chọn */}
-                    {selectedDeparture && (
-                        <div className="rounded-xl border border-border overflow-hidden">
-                            <div className="bg-primary/5 px-3 py-2 border-b border-border">
-                                <p className="text-xs font-bold text-primary">Giá ngày {new Date(selectedDeparture.departure_date).toLocaleDateString('vi-VN')}</p>
-                            </div>
-                            <div className="divide-y divide-border text-sm">
-                                <div className="flex justify-between px-3 py-2">
-                                    <span className="text-text-secondary">Người lớn</span>
-                                    <span className="font-semibold text-primary">{formatPrice(adultPrice)}</span>
-                                </div>
-                                {childPrice > 0 && (
-                                    <div className="flex justify-between px-3 py-2">
-                                        <span className="text-text-secondary">Trẻ em</span>
-                                        <span className="font-semibold text-primary">{formatPrice(childPrice)}</span>
-                                    </div>
-                                )}
-                                {infantPrice > 0 && (
-                                    <div className="flex justify-between px-3 py-2">
-                                        <span className="text-text-secondary">Em bé</span>
-                                        <span className="font-semibold text-primary">{formatPrice(infantPrice)}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     {/* ═══ BƯỚC 2: HÀNH KHÁCH ═══ */}
                     <div>
@@ -276,20 +281,23 @@ const BookingForm = ({ tour }) => {
                                 onChange={setAdults}
                                 min={1}
                                 max={maxSeats}
+                                price={adultPrice}
                             />
                             <PassengerCounter
                                 label="Trẻ em"
-                                ageDesc="Từ 2 – 10 tuổi"
+                                ageDesc="Từ 5 - 10 tuổi"
                                 count={children}
                                 onChange={setChildren}
                                 max={Math.max(0, maxSeats - adults)}
+                                price={childPrice}
                             />
                             <PassengerCounter
-                                label="Trẻ nhỏ"
-                                ageDesc="Dưới 2 tuổi"
+                                label="Em bé"
+                                ageDesc="Dưới 5 tuổi"
                                 count={infants}
                                 onChange={setInfants}
                                 max={Math.max(0, maxSeats - adults - children)}
+                                price={infantPrice}
                             />
                         </div>
                         <p className="text-xs text-text-muted mt-1.5 text-right">
@@ -307,20 +315,12 @@ const BookingForm = ({ tour }) => {
                                 <MapPin className="w-3.5 h-3.5 text-text-muted" />
                                 Điểm đón
                             </label>
-                            <select
+                            <CustomSelect
                                 value={selectedPickupId}
-                                onChange={e => setSelectedPickupId(e.target.value)}
-                                className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                            >
-                                <option value="">— Không chọn điểm đón —</option>
-                                {pickupLocations.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.location_name}
-                                        {p.pickup_time ? ` · ${p.pickup_time}` : ''}
-                                        {parseFloat(p.surcharge_amount) > 0 ? ` · +${formatPrice(p.surcharge_amount)}/người` : ''}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={val => setSelectedPickupId(val)}
+                                options={pickupOptions}
+                                placeholder="— Không chọn điểm đón —"
+                            />
                         </div>
                     )}
 
@@ -342,15 +342,12 @@ const BookingForm = ({ tour }) => {
                                     return (
                                         <div key={opt.id} className="px-3 py-2.5">
                                             <div className="flex items-center justify-between">
-                                                <label className="flex items-center gap-2 cursor-pointer flex-1">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected || false}
-                                                        onChange={() => toggleOption(opt.id)}
-                                                        className="w-4 h-4 rounded border-border text-primary accent-primary"
-                                                    />
-                                                    <span className="text-sm text-text">{opt.option_name}</span>
-                                                </label>
+                                                <CustomCheckbox
+                                                    className="flex-1"
+                                                    checked={isSelected || false}
+                                                    onChange={() => toggleOption(opt.id)}
+                                                    label={opt.option_name}
+                                                />
                                                 <span className="text-sm font-medium text-primary">
                                                     +{formatPrice(opt.price)}{chargeLabel}
                                                 </span>
@@ -412,28 +409,6 @@ const BookingForm = ({ tour }) => {
                             </div>
                         </div>
                     )}
-
-                    {/* ═══ THÔNG TIN KHÁCH ═══ */}
-                    <div className="pt-3 border-t border-border space-y-3">
-                        <div className="bg-surface-alt rounded-xl p-4 mb-4 border border-border/50 text-sm">
-                            <p className="mb-2"><span className="text-text-muted">Họ và tên:</span> <strong className="text-text">{user?.full_name || user?.username}</strong></p>
-                            <p className="mb-2"><span className="text-text-muted">Số điện thoại:</span> <strong className="text-text">{user?.phone_number}</strong></p>
-                            <p><span className="text-text-muted">Email:</span> <strong className="text-text">{user?.email}</strong></p>
-                        </div>
-
-                        <div>
-                            <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-1">
-                                <FileText className="w-3.5 h-3.5 text-text-muted" />
-                                Ghi chú
-                            </label>
-                            <textarea
-                                {...register('customer_note')}
-                                rows={2}
-                                className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none"
-                                placeholder="Yêu cầu đặc biệt..."
-                            />
-                        </div>
-                    </div>
 
                     {/* Submit */}
                     <button

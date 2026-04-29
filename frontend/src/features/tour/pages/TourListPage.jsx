@@ -4,7 +4,7 @@ import { tourService } from '@/services/tourService';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
-import { MapPin, Globe2, Loader2, X, Filter, SlidersHorizontal, Star, Sparkles, Search } from 'lucide-react';
+import { MapPin, Globe2, Loader2, X, Filter, SlidersHorizontal, Star, Sparkles, Search, CalendarDays } from 'lucide-react';
 import DepartureCalendar from '../../../components/ui/DepartureCalendar';
 import banahill from '../../../assets/images/banahill.webp';
 import tokyo from '../../../assets/images/tokyo.webp';
@@ -56,6 +56,17 @@ const SORT_OPTIONS = [
     { label: 'Giá cao → thấp', value: 'price_desc' },
     { label: 'Ngày khởi hành gần nhất', value: 'date_asc' },
 ];
+
+const getMinPrice = (tour) => {
+    if (!tour.departures || tour.departures.length === 0) return Infinity;
+    return Math.min(...tour.departures.map(d => parseFloat(d.price_adult) || Infinity));
+};
+
+const getEarliestDate = (tour) => {
+    if (!tour.departures || tour.departures.length === 0) return '9999-12-31';
+    const dates = tour.departures.map(d => d.departure_date).filter(Boolean).sort();
+    return dates[0] || '9999-12-31';
+};
 
 /* ═══ Main Page ═══ */
 const TourListPage = () => {
@@ -125,12 +136,14 @@ const TourListPage = () => {
 
     const filteredTours = useMemo(() => {
         let result = tours.filter(tour => {
+            // Ẩn các tour không có ngày khởi hành
+            if (!tour.departures || tour.departures.length === 0) return false;
+
             if (filters.departure) {
                 if (!tour.pickupLocations?.some(loc => loc.location_name === filters.departure)) return false;
             }
             if (filters.destination && (tour.Category?.name || '') !== filters.destination) return false;
             if (filters.badge && tour.tour_badge !== filters.badge) return false;
-            // Client-side date filter
             if (filters.departureDate) {
                 if (!tour.departures?.some(d => d.departure_date === filters.departureDate)) return false;
             }
@@ -141,6 +154,11 @@ const TourListPage = () => {
         else if (sortBy === 'date_asc') result = [...result].sort((a, b) => getEarliestDate(a).localeCompare(getEarliestDate(b)));
         return result;
     }, [tours, filters, sortBy]);
+
+    // Cuộn lên đầu trang khi thay đổi bộ lọc hoặc sắp xếp
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [filters, sortBy]);
 
     const hasActiveFilter = filters.budget !== '' || filters.departure !== '' || filters.destination !== '' || filters.departureDate !== '' || filters.badge !== '';
 
@@ -162,18 +180,19 @@ const TourListPage = () => {
             </div>
             <DepartureCalendar
                 label="Ngày khởi hành"
+                labelIcon={<CalendarDays className="w-3.5 h-3.5" />}
                 value={filters.departureDate}
                 onChange={(v) => setFilters(f => ({ ...f, departureDate: v }))}
                 departurePriceMap={departurePriceMap}
             />
-            <CustomSelect label="Loại tour" value={filters.badge} onChange={(v) => setFilters(f => ({ ...f, badge: v }))} options={BADGE_OPTIONS} placeholder="Tất cả" icon={<Star className="w-4 h-4" />} />
-            <CustomSelect label="Ngân sách" value={filters.budget} onChange={(v) => setFilters(f => ({ ...f, budget: v }))} options={BUDGET_OPTIONS} placeholder="Tất cả" />
-            <CustomSelect label="Điểm khởi hành" value={filters.departure} onChange={(v) => setFilters(f => ({ ...f, departure: v }))} options={departureOptions} placeholder="Tất cả" icon={<MapPin className="w-4 h-4" />} />
-            <CustomSelect label="Điểm đến" value={filters.destination} onChange={(v) => setFilters(f => ({ ...f, destination: v }))} options={destinationOptions} placeholder="Tất cả" />
+            <CustomSelect label="Loại tour" labelIcon={<Star className="w-3.5 h-3.5" />} value={filters.badge} onChange={(v) => setFilters(f => ({ ...f, badge: v }))} options={BADGE_OPTIONS} placeholder="Tất cả" />
+            <CustomSelect label="Ngân sách" labelIcon={<Filter className="w-3.5 h-3.5" />} value={filters.budget} onChange={(v) => setFilters(f => ({ ...f, budget: v }))} options={BUDGET_OPTIONS} placeholder="Tất cả" />
+            <CustomSelect label="Điểm khởi hành" labelIcon={<MapPin className="w-3.5 h-3.5" />} value={filters.departure} onChange={(v) => setFilters(f => ({ ...f, departure: v }))} options={departureOptions} placeholder="Tất cả" />
+            <CustomSelect label="Điểm đến" labelIcon={<Globe2 className="w-3.5 h-3.5" />} value={filters.destination} onChange={(v) => setFilters(f => ({ ...f, destination: v }))} options={destinationOptions} placeholder="Tất cả" />
 
             
 
-            <CustomSelect label="Sắp xếp theo" value={sortBy} onChange={(v) => setSortBy(v)} options={SORT_OPTIONS} placeholder="Mặc định" />
+            <CustomSelect label="Sắp xếp theo" labelIcon={<SlidersHorizontal className="w-3.5 h-3.5" />} value={sortBy} onChange={(v) => setSortBy(v)} options={SORT_OPTIONS} placeholder="Mặc định" />
 
             <button onClick={() => setShowMobileFilter(false)} className="w-full py-3 bg-[#1a3c6e] text-white font-bold rounded-xl hover:bg-[#15325c] transition lg:hidden">
                 Áp dụng

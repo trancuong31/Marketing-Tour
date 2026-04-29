@@ -253,11 +253,29 @@ button {
     animation-delay: 600ms;
 }
 
+@keyframes slideProgress {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+
+@keyframes kenBurns {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+.animate-slide-progress {
+    animation: slideProgress 7s linear forwards;
+}
+
+.animate-ken-burns {
+    animation: kenBurns 10s ease-out infinite alternate;
+}
+
 
 /* ═══ Rich Text Content ═══ */
 .prose-content {
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .prose-content h1 {
@@ -273,7 +291,7 @@ button {
 }
 
 .prose-content p {
-    @apply mb-3 leading-relaxed;
+    @apply mb-0 leading-relaxed;
 }
 
 .prose-content ul {

@@ -123,6 +123,15 @@ const createBooking = catchAsync(async (req, res) => {
             total_price: totalPrice,
         }, { transaction: t });
 
+        // Giảm số chỗ trống
+        if (departure.available_seats > 0) {
+            const newSeats = departure.available_seats - totalPassengers;
+            await departure.update({
+                available_seats: newSeats,
+                status: newSeats === 0 ? 'full' : 'open'
+            }, { transaction: t });
+        }
+
         if (optionRecords.length > 0) {
             await BookingOption.bulkCreate(
                 optionRecords.map(r => ({ ...r, booking_id: newBooking.id })),
@@ -237,8 +246,25 @@ const cancelBooking = catchAsync(async (req, res) => {
     if (!booking) throw new AppError('Booking không tồn tại', HTTP_CODES.NOT_FOUND);
     if (booking.status !== 'pending') throw new AppError('Chỉ có thể hủy booking đang chờ', HTTP_CODES.BAD_REQUEST);
 
-    booking.status = 'cancelled';
-    await booking.save();
+    await sequelize.transaction(async (t) => {
+        booking.status = 'cancelled';
+        await booking.save({ transaction: t });
+
+        // Khôi phục chỗ trống
+        const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
+        if (departure) {
+            // Chỉ khôi phục nếu lúc đầu có giới hạn chỗ (không phải là unlimited: 0/open từ đầu)
+            const isLimited = departure.available_seats > 0 || departure.status === 'full';
+            if (isLimited) {
+                const totalPassengers = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
+                const newSeats = departure.available_seats + totalPassengers;
+                await departure.update({
+                    available_seats: newSeats,
+                    status: 'open'
+                }, { transaction: t });
+            }
+        }
+    });
 
     res.status(200).json({
         status: 'success',

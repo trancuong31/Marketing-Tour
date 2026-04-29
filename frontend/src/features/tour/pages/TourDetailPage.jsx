@@ -11,7 +11,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import {
     Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
     ChevronDown, CheckCircle, XCircle, AlertTriangle, Ban,
-    Heart, Trash2
+    Heart, Trash2, CircleCheckBig
 } from 'lucide-react';
 
 const formatPrice = (price) =>
@@ -390,7 +390,7 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
 
 /* ═══ ITINERARY ACCORDION ═══ */
 const ItineraryAccordion = ({ itineraries }) => {
-    const [openDay, setOpenDay] = useState(0);
+    const [openDay, setOpenDay] = useState(null);
 
     if (!itineraries || itineraries.length === 0) return null;
 
@@ -412,14 +412,16 @@ const ItineraryAccordion = ({ itineraries }) => {
                         </div>
                         <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${openDay === idx ? 'rotate-180' : ''}`} />
                     </button>
-                    {openDay === idx && (
-                        <div className="px-4 py-4 bg-surface border-t border-border overflow-hidden">
-                            <div
-                                className="prose-content break-words text-sm text-text-secondary leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.content) }}
-                            />
+                    <div className={`grid transition-all duration-300 ease-in-out ${openDay === idx ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                        <div className="overflow-hidden">
+                            <div className="px-4 py-4 bg-surface border-t border-border">
+                                <div
+                                    className="prose-content break-words text-sm text-text-secondary leading-relaxed"
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.content).replace(/&nbsp;/g, ' ') }}
+                                />
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             ))}
         </div>
@@ -608,7 +610,32 @@ const TourDetailPage = () => {
 
     return (
         <ClientLayout>
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2">
+                <h1 className="text-3xl sm:text-4xl font-bold text-text leading-tight">
+                            {tour.title}
+                        </h1>
+
+                        {/* Meta */}
+                        <div className="flex flex-wrap gap-4 pb-2 text-text-secondary">
+                            {durationText && (
+                                <span className="flex items-center gap-1.5 text-sm">
+                                    <Clock className="w-4 h-4 text-primary" />
+                                    {durationText}
+                                </span>
+                            )}
+                            {minPrice && (
+                                <span className="flex items-center gap-1.5 text-sm">
+                                    <Tag className="w-4 h-4 text-primary" />
+                                    Giá từ <span className="font-bold text-primary">{formatPrice(minPrice)}</span>/người
+                                </span>
+                            )}
+                            {tour.Category && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
+                                <Tag className="w-3.5 h-3.5" />
+                                {tour.Category.name}
+                            </span>
+                        )} 
+                        </div>
                 {/* ═══ BỐ CỤC ẢNH GRID THÔNG MINH ═══ */}
                 {(images.length > 0 || tour.thumbnail_url) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px]">
@@ -687,49 +714,24 @@ const TourDetailPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Cột trái */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Category */}
-                        {tour.Category && (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
-                                <Tag className="w-3.5 h-3.5" />
-                                {tour.Category.name}
-                            </span>
-                        )}
-
-                        <h1 className="text-3xl sm:text-4xl font-extrabold text-text leading-tight">
-                            {tour.title}
-                        </h1>
-
-                        {/* Meta */}
-                        <div className="flex flex-wrap gap-4 text-text-secondary">
-                            {durationText && (
-                                <span className="flex items-center gap-1.5 text-sm">
-                                    <Clock className="w-4 h-4 text-primary" />
-                                    {durationText}
-                                </span>
-                            )}
-                            {minPrice && (
-                                <span className="flex items-center gap-1.5 text-sm">
-                                    <Tag className="w-4 h-4 text-primary" />
-                                    Giá từ <span className="font-bold text-primary">{formatPrice(minPrice)}</span>/người
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Tóm tắt */}
-                        {tour.summary && (
-                            <div className="p-4 bg-surface-alt rounded-xl border border-border">
-                                <p className="text-text-secondary leading-relaxed">{tour.summary}</p>
-                            </div>
-                        )}
-
                         {/* Điểm nổi bật */}
                         {tour.highlights && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
-                                <h3 className="text-lg font-bold text-primary mb-3">✨ Điểm nổi bật</h3>
-                                <div
-                                    className="prose-content break-words text-sm text-text-secondary"
-                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.highlights) }}
-                                />
+                                <h3 className="text-lg font-bold text-primary mb-4">Điểm nổi bật</h3>
+                                <div className="space-y-3">
+                                    {tour.highlights
+                                        .replace(/<[^>]*>?/gm, '') 
+                                        .replace(/&nbsp;/g, ' ') 
+                                        .split(/\.\s+|\.\n|\.$/)
+                                        .map(item => item.trim().replace(/^[-*•]\s*/, '')) 
+                                        .filter(item => item.length > 0)
+                                        .map((item, idx) => (
+                                            <div key={idx} className="flex items-start gap-3">
+                                                <CircleCheckBig className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
+                                                <span className="text-sm text-text-secondary font-medium leading-relaxed">{item}</span>
+                                            </div>
+                                        ))}
+                                </div>
                             </div>
                         )}
 
@@ -747,7 +749,7 @@ const TourDetailPage = () => {
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
-                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_includes) }}
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_includes).replace(/&nbsp;/g, ' ') }}
                                         />
                                     </div>
                                 )}
@@ -759,7 +761,7 @@ const TourDetailPage = () => {
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
-                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_excludes) }}
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.price_excludes).replace(/&nbsp;/g, ' ') }}
                                         />
                                     </div>
                                 )}
@@ -775,7 +777,7 @@ const TourDetailPage = () => {
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"
-                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.terms_and_notes) }}
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.terms_and_notes).replace(/&nbsp;/g, ' ') }}
                                 />
                             </div>
                         )}
@@ -789,7 +791,7 @@ const TourDetailPage = () => {
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"
-                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.cancellation_policy) }}
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tour.cancellation_policy).replace(/&nbsp;/g, ' ') }}
                                 />
                             </div>
                         )}

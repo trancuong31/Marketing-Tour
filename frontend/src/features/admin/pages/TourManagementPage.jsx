@@ -28,6 +28,24 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
         import('react-quill-new/dist/quill.snow.css');
     }, []);
 
+    const formats = [
+        'header', 'bold', 'italic', 'underline', 'strike', 'blockquote',
+        'list', 'bullet', 'indent', 'link', 'align'
+    ];
+
+    const modules = {
+        toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+            [{ 'align': [] }],
+            ['clean']
+        ],
+        clipboard: {
+            matchVisual: false
+        }
+    };
+
     return (
         <div>
             {label && (
@@ -42,7 +60,9 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
                         value={value || ''}
                         onChange={onChange}
                         placeholder={placeholder}
-                        className="bg-surface rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
+                        formats={formats}
+                        modules={modules}
+                        className="bg-transparent rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
                     />
                 ) : (
                     <textarea
@@ -57,6 +77,33 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
         </div>
     );
 };
+
+const PriceInput = ({ control, name, rules, error, placeholder }) => (
+    <Controller
+        name={name}
+        control={control}
+        rules={rules}
+        render={({ field }) => {
+            const displayValue = field.value !== undefined && field.value !== '' && field.value !== null 
+                ? Number(field.value).toLocaleString('vi-VN') 
+                : '';
+            return (
+                <input
+                    type="text"
+                    value={displayValue}
+                    onChange={(e) => {
+                        const val = e.target.value.replace(/\./g, '');
+                        if (val === '' || !isNaN(val)) {
+                            field.onChange(val === '' ? '' : Number(val));
+                        }
+                    }}
+                    className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                    placeholder={placeholder}
+                />
+            );
+        }}
+    />
+);
 
 // ═══ TAB: THÔNG TIN CHUNG ═══
 const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage, errors, control }) => {
@@ -186,14 +233,16 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
             {/* 5 Rich Text Fields */}
             <div className="space-y-6 pt-2">
                 <div>
-                    <RichTextEditor
-                        value={watch('highlights')}
-                        onChange={val => setValue('highlights', val, { shouldValidate: true })}
-                        label="Điểm nổi bật *"
-                        placeholder="Các điểm nổi bật của tour..."
-                        error={errors.highlights?.message}
+                    <label className="text-sm font-medium text-text mb-1 block">
+                        Điểm nổi bật *
+                    </label>
+                    <textarea
+                        {...register('highlights', { required: 'Vui lòng nhập điểm nổi bật' })}
+                        rows={4}
+                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.highlights ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
+                        placeholder="Nhập các điểm nổi bật... (Lưu ý: Viết thành đoạn văn, mỗi điểm nổi bật kết thúc bằng 1 dấu chấm)"
                     />
-                    <input type="hidden" {...register('highlights', { required: 'Vui lòng nhập điểm nổi bật' })} />
+                    {errors.highlights && <p className="text-error text-xs mt-1 font-medium">{errors.highlights.message}</p>}
                 </div>
 
                 <div>
@@ -308,7 +357,18 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors }) => {
                 <h4 className="text-sm font-bold text-text">Lịch trình từng ngày *</h4>
                 <button
                     type="button"
-                    onClick={() => append({ day_number: fields.length + 1, title: '', content: '' })}
+                    onClick={() => {
+                        append({ day_number: fields.length + 1, title: '', content: '' });
+                        setTimeout(() => {
+                            const elements = document.querySelectorAll('.itinerary-day-card');
+                            if (elements.length > 0) {
+                                const lastEl = elements[elements.length - 1];
+                                lastEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                const input = lastEl.querySelector('input[type="text"]');
+                                if (input) input.focus();
+                            }
+                        }, 100);
+                    }}
                     className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition flex items-center gap-1 shadow-sm"
                 >
                     <Plus className="w-4 h-4" /> Thêm ngày
@@ -324,7 +384,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors }) => {
             )}
 
             {fields.map((field, index) => (
-                <div key={field.id} className="p-5 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative group">
+                <div key={field.id} className="itinerary-day-card p-5 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative group">
                     <div className="flex items-center justify-between pb-3 border-b border-border/50">
                         <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5">
                             <Calendar className="w-3.5 h-3.5" /> Ngày {index + 1}
@@ -413,32 +473,17 @@ const DeparturesTab = ({ control, register, errors }) => {
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá NL (VNĐ) *</label>
-                            <input
-                                type="number"
-                                {...register(`departures.${index}.price_adult`, { required: 'Bắt buộc', min: { value: 1, message: '>0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.price_adult ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="3500000"
-                            />
+                            <PriceInput control={control} name={`departures.${index}.price_adult`} rules={{ required: 'Bắt buộc', min: { value: 1, message: '>0' } }} error={errors.departures?.[index]?.price_adult} placeholder="3.500.000" />
                             {errors.departures?.[index]?.price_adult && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_adult.message}</p>}
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá trẻ em (VNĐ) *</label>
-                            <input
-                                type="number"
-                                {...register(`departures.${index}.price_child`, { required: 'Bắt buộc', min: { value: 0, message: '>=0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.price_child ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="0"
-                            />
+                            <PriceInput control={control} name={`departures.${index}.price_child`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_child} placeholder="0" />
                             {errors.departures?.[index]?.price_child && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_child.message}</p>}
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá em bé (VNĐ) *</label>
-                            <input
-                                type="number"
-                                {...register(`departures.${index}.price_infant`, { required: 'Bắt buộc', min: { value: 0, message: '>=0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.price_infant ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="0"
-                            />
+                            <PriceInput control={control} name={`departures.${index}.price_infant`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_infant} placeholder="0" />
                             {errors.departures?.[index]?.price_infant && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_infant.message}</p>}
                         </div>
                         <div>
@@ -528,12 +573,7 @@ const PickupsTab = ({ control, register, errors }) => {
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Phụ thu (VNĐ) *</label>
-                            <input
-                                type="number"
-                                {...register(`pickup_locations.${index}.surcharge_amount`, { required: 'Bắt buộc', min: { value: 0, message: '>= 0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.surcharge_amount ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="0"
-                            />
+                            <PriceInput control={control} name={`pickup_locations.${index}.surcharge_amount`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>= 0' } }} error={errors.pickup_locations?.[index]?.surcharge_amount} placeholder="0" />
                             {errors.pickup_locations?.[index]?.surcharge_amount && <p className="text-error text-[10px] mt-1 font-medium">{errors.pickup_locations[index].surcharge_amount.message}</p>}
                         </div>
                     </div>
@@ -595,12 +635,7 @@ const OptionsTab = ({ control, register, errors }) => {
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá (VNĐ) *</label>
-                            <input
-                                type="number"
-                                {...register(`options.${index}.price`, { required: 'Bắt buộc', min: { value: 0, message: '>=0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.options?.[index]?.price ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="0"
-                            />
+                            <PriceInput control={control} name={`options.${index}.price`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.options?.[index]?.price} placeholder="0" />
                             {errors.options?.[index]?.price && <p className="text-error text-[10px] mt-1 font-medium">{errors.options[index].price.message}</p>}
                         </div>
                         <div className="[&>div>button]:py-2 [&>div>button]:bg-surface">

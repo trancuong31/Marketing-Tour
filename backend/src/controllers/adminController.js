@@ -512,9 +512,44 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
     }
 
     const oldStatus = booking.status;
-    await booking.update({
-        status,
-        admin_note: admin_note !== undefined ? admin_note : booking.admin_note,
+    await sequelize.transaction(async (t) => {
+        await booking.update({
+            status,
+            admin_note: admin_note !== undefined ? admin_note : booking.admin_note,
+        }, { transaction: t });
+
+        // Logic cập nhật số chỗ trống
+        const totalPassengers = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
+
+        // 1. Admin hủy đơn (pending/contacted/approved -> cancelled) => Khôi phục chỗ trống
+        if (status === 'cancelled' && oldStatus !== 'cancelled') {
+            const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
+            if (departure) {
+                const isLimited = departure.available_seats > 0 || departure.status === 'full';
+                if (isLimited) {
+                    const newSeats = departure.available_seats + totalPassengers;
+                    await departure.update({
+                        available_seats: newSeats,
+                        status: 'open'
+                    }, { transaction: t });
+                }
+            }
+        }
+
+        // 2. Admin khôi phục đơn đã hủy (cancelled -> pending/contacted/approved) => Giảm chỗ trống
+        if (oldStatus === 'cancelled' && status !== 'cancelled') {
+            const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
+            if (departure && departure.available_seats > 0) { // Nếu tour có giới hạn chỗ
+                if (departure.available_seats < totalPassengers) {
+                    throw new AppError(`Không đủ chỗ trống để khôi phục đơn (còn ${departure.available_seats} chỗ).`, HTTP_CODES.BAD_REQUEST);
+                }
+                const newSeats = departure.available_seats - totalPassengers;
+                await departure.update({
+                    available_seats: newSeats,
+                    status: newSeats === 0 ? 'full' : 'open'
+                }, { transaction: t });
+            }
+        }
     });
 
     // Nếu trạng thái chuyển thành 'approved', tạo thông báo cho user

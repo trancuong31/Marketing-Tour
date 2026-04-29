@@ -4,7 +4,7 @@ import { useThemeStore } from '../../../store';
 /**
  * Custom Select dropdown with keyboard navigation & theme support
  */
-const CustomSelect = ({ value, onChange, options, placeholder, icon, label }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, icon, label, labelIcon }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const dropdownRef = useRef(null);
@@ -66,7 +66,8 @@ const CustomSelect = ({ value, onChange, options, placeholder, icon, label }) =>
     return (
         <div ref={dropdownRef} className="relative w-full">
             {label && (
-                <label className="block text-[0.7rem] uppercase tracking-wider text-text-muted font-semibold mb-2 ">
+                <label className="flex items-center gap-2 text-[0.7rem] uppercase tracking-wider text-text-secondary font-bold mb-2">
+                    {labelIcon && <span className="text-primary">{labelIcon}</span>}
                     {label}
                 </label>
             )}
@@ -84,8 +85,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, icon, label }) =>
                     ${isOpen ? 'ring-2 ring-primary/30 border-primary/50' : ''}
                 `}
             >
-                <span className={`flex items-center gap-2 truncate ${!selectedOption ? 'text-text-muted' : ''}`}>
-                    {icon && <span className="text-text-muted shrink-0">{icon}</span>}
+                <span className={`flex items-center gap-2 truncate font-medium ${!selectedOption ? 'text-text-muted' : 'text-text'}`}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
                 <svg

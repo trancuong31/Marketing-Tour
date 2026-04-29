@@ -45,12 +45,12 @@ const HomePage = () => {
         if (heroBanners.length <= 1) return;
         const timer = setInterval(() => {
             setHeroIndex(prev => (prev + 1) % heroBanners.length);
-        }, 5000);
+        }, 7000);
         return () => clearInterval(timer);
     }, [heroBanners.length]);
 
-    const featured = tours.filter(t => t.tour_badge === 'featured').slice(0, 6);
-    const onSale = tours.filter(t => t.tour_badge === 'promotion').slice(0, 6);
+    const featured = tours.filter(t => t.tour_badge === 'featured' && t.departures?.length > 0).slice(0, 6);
+    const onSale = tours.filter(t => t.tour_badge === 'promotion' && t.departures?.length > 0).slice(0, 6);
 
     const departurePriceMap = useMemo(() => {
         const map = {};
@@ -98,7 +98,7 @@ const HomePage = () => {
                 
                 {/* 1. Background (Clickable) */}
                 <div 
-                    className="absolute inset-0 cursor-pointer z-0 overflow-hidden"
+                    className="absolute inset-0 cursor-pointer z-0 overflow-hidden bg-black"
                     onClick={() => heroBanners.length > 0 && handleBannerClick(heroBanners[heroIndex])}
                 >
                     {heroBanners.length > 0 ? (
@@ -108,14 +108,16 @@ const HomePage = () => {
                                     key={banner.id}
                                     src={getImageUrl(banner.image_url)}
                                     alt={banner.title}
-                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-all duration-[10000ms] ease-linear transform-gpu will-change-transform ${
-                                        idx === heroIndex ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
+                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[2000ms] ease-in-out transform-gpu will-change-transform animate-ken-burns ${
+                                        idx === heroIndex 
+                                            ? 'opacity-100 z-10 scale-100' 
+                                            : 'opacity-0 z-0 scale-110'
                                     }`}
                                 />
                             ))}
                         </>
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary via-primary-dark to-accent" />
+                        <div className="w-full h-full bg-black" />
                     )}
                 </div>
                 {/* Cấu trúc Content linh hoạt */}
@@ -145,29 +147,30 @@ const HomePage = () => {
                             </div>
                         </div>
 
-                        {/* Cột Phải: Banner Title */}
-                        {heroBanners.length > 0 && heroBanners[heroIndex]?.title && (
+                        {/* Cột Phải: Banner Info */}
+                        {heroBanners.length > 0 && (
                             <div 
-                                className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm shrink-0 animate-fade-in-up"
+                                key={`banner-card-${heroIndex}`}
+                                className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm shrink-0 animate-fade-in-right"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleBannerClick(heroBanners[heroIndex]);
                                 }}
                             >
-                                <div className="p-5 rounded-2xl shadow-2xl transition duration-500 backdrop-blur-md bg-black/20 border border-white/10">
+                                <div className="p-5 rounded-3xl shadow-2xl transition-all duration-500 backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02]">
                                     <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-2 flex flex-col gap-1">
-                                        <span className="text-base normal-case font-medium text-white/80">Giá chỉ từ</span> 
-                                        <span className="text-4xl font-extrabold text-orange-400 drop-shadow-xl leading-none">
+                                        <span className="text-xs normal-case font-medium text-white/60">Giá tour trọn gói chỉ từ</span> 
+                                        <span className="text-4xl font-extrabold text-secondary drop-shadow-xl leading-none">
                                             {formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)} 
-                                            <span className="text-base font-medium text-white/70 ml-1">/ Khách</span>
+                                            <span className="text-base font-medium text-white/50 ml-1">/ Khách</span>
                                         </span>
                                     </div>
-                                    <div className="flex items-end gap-4 justify-between mt-4">
-                                        <h3 className="text-white font-bold text-lg leading-snug line-clamp-2 drop-shadow-md">
+                                    <div className="flex items-end gap-4 justify-between mt-6">
+                                        <h3 className="text-white font-bold text-xl leading-tight line-clamp-2 drop-shadow-md">
                                             {heroBanners[heroIndex].title}
                                         </h3>
-                                        <div className="bg-white/10 p-2.5 rounded-full group-hover:bg-primary transition-all duration-300 shrink-0 border border-white/10 group-hover:border-transparent">
-                                            <ChevronRight className="w-5 h-5 text-white transition-transform duration-300" />
+                                        <div className="bg-primary p-3 rounded-2xl group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
+                                            <ChevronRight className="w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
                                         </div>
                                     </div>
                                 </div>
@@ -181,45 +184,57 @@ const HomePage = () => {
                     </div>
                 </div>
 
-                {/* 4. Slideshow dots */}
+                {/* 4. Sleek Slideshow Controls (Senior Style) */}
                 {heroBanners.length > 1 && (
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 z-20 pointer-events-auto">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setHeroIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length);
-                            }}
-                            className="p-1.5 rounded-full bg-white/10 backdrop-blur hover:bg-white/30 transition border border-white/20"
-                        >
-                            <ChevronLeft className="w-4 h-4 text-white" />
-                        </button>
+                    <div className="absolute bottom-8 right-8 z-40 pointer-events-auto animate-fade-in flex flex-col items-end gap-5">
                         
-                        <div className="flex gap-2">
-                            {heroBanners.map((_, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setHeroIndex(idx);
-                                    }}
-                                    className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                                        idx === heroIndex
-                                            ? 'bg-secondary w-8' 
-                                            : 'bg-white/50 hover:bg-white'
-                                    }`}
-                                />
-                            ))}
+                        {/* 1. Next Up Preview */}
+                        <div className="flex flex-col items-end opacity-0 group-hover/hero:opacity-100 transition-all duration-500 translate-y-2 group-hover/hero:translate-y-0">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-1">Khám phá tiếp</span>
+                            <span className="text-sm font-medium text-white/90 truncate max-w-[240px] drop-shadow-md">
+                                {heroBanners[(heroIndex + 1) % heroBanners.length].title}
+                            </span>
                         </div>
 
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setHeroIndex(prev => (prev + 1) % heroBanners.length);
-                            }}
-                            className="p-1.5 rounded-full bg-white/10 backdrop-blur hover:bg-white/30 transition border border-white/20"
-                        >
-                            <ChevronRight className="w-4 h-4 text-white" />
-                        </button>
+                        {/* 2. Main Navigation Block */}
+                        <div className="flex items-center gap-6">
+                            {/* Prev Button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHeroIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length);
+                                }}
+                                className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                            >
+                                <ChevronLeft className="w-5 h-5 group-hover/btn:-translate-x-0.5 transition-transform" />
+                            </button>
+
+                            {/* Counter */}
+                            <div className="text-4xl font-light tracking-tighter flex items-baseline text-white">
+                                <span className="font-bold">{(heroIndex + 1).toString().padStart(2, '0')}</span>
+                                <span className="mx-3 text-xl opacity-20">/</span>
+                                <span className="text-xl opacity-40">{heroBanners.length.toString().padStart(2, '0')}</span>
+                            </div>
+
+                            {/* Next Button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setHeroIndex(prev => (prev + 1) % heroBanners.length);
+                                }}
+                                className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                            >
+                                <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-0.5 transition-transform" />
+                            </button>
+                        </div>
+                        
+                        {/* 3. Visual Progress Bar */}
+                        <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden relative">
+                            <div 
+                                key={heroIndex}
+                                className="absolute left-0 top-0 h-full bg-secondary animate-slide-progress"
+                            />
+                        </div>
                     </div>
                 )}
             </section>

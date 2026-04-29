@@ -10,7 +10,7 @@ const formatShortPrice = (price) => {
     return m.toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'tr';
 };
 
-const DepartureCalendar = ({ label, value, onChange, departurePriceMap = {}, className = '' }) => {
+const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMap = {}, className = '' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isDropdownAbove, setIsDropdownAbove] = useState(false);
     const [displayMonth, setDisplayMonth] = useState(() => new Date());
@@ -77,7 +77,8 @@ const DepartureCalendar = ({ label, value, onChange, departurePriceMap = {}, cla
         <div ref={ref} className={`relative ${className}`}>
             {/* Label */}
             {label && (
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5 cursor-pointer">
+                <label className="flex items-center gap-2 text-[0.7rem] uppercase tracking-wider text-text-secondary font-bold mb-2 cursor-pointer">
+                    {labelIcon && <span className="text-primary">{labelIcon}</span>}
                     {label}
                 </label>
             )}
@@ -93,8 +94,7 @@ const DepartureCalendar = ({ label, value, onChange, departurePriceMap = {}, cla
                 `}
             >
                 <div className="flex items-center gap-3 truncate">
-                    <CalendarDays className={`w-5 h-5 flex-shrink-0 transition-colors ${value ? 'text-primary' : 'text-gray-400'}`} />
-                    <span className={`truncate text-sm sm:text-base text-left ${value ? 'text-slate-800 font-medium' : 'text-slate-400'}`}>
+                    <span className={`truncate text-sm text-left font-medium ${value ? 'text-text' : 'text-text-muted'}`}>
                         {value 
                             ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) 
                             : 'Chọn ngày khởi hành...'}

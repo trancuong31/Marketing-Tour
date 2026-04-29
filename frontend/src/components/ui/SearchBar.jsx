@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Wallet } from 'lucide-react';
+import { Search, MapPin, Wallet, CalendarDays } from 'lucide-react';
 import CustomSelect from './CustomSelect/CustomSelect';
 import DepartureCalendar from './DepartureCalendar';
 
@@ -30,8 +30,7 @@ const SearchBar = ({ departurePriceMap = {} }) => {
     if (searchParams.keyword) query.append('q', searchParams.keyword);
     if (searchParams.date) query.append('date', searchParams.date);
     if (searchParams.budget) query.append('budget', searchParams.budget);
-    
-    // Default to /tours to show all results since tour type filter is removed
+
     navigate(`/tours?${query.toString()}`);
   };
 
@@ -41,18 +40,17 @@ const SearchBar = ({ departurePriceMap = {} }) => {
       className="w-full bg-white/95 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/50 p-3 sm:p-4 flex flex-col lg:flex-row items-end gap-4"
     >
       {/* Điểm đến */}
+      {/* Điểm đến */}
       <div className="flex-1 w-full">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+        <label className="flex items-center gap-2 text-[0.7rem] uppercase tracking-wider text-text-secondary font-bold mb-2 ml-1">
+          <MapPin className="w-3.5 h-3.5 text-primary" />
           Bạn muốn đi đâu?
         </label>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <MapPin className="w-5 h-5 text-slate-400" />
-          </div>
           <input
             type="text"
             placeholder="Tên tour, điểm đến..."
-            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 pl-11 pr-4 text-sm sm:text-base text-slate-800 font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm text-text font-medium placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
             value={searchParams.keyword}
             onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
           />
@@ -61,11 +59,10 @@ const SearchBar = ({ departurePriceMap = {} }) => {
 
       {/* Ngày khởi hành */}
       <div className="flex-1 w-full relative">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-          Ngày khởi hành
-        </label>
         <div className="[&>div>button]:py-2.5 [&>div>button]:shadow-sm">
           <DepartureCalendar
+            label="Ngày khởi hành"
+            labelIcon={<CalendarDays className="w-3.5 h-3.5" />}
             value={searchParams.date}
             onChange={handleDateSelect}
             departurePriceMap={departurePriceMap}
@@ -75,16 +72,14 @@ const SearchBar = ({ departurePriceMap = {} }) => {
 
       {/* Ngân sách */}
       <div className="flex-1 w-full relative">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-          Ngân sách
-        </label>
         <div className="[&>div>button]:py-2.5 [&>div>button]:shadow-sm [&>div>button]:border-gray-200 [&>div>button]:bg-white">
           <CustomSelect
+            label="Ngân sách"
+            labelIcon={<Wallet className="w-3.5 h-3.5" />}
             value={searchParams.budget}
             onChange={(val) => setSearchParams({ ...searchParams, budget: val })}
             options={budgetOptions}
             placeholder="Tất cả mức giá"
-            icon={<Wallet className="w-5 h-5 text-slate-400" />}
           />
         </div>
       </div>
