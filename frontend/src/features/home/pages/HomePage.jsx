@@ -135,7 +135,6 @@ const HomePage = () => {
                             {/* Title cố định */}
                             <div className="max-w-2xl mx-auto xl:mx-0">
                                 <h1 
-                                    key={`title-${heroIndex}`}
                                     className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 text-white drop-shadow-lg tracking-tight animate-fade-in-up"
                                 >
                                     Hành trình đáng nhớ
@@ -145,7 +144,6 @@ const HomePage = () => {
                                     </span>
                                 </h1>
                                 <p 
-                                    key={`desc-${heroIndex}`}
                                     className="text-base sm:text-lg text-white/90 mb-4 drop-shadow-md font-medium max-w-xl mx-auto xl:mx-0 animate-fade-in-up delay-100"
                                 >
                                     Tour du lịch nội địa và quốc tế chất lượng cao với giá tốt nhất trên thị trường.

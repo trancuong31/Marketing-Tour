@@ -6,7 +6,7 @@ import {
     Loader2, Phone, Mail, Calendar, X, CheckCircle2, 
     Eye, Filter, Users, ChevronLeft, ChevronRight, 
     Trash2, Search, ArrowLeft, MoreHorizontal,
-    LayoutGrid, List, AlertCircle, Clock, CheckCircle, XCircle, ExternalLink, FileText
+    LayoutGrid, List, AlertCircle, Clock, XCircle, ExternalLink, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -39,6 +39,9 @@ const BookingManagementPage = () => {
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    
+    // Overview Search
+    const [overviewSearch, setOverviewSearch] = useState('');
     const [totalItems, setTotalItems] = useState(0);
 
     // Debounce search
@@ -113,12 +116,17 @@ const BookingManagementPage = () => {
     const performDeleteBooking = async (id) => {
         try {
             await adminService.deleteBooking(id);
-            toast.success('Xóa đơn đặt thành công!');
+            toast.success('Xóa đơn hàng thành công');
             await fetchBookings();
+            setDetail(null);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Lỗi xóa đơn');
+            toast.error('Lỗi khi xóa đơn hàng');
         }
     };
+
+    const filteredOverview = overviewData.filter(tour => 
+        tour.title.toLowerCase().includes(overviewSearch.toLowerCase())
+    );
 
     const handleDeleteBooking = (id) => {
         toast('Xác nhận xóa', {
@@ -158,28 +166,43 @@ const BookingManagementPage = () => {
         <AdminLayout>
             <div className="flex flex-col gap-6">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-text">Quản lý Đơn hàng</h2>
-                        <p className="text-text-muted text-sm mt-1">
-                            {view === 'overview' 
-                                ? 'Tổng quan đơn hàng theo từng tour' 
-                                : `Danh sách đơn hàng ${selectedTour ? `cho tour: ${selectedTour.title}` : ''}`
-                            }
-                        </p>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                        {/* Unified Search Input */}
+                        <div className="relative w-full max-w-xl group flex items-center">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                                <input 
+                                    type="text" 
+                                    placeholder={view === 'overview' ? "Tìm tên tour trong tổng quan..." : "Tìm mã đơn, khách hàng, SĐT..."}
+                                    className="w-full pl-12 pr-4 py-3 bg-surface border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold shadow-sm"
+                                    value={view === 'overview' ? overviewSearch : searchQuery}
+                                    onChange={(e) => view === 'overview' ? setOverviewSearch(e.target.value) : setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            {selectedTour && view === 'list' && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-xl">
+                                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                                    <span className="text-[10px] font-black text-primary truncate max-w-[120px] uppercase tracking-tighter">{selectedTour.title}</span>
+                                </div>
+                            )}
+                        </div>
+
+
                     </div>
                     
-                    <div className="flex items-center gap-2 bg-surface-alt p-1 rounded-xl border border-border">
+                    <div className="flex items-center gap-2 bg-surface p-1.5 rounded-2xl border border-border shadow-sm shrink-0 self-end md:self-auto">
                         <button 
                             onClick={() => setView('overview')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'overview' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-hover'}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${view === 'overview' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-alt'}`}
                         >
                             <LayoutGrid className="w-4 h-4" />
                             Tổng quan
                         </button>
                         <button 
                             onClick={() => setView('list')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${view === 'list' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-hover'}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${view === 'list' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-alt'}`}
                         >
                             <List className="w-4 h-4" />
                             Danh sách
@@ -194,26 +217,13 @@ const BookingManagementPage = () => {
                             {selectedTour && (
                                 <button 
                                     onClick={goBack}
-                                    className="flex items-center gap-2 px-3 py-2 bg-surface-alt hover:bg-surface-hover text-text-secondary rounded-xl transition-all border border-border"
+                                    className="flex items-center gap-2 px-4 py-2 bg-surface-alt hover:bg-primary/10 text-text-secondary hover:text-primary rounded-xl transition-all border border-border font-bold"
                                 >
                                     <ArrowLeft className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Quay lại</span>
+                                    <span className="text-sm">Quay lại Tổng quan</span>
                                 </button>
                             )}
                             
-                            <div className="relative flex-1 min-w-[280px] group">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Tìm mã đơn, tên khách, số điện thoại..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1 w-full lg:w-auto">
                             <Filter className="w-4 h-4 text-text-muted flex-shrink-0" />
                             {['', 'pending', 'contacted', 'approved', 'cancelled'].map(status => (
                                 <button
@@ -240,29 +250,30 @@ const BookingManagementPage = () => {
                     </div>
                 ) : view === 'overview' ? (
                     /* ═══ OVERVIEW DASHBOARD ═══ */
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {overviewData.length > 0 ? overviewData.map(tour => (
-                            <div 
-                                key={tour.id} 
-                                className="group bg-surface rounded-2xl border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
-                            >
-                                <div className="relative h-40 overflow-hidden cursor-pointer group/img" onClick={() => window.open(`/tours/${tour.slug}`, '_blank')}>
-                                    <img 
-                                        src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
-                                        alt={tour.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover/img:opacity-80 transition-opacity" />
-                                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
-                                        <h3 className="text-white font-bold line-clamp-2 leading-tight group-hover/img:text-primary-light transition-colors">{tour.title}</h3>
-                                        <ExternalLink className="w-4 h-4 text-white/50 group-hover/img:text-white transition-all flex-shrink-0 mb-1" />
-                                    </div>
-                                    {tour.pending > 0 && (
-                                        <div className="absolute top-4 right-4 bg-error text-white text-[10px] font-bold px-2 py-1 rounded-full animate-bounce shadow-lg shadow-error/20">
-                                            {tour.pending} ĐƠN CHỜ
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {filteredOverview.length > 0 ? filteredOverview.map(tour => (
+                                <div 
+                                    key={tour.id} 
+                                    className="group bg-surface rounded-2xl border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                                >
+                                    <div className="relative h-40 overflow-hidden cursor-pointer group/img" onClick={() => window.open(`/tours/${tour.slug}`, '_blank')}>
+                                        <img 
+                                            src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
+                                            alt={tour.title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover/img:opacity-80 transition-opacity" />
+                                        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
+                                            <h3 className="text-white font-bold line-clamp-2 leading-tight group-hover/img:text-primary-light transition-colors">{tour.title}</h3>
+                                            <ExternalLink className="w-4 h-4 text-white/50 group-hover/img:text-white transition-all flex-shrink-0 mb-1" />
                                         </div>
-                                    )}
-                                </div>
+                                        {tour.pending > 0 && (
+                                            <div className="absolute top-4 right-4 bg-error text-white text-[10px] font-bold px-2 py-1 rounded-full animate-bounce shadow-lg shadow-error/20">
+                                                {tour.pending} ĐƠN CHỜ
+                                            </div>
+                                        )}
+                                    </div>
                                 
                                 <div className="p-5">
                                     <div className="grid grid-cols-2 gap-3 mb-5">
@@ -282,8 +293,7 @@ const BookingManagementPage = () => {
                                             <span className="text-xs text-error font-medium mb-1 uppercase tracking-wider">Đã hủy</span>
                                             <span className="text-xl font-bold text-error">{tour.cancelled}</span>
                                         </div>
-                                    </div>
-                                    
+                                    </div>                                    
                                     <button 
                                         onClick={() => selectTour(tour)}
                                         className="w-full py-3 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20 group-hover:border-primary"
@@ -299,6 +309,7 @@ const BookingManagementPage = () => {
                                 <p className="text-text-muted font-medium">Chưa có dữ liệu đơn hàng nào</p>
                             </div>
                         )}
+                    </div>
                     </div>
                 ) : (
                     /* ═══ LIST VIEW TABLE ═══ */
@@ -481,7 +492,7 @@ const BookingManagementPage = () => {
                 )}
             </div>
 
-            {/* ═══ DETAIL MODAL ═══ */}
+
             {detail && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setDetail(null)} />
@@ -554,6 +565,7 @@ const BookingManagementPage = () => {
                                     </div>
                                 </section>
                             </div>
+
 
                             {/* Right Column: Services & Total */}
                             <div className="space-y-6">

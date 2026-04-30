@@ -466,7 +466,10 @@ const getBookingOverview = catchAsync(async (req, res) => {
             as: 'bookings',
             attributes: ['id', 'status'],
         }],
-        order: [['id', 'DESC']],
+        order: [
+            [{ model: Booking, as: 'bookings' }, 'status', 'ASC'],
+            ['id', 'DESC'],
+        ]
     });
 
     const data = tours

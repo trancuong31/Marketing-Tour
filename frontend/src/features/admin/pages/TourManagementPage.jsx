@@ -290,58 +290,72 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                 </div>
             </div>
 
-            {/* Existing Images */}
-            {modal.tour?.images?.length > 0 && (
-                <div>
-                    <label className="text-sm font-medium text-text mb-2 block">Ảnh hiện tại</label>
-                    <div className="flex flex-wrap gap-3">
-                        {modal.tour.images.map(img => (
-                            <div key={img.id} className="relative group rounded-lg overflow-hidden border border-border shadow-sm">
-                                <img src={getImageUrl(img.image_url)} alt="" className="w-24 h-24 object-cover" />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            {/* Unified Image Management */}
+            <div className="space-y-3">
+                <label className="text-sm font-medium text-text block">
+                    Album ảnh tour {!modal.tour && files.length === 0 && <span className="text-error font-normal">(Bắt buộc ít nhất 1 ảnh)</span>}
+                </label>
+                
+                <div 
+                    className={`p-4 border-2 border-dashed rounded-2xl transition-all ${
+                        !modal.tour && files.length === 0 && Object.keys(errors).length > 0 
+                        ? 'border-error bg-error/5' 
+                        : 'border-border hover:border-primary/50 bg-surface-alt/50'
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                        const droppedFiles = Array.from(e.dataTransfer.files);
+                        if (droppedFiles.length > 0) setFiles(prev => [...prev, ...droppedFiles]);
+                    }}
+                >
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                        {/* Existing Images */}
+                        {modal.tour?.images?.map(img => (
+                            <div key={img.id} className="relative aspect-square group rounded-xl overflow-hidden border border-border shadow-sm bg-surface">
+                                <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
                                     <button type="button" onClick={() => handleDeleteImage(img.id)}
-                                        className="w-8 h-8 bg-error text-white rounded-full flex items-center justify-center shadow-md transform hover:scale-110 transition-transform" title="Xóa ảnh">
+                                        className="w-8 h-8 bg-error text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform" title="Xóa ảnh hệ thống">
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-            )}
 
-            {/* Uploaded Images Preview */}
-            {files.length > 0 && (
-                <div>
-                    <label className="text-sm font-medium text-text mb-2 block">Ảnh mới chọn để thêm</label>
-                    <div className="flex flex-wrap gap-3">
+                        {/* New Uploaded Files */}
                         {files.map((file, idx) => {
                             const previewUrl = URL.createObjectURL(file);
                             return (
-                                <div key={idx} className="relative group rounded-lg overflow-hidden border border-border shadow-sm">
-                                    <img src={previewUrl} alt="" className="w-24 h-24 object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div key={idx} className="relative aspect-square group rounded-xl overflow-hidden border border-border shadow-sm bg-surface">
+                                    <img src={previewUrl} alt="" className="w-full h-full object-cover" />
+                                    <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-primary text-white text-[8px] font-bold rounded-md shadow-sm z-10">MỚI</div>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
                                         <button type="button" onClick={() => removeFile(idx)}
-                                            className="w-8 h-8 bg-error text-white rounded-full flex items-center justify-center shadow-md transform hover:scale-110 transition-transform" title="Hủy ảnh này">
+                                            className="w-8 h-8 bg-error text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform" title="Hủy ảnh này">
                                             <X className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>
                             );
                         })}
-                    </div>
-                </div>
-            )}
 
-            {/* Upload */}
-            <div>
-                <label className="text-sm font-medium text-text mb-2 block">Thêm ảnh mới {!modal.tour && files.length === 0 && <span className="text-error font-normal">(Bắt buộc chọn ít nhất 1 ảnh cho tour mới)</span>}</label>
-                <label className={`flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed rounded-xl cursor-pointer transition text-sm ${!modal.tour && files.length === 0 && Object.keys(errors).length > 0 ? 'border-error bg-error/5 text-error' : 'border-border hover:border-primary hover:bg-primary/5 text-text-muted'}`}>
-                    <Upload className={`w-6 h-6 mb-1 ${!modal.tour && files.length === 0 && Object.keys(errors).length > 0 ? 'text-error' : 'text-primary/70'}`} />
-                    <span className="font-semibold">Nhấp để chọn ảnh tải lên</span>
-                    <span className="text-xs opacity-70">Hỗ trợ định dạng JPG, PNG, WEBP</span>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
-                </label>
+                        {/* Upload Button Tile */}
+                        <label className="relative aspect-square flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all text-text-muted group">
+                            <Upload className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-bold uppercase tracking-tighter">Thêm ảnh</span>
+                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
+                        </label>
+                    </div>
+                    
+                    {(files.length === 0 && (!modal.tour?.images || modal.tour.images.length === 0)) && (
+                        <div className="text-center py-4 text-text-muted">
+                            <p className="text-xs font-medium">Kéo thả ảnh vào đây hoặc nhấp "Thêm ảnh"</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -1095,7 +1109,7 @@ const TourManagementPage = () => {
                             </button>
                         </div>
 
-                        {/* Tab Navigation - Fixed Width/Height No Scrollbar */}
+                        {/* Tab Navigation */}
                         <div className="px-6 pt-4 border-b border-border flex gap-2 overflow-x-auto shrink-0 scrollbar-hide [&::-webkit-scrollbar]:hidden">
                             {TABS.map(tab => {
                                 const Icon = tab.icon;
@@ -1120,9 +1134,12 @@ const TourManagementPage = () => {
                         </div>
 
                         {/* Tab Content */}
-                        <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 overflow-hidden">
+                        <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 overflow-hidden relative">
                             <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-surface-alt/30">
-                                <div className="max-w-4xl mx-auto">
+                                <div 
+                                    key={activeTab} 
+                                    className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500 ease-out fill-mode-both"
+                                >
                                     {activeTab === 'general' && (
                                         <GeneralTab
                                             register={register}
