@@ -69,6 +69,7 @@ export const adminService = {
     deleteTourImage: (id) => api.delete(`/admin/tour-images/${id}`),
 
     // Bookings
+    getBookingOverview: () => api.get('/admin/bookings/overview'),
     getBookings: (params) => api.get('/admin/bookings', { params }),
     updateBookingStatus: (id, data) => api.put(`/admin/bookings/${id}/status`, data),
     deleteBooking: (id) => api.delete(`/admin/bookings/${id}`),

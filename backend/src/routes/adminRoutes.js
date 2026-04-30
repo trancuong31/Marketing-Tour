@@ -10,6 +10,7 @@ const {
     updateTour,
     deleteTour,
     getBookings,
+    getBookingOverview,
     updateBookingStatus,
     getVotes,
     updateVoteStatus,
@@ -45,6 +46,7 @@ router.delete('/tours/:id', deleteTour);
 router.delete('/tour-images/:id', deleteTourImage);
 
 // ── Booking ──
+router.get('/bookings/overview', getBookingOverview);
 router.get('/bookings', getBookings);
 router.put('/bookings/:id/status', updateBookingStatus);
 router.delete('/bookings/:id', deleteBooking);

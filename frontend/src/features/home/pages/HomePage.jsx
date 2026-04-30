@@ -108,10 +108,10 @@ const HomePage = () => {
                                     key={banner.id}
                                     src={getImageUrl(banner.image_url)}
                                     alt={banner.title}
-                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[2000ms] ease-in-out transform-gpu will-change-transform animate-ken-burns ${
+                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[1500ms] ease-in-out transform-gpu will-change-[opacity,transform] ${
                                         idx === heroIndex 
-                                            ? 'opacity-100 z-10 scale-100' 
-                                            : 'opacity-0 z-0 scale-110'
+                                            ? 'opacity-100 z-10 animate-ken-burns' 
+                                            : 'opacity-0 z-0'
                                     }`}
                                 />
                             ))}
@@ -127,21 +127,27 @@ const HomePage = () => {
                     <div className="flex flex-col xl:flex-row items-center justify-between gap-8 xl:gap-10 w-full">
                         {/* Cột Trái: Slogan */}
                         <div className="text-center xl:text-left w-full max-w-3xl xl:max-w-4xl mx-auto xl:mx-0 flex-1">
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs sm:text-sm font-medium mb-4 text-white drop-shadow-md">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 border border-white/20 rounded-full text-xs sm:text-sm font-medium mb-4 text-white drop-shadow-md">
                                 <Compass className="w-4 h-4" />
                                 Khám phá thế giới cùng chúng tôi
                             </div>
 
                             {/* Title cố định */}
                             <div className="max-w-2xl mx-auto xl:mx-0">
-                                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 text-white drop-shadow-lg tracking-tight">
+                                <h1 
+                                    key={`title-${heroIndex}`}
+                                    className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 text-white drop-shadow-lg tracking-tight animate-fade-in-up"
+                                >
                                     Hành trình đáng nhớ
                                     <br />
                                     <span className="bg-gradient-to-r from-secondary to-yellow-300 bg-clip-text text-transparent drop-shadow-md">
                                         bắt đầu từ đây
                                     </span>
                                 </h1>
-                                <p className="text-base sm:text-lg text-white/90 mb-4 drop-shadow-md font-medium max-w-xl mx-auto xl:mx-0">
+                                <p 
+                                    key={`desc-${heroIndex}`}
+                                    className="text-base sm:text-lg text-white/90 mb-4 drop-shadow-md font-medium max-w-xl mx-auto xl:mx-0 animate-fade-in-up delay-100"
+                                >
                                     Tour du lịch nội địa và quốc tế chất lượng cao với giá tốt nhất trên thị trường.
                                 </p>
                             </div>
@@ -157,7 +163,7 @@ const HomePage = () => {
                                     handleBannerClick(heroBanners[heroIndex]);
                                 }}
                             >
-                                <div className="p-5 rounded-3xl shadow-2xl transition-all duration-500 backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-[1.02]">
+                                <div className="p-5 rounded-3xl shadow-2xl transition-all duration-500 bg-white/10 border border-white/10 hover:bg-white/20 hover:scale-[1.02]">
                                     <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-2 flex flex-col gap-1">
                                         <span className="text-xs normal-case font-medium text-white/60">Giá tour trọn gói chỉ từ</span> 
                                         <span className="text-4xl font-extrabold text-secondary drop-shadow-xl leading-none">
@@ -170,7 +176,7 @@ const HomePage = () => {
                                             {heroBanners[heroIndex].title}
                                         </h3>
                                         <div className="bg-primary p-3 rounded-2xl group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
-                                            <ChevronRight className="w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
+                                            <ChevronRight className="w-5 h-5 text-white transition-transform duration-300" />
                                         </div>
                                     </div>
                                 </div>
@@ -204,9 +210,9 @@ const HomePage = () => {
                                     e.stopPropagation();
                                     setHeroIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length);
                                 }}
-                                className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                                className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
                             >
-                                <ChevronLeft className="w-5 h-5 group-hover/btn:-translate-x-0.5 transition-transform" />
+                                <ChevronLeft className="w-5 h-5 transition-transform" />
                             </button>
 
                             {/* Counter */}
@@ -222,9 +228,9 @@ const HomePage = () => {
                                     e.stopPropagation();
                                     setHeroIndex(prev => (prev + 1) % heroBanners.length);
                                 }}
-                                className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                                className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
                             >
-                                <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-0.5 transition-transform" />
+                                <ChevronRight className="w-5 h-5 transition-transform" />
                             </button>
                         </div>
                         

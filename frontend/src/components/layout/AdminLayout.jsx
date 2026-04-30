@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import {
-    LayoutDashboard, ShoppingCart, Map, FileText, Star,
+    ShoppingCart, Map, FileText, Star,
     LogOut, Menu, X, ChevronRight, User, Home, Image
 } from 'lucide-react';
+import logo from "../../../public/logo.jpg";
 
 const menuItems = [
     { path: '/admin/bookings', label: 'Quản lý Đơn', icon: ShoppingCart },
@@ -37,9 +38,7 @@ const AdminLayout = ({ children }) => {
                 }`}>
                 {/* Logo */}
                 <div className="flex items-center gap-2 px-5 h-16 border-b border-border">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <LayoutDashboard className="w-4 h-4 text-white" />
-                    </div>
+                    <img src={logo} alt="Logo" className="w-8 h-8 rounded-lg" />
                     <span className="font-bold text-text">Admin Panel</span>
                     <button className="ml-auto lg:hidden" onClick={() => setSidebarOpen(false)}>
                         <X className="w-5 h-5" />

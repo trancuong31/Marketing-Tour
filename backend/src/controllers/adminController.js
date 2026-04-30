@@ -455,16 +455,61 @@ const deleteTour = catchAsync(async (req, res, next) => {
 // ══════════════════════════════════════
 
 /**
+ * Tổng quan đơn đặt theo tour (admin dashboard)
+ * GET /api/admin/bookings/overview
+ */
+const getBookingOverview = catchAsync(async (req, res) => {
+    const tours = await Tour.findAll({
+        attributes: ['id', 'title', 'slug', 'thumbnail_url'],
+        include: [{
+            model: Booking,
+            as: 'bookings',
+            attributes: ['id', 'status'],
+        }],
+        order: [['id', 'DESC']],
+    });
+
+    const data = tours
+        .map(tour => {
+            const bookings = tour.bookings || [];
+            const total = bookings.length;
+            const pending = bookings.filter(b => b.status === 'pending').length;
+            const contacted = bookings.filter(b => b.status === 'contacted').length;
+            const approved = bookings.filter(b => b.status === 'approved').length;
+            const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+            return {
+                id: tour.id,
+                title: tour.title,
+                slug: tour.slug,
+                thumbnail_url: tour.thumbnail_url,
+                total, pending, contacted, approved, cancelled,
+            };
+        })
+        .filter(t => t.total > 0 || t.pending > 0);
+
+    res.status(200).json({ status: 'success', data });
+});
+
+/**
  * Lấy danh sách đơn đặt tour (admin)
- * GET /api/admin/bookings?status=pending|contacted|approved|cancelled&page=1&limit=10
+ * GET /api/admin/bookings?status=...&tour_id=...&search=...&page=1&limit=10
  */
 const getBookings = catchAsync(async (req, res) => {
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status, tour_id, search, page = 1, limit = 10 } = req.query;
     const whereClause = {};
     if (status) whereClause.status = status;
+    if (tour_id) whereClause.tour_id = tour_id;
 
-    const limitNum = parseInt(limit, 10);
-    const pageNum = parseInt(page, 10);
+    if (search) {
+        whereClause[Op.or] = [
+            { customer_name: { [Op.like]: `%${search}%` } },
+            { customer_phone: { [Op.like]: `%${search}%` } },
+            { booking_code: { [Op.like]: `%${search}%` } },
+        ];
+    }
+
+    const limitNum = parseInt(limit, 10) || 10;
+    const pageNum = parseInt(page, 10) || 1;
     const offset = (pageNum - 1) * limitNum;
 
     const { count, rows } = await Booking.findAndCountAll({
@@ -478,6 +523,7 @@ const getBookings = catchAsync(async (req, res) => {
         order: [['created_at', 'DESC']],
         limit: limitNum,
         offset: offset,
+        distinct: true,
     });
 
     res.status(200).json({
@@ -504,7 +550,7 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
     }
 
     const booking = await Booking.findByPk(id, {
-        include: [{ model: Tour, attributes: ['title'] }]
+        include: [{ model: Tour, attributes: ['title', 'slug'] }]
     });
     
     if (!booking) {
@@ -1002,6 +1048,7 @@ module.exports = {
     updateTour,
     deleteTour,
     getBookings,
+    getBookingOverview,
     updateBookingStatus,
     deleteBooking,
     getVotes,

@@ -197,6 +197,14 @@ button {
     animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
+@utility animate-fade-in-up {
+    animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+@utility animate-fade-in-right {
+    animation: slide-left 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
 @utility animate-pulse-icon {
     animation: pulse-icon 2s ease-in-out infinite;
 }
@@ -259,8 +267,8 @@ button {
 }
 
 @keyframes kenBurns {
-    from { transform: scale(1); }
-    to { transform: scale(1.1); }
+    0% { transform: scale(1.02); }
+    100% { transform: scale(1.1); }
 }
 
 .animate-slide-progress {

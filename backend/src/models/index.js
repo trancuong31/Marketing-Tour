@@ -47,7 +47,7 @@ Tour.hasMany(TourOption, { foreignKey: 'tour_id', as: 'options', onDelete: 'CASC
 TourOption.belongsTo(Tour, { foreignKey: 'tour_id' });
 
 // Tour ↔ Booking
-Tour.hasMany(Booking, { foreignKey: 'tour_id' });
+Tour.hasMany(Booking, { foreignKey: 'tour_id', as: 'bookings' });
 Booking.belongsTo(Tour, { foreignKey: 'tour_id' });
 
 // User ↔ Booking (nullable)
