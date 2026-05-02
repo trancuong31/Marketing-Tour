@@ -33,7 +33,7 @@ router.use('/admin', adminRoutes);
 router.get('/health', (req, res) => {
     res.status(200).json({
         status: 'success',
-        message: 'Marketing Tour API đang hoạt động',
+        message: 'KyNghiTuyetVoi API đang hoạt động',
         timestamp: new Date().toISOString(),
     });
 });

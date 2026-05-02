@@ -107,8 +107,12 @@ const ClientLayout = ({ children }) => {
                                             )}
                                             <div className="flex flex-col">
                                                 <span>{user?.full_name || 'Người dùng'}</span>
-                                                {(user?.role_id === 1 || user?.role_id === 2) && (
+                                                {/* admin hoặc customer */}
+                                                {(user?.role_id === 1) && (
                                                     <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Admin</span>
+                                                )}
+                                                {(user?.role_id === 2) && (
+                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Customer</span>
                                                 )}
                                             </div>
                                         </div>
@@ -120,7 +124,7 @@ const ClientLayout = ({ children }) => {
                                                 <p className="text-xs text-text-muted truncate">{user?.email}</p>
                                             </div>
                                             <div className="py-1.5 flex flex-col px-1.5 gap-1">
-                                                {(user?.role_id === 1 || user?.role_id === 2) && (
+                                                {(user?.role_id === 1) && (
                                                     <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors text-text group/item">
                                                         <Shield className="w-4 h-4 text-text-muted group-hover/item:text-primary transition-colors" />
                                                         <span className="text-sm font-medium">Trang quản trị</span>
@@ -368,7 +372,7 @@ const ClientLayout = ({ children }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
                         {/* Col 1 - About */}
                         <div>
-                            <h4 className="font-bold text-text mb-4 text-base">Về Marketing Tour</h4>
+                            <h4 className="font-bold text-text mb-4 text-base">Về KyNghiTuyetVoi</h4>
                             <ul className="space-y-2.5 text-text-secondary">
                                 <li><Link to="/" className="hover:text-primary transition text-text-secondary">Chúng tôi</Link></li>
                                 <li><Link to="/guides" className="hover:text-primary transition text-text-secondary">Blog du lịch</Link></li>

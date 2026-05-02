@@ -44,7 +44,7 @@ const AdminLoginPage = () => {
                         <Globe className="w-7 h-7 text-white" />
                     </div>
                     <h1 className="text-2xl font-extrabold text-text">Admin Portal</h1>
-                    <p className="text-sm text-text-muted mt-1">Marketing Tour Dashboard</p>
+                    <p className="text-sm text-text-muted mt-1">KyNghiTuyetVoi Dashboard</p>
                 </div>
 
                 {/* Form */}

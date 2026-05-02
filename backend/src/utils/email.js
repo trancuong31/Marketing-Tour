@@ -25,7 +25,7 @@ const sendEmail = async (options) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-        from: `Marketing Tour <${env.email.from}>`,
+        from: `KyNghiTuyetVoi <${env.email.from}>`,
         to: options.email,
         subject: options.subject,
         text: options.text,
@@ -48,7 +48,7 @@ const generateOtpHtml = (otpCode, type) => {
     const isRegister = type === 'register';
     const title = isRegister ? 'Xác thực tài khoản' : 'Đặt lại mật khẩu';
     const description = isRegister
-        ? 'Cảm ơn bạn đã đăng ký tài khoản tại Marketing Tour. Vui lòng sử dụng mã OTP bên dưới để xác thực email của bạn.'
+        ? 'Cảm ơn bạn đã đăng ký tài khoản tại KyNghiTuyetVoi. Vui lòng sử dụng mã OTP bên dưới để xác thực email của bạn.'
         : 'Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng sử dụng mã OTP bên dưới để xác nhận.';
 
     const digits = otpCode.split('').map(d =>
@@ -65,7 +65,7 @@ const generateOtpHtml = (otpCode, type) => {
 <table width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);overflow:hidden">
   <!-- Header -->
   <tr><td style="background:linear-gradient(135deg,#0ea5e9,#0284c7);padding:32px 40px;text-align:center">
-    <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700">✈️ Marketing Tour</h1>
+    <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700">✈️ KyNghiTuyetVoi</h1>
   </td></tr>
   <!-- Body -->
   <tr><td style="padding:40px">
@@ -86,7 +86,7 @@ const generateOtpHtml = (otpCode, type) => {
   </td></tr>
   <!-- Footer -->
   <tr><td style="background:#f8fafc;padding:20px 40px;text-align:center;border-top:1px solid #e9ecef">
-    <p style="color:#8e8ea0;font-size:11px;margin:0">© ${new Date().getFullYear()} Marketing Tour. All rights reserved.</p>
+    <p style="color:#8e8ea0;font-size:11px;margin:0">© ${new Date().getFullYear()} KyNghiTuyetVoi. All rights reserved.</p>
   </td></tr>
 </table>
 </td></tr>
@@ -101,8 +101,8 @@ const generateOtpHtml = (otpCode, type) => {
 const sendOtpEmail = async (email, otpCode, type) => {
     const isRegister = type === 'register';
     const subject = isRegister
-        ? `[Marketing Tour] Mã xác thực: ${otpCode}`
-        : `[Marketing Tour] Mã đặt lại mật khẩu: ${otpCode}`;
+        ? `[KyNghiTuyetVoi] Mã xác thực: ${otpCode}`
+        : `[KyNghiTuyetVoi] Mã đặt lại mật khẩu: ${otpCode}`;
 
     await sendEmail({
         email,
@@ -118,12 +118,12 @@ const sendOtpEmail = async (email, otpCode, type) => {
 const sendWelcomeEmail = async (user) => {
     await sendEmail({
         email: user.email,
-        subject: 'Chào mừng đến với Marketing Tour!',
-        text: `Xin chào ${user.full_name}, Chào mừng bạn đến với Marketing Tour!`,
+        subject: 'Chào mừng đến với KyNghiTuyetVoi!',
+        text: `Xin chào ${user.full_name}, Chào mừng bạn đến với KyNghiTuyetVoi!`,
         html: `
-      <h1>Chào mừng đến với Marketing Tour!</h1>
+      <h1>Chào mừng đến với KyNghiTuyetVoi!</h1>
       <p>Xin chào ${user.full_name},</p>
-      <p>Chào mừng bạn đến với Marketing Tour! Chúng tôi rất vui được đồng hành cùng bạn.</p>
+      <p>Chào mừng bạn đến với KyNghiTuyetVoi! Chúng tôi rất vui được đồng hành cùng bạn.</p>
     `,
     });
 };
