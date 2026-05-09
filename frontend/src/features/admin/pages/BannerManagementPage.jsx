@@ -2,18 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { adminService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
+import BannerTourGridItem from '../components/BannerTourGridItem';
+import BannerTourListItem from '../components/BannerTourListItem';
 import {
     Image, Plus, Pencil, Trash2, X, Loader2, Upload,
-    Monitor, Eye, EyeOff, Link2, Search, Check,
+    Monitor, Eye, EyeOff, Link2, Search, Check, LayoutGrid, List
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BannerManagementPage = () => {
+    const [viewLayout, setViewLayout] = useState(() => localStorage.getItem('admin_banner_layout') || 'grid');
     const [banners, setBanners] = useState([]);
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tourSearch, setTourSearch] = useState('');
-    const [submitting, setSubmitting] = useState(false);
+    const [submittingTourId, setSubmittingTourId] = useState(null);
     const [deleting, setDeleting] = useState(null);
 
     const fetchInitialData = async () => {
@@ -36,6 +39,10 @@ const BannerManagementPage = () => {
         fetchInitialData();
     }, []);
 
+    useEffect(() => {
+        localStorage.setItem('admin_banner_layout', viewLayout);
+    }, [viewLayout]);
+
     const performToggle = async (tour, existingBanner) => {
         if (existingBanner) {
             setDeleting(existingBanner.id);
@@ -50,7 +57,7 @@ const BannerManagementPage = () => {
                 setDeleting(null);
             }
         } else {
-            setSubmitting(true);
+            setSubmittingTourId(tour.id);
             try {
                 const fd = new FormData();
                 fd.append('title', tour.title);
@@ -68,7 +75,7 @@ const BannerManagementPage = () => {
                     fd.append('image', file);
                 } else {
                     toast.error('Tour này không có ảnh để làm banner!');
-                    setSubmitting(false);
+                    setSubmittingTourId(null);
                     return;
                 }
 
@@ -79,7 +86,7 @@ const BannerManagementPage = () => {
             } catch (err) {
                 toast.error('Lỗi khi thêm tour vào slider');
             } finally {
-                setSubmitting(false);
+                setSubmittingTourId(null);
             }
         }
     };
@@ -120,77 +127,69 @@ const BannerManagementPage = () => {
                         Chọn tối đa 5-7 tour tiêu biểu để hiển thị trên slider lớn tại đầu trang chủ
                     </p>
                 </div>
-                <div className="relative w-full md:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <input
-                        type="text"
-                        placeholder="Tìm tour nhanh..."
-                        value={tourSearch}
-                        onChange={e => setTourSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                        <input
+                            type="text"
+                            placeholder="Tìm tour nhanh..."
+                            value={tourSearch}
+                            onChange={e => setTourSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
+                    <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border w-full sm:w-auto justify-center">
+                        <button 
+                            onClick={() => setViewLayout('grid')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewLayout === 'grid' ? 'bg-surface-alt shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}`}
+                        >
+                            <LayoutGrid className="w-4 h-4" />
+                            <span className="hidden sm:block">Lưới</span>
+                        </button>
+                        <button 
+                            onClick={() => setViewLayout('list')}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewLayout === 'list' ? 'bg-surface-alt shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}`}
+                        >
+                            <List className="w-4 h-4" />
+                            <span className="hidden sm:block">Danh sách</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* ═══ TOUR SELECTION GRID ═══ */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
+                <div className="flex flex-col items-center justify-center py-20 overflow-auto scrollbar-hide">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     <p className="text-sm text-text-muted mt-3">Đang tải danh sách tour...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-up">
+                <div className={viewLayout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-up" : "flex flex-col gap-4 animate-fade-up"}>
                     {filteredTours.map((tour, idx) => {
                         const isPinned = heroTourIds.includes(tour.id);
-                        const isActionLoading = submitting || (deleting !== null);
+                        const isActionLoading = (submittingTourId !== null) || (deleting !== null);
+                        const isItemLoading = (isPinned && deleting === banners.find(b => b.tour_id === tour.id)?.id) || (!isPinned && submittingTourId === tour.id);
 
-                        return (
-                            <div 
+                        return viewLayout === 'grid' ? (
+                            <BannerTourGridItem 
                                 key={tour.id} 
-                                className={`group relative bg-surface rounded-2xl border transition-all duration-300 overflow-hidden flex flex-col ${
-                                    isPinned ? 'border-primary shadow-lg ring-1 ring-primary/20' : 'border-border hover:border-primary/40 hover:shadow-md'
-                                }`}
-                                style={{ animationDelay: `${idx * 30}ms` }}
-                            >
-                                {/* Thumbnail */}
-                                <div className="aspect-[16/10] overflow-hidden relative bg-surface-alt">
-                                    <img 
-                                        src={getImageUrl(tour.thumbnail_url || (tour.images && tour.images[0]?.image_url))} 
-                                        alt={tour.title}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                    {isPinned && (
-                                        <div className="absolute top-2 right-2 bg-primary text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg flex items-center gap-1.5">
-                                            <Check className="w-3 h-3" /> Đang hiển thị
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Info */}
-                                <div className="p-4 flex flex-col flex-1">
-                                    <h3 className="font-bold text-text text-sm line-clamp-2 mb-4 flex-1">
-                                        {tour.title}
-                                    </h3>
-                                    
-                                    <button
-                                        onClick={() => toggleTourInHero(tour)}
-                                        disabled={isActionLoading}
-                                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                                            isPinned 
-                                                ? 'bg-error/10 text-error hover:bg-error hover:text-white' 
-                                                : 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-primary/30'
-                                        }`}
-                                    >
-                                        { (isPinned && deleting === banners.find(b => b.tour_id === tour.id)?.id) || (submitting && !isPinned) ? (
-                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                        ) : isPinned ? (
-                                            <>Gỡ khỏi Slider</>
-                                        ) : (
-                                            <>Đưa vào Slider</>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
+                                tour={tour} 
+                                isPinned={isPinned} 
+                                isActionLoading={isActionLoading}
+                                isItemLoading={isItemLoading}
+                                onToggle={toggleTourInHero}
+                                idx={idx}
+                            />
+                        ) : (
+                            <BannerTourListItem 
+                                key={tour.id} 
+                                tour={tour} 
+                                isPinned={isPinned} 
+                                isActionLoading={isActionLoading}
+                                isItemLoading={isItemLoading}
+                                onToggle={toggleTourInHero}
+                                idx={idx}
+                            />
                         );
                     })}
                 </div>

@@ -143,7 +143,7 @@ const LookupBookingPage = () => {
 
     return (
         <ClientLayout>
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 md:py-16">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
                 {/* Header */}
                 <div className="text-center mb-10">
                     <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Tra Cứu Đơn Đặt Tour</h1>
@@ -154,7 +154,6 @@ const LookupBookingPage = () => {
 
                 {/* Form Tra Cứu */}
                 <form onSubmit={handleSearch} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-10 max-w-2xl mx-auto relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
                     <div className="flex flex-col sm:flex-row gap-5 mb-6 focus-within:relative">
                         {/* Email */}
                         <div className="flex-1 relative">

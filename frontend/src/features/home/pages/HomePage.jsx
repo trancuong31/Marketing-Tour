@@ -121,7 +121,7 @@ const HomePage = () => {
                     )}
                 </div>
                 {/* Cấu trúc Content linh hoạt */}
-                <div className="relative z-10 w-full max-w-[1400px] mx-auto pointer-events-none flex flex-col gap-6 xl:gap-8 px-2 sm:px-6 mt-4 mb-6">
+                <div className="relative z-10 w-full max-w-[1400px] 2xl:max-w-[1800px] mx-auto pointer-events-none flex flex-col gap-6 xl:gap-8 px-2 sm:px-6 mt-4 mb-6">
                     
                     {/* HÀNG TRÊN: Cột Trái (Slogan) & Cột Phải (Banner Info) */}
                     <div className="flex flex-col xl:flex-row items-center justify-between gap-8 xl:gap-10 w-full">

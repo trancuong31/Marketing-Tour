@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
+import TourOverviewGridItem from '../components/TourOverviewGridItem';
+import TourOverviewListItem from '../components/TourOverviewListItem';
 import { 
     Loader2, Phone, Mail, Calendar, X, CheckCircle2, 
     Eye, Filter, Users, ChevronLeft, ChevronRight, 
@@ -24,6 +26,7 @@ const ITEMS_PER_PAGE = 10;
 
 const BookingManagementPage = () => {
     const [view, setView] = useState('overview'); // 'overview' or 'list'
+    const [overviewLayout, setOverviewLayout] = useState(() => localStorage.getItem('admin_booking_layout') || 'grid'); // 'grid' or 'list'
     const [overviewData, setOverviewData] = useState([]);
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -96,6 +99,10 @@ const BookingManagementPage = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [statusFilter, selectedTour, debouncedSearch]);
+
+    useEffect(() => {
+        localStorage.setItem('admin_booking_layout', overviewLayout);
+    }, [overviewLayout]);
 
     const handleUpdateStatus = async (id, status) => {
         setUpdating(id);
@@ -210,9 +217,9 @@ const BookingManagementPage = () => {
                     </div>
                 </div>
 
-                {/* Filters & Search - Only visible in list view */}
-                {view === 'list' && (
-                    <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-surface p-4 rounded-2xl border border-border shadow-sm">
+                {/* Options Bar */}
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-surface p-4 rounded-2xl border border-border shadow-sm">
+                    {view === 'list' ? (
                         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                             {selectedTour && (
                                 <button 
@@ -239,8 +246,30 @@ const BookingManagementPage = () => {
                                 </button>
                             ))}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex flex-wrap items-center justify-between w-full">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-text-secondary">Hiển thị <span className="text-primary">{filteredOverview.length}</span> tour</span>
+                            </div>
+                            <div className="flex items-center gap-1 bg-surface-alt p-1 rounded-xl border border-border">
+                                <button 
+                                    onClick={() => setOverviewLayout('grid')}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${overviewLayout === 'grid' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface/50'}`}
+                                >
+                                    <LayoutGrid className="w-4 h-4" />
+                                    <span className="hidden sm:block">Lưới</span>
+                                </button>
+                                <button 
+                                    onClick={() => setOverviewLayout('list')}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${overviewLayout === 'list' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface/50'}`}
+                                >
+                                    <List className="w-4 h-4" />
+                                    <span className="hidden sm:block">Danh sách</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Content Area */}
                 {loading ? (
@@ -251,58 +280,13 @@ const BookingManagementPage = () => {
                 ) : view === 'overview' ? (
                     /* ═══ OVERVIEW DASHBOARD ═══ */
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className={overviewLayout === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
                             {filteredOverview.length > 0 ? filteredOverview.map(tour => (
-                                <div 
-                                    key={tour.id} 
-                                    className="group bg-surface rounded-2xl border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden"
-                                >
-                                    <div className="relative h-40 overflow-hidden cursor-pointer group/img" onClick={() => window.open(`/tours/${tour.slug}`, '_blank')}>
-                                        <img 
-                                            src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
-                                            alt={tour.title}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover/img:opacity-80 transition-opacity" />
-                                        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-2">
-                                            <h3 className="text-white font-bold line-clamp-2 leading-tight group-hover/img:text-primary-light transition-colors">{tour.title}</h3>
-                                            <ExternalLink className="w-4 h-4 text-white/50 group-hover/img:text-white transition-all flex-shrink-0 mb-1" />
-                                        </div>
-                                        {tour.pending > 0 && (
-                                            <div className="absolute top-4 right-4 bg-error text-white text-[10px] font-bold px-2 py-1 rounded-full animate-bounce shadow-lg shadow-error/20">
-                                                {tour.pending} ĐƠN CHỜ
-                                            </div>
-                                        )}
-                                    </div>
-                                
-                                <div className="p-5">
-                                    <div className="grid grid-cols-2 gap-3 mb-5">
-                                        <div className="bg-warning/5 border border-warning/10 p-3 rounded-xl flex flex-col items-center justify-center">
-                                            <span className="text-xs text-warning font-medium mb-1 uppercase tracking-wider">Đang chờ</span>
-                                            <span className="text-xl font-bold text-warning">{tour.pending}</span>
-                                        </div>
-                                        <div className="bg-success/5 border border-success/10 p-3 rounded-xl flex flex-col items-center justify-center">
-                                            <span className="text-xs text-success font-medium mb-1 uppercase tracking-wider">Đã duyệt</span>
-                                            <span className="text-xl font-bold text-success">{tour.approved}</span>
-                                        </div>
-                                        <div className="bg-info/5 border border-info/10 p-3 rounded-xl flex flex-col items-center justify-center">
-                                            <span className="text-xs text-info font-medium mb-1 uppercase tracking-wider">Liên hệ</span>
-                                            <span className="text-xl font-bold text-info">{tour.contacted}</span>
-                                        </div>
-                                        <div className="bg-error/5 border border-error/10 p-3 rounded-xl flex flex-col items-center justify-center">
-                                            <span className="text-xs text-error font-medium mb-1 uppercase tracking-wider">Đã hủy</span>
-                                            <span className="text-xl font-bold text-error">{tour.cancelled}</span>
-                                        </div>
-                                    </div>                                    
-                                    <button 
-                                        onClick={() => selectTour(tour)}
-                                        className="w-full py-3 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20 group-hover:border-primary"
-                                    >
-                                        <List className="w-4 h-4" />
-                                        Xem chi tiết
-                                    </button>
-                                </div>
-                            </div>
+                                overviewLayout === 'grid' ? (
+                                    <TourOverviewGridItem key={tour.id} tour={tour} onSelectTour={selectTour} />
+                                ) : (
+                                    <TourOverviewListItem key={tour.id} tour={tour} onSelectTour={selectTour} />
+                                )
                         )) : (
                             <div className="col-span-full py-20 bg-surface rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-4">
                                 <AlertCircle className="w-12 h-12 text-text-muted" />

@@ -37,7 +37,7 @@ const GuidePage = () => {
             <ClientLayout>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl font-extrabold text-text mb-2">Hướng Dẫn Du Lịch</h1>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Hướng Dẫn Du Lịch</h1>
                         <p className="text-text-muted">Mẹo và thông tin hữu ích cho chuyến đi của bạn</p>
                     </div>
 
