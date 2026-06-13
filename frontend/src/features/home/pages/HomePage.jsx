@@ -173,7 +173,7 @@ const HomePage = () => {
                                         <h3 className="text-white font-bold text-xl leading-tight line-clamp-2 drop-shadow-md">
                                             {heroBanners[heroIndex].title}
                                         </h3>
-                                        <div className="bg-primary p-3 rounded-2xl group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
+                                        <div className="bg-primary p-3 rounded-xl group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
                                             <ChevronRight className="w-5 h-5 text-white transition-transform duration-300" />
                                         </div>
                                     </div>

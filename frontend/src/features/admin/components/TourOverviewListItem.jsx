@@ -40,10 +40,6 @@ const TourOverviewListItem = ({ tour, onSelectTour }) => {
                             <span className="text-[10px] text-success font-medium mb-0.5 uppercase tracking-wider">Đã duyệt</span>
                             <span className="text-lg font-bold text-success leading-none">{tour.approved}</span>
                         </div>
-                        <div className="bg-info/5 border border-info/10 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[75px]">
-                            <span className="text-[10px] text-info font-medium mb-0.5 uppercase tracking-wider">Liên hệ</span>
-                            <span className="text-lg font-bold text-info leading-none">{tour.contacted}</span>
-                        </div>
                         <div className="bg-error/5 border border-error/10 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[75px]">
                             <span className="text-[10px] text-error font-medium mb-0.5 uppercase tracking-wider">Đã hủy</span>
                             <span className="text-lg font-bold text-error leading-none">{tour.cancelled}</span>

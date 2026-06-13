@@ -64,7 +64,7 @@ const Booking = sequelize.define('Booking', {
     },
 
     status: {
-        type: DataTypes.ENUM('pending', 'contacted', 'approved', 'cancelled'),
+        type: DataTypes.ENUM('pending', 'approved', 'cancelled'),
         defaultValue: 'pending',
     },
     total_price: {
@@ -72,6 +72,41 @@ const Booking = sequelize.define('Booking', {
         allowNull: false,
         defaultValue: 0,
         comment: 'Tổng tiền thanh toán (Snapshot)',
+    },
+    tour_title_snapshot: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Snapshot tên tour tại thời điểm đặt',
+    },
+    departure_date_snapshot: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+        comment: 'Snapshot ngày khởi hành tại thời điểm đặt',
+    },
+    adult_price_snapshot: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        comment: 'Snapshot giá người lớn tại thời điểm đặt',
+    },
+    child_price_snapshot: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        comment: 'Snapshot giá trẻ em tại thời điểm đặt',
+    },
+    infant_price_snapshot: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        comment: 'Snapshot giá em bé tại thời điểm đặt',
+    },
+    pickup_location_snapshot: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+        comment: 'Snapshot tên điểm đón tại thời điểm đặt',
+    },
+    pickup_price_snapshot: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: true,
+        comment: 'Snapshot phụ thu điểm đón tại thời điểm đặt',
     },
     admin_note: {
         type: DataTypes.TEXT,

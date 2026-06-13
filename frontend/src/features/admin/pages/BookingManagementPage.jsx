@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
 import { adminService } from '@/services/tourService';
-import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import TourOverviewGridItem from '../components/TourOverviewGridItem';
 import TourOverviewListItem from '../components/TourOverviewListItem';
-import { 
-    Loader2, Phone, Mail, Calendar, X, CheckCircle2, 
-    Eye, Filter, Users, ChevronLeft, ChevronRight, 
+import {
+    Loader2, Phone, Mail, Calendar, X, CheckCircle2,
+    Eye, Filter, Users, ChevronLeft, ChevronRight,
     Trash2, Search, ArrowLeft, MoreHorizontal,
-    LayoutGrid, List, AlertCircle, Clock, XCircle, ExternalLink, FileText
+    LayoutGrid, List, AlertCircle, Clock, XCircle, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusConfig = {
     pending:   { label: 'Đang chờ',   className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
-    contacted: { label: 'Đã liên hệ', className: 'bg-info/10 text-info border-info/20', icon: Phone },
     approved:  { label: 'Đã duyệt',   className: 'bg-success/10 text-success border-success/20', icon: CheckCircle2 },
     cancelled: { label: 'Đã hủy',     className: 'bg-error/10 text-error border-error/20', icon: XCircle },
 };
@@ -233,7 +231,7 @@ const BookingManagementPage = () => {
                             )}
                             
                             <Filter className="w-4 h-4 text-text-muted flex-shrink-0" />
-                            {['', 'pending', 'contacted', 'approved', 'cancelled'].map(status => (
+                            {['', 'pending', 'approved', 'cancelled'].map(status => (
                                 <button
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
@@ -339,10 +337,10 @@ const BookingManagementPage = () => {
                                                     </td>
                                                     {!selectedTour && (
                                                         <td className="px-6 py-4 hidden md:table-cell max-w-[200px]">
-                                                            <p className="text-text font-medium truncate">{booking.Tour?.title}</p>
-                                                            {booking.departure && (
+                                                            <p className="text-text font-medium truncate">{booking.Tour?.title || booking.tour_title_snapshot || 'Tour chưa cập nhật tên'}</p>
+                                                            {(booking.departure || booking.departure_date_snapshot) && (
                                                                 <span className="text-[10px] text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10 mt-1 inline-block">
-                                                                    Khởi hành: {new Date(booking.departure.departure_date).toLocaleDateString('vi-VN')}
+                                                                    Khởi hành: {new Date(booking.departure?.departure_date || booking.departure_date_snapshot).toLocaleDateString('vi-VN')}
                                                                 </span>
                                                             )}
                                                         </td>
@@ -505,17 +503,17 @@ const BookingManagementPage = () => {
                                 <section>
                                     <h4 className="text-xs font-bold text-text-muted uppercase tracking-widest mb-3">Thông tin Tour</h4>
                                     <div className="bg-surface-alt p-4 rounded-2xl border border-border space-y-3">
-                                        <p className="font-bold text-text leading-snug">{detail.Tour?.title}</p>
-                                        {detail.departure && (
+                                        <p className="font-bold text-text leading-snug">{detail.Tour?.title || detail.tour_title_snapshot || 'Tour chưa cập nhật tên'}</p>
+                                        {(detail.departure || detail.departure_date_snapshot) && (
                                             <div className="flex items-center gap-2 text-sm text-text-secondary">
                                                 <Calendar className="w-4 h-4 text-primary" />
-                                                <span className="font-medium">Khởi hành: {new Date(detail.departure.departure_date).toLocaleDateString('vi-VN')}</span>
+                                                <span className="font-medium">Khởi hành: {new Date(detail.departure?.departure_date || detail.departure_date_snapshot).toLocaleDateString('vi-VN')}</span>
                                             </div>
                                         )}
-                                        {detail.pickupLocation && (
+                                        {(detail.pickupLocation || detail.pickup_location_snapshot) && (
                                             <div className="text-sm bg-primary/5 p-2 rounded-lg border border-primary/10">
                                                 <p className="text-xs text-primary font-bold mb-1">Điểm đón:</p>
-                                                <p className="text-text font-medium">{detail.pickupLocation.location_name}</p>
+                                                <p className="text-text font-medium">{detail.pickupLocation?.location_name || detail.pickup_location_snapshot}</p>
                                             </div>
                                         )}
                                     </div>
@@ -584,7 +582,7 @@ const BookingManagementPage = () => {
                                         {detail.customer_note && (
                                             <div className="p-3 bg-surface rounded-xl border border-border">
                                                 <p className="text-[10px] text-text-muted font-black uppercase mb-1">Ghi chú từ khách</p>
-                                                <p className="text-sm italic text-text-secondary leading-tight">"{detail.customer_note}"</p>
+                                                <p className="text-sm italic text-text-secondary leading-tight">{detail.customer_note}</p>
                                             </div>
                                         )}
                                     </div>

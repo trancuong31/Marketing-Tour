@@ -13,7 +13,7 @@ const generateBookingCode = () => {
     return `BK${timestamp}${random}`;
 };
 
-// --------- Tạo booking mới (flow mới: departure + pickup + options) ---------
+// --------- Tạo booking ---------
 const createBooking = catchAsync(async (req, res) => {
     const {
         tour_id, departure_id, pickup_location_id,
@@ -33,7 +33,7 @@ const createBooking = catchAsync(async (req, res) => {
 
     // validate user đã booking departure này chưa
     const userId = req.user?.id;
-    if (userId && await Booking.findOne({ where: { user_id: userId, departure_id, status: ['pending', 'contacted', 'approved'] } })) {
+    if (userId && await Booking.findOne({ where: { user_id: userId, departure_id, status: ['pending', 'approved'] } })) {
         throw new AppError('Bạn đã có yêu cầu đặt tour cho ngày khởi hành này. Vui lòng kiểm tra lại lịch sử đặt tour của bạn.', HTTP_CODES.BAD_REQUEST);
     }
     if (!departure) throw new AppError('Ngày khởi hành không hợp lệ hoặc đã đóng', HTTP_CODES.BAD_REQUEST);
@@ -44,14 +44,16 @@ const createBooking = catchAsync(async (req, res) => {
         throw new AppError(`Chỉ còn ${departure.available_seats} chỗ trống`, HTTP_CODES.BAD_REQUEST);
     }
 
+
     // 4. Validate pickup (optional)
     let pickupSurcharge = 0;
+    let pickupRecord = null;
     if (pickup_location_id) {
-        const pickup = await TourPickupLocation.findOne({
+        pickupRecord = await TourPickupLocation.findOne({
             where: { id: pickup_location_id, tour_id },
         });
-        if (!pickup) throw new AppError('Điểm đón không hợp lệ', HTTP_CODES.BAD_REQUEST);
-        pickupSurcharge = parseFloat(pickup.surcharge_amount) || 0;
+        if (!pickupRecord) throw new AppError('Điểm đón không hợp lệ', HTTP_CODES.BAD_REQUEST);
+        pickupSurcharge = parseFloat(pickupRecord.surcharge_amount) || 0;
     }
 
     // 5. Tính giá gốc từ departure
@@ -126,6 +128,14 @@ const createBooking = catchAsync(async (req, res) => {
             customer_note: customer_note || null,
             status: 'pending',
             total_price: totalPrice,
+            // Snapshot fields
+            tour_title_snapshot: tour.title,
+            departure_date_snapshot: departure.departure_date,
+            adult_price_snapshot: parseFloat(departure.price_adult),
+            child_price_snapshot: parseFloat(departure.price_child || 0),
+            infant_price_snapshot: parseFloat(departure.price_infant || 0),
+            pickup_location_snapshot: pickupRecord ? pickupRecord.location_name : null,
+            pickup_price_snapshot: pickupSurcharge || null,
         }, { transaction: t });
 
         // Giảm số chỗ trống
@@ -213,7 +223,16 @@ const getMyBookings = catchAsync(async (req, res) => {
         adult_count: b.adult_qty,
         child_count: b.child_qty,
         infant_count: b.infant_qty,
-        departure_date: b.departure?.departure_date || null,
+        departure_date: b.departure?.departure_date || b.departure_date_snapshot || null,
+
+        // Snapshot fields
+        tour_title_snapshot: b.tour_title_snapshot,
+        departure_date_snapshot: b.departure_date_snapshot,
+        adult_price_snapshot: b.adult_price_snapshot,
+        child_price_snapshot: b.child_price_snapshot,
+        infant_price_snapshot: b.infant_price_snapshot,
+        pickup_location_snapshot: b.pickup_location_snapshot,
+        pickup_price_snapshot: b.pickup_price_snapshot,
 
         tour: b.Tour ? {
             id: b.Tour.id,
@@ -337,7 +356,16 @@ const lookupBooking = catchAsync(async (req, res, next) => {
         adult_count: b.adult_qty,
         child_count: b.child_qty,
         infant_count: b.infant_qty,
-        departure_date: b.departure?.departure_date || null,
+        departure_date: b.departure?.departure_date || b.departure_date_snapshot || null,
+
+        // Snapshot fields
+        tour_title_snapshot: b.tour_title_snapshot,
+        departure_date_snapshot: b.departure_date_snapshot,
+        adult_price_snapshot: b.adult_price_snapshot,
+        child_price_snapshot: b.child_price_snapshot,
+        infant_price_snapshot: b.infant_price_snapshot,
+        pickup_location_snapshot: b.pickup_location_snapshot,
+        pickup_price_snapshot: b.pickup_price_snapshot,
 
         tour: b.Tour ? {
             id: b.Tour.id,

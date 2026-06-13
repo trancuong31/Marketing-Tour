@@ -114,8 +114,7 @@ const HistoryPage = () => {
     const getStatusStyle = (status) => {
         switch (status) {
             case 'pending': return { bg: '#FEF9C3', text: '#92400E', border: '#FDE68A', icon: Clock };
-            case 'confirmed':
-            case 'contacted': return { bg: '#DBEAFE', text: '#1E40AF', border: '#BFDBFE', icon: CheckCircle2 };
+            case 'confirmed': return { bg: '#DBEAFE', text: '#1E40AF', border: '#BFDBFE', icon: CheckCircle2 };
             case 'completed':
             case 'approved': return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: FileCheck };
             case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', icon: XCircle };
@@ -126,8 +125,7 @@ const HistoryPage = () => {
     const getStatusText = (status) => {
         switch (status) {
             case 'pending': return 'Đang xử lý';
-            case 'confirmed':
-            case 'contacted': return 'Đã xác nhận';
+            case 'confirmed': return 'Đã xác nhận';
             case 'completed':
             case 'approved': return 'Hoàn thành';
             case 'cancelled': return 'Đã hủy';
@@ -286,7 +284,7 @@ const HistoryPage = () => {
                                             onClick={() => handleTourClick(b)}
                                         >
                                             <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-1 mb-2 group-hover:text-primary transition-colors">
-                                                {b.tour?.title || 'Tour ưu đãi chưa cập nhật tên'}
+                                                {b.tour?.title || b.tour_title_snapshot || 'Tour ưu đãi chưa cập nhật tên'}
                                             </h3>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="w-4 h-4 text-gray-400" />
@@ -339,7 +337,7 @@ const HistoryPage = () => {
                                                         <span>Chi tiết đặt tour</span>
                                                     </h4>
 
-                                                    <p className="text-sm font-semibold text-gray-900 mb-6">Tên tour: {b.tour?.title || 'Chưa cập nhật'}</p>
+                                                    <p className="text-sm font-semibold text-gray-900 mb-6">Tên tour: {b.tour?.title || b.tour_title_snapshot || 'Chưa cập nhật'}</p>
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                         {/* Chi tiết tour */}
@@ -350,7 +348,7 @@ const HistoryPage = () => {
                                                             <div className="space-y-1">
                                                                 <p className="text-sm text-gray-700"><span className="text-gray-500">Khởi hành:</span> {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}</p>
                                                                 <p className="text-sm text-gray-700"><span className="text-gray-500">Thời lượng:</span> {duration}</p>
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || 'Không có'}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || 'Không có'}</p>
                                                             </div>
                                                         </div>
 

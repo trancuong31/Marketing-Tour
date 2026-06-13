@@ -34,10 +34,6 @@ const TourOverviewGridItem = ({ tour, onSelectTour }) => {
                         <span className="text-xs text-success font-medium mb-1 uppercase tracking-wider">Đã duyệt</span>
                         <span className="text-xl font-bold text-success">{tour.approved}</span>
                     </div>
-                    <div className="bg-info/5 border border-info/10 p-3 rounded-xl flex flex-col items-center justify-center">
-                        <span className="text-xs text-info font-medium mb-1 uppercase tracking-wider">Liên hệ</span>
-                        <span className="text-xl font-bold text-info">{tour.contacted}</span>
-                    </div>
                     <div className="bg-error/5 border border-error/10 p-3 rounded-xl flex flex-col items-center justify-center">
                         <span className="text-xs text-error font-medium mb-1 uppercase tracking-wider">Đã hủy</span>
                         <span className="text-xl font-bold text-error">{tour.cancelled}</span>

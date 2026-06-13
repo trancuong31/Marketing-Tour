@@ -9,8 +9,6 @@ import { toast } from 'sonner';
 const getStatusStyle = (status) => {
     switch (status) {
         case 'pending': return { bg: '#FEF9C3', text: '#92400E', border: '#FDE68A', icon: '⏳', label: 'Đang xử lý' };
-        case 'confirmed':
-        case 'contacted': return { bg: '#DBEAFE', text: '#1E40AF', border: '#BFDBFE', icon: '✅', label: 'Đã xác nhận' };
         case 'completed':
         case 'approved': return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋', label: 'Hoàn thành' };
         case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', icon: '❌', label: 'Đã hủy' };
@@ -279,7 +277,7 @@ const LookupBookingPage = () => {
                                                     onClick={() => handleTourClick(b)}
                                                 >
                                                     <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-1 mb-2 hover:text-primary transition-colors">
-                                                        {b.tour?.title || 'Tour chưa cập nhật tên'}
+                                                        {b.tour?.title || b.tour_title_snapshot || 'Tour chưa cập nhật tên'}
                                                     </h3>
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4 text-gray-400" />
@@ -313,7 +311,7 @@ const LookupBookingPage = () => {
                                                                 <div className="space-y-1">
                                                                     <p className="text-sm text-gray-700"><span className="text-gray-500">Người đặt:</span> {b.customer_name}</p>
                                                                     <p className="text-sm text-gray-700"><span className="text-gray-500">Thời lượng:</span> {duration}</p>
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || 'Không có yêu cầu'}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || 'Không có yêu cầu'}</p>
                                                                 </div>
                                                             </div>
 

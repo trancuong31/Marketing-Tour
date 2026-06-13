@@ -477,7 +477,6 @@ const getBookingOverview = catchAsync(async (req, res) => {
             const bookings = tour.bookings || [];
             const total = bookings.length;
             const pending = bookings.filter(b => b.status === 'pending').length;
-            const contacted = bookings.filter(b => b.status === 'contacted').length;
             const approved = bookings.filter(b => b.status === 'approved').length;
             const cancelled = bookings.filter(b => b.status === 'cancelled').length;
             return {
@@ -485,7 +484,7 @@ const getBookingOverview = catchAsync(async (req, res) => {
                 title: tour.title,
                 slug: tour.slug,
                 thumbnail_url: tour.thumbnail_url,
-                total, pending, contacted, approved, cancelled,
+                total, pending, approved, cancelled,
             };
         })
         .filter(t => t.total > 0 || t.pending > 0);
@@ -529,13 +528,59 @@ const getBookings = catchAsync(async (req, res) => {
         distinct: true,
     });
 
+    const data = rows.map(b => ({
+        id: b.id,
+        booking_code: b.booking_code,
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_email: b.customer_email,
+        adult_qty: b.adult_qty,
+        child_qty: b.child_qty,
+        infant_qty: b.infant_qty,
+        total_price: b.total_price,
+        customer_note: b.customer_note,
+        status: b.status,
+        admin_note: b.admin_note,
+        created_at: b.created_at,
+        updated_at: b.updated_at,
+        tour_id: b.tour_id,
+        departure_id: b.departure_id,
+        user_id: b.user_id,
+
+        // Snapshot fields
+        tour_title_snapshot: b.tour_title_snapshot,
+        departure_date_snapshot: b.departure_date_snapshot,
+        adult_price_snapshot: b.adult_price_snapshot,
+        child_price_snapshot: b.child_price_snapshot,
+        infant_price_snapshot: b.infant_price_snapshot,
+        pickup_location_snapshot: b.pickup_location_snapshot,
+        pickup_price_snapshot: b.pickup_price_snapshot,
+
+        Tour: b.Tour ? {
+            id: b.Tour.id,
+            title: b.Tour.title,
+            slug: b.Tour.slug,
+        } : null,
+        departure: b.departure ? {
+            id: b.departure.id,
+            departure_date: b.departure.departure_date,
+            price_adult: b.departure.price_adult,
+        } : null,
+        pickupLocation: b.pickupLocation ? {
+            id: b.pickupLocation.id,
+            location_name: b.pickupLocation.location_name,
+            surcharge_amount: b.pickupLocation.surcharge_amount,
+        } : null,
+        bookingOptions: b.bookingOptions || [],
+    }));
+
     res.status(200).json({
         status: 'success',
-        results: rows.length,
+        results: data.length,
         totalItems: count,
         totalPages: Math.ceil(count / limitNum),
         currentPage: pageNum,
-        data: rows,
+        data,
     });
 });
 
@@ -547,7 +592,7 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { status, admin_note } = req.body;
 
-    const validStatuses = ['pending', 'contacted', 'approved', 'cancelled'];
+    const validStatuses = ['pending', 'approved', 'cancelled'];
     if (!validStatuses.includes(status)) {
         return next(new AppError('Trạng thái không hợp lệ', HTTP_CODES.BAD_REQUEST));
     }
@@ -570,7 +615,7 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
         // Logic cập nhật số chỗ trống
         const totalPassengers = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
 
-        // 1. Admin hủy đơn (pending/contacted/approved -> cancelled) => Khôi phục chỗ trống
+        // 1. Admin hủy đơn (pending/approved -> cancelled) => Khôi phục chỗ trống
         if (status === 'cancelled' && oldStatus !== 'cancelled') {
             const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
             if (departure) {
@@ -585,7 +630,7 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
             }
         }
 
-        // 2. Admin khôi phục đơn đã hủy (cancelled -> pending/contacted/approved) => Giảm chỗ trống
+        // 2. Admin khôi phục đơn đã hủy (cancelled -> pending/approved) => Giảm chỗ trống
         if (oldStatus === 'cancelled' && status !== 'cancelled') {
             const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
             if (departure && departure.available_seats > 0) { // Nếu tour có giới hạn chỗ

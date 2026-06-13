@@ -3,10 +3,10 @@ const router = express.Router();
 const { createBooking, getMyBookings, cancelBooking, deleteMyBooking, lookupBooking } = require('../controllers/bookingController');
 const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
 
-// Tạo booking (guest hoặc login)
+// Tạo booking
 router.post('/', optionalAuthenticate, createBooking);
 
-// Tra cứu booking (Public)
+// Tra cứu booking
 router.get('/lookup', lookupBooking);
 
 // Lấy booking của user login + chi tiết tour
