@@ -4,8 +4,7 @@ const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const env = require('../config/env');
+const { Op } = require('sequelize');
 
 // Sinh booking code duy nhất
 const generateBookingCode = () => {
@@ -31,6 +30,12 @@ const createBooking = catchAsync(async (req, res) => {
     const departure = await TourDeparture.findOne({
         where: { id: departure_id, tour_id, status: 'open' },
     });
+
+    // validate user đã booking departure này chưa
+    const userId = req.user?.id;
+    if (userId && await Booking.findOne({ where: { user_id: userId, departure_id, status: ['pending', 'contacted', 'approved'] } })) {
+        throw new AppError('Bạn đã có yêu cầu đặt tour cho ngày khởi hành này. Vui lòng kiểm tra lại lịch sử đặt tour của bạn.', HTTP_CODES.BAD_REQUEST);
+    }
     if (!departure) throw new AppError('Ngày khởi hành không hợp lệ hoặc đã đóng', HTTP_CODES.BAD_REQUEST);
 
     // 3. Validate seats
@@ -177,6 +182,8 @@ const getMyBookings = catchAsync(async (req, res) => {
 
     const { count, rows: bookings } = await Booking.findAndCountAll({
         where: { user_id: userId },
+        distinct: true,
+        col: 'id',
         include: [
             { model: Tour, attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'] },
             { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
@@ -243,8 +250,8 @@ const cancelBooking = catchAsync(async (req, res) => {
     const { bookingId } = req.params;
 
     const booking = await Booking.findOne({ where: { id: bookingId, user_id: userId } });
-    if (!booking) throw new AppError('Booking không tồn tại', HTTP_CODES.NOT_FOUND);
-    if (booking.status !== 'pending') throw new AppError('Chỉ có thể hủy booking đang chờ', HTTP_CODES.BAD_REQUEST);
+    if (!booking) throw new AppError('Booking không tồn tại!', HTTP_CODES.NOT_FOUND);
+    if (booking.status !== 'pending') throw new AppError('Chỉ có thể hủy booking đang chờ xử lý!', HTTP_CODES.BAD_REQUEST);
 
     await sequelize.transaction(async (t) => {
         booking.status = 'cancelled';

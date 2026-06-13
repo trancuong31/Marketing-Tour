@@ -1,15 +1,148 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuthStore } from '@/store';
 import { bookingService } from '@/services/tourService';
 import SuccessModal from '@/components/ui/SuccessModal';
-import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check } from 'lucide-react';
+import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check, ChevronDown, Armchair } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CustomSelect } from '@/components/ui';
+import { toast } from 'sonner';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
+// ─── Helper: tách thông tin departure ───────────────────────────────────────
+const parseDeparture = (d) => {
+    const date = new Date(d.departure_date);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    const weekday = date.toLocaleDateString('vi-VN', { weekday: 'long' });
+
+    const seats = d.available_seats;
+    const seatBadge =
+        seats === 0
+            ? { label: 'Hết chỗ', variant: 'danger' }
+            : seats <= 5
+            ? { label: `Còn ${seats} chỗ`, variant: 'warning' }
+            : { label: `Còn ${seats} chỗ`, variant: 'success' };
+
+    return { day, month, year, weekday, seatBadge, disabled: seats === 0 };
+};
+
+const BADGE_CLASS = {
+    success: 'bg-green-50 text-green-700',
+    warning: 'bg-amber-50 text-amber-700',
+    danger:  'bg-red-50   text-red-500',
+};
+
+// ─── DepartureSelect ─────────────────────────────────────────────────────────
+const DepartureSelect = ({ departures, value, onChange, placeholder = '— Chọn ngày khởi hành —' }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+
+    // Đóng khi click ngoài
+    useEffect(() => {
+        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selected = departures.find(d => String(d.id) === String(value));
+    const parsed = selected ? parseDeparture(selected) : null;
+
+    return (
+        <div ref={ref} className="relative">
+            {/* Trigger */}
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className={`
+                    w-full flex items-center justify-between gap-3
+                    px-3 py-2.5 rounded-xl border bg-white text-left
+                    transition-all duration-150
+                    ${open ? 'border-primary ring-2 ring-primary/10' : 'border-border hover:border-primary/50'}
+                `}
+            >
+                {parsed ? (
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Khối ngày */}
+                        <div className="text-center shrink-0 w-9">
+                            <div className="text-base font-semibold text-text leading-none">{parsed.day}</div>
+                            <div className="text-[11px] text-text-muted mt-0.5">Th{parsed.month}</div>
+                        </div>
+                        {/* Divider */}
+                        <div className="w-px h-7 bg-border shrink-0" />
+                        {/* Thứ + năm */}
+                        <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-text truncate">{parsed.weekday}</div>
+                            <div className="text-xs text-text-muted">{parsed.year}</div>
+                        </div>
+                        {/* Badge */}
+                        <span className={`shrink-0 text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BADGE_CLASS[parsed.seatBadge.variant]}`}>
+                            {parsed.seatBadge.label}
+                        </span>
+                    </div>
+                ) : (
+                    <span className="text-sm text-text-muted">{placeholder}</span>
+                )}
+                <ChevronDown className={`w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown */}
+            {open && (
+                <ul className="absolute z-50 mt-1.5 w-full bg-white border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-64 overflow-y-auto">
+                    {departures.length === 0 && (
+                        <li className="px-4 py-3 text-sm text-text-muted text-center">Không có lịch khởi hành</li>
+                    )}
+                    {departures.map(d => {
+                        const p = parseDeparture(d);
+                        const isSelected = String(d.id) === String(value);
+
+                        return (
+                            <li
+                                key={d.id}
+                                onClick={() => {
+                                    if (!p.disabled) { onChange(String(d.id)); setOpen(false); }
+                                }}
+                                className={`
+                                    flex items-center justify-between gap-3 px-3 py-3 cursor-pointer
+                                    transition-colors duration-100
+                                    ${p.disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-surface-alt'}
+                                    ${isSelected ? 'bg-primary/5' : ''}
+                                `}
+                            >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {/* Khối ngày */}
+                                    <div className="text-center shrink-0 w-9 flex flex-col items-center justify-center">
+                                        <div className="text-base font-semibold text-text leading-none">{p.day}</div>
+                                        <div className="text-[11px] text-text-muted mt-0.5">Th{p.month}</div>
+                                    </div>
+                                    {/* Divider */}
+                                    <div className="w-px self-stretch bg-border shrink-0" />
+                                    {/* Thứ + năm */}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="text-sm font-medium text-text">{p.weekday}</div>
+                                        <div className="text-xs text-text-muted">{p.year}</div>
+                                    </div>
+                                </div>
+                                {/* Badge + checkmark */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${BADGE_CLASS[p.seatBadge.variant]}`}>
+                                        {p.seatBadge.label}
+                                    </span>
+                                    {isSelected && <Check className="w-3.5 h-3.5 text-primary" strokeWidth={3} />}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+// ─── PassengerCounter ─────────────────────────────────────────────────────────
 const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99, price }) => (
     <div className="flex items-center justify-between py-2.5">
         <div>
@@ -45,122 +178,97 @@ const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99, 
     </div>
 );
 
+// ─── CustomCheckbox ───────────────────────────────────────────────────────────
 const CustomCheckbox = ({ checked, onChange, label, className = '' }) => (
     <label className={`flex items-center gap-3 cursor-pointer group select-none ${className}`}>
         <div className="relative flex items-center justify-center">
-            <input 
-                type="checkbox" 
-                className="absolute opacity-0 w-0 h-0" 
-                checked={checked} 
-                onChange={onChange} 
+            <input
+                type="checkbox"
+                className="absolute opacity-0 w-0 h-0"
+                checked={checked}
+                onChange={onChange}
             />
             <div className={`
                 w-5 h-5 rounded flex items-center justify-center border transition-all duration-200 ease-in-out
-                ${checked 
-                    ? 'bg-primary border-primary text-white shadow-[0_0_10px_rgba(var(--color-primary),0.2)]' 
+                ${checked
+                    ? 'bg-primary border-primary text-white shadow-[0_0_10px_rgba(var(--color-primary),0.2)]'
                     : 'bg-surface-alt border-border text-transparent group-hover:border-primary/50'
                 }
             `}>
                 <Check className={`w-3.5 h-3.5 transition-transform duration-200 ${checked ? 'scale-100' : 'scale-50 opacity-0'}`} strokeWidth={3} />
             </div>
         </div>
-        {label && <span className={`text-sm transition-colors ${checked ? 'text-text font-medium' : 'text-text group-hover:text-text-secondary'}`}>{label}</span>}
+        {label && (
+            <span className={`text-sm transition-colors ${checked ? 'text-text font-medium' : 'text-text group-hover:text-text-secondary'}`}>
+                {label}
+            </span>
+        )}
     </label>
 );
 
+// ─── BookingForm ──────────────────────────────────────────────────────────────
 const BookingForm = ({ tour }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
     const [modal, setModal] = useState({ open: false, code: '', amount: 0 });
 
-    // Booking selections
     const [selectedDepartureId, setSelectedDepartureId] = useState('');
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
     const [selectedPickupId, setSelectedPickupId] = useState('');
-    const [selectedOptions, setSelectedOptions] = useState({}); // { optionId: { selected: bool, quantity: number } }
+    const [selectedOptions, setSelectedOptions] = useState({});
 
-    const {
-        register,
-        handleSubmit,
-        reset,
-    } = useForm({
-        defaultValues: {
-            customer_note: '',
-        },
-    });
+    const { register, handleSubmit, reset } = useForm({ defaultValues: { customer_note: '' } });
 
-    // Data
     const departures = (tour.departures || []).filter(d => d.status === 'open');
     const pickupLocations = tour.pickupLocations || [];
     const tourOptions = tour.options || [];
-
-    // Options for CustomSelect
-    const departureOptions = useMemo(() => departures.map(d => ({
-        value: String(d.id),
-        label: `${new Date(d.departure_date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })} · ${formatPrice(d.price_adult)}/người lớn ${d.available_seats > 0 ? ` · Còn ${d.available_seats} chỗ` : ''}`
-    })), [departures]);
 
     const pickupOptions = useMemo(() => pickupLocations.map(p => ({
         value: String(p.id),
         label: `${p.location_name}${p.pickup_time ? ` · ${p.pickup_time}` : ''}${parseFloat(p.surcharge_amount) > 0 ? ` · +${formatPrice(p.surcharge_amount)}/người` : ''}`
     })), [pickupLocations]);
 
-    // Departure đã chọn
     const selectedDeparture = useMemo(
         () => departures.find(d => String(d.id) === String(selectedDepartureId)),
         [departures, selectedDepartureId],
     );
 
-    // Max passengers từ available_seats
     const maxSeats = selectedDeparture?.available_seats || 99;
-
-    // Giá từ departure
     const adultPrice = selectedDeparture ? parseFloat(selectedDeparture.price_adult) : 0;
     const childPrice = selectedDeparture ? parseFloat(selectedDeparture.price_child || 0) : 0;
     const infantPrice = selectedDeparture ? parseFloat(selectedDeparture.price_infant || 0) : 0;
 
-    // Pickup surcharge
     const selectedPickup = pickupLocations.find(p => String(p.id) === String(selectedPickupId));
     const pickupSurcharge = selectedPickup ? parseFloat(selectedPickup.surcharge_amount || 0) : 0;
 
     const totalPassengers = adults + children + infants;
 
-    // Options total
     const optionsTotal = useMemo(() => {
         let total = 0;
         tourOptions.forEach(opt => {
             const sel = selectedOptions[opt.id];
             if (!sel?.selected) return;
             const price = parseFloat(opt.price || 0);
-            if (opt.charge_type === 'per_person') {
-                total += price * totalPassengers;
-            } else if (opt.charge_type === 'per_booking') {
-                total += price;
-            } else {
-                total += price * (sel.quantity || 1);
-            }
+            if (opt.charge_type === 'per_person') total += price * totalPassengers;
+            else if (opt.charge_type === 'per_booking') total += price;
+            else total += price * (sel.quantity || 1);
         });
         return total;
     }, [tourOptions, selectedOptions, totalPassengers]);
 
-    // Real-time calculation
     const totalPrice = useMemo(() => {
         if (!selectedDeparture) return 0;
         const base = (adults * adultPrice) + (children * childPrice) + (infants * infantPrice);
-        const pickup = pickupSurcharge * totalPassengers;
-        return base + pickup + optionsTotal;
+        return base + (pickupSurcharge * totalPassengers) + optionsTotal;
     }, [adults, children, infants, adultPrice, childPrice, infantPrice, pickupSurcharge, totalPassengers, optionsTotal, selectedDeparture]);
 
     const toggleOption = (optionId) => {
         setSelectedOptions(prev => ({
             ...prev,
-            [optionId]: {
-                selected: !prev[optionId]?.selected,
-                quantity: prev[optionId]?.quantity || 1,
-            },
+            [optionId]: { selected: !prev[optionId]?.selected, quantity: prev[optionId]?.quantity || 1 },
         }));
     };
 
@@ -172,28 +280,19 @@ const BookingForm = ({ tour }) => {
     };
 
     const onSubmit = async (data) => {
-        if (!selectedDepartureId) {
-            alert('Vui lòng chọn ngày khởi hành');
-            return;
-        }
-
-        if (!user) {
-            alert('Vui lòng đăng nhập để đặt tour');
-            return;
-        }
+        if (!selectedDepartureId) { toast.error('Vui lòng chọn ngày khởi hành!'); return; }
+        if (!selectedPickupId)    { toast.error('Vui lòng chọn điểm đón!');       return; }
+        if (!user)                { toast.error('Vui lòng đăng nhập để đặt tour!'); return; }
 
         setSubmitting(true);
         try {
-            // Build options payload
             const optionsPayload = [];
             tourOptions.forEach(opt => {
                 const sel = selectedOptions[opt.id];
-                if (sel?.selected) {
-                    optionsPayload.push({
-                        option_id: opt.id,
-                        quantity: opt.charge_type === 'quantity' ? (sel.quantity || 1) : 1,
-                    });
-                }
+                if (sel?.selected) optionsPayload.push({
+                    option_id: opt.id,
+                    quantity: opt.charge_type === 'quantity' ? (sel.quantity || 1) : 1,
+                });
             });
 
             const payload = {
@@ -213,15 +312,10 @@ const BookingForm = ({ tour }) => {
             const res = await bookingService.create(payload);
             setModal({ open: true, code: res.data.data.bookingCode, amount: totalPrice });
             reset();
-            setAdults(1);
-            setChildren(0);
-            setInfants(0);
-            setSelectedDepartureId('');
-            setSelectedPickupId('');
-            setSelectedOptions({});
+            setAdults(1); setChildren(0); setInfants(0);
+            setSelectedDepartureId(''); setSelectedPickupId(''); setSelectedOptions({});
         } catch (err) {
-            const msg = err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại';
-            alert(msg);
+            toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
         } finally {
             setSubmitting(false);
         }
@@ -238,9 +332,11 @@ const BookingForm = ({ tour }) => {
                 <h3 className="text-lg font-bold text-text mb-1">Đặt Tour Ngay</h3>
                 {departures.length > 0 ? (
                     <p className="text-sm text-text-muted mb-5">
-                        Giá từ <span className="font-bold text-primary">
+                        Giá từ{' '}
+                        <span className="font-bold text-primary">
                             {formatPrice(Math.min(...departures.map(d => parseFloat(d.price_adult))))}
-                        </span>/người lớn
+                        </span>
+                        /người lớn
                     </p>
                 ) : (
                     <p className="text-sm text-warning mb-5">Chưa có lịch khởi hành</p>
@@ -253,17 +349,13 @@ const BookingForm = ({ tour }) => {
                             <Calendar className="w-3.5 h-3.5 text-text-muted" />
                             Ngày khởi hành <span className="text-error">*</span>
                         </label>
-                        <CustomSelect
+                        <DepartureSelect
+                            departures={departures}
                             value={selectedDepartureId}
-                            onChange={val => {
+                            onChange={(val) => {
                                 setSelectedDepartureId(val);
-                                // Reset passengers khi đổi departure
-                                setAdults(1);
-                                setChildren(0);
-                                setInfants(0);
+                                setAdults(1); setChildren(0); setInfants(0);
                             }}
-                            options={departureOptions}
-                            placeholder="— Chọn ngày khởi hành —"
                         />
                     </div>
 
@@ -274,31 +366,9 @@ const BookingForm = ({ tour }) => {
                             Hành khách
                         </label>
                         <div className="bg-surface-alt rounded-xl border border-border p-3 divide-y divide-border">
-                            <PassengerCounter
-                                label="Người lớn"
-                                ageDesc="Trên 10 tuổi"
-                                count={adults}
-                                onChange={setAdults}
-                                min={1}
-                                max={maxSeats}
-                                price={adultPrice}
-                            />
-                            <PassengerCounter
-                                label="Trẻ em"
-                                ageDesc="Từ 5 - 10 tuổi"
-                                count={children}
-                                onChange={setChildren}
-                                max={Math.max(0, maxSeats - adults)}
-                                price={childPrice}
-                            />
-                            <PassengerCounter
-                                label="Em bé"
-                                ageDesc="Dưới 5 tuổi"
-                                count={infants}
-                                onChange={setInfants}
-                                max={Math.max(0, maxSeats - adults - children)}
-                                price={infantPrice}
-                            />
+                            <PassengerCounter label="Người lớn" ageDesc="Trên 10 tuổi"    count={adults}   onChange={setAdults}   min={1} max={maxSeats}                             price={adultPrice} />
+                            <PassengerCounter label="Trẻ em"    ageDesc="Từ 5 - 10 tuổi"  count={children} onChange={setChildren}         max={Math.max(0, maxSeats - adults)}         price={childPrice} />
+                            <PassengerCounter label="Em bé"     ageDesc="Dưới 5 tuổi"     count={infants}  onChange={setInfants}          max={Math.max(0, maxSeats - adults - children)} price={infantPrice} />
                         </div>
                         <p className="text-xs text-text-muted mt-1.5 text-right">
                             Tổng: <span className="font-semibold text-text">{totalPassengers}</span> hành khách
@@ -313,13 +383,13 @@ const BookingForm = ({ tour }) => {
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-1">
                                 <MapPin className="w-3.5 h-3.5 text-text-muted" />
-                                Điểm đón
+                                Điểm đón <span className="text-red-500">*</span>
                             </label>
                             <CustomSelect
                                 value={selectedPickupId}
                                 onChange={val => setSelectedPickupId(val)}
                                 options={pickupOptions}
-                                placeholder="— Không chọn điểm đón —"
+                                placeholder="— Chọn điểm đón —"
                             />
                         </div>
                     )}
@@ -329,16 +399,14 @@ const BookingForm = ({ tour }) => {
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-2">
                                 <Settings className="w-3.5 h-3.5 text-text-muted" />
-                                Dịch vụ thêm
+                                Dịch vụ thêm (tùy chọn)
                             </label>
                             <div className="bg-surface-alt rounded-xl border border-border divide-y divide-border">
                                 {tourOptions.map(opt => {
                                     const sel = selectedOptions[opt.id];
                                     const isSelected = sel?.selected;
                                     const chargeLabel = opt.charge_type === 'per_person' ? '/người'
-                                        : opt.charge_type === 'per_booking' ? '/đơn'
-                                        : '';
-
+                                        : opt.charge_type === 'per_booking' ? '/đơn' : '';
                                     return (
                                         <div key={opt.id} className="px-3 py-2.5">
                                             <div className="flex items-center justify-between">
@@ -352,7 +420,6 @@ const BookingForm = ({ tour }) => {
                                                     +{formatPrice(opt.price)}{chargeLabel}
                                                 </span>
                                             </div>
-                                            {/* Quantity input for type='quantity' */}
                                             {isSelected && opt.charge_type === 'quantity' && (
                                                 <div className="flex items-center gap-2 ml-6 mt-1.5">
                                                     <span className="text-xs text-text-muted">Số lượng:</span>
@@ -372,7 +439,7 @@ const BookingForm = ({ tour }) => {
                         </div>
                     )}
 
-                    {/* ═══ CHI TIẾT GIÁ (Real-time) ═══ */}
+                    {/* ═══ CHI TIẾT GIÁ ═══ */}
                     {selectedDeparture && (
                         <div className="pt-3 border-t border-border space-y-1.5">
                             <div className="flex justify-between text-xs text-text-secondary">
@@ -413,14 +480,11 @@ const BookingForm = ({ tour }) => {
                     {/* Submit */}
                     <button
                         type="submit"
-                        disabled={submitting || !selectedDepartureId}
+                        disabled={submitting}
                         className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {submitting ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Đang xử lý...
-                            </>
+                            <><Loader2 className="w-4 h-4 animate-spin" />Đang xử lý...</>
                         ) : (
                             'Đặt Tour Ngay'
                         )}

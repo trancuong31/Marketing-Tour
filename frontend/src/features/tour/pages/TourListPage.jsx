@@ -96,7 +96,6 @@ const TourListPage = () => {
             .catch(err => console.error('Lỗi tải điểm đón:', err));
     }, []);
 
-    // Fetch tours WITHOUT date param — date filtering is client-side so calendar always has full departure data
     useEffect(() => {
         const fetchTours = async () => {
             setLoading(true);
@@ -136,9 +135,6 @@ const TourListPage = () => {
 
     const filteredTours = useMemo(() => {
         let result = tours.filter(tour => {
-            // Ẩn các tour không có ngày khởi hành
-            if (!tour.departures || tour.departures.length === 0) return false;
-
             if (filters.departure) {
                 if (!tour.pickupLocations?.some(loc => loc.location_name === filters.departure)) return false;
             }
@@ -225,7 +221,7 @@ const TourListPage = () => {
                 <div className="flex gap-8">
                     {/* SIDEBAR — z-10 so calendar popup renders above tour grid */}
                     <aside className="hidden lg:block w-[280px] shrink-0 relative z-10">
-                        <div className="sticky top-20 bg-white rounded-2xl border border-border shadow-sm p-5 overflow-visible">
+                        <div className="sticky top-20 bg-white rounded-xl border border-border shadow-sm p-5 overflow-visible">
                             {filterContent}
                         </div>
                     </aside>

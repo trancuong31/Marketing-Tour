@@ -113,6 +113,7 @@ const BookingManagementPage = () => {
                 setDetail(prev => ({ ...prev, status }));
             }
             toast.success('Cập nhật trạng thái thành công!');
+            setDetail(null);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Lỗi cập nhật');
         } finally {

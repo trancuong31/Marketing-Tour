@@ -1,10 +1,23 @@
+import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+
 const SuccessModal = ({ isOpen, onClose, title, message, bookingCode, totalAmount }) => {
+    useEffect(() => {
+        if (isOpen) {
+            const originalStyle = window.getComputedStyle(document.body).overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalStyle;
+            };
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    return createPortal(
+        <div className="fixed inset-0 flex items-center overscroll-contain justify-center p-4 z-[100]">
             {/* Overlay */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"  />
 
             {/* Modal */}
             <div className="relative bg-surface rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-up">
@@ -48,7 +61,8 @@ const SuccessModal = ({ isOpen, onClose, title, message, bookingCode, totalAmoun
                     Đóng và xem lịch sử
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

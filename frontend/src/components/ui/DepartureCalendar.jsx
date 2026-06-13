@@ -89,7 +89,7 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
                     w-full flex items-center justify-between gap-2 px-3.5 py-2.5 
-                    bg-white border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20
+                    bg-white border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20
                     ${isOpen ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 hover:border-gray-300'}
                 `}
             >

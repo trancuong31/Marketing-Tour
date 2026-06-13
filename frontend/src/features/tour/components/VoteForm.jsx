@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { tourService } from '@/services/tourService';
-import { Star, Send, CheckCircle2, Loader2, ImagePlus, X, LogIn } from 'lucide-react';
+import { Star, Send, CheckCircle2, Loader2, ImagePlus, X, LogIn, ShieldX } from 'lucide-react';
 import { useAuthStore } from '@/store';
+import { toast } from 'sonner';
 
 const VoteForm = ({ tourId, onSuccess }) => {
     const [submitting, setSubmitting] = useState(false);
@@ -10,6 +11,9 @@ const VoteForm = ({ tourId, onSuccess }) => {
     const [hoverRating, setHoverRating] = useState(0);
     const [images, setImages] = useState([]);
     const { isAuthenticated } = useAuthStore();
+
+    // Vote eligibility state
+    const [eligibility, setEligibility] = useState({ loading: true, eligible: false, reason: '' });
 
     const {
         register,
@@ -27,10 +31,30 @@ const VoteForm = ({ tourId, onSuccess }) => {
 
     const currentRating = watch('rating');
 
+    // Check vote eligibility when authenticated
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setEligibility({ loading: false, eligible: false, reason: '' });
+            return;
+        }
+
+        const checkEligibility = async () => {
+            try {
+                const res = await tourService.checkVoteEligibility(tourId);
+                const data = res.data.data;
+                setEligibility({ loading: false, eligible: data.eligible, reason: data.reason || '' });
+            } catch {
+                setEligibility({ loading: false, eligible: false, reason: 'Không thể kiểm tra quyền đánh giá.' });
+            }
+        };
+
+        checkEligibility();
+    }, [isAuthenticated, tourId]);
+
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         if (images.length + files.length > 5) {
-            alert('Bạn chỉ được tải lên tối đa 5 hình ảnh.');
+            toast.error('Bạn chỉ được tải lên tối đa 5 hình ảnh.');
             return;
         }
         setImages((prev) => [...prev, ...files]);
@@ -59,7 +83,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
             if (onSuccess) onSuccess();
         } catch (err) {
             const msg = err.response?.data?.message || 'Có lỗi xảy ra';
-            alert(msg);
+            toast.error(msg);
         } finally {
             setSubmitting(false);
         }
@@ -85,6 +109,29 @@ const VoteForm = ({ tourId, onSuccess }) => {
                 </div>
                 <h4 className="font-semibold text-text mb-2">Đăng nhập để đánh giá</h4>
                 <p className="text-sm text-text-secondary mb-4">Bạn cần đăng nhập để có thể gửi nhận xét và hình ảnh cho tour này.</p>
+            </div>
+        );
+    }
+
+    // Loading eligibility
+    if (eligibility.loading) {
+        return (
+            <div className="mt-6 p-6 bg-surface-alt rounded-xl border border-border text-center">
+                <Loader2 className="w-6 h-6 text-primary animate-spin mx-auto mb-2" />
+                <p className="text-sm text-text-muted">Đang kiểm tra quyền đánh giá...</p>
+            </div>
+        );
+    }
+
+    // Not eligible
+    if (!eligibility.eligible) {
+        return (
+            <div className="mt-6 p-5 bg-warning/5 border border-warning/20 rounded-xl flex items-center gap-3">
+                <ShieldX className="w-6 h-6 text-warning flex-shrink-0" />
+                <div>
+                    <p className="font-semibold text-warning">Chưa thể đánh giá</p>
+                    <p className="text-sm text-text-secondary">{eligibility.reason}</p>
+                </div>
             </div>
         );
     }

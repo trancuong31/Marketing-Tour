@@ -19,6 +19,7 @@ export const tourService = {
     likeVote: (id) => api.post(`/tours/votes/${id}/like`),
     createVote: (id, formData) => api.post(`/tours/${id}/votes`, formData),
     deleteVote: (id) => api.delete(`/tours/votes/${id}`),
+    checkVoteEligibility: (id) => api.get(`/tours/${id}/vote-eligibility`),
 };
 
 // ══════════════════════════════════════

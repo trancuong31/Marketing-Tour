@@ -1,12 +1,8 @@
 import axios from 'axios';
 
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT, 10) || 30000;
-const API_URL_LOCAL = import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:8888/api';
-const API_URL_PUBLIC = import.meta.env.VITE_API_URL_PUBLIC || API_URL_LOCAL;
-
-const hostname = window.location.hostname;
-const isLocal = hostname === 'localhost' || hostname.startsWith('192.168.') || hostname === '127.0.0.1';
-const baseURL = isLocal ? API_URL_LOCAL : API_URL_PUBLIC;
+// Ưu tiên VITE_API_URL_PUBLIC, sau đó đến LOCAL, mặc định fallback về '/api'
+const baseURL = import.meta.env.VITE_API_URL_PUBLIC || import.meta.env.VITE_API_URL_LOCAL || '/api';
 
 const api = axios.create({
     baseURL,

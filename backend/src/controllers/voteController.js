@@ -1,4 +1,5 @@
-const { Vote, Tour, Notification, VoteLike } = require('../models');
+const { Vote, Tour, Notification, VoteLike, Booking, TourDeparture } = require('../models');
+const { Op } = require('sequelize');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -79,6 +80,45 @@ const createVote = catchAsync(async (req, res, next) => {
     const tour = await Tour.findByPk(id);
     if (!tour) {
         return next(new AppError('Tour không tồn tại', HTTP_CODES.NOT_FOUND));
+    }
+
+    // Nếu là đánh giá gốc (không phải reply), kiểm tra quyền vote
+    if (!parent_id) {
+        // Kiểm tra user có booking approved cho tour này không
+        const approvedBooking = await Booking.findOne({
+            where: {
+                user_id: req.user.id,
+                tour_id: id,
+                status: 'approved',
+            },
+            include: [{
+                model: TourDeparture,
+                as: 'departure',
+                attributes: ['departure_date'],
+            }],
+        });
+
+        if (!approvedBooking) {
+            return next(new AppError('Bạn cần có booking đã được duyệt cho tour này để đánh giá.', HTTP_CODES.FORBIDDEN));
+        }
+
+        // Kiểm tra tour đã kết thúc chưa (departure_date + duration_days)
+        const departureDate = new Date(approvedBooking.departure?.departure_date);
+        const durationDays = tour.duration_days || 1;
+        const tourEndDate = new Date(departureDate);
+        tourEndDate.setDate(tourEndDate.getDate() + durationDays);
+
+        if (new Date() < tourEndDate) {
+            return next(new AppError('Bạn chỉ có thể đánh giá sau khi chuyến du lịch kết thúc.', HTTP_CODES.FORBIDDEN));
+        }
+
+        // Kiểm tra đã đánh giá chưa
+        const existingVote = await Vote.findOne({
+            where: { tour_id: id, user_id: req.user.id, parent_id: null },
+        });
+        if (existingVote) {
+            return next(new AppError('Bạn đã đánh giá tour này rồi.', HTTP_CODES.BAD_REQUEST));
+        }
     }
 
     // Nếu không phải là phản hồi (parent_id là null), yêu cầu rating
@@ -238,4 +278,68 @@ const likeVote = catchAsync(async (req, res, next) => {
     });
 });
 
-module.exports = { getApprovedVotes, createVote, getFeaturedVotes, likeVote, deleteVote };
+/**
+ * Kiểm tra quyền vote của user cho tour
+ * GET /api/tours/:id/vote-eligibility
+ */
+const checkVoteEligibility = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const tour = await Tour.findByPk(id);
+    if (!tour) {
+        return next(new AppError('Tour không tồn tại', HTTP_CODES.NOT_FOUND));
+    }
+
+    // Kiểm tra đã đánh giá chưa
+    const existingVote = await Vote.findOne({
+        where: { tour_id: id, user_id: userId, parent_id: null },
+    });
+    if (existingVote) {
+        return res.status(200).json({
+            status: 'success',
+            data: { eligible: false, reason: 'Bạn đã đánh giá tour này rồi.' },
+        });
+    }
+
+    // Kiểm tra có booking approved không
+    const approvedBooking = await Booking.findOne({
+        where: {
+            user_id: userId,
+            tour_id: id,
+            status: 'approved',
+        },
+        include: [{
+            model: TourDeparture,
+            as: 'departure',
+            attributes: ['departure_date'],
+        }],
+    });
+
+    if (!approvedBooking) {
+        return res.status(200).json({
+            status: 'success',
+            data: { eligible: false, reason: 'Bạn cần có booking đã được duyệt cho tour này để đánh giá.' },
+        });
+    }
+
+    // Kiểm tra tour đã kết thúc chưa
+    const departureDate = new Date(approvedBooking.departure?.departure_date);
+    const durationDays = tour.duration_days || 1;
+    const tourEndDate = new Date(departureDate);
+    tourEndDate.setDate(tourEndDate.getDate() + durationDays);
+
+    if (new Date() < tourEndDate) {
+        return res.status(200).json({
+            status: 'success',
+            data: { eligible: false, reason: 'Bạn chỉ có thể đánh giá sau khi chuyến du lịch kết thúc.' },
+        });
+    }
+
+    return res.status(200).json({
+        status: 'success',
+        data: { eligible: true },
+    });
+});
+
+module.exports = { getApprovedVotes, createVote, getFeaturedVotes, likeVote, deleteVote, checkVoteEligibility };
