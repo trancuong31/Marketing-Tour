@@ -15,6 +15,10 @@ const VoteLike = require('./VoteLike');
 const Notification = require('./Notification');
 const Otp = require('./Otp');
 const Banner = require('./Banner');
+const TourTranslation = require('./TourTranslation');
+const TourItineraryTranslation = require('./TourItineraryTranslation');
+const CategoryTranslation = require('./CategoryTranslation');
+const GuideTranslation = require('./GuideTranslation');
 
 // ── Associations ──
 
@@ -26,13 +30,25 @@ User.belongsTo(Role, { foreignKey: 'role_id' });
 Category.hasMany(Tour, { foreignKey: 'category_id' });
 Tour.belongsTo(Category, { foreignKey: 'category_id' });
 
+// Category ↔ CategoryTranslation
+Category.hasMany(CategoryTranslation, { foreignKey: 'category_id', as: 'translations', onDelete: 'CASCADE' });
+CategoryTranslation.belongsTo(Category, { foreignKey: 'category_id' });
+
 // Tour ↔ TourImage
 Tour.hasMany(TourImage, { foreignKey: 'tour_id', as: 'images', onDelete: 'CASCADE' });
 TourImage.belongsTo(Tour, { foreignKey: 'tour_id' });
 
+// Tour ↔ TourTranslation
+Tour.hasMany(TourTranslation, { foreignKey: 'tour_id', as: 'translations', onDelete: 'CASCADE' });
+TourTranslation.belongsTo(Tour, { foreignKey: 'tour_id' });
+
 // Tour ↔ TourItinerary
 Tour.hasMany(TourItinerary, { foreignKey: 'tour_id', as: 'itineraries', onDelete: 'CASCADE' });
 TourItinerary.belongsTo(Tour, { foreignKey: 'tour_id' });
+
+// TourItinerary ↔ TourItineraryTranslation
+TourItinerary.hasMany(TourItineraryTranslation, { foreignKey: 'itinerary_id', as: 'translations', onDelete: 'CASCADE' });
+TourItineraryTranslation.belongsTo(TourItinerary, { foreignKey: 'itinerary_id' });
 
 // Tour ↔ TourDeparture
 Tour.hasMany(TourDeparture, { foreignKey: 'tour_id', as: 'departures', onDelete: 'CASCADE' });
@@ -86,6 +102,10 @@ VoteLike.belongsTo(Vote, { foreignKey: 'vote_id' });
 User.hasMany(VoteLike, { foreignKey: 'user_id' });
 VoteLike.belongsTo(User, { foreignKey: 'user_id' });
 
+// Guide ↔ GuideTranslation
+Guide.hasMany(GuideTranslation, { foreignKey: 'guide_id', as: 'translations', onDelete: 'CASCADE' });
+GuideTranslation.belongsTo(Guide, { foreignKey: 'guide_id' });
+
 module.exports = {
     Role,
     User,
@@ -104,4 +124,8 @@ module.exports = {
     Notification,
     Otp,
     Banner,
+    TourTranslation,
+    TourItineraryTranslation,
+    CategoryTranslation,
+    GuideTranslation,
 };

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 import { tourService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
 import BookingForm from '@/features/tour/components/BookingForm';
 import VoteForm from '@/features/tour/components/VoteForm';
-import { getImageUrl } from '@/utils/imageUrl';
+import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
@@ -351,7 +352,7 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                 {current + 1} / {images.length}
             </div>
             <div className="relative max-w-5xl w-full mx-4" onClick={e => e.stopPropagation()}>
-                <img src={getImageUrl(images[current]?.image_url)} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" />
+                <img src={getImageUrl(images[current]?.image_url)} alt="" className="w-full max-h-[80vh] object-contain rounded-lg" onError={onImgError('tour')} />
                 {images.length > 1 && (
                     <>
                         <button
@@ -379,7 +380,7 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                                 i === current ? 'border-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
                             }`}
                         >
-                            <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
+                            <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" onError={onImgError('tour')} />
                         </button>
                     ))}
                 </div>
@@ -389,14 +390,14 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
 };
 
 /* ═══ ITINERARY ACCORDION ═══ */
-const ItineraryAccordion = ({ itineraries }) => {
+const ItineraryAccordion = ({ itineraries, t }) => {
     const [openDay, setOpenDay] = useState(null);
 
     if (!itineraries || itineraries.length === 0) return null;
 
     return (
         <div className="space-y-2">
-            <h2 className="text-xl font-bold text-text mb-4">Lịch trình chi tiết</h2>
+            <h2 className="text-xl font-bold text-text mb-4">{t('tour.detail.itinerary', 'Lịch trình chi tiết')}</h2>
             {itineraries.map((item, idx) => (
                 <div key={item.id || idx} className="rounded-xl border border-border overflow-hidden">
                     <button
@@ -430,6 +431,7 @@ const ItineraryAccordion = ({ itineraries }) => {
 
 /* ═══ FEATURED REVIEWS CAROUSEL (Global 5-star Reviews) ═══ */
 const FeaturedReviewsCarousel = ({ votes }) => {
+    const { t } = useTranslation();
     const scrollRef = useRef(null);
     const animRef = useRef(null);
 
@@ -458,9 +460,9 @@ const FeaturedReviewsCarousel = ({ votes }) => {
             <div className="max-w-6xl mx-auto px-4 mb-8">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-6 bg-primary rounded-full" />
-                    <h2 className="text-xl font-bold text-text uppercase tracking-tight">Trải nghiệm thực tế từ khách hàng</h2>
+                    <h2 className="text-xl font-bold text-text uppercase tracking-tight">{t('tour.detail.customerExperience', 'Trải nghiệm thực tế từ khách hàng')}</h2>
                 </div>
-                <p className="text-sm text-text-muted mt-1">Những chia sẻ chân thực từ khách hàng trên toàn hệ thống</p>
+                <p className="text-sm text-text-muted mt-1">{t('tour.detail.customerExperienceDesc', 'Những chia sẻ chân thực từ khách hàng trên toàn hệ thống')}</p>
             </div>
             
             <div className="relative">
@@ -478,9 +480,9 @@ const FeaturedReviewsCarousel = ({ votes }) => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-bold text-text truncate">{vote.customer_name || "Khách hàng"}</p>
+                                        <p className="text-sm font-bold text-text truncate">{vote.customer_name || t('tour.detail.customer', 'Khách hàng')}</p>
                                         {vote.is_mock && (
-                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase transition-opacity group-hover:opacity-100">Gợi ý</span>
+                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase transition-opacity group-hover:opacity-100">{t('tour.detail.suggested', 'Gợi ý')}</span>
                                         )}
                                     </div>
                                     <div className="flex gap-0.5 mt-0.5">
@@ -519,6 +521,7 @@ const MOCK_REVIEWS = [
 
 /* ═══ MAIN PAGE ═══ */
 const TourDetailPage = () => {
+    const { t, i18n } = useTranslation();
     const { slug } = useParams();
     const [tour, setTour] = useState(null);
     const [votes, setVotes] = useState([]);
@@ -557,7 +560,7 @@ const TourDetailPage = () => {
             }
         };
         fetchData();
-    }, [slug]);
+    }, [slug, i18n.language]);
 
     const refreshVotes = async () => {
         if (tour?.id) {
@@ -589,8 +592,8 @@ const TourDetailPage = () => {
         return (
             <ClientLayout>
                 <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-                    <h2 className="text-2xl font-bold text-text mb-2">Không tìm thấy tour</h2>
-                    <p className="text-text-muted">Tour này có thể đã ngừng hoặc không tồn tại.</p>
+                    <h2 className="text-2xl font-bold text-text mb-2">{t('tour.list.noResults', 'Không tìm thấy tour')}</h2>
+                    <p className="text-text-muted">{t('tour.detail.notFoundDesc', 'Tour này có thể đã ngừng hoặc không tồn tại.')}</p>
                 </div>
             </ClientLayout>
         );
@@ -600,8 +603,8 @@ const TourDetailPage = () => {
     const itineraries = tour.itineraries || [];
     const departures = tour.departures || [];
     const durationText = tour.duration_days && tour.duration_nights
-        ? `${tour.duration_days} ngày ${tour.duration_nights} đêm`
-        : tour.duration_days ? `${tour.duration_days} ngày` : null;
+        ? t('tour.card.durationDaysNights', '{{days}} ngày {{nights}} đêm', { days: tour.duration_days, nights: tour.duration_nights })
+        : tour.duration_days ? t('tour.card.durationDays', '{{days}} ngày', { days: tour.duration_days }) : null;
 
     // Giá thấp nhất từ departures
     const minPrice = departures.length > 0
@@ -626,7 +629,7 @@ const TourDetailPage = () => {
                             {minPrice && (
                                 <span className="flex items-center gap-1.5 text-sm">
                                     <Tag className="w-4 h-4 text-primary" />
-                                    Giá từ <span className="font-bold text-primary">{formatPrice(minPrice)}</span>/người
+                                    {t('tour.card.from', 'Giá từ')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/người')}
                                 </span>
                             )}
                             {tour.Category && (
@@ -649,17 +652,18 @@ const TourDetailPage = () => {
                                 src={getImageUrl(images.length > 0 ? images[0].image_url : tour.thumbnail_url)} 
                                 alt={tour.title} 
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" 
+                                onError={onImgError('tour')}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                             
                             {/* Nhãn giảm giá / Badge (Nếu có) */}
                             {tour.tour_badge === 'promotion' ? (
                                 <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
-                                    Tour Ưu Đãi
+                                    {t('tour.card.promotion', 'Tour Ưu Đãi')}
                                 </div>
                             ) : tour.tour_badge === 'featured' ? (
                                 <div className="absolute top-4 left-0 bg-primary text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
-                                    Tour Nổi Bật
+                                    {t('tour.card.featured', 'Tour Nổi Bật')}
                                 </div>
                             ) : null}
 
@@ -670,7 +674,7 @@ const TourDetailPage = () => {
                                     className="absolute bottom-4 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-sm font-medium rounded-lg flex items-center gap-1.5 hover:bg-black/80 transition"
                                 >
                                     <ZoomIn className="w-4 h-4" />
-                                    {images.length} ảnh
+                                    {images.length} {t('tour.detail.photos', 'ảnh')}
                                 </button>
                             )}
                         </div>
@@ -700,6 +704,7 @@ const TourDetailPage = () => {
                                                 src={getImageUrl(img.image_url)} 
                                                 alt={`${tour.title} - ${i+1}`} 
                                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                                onError={onImgError('tour')}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
                                         </div>
@@ -717,7 +722,7 @@ const TourDetailPage = () => {
                         {/* Điểm nổi bật */}
                         {tour.highlights && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
-                                <h3 className="text-lg font-bold text-primary mb-4">Điểm nổi bật</h3>
+                                <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Điểm nổi bật')}</h3>
                                 <div className="space-y-3">
                                     {tour.highlights
                                         .replace(/<[^>]*>?/gm, '') 
@@ -736,7 +741,7 @@ const TourDetailPage = () => {
                         )}
 
                         {/* Lịch trình chi tiết */}
-                        {itineraries.length > 0 && <ItineraryAccordion itineraries={itineraries} />}
+                        {itineraries.length > 0 && <ItineraryAccordion itineraries={itineraries} t={t} />}
 
                         {/* Giá bao gồm / không bao gồm */}
                         {(tour.price_includes || tour.price_excludes) && (
@@ -745,7 +750,7 @@ const TourDetailPage = () => {
                                     <div className="rounded-xl border border-success/20 bg-success/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <CheckCircle className="w-5 h-5 text-success" />
-                                            <h3 className="text-sm font-bold text-success">Giá bao gồm</h3>
+                                            <h3 className="text-sm font-bold text-success">{t('tour.detail.priceIncludes', 'Giá bao gồm')}</h3>
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
@@ -757,7 +762,7 @@ const TourDetailPage = () => {
                                     <div className="rounded-xl border border-error/20 bg-error/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <XCircle className="w-5 h-5 text-error" />
-                                            <h3 className="text-sm font-bold text-error">Giá không bao gồm</h3>
+                                            <h3 className="text-sm font-bold text-error">{t('tour.detail.priceExcludes', 'Giá không bao gồm')}</h3>
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
@@ -773,7 +778,7 @@ const TourDetailPage = () => {
                             <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-3">
                                     <AlertTriangle className="w-5 h-5 text-warning" />
-                                    <h3 className="text-lg font-bold text-warning">Điều khoản & Lưu ý</h3>
+                                    <h3 className="text-lg font-bold text-warning">{t('tour.detail.termsNotes', 'Điều khoản & Lưu ý')}</h3>
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"
@@ -787,7 +792,7 @@ const TourDetailPage = () => {
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-3">
                                     <Ban className="w-5 h-5 text-primary" />
-                                    <h3 className="text-lg font-bold text-primary">Quy định hoàn hủy</h3>
+                                    <h3 className="text-lg font-bold text-primary">{t('tour.detail.cancellationPolicy', 'Quy định hoàn hủy')}</h3>
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"

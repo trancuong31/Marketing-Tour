@@ -158,6 +158,7 @@ const createTour = catchAsync(async (req, res, next) => {
         duration_days, duration_nights,
         tour_badge, status,
         itineraries, departures, pickup_locations, options,
+        translations, // Array of translations for the tour (en, zh)
     } = req.body;
 
     if (!title || !category_id) {
@@ -201,15 +202,26 @@ const createTour = catchAsync(async (req, res, next) => {
         // 3. Lịch trình
         const parsedItineraries = parseJsonField(itineraries);
         if (parsedItineraries.length > 0) {
-            await TourItinerary.bulkCreate(
-                parsedItineraries.map((item) => ({
+            for (const item of parsedItineraries) {
+                const iti = await TourItinerary.create({
                     tour_id: tour.id,
                     day_number: item.day_number,
                     title: item.title,
                     content: item.content,
-                })),
-                { transaction: t },
-            );
+                }, { transaction: t });
+
+                if (item.translations && item.translations.length > 0) {
+                    await TourItineraryTranslation.bulkCreate(
+                        item.translations.map(tr => ({
+                            itinerary_id: iti.id,
+                            language: tr.language,
+                            title: tr.title || item.title,
+                            content: tr.content || item.content,
+                        })),
+                        { transaction: t }
+                    );
+                }
+            }
         }
 
         // 4. Lịch khởi hành
@@ -257,6 +269,26 @@ const createTour = catchAsync(async (req, res, next) => {
             );
         }
 
+        // 7. Tour Translations
+        const parsedTranslations = parseJsonField(translations);
+        if (parsedTranslations.length > 0) {
+            await TourTranslation.bulkCreate(
+                parsedTranslations.map((item) => ({
+                    tour_id: tour.id,
+                    language: item.language,
+                    title: item.title || title,
+                    slug: item.slug || finalSlug,
+                    summary: item.summary || null,
+                    highlights: item.highlights || null,
+                    price_includes: item.price_includes || null,
+                    price_excludes: item.price_excludes || null,
+                    terms_and_notes: item.terms_and_notes || null,
+                    cancellation_policy: item.cancellation_policy || null,
+                })),
+                { transaction: t }
+            );
+        }
+
         return tour;
     });
 
@@ -298,6 +330,7 @@ const updateTour = catchAsync(async (req, res, next) => {
         duration_days, duration_nights,
         tour_badge, status,
         itineraries, departures, pickup_locations, options,
+        translations,
     } = req.body;
 
     // Nếu đổi title → tạo slug mới
@@ -348,15 +381,26 @@ const updateTour = catchAsync(async (req, res, next) => {
             await TourItinerary.destroy({ where: { tour_id: id }, transaction: t });
             const parsedItineraries = parseJsonField(itineraries);
             if (parsedItineraries.length > 0) {
-                await TourItinerary.bulkCreate(
-                    parsedItineraries.map((item) => ({
+                for (const item of parsedItineraries) {
+                    const iti = await TourItinerary.create({
                         tour_id: id,
                         day_number: item.day_number,
                         title: item.title,
                         content: item.content,
-                    })),
-                    { transaction: t },
-                );
+                    }, { transaction: t });
+
+                    if (item.translations && item.translations.length > 0) {
+                        await TourItineraryTranslation.bulkCreate(
+                            item.translations.map(tr => ({
+                                itinerary_id: iti.id,
+                                language: tr.language,
+                                title: tr.title || item.title,
+                                content: tr.content || item.content,
+                            })),
+                            { transaction: t }
+                        );
+                    }
+                }
             }
         }
 
@@ -407,6 +451,28 @@ const updateTour = catchAsync(async (req, res, next) => {
                         charge_type: item.charge_type || 'quantity',
                     })),
                     { transaction: t },
+                );
+            }
+        }
+
+        if (translations !== undefined) {
+            await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
+            const parsedTranslations = parseJsonField(translations);
+            if (parsedTranslations.length > 0) {
+                await TourTranslation.bulkCreate(
+                    parsedTranslations.map((item) => ({
+                        tour_id: id,
+                        language: item.language,
+                        title: item.title,
+                        slug: item.slug || newSlug,
+                        summary: item.summary || null,
+                        highlights: item.highlights || null,
+                        price_includes: item.price_includes || null,
+                        price_excludes: item.price_excludes || null,
+                        terms_and_notes: item.terms_and_notes || null,
+                        cancellation_policy: item.cancellation_policy || null,
+                    })),
+                    { transaction: t }
                 );
             }
         }

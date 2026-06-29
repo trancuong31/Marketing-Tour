@@ -1,0 +1,62 @@
+{
+    "list": {
+        "domesticLabel": "国内游",
+        "domesticDesc": "探索从北到南的越南之美",
+        "internationalLabel": "国际游",
+        "internationalDesc": "体验世界各地不同的文化",
+        "allLabel": "搜索结果",
+        "allDesc": "发现最适合您的旅程",
+        "filterTitle": "搜索过滤器",
+        "clearAll": "全部清除",
+        "filterDepartureDate": "出发日期",
+        "filterType": "旅游类型",
+        "filterBudget": "预算",
+        "filterDeparturePoint": "出发地",
+        "filterDestination": "目的地",
+        "filterSort": "排序方式",
+        "apply": "应用",
+        "filterBtn": "过滤器",
+        "showingResults": "显示 {{count}} / {{total}} 个旅游",
+        "noResults": "未找到旅游",
+        "changeFilter": "尝试更改过滤器以查看更多结果",
+        "clearFilterBtn": "清除过滤器"
+    },
+    "filter": {
+        "all": "全部",
+        "budgetUnder5M": "500万以下",
+        "budget5To10M": "500万 - 1000万",
+        "budget10To20M": "1000万 - 2000万",
+        "budgetOver20M": "2000万以上",
+        "badgeFeatured": "精选旅游",
+        "badgePromotion": "促销旅游"
+    },
+    "sort": {
+        "default": "默认",
+        "priceAsc": "价格：从低到高",
+        "priceDesc": "价格：从高到低",
+        "dateAsc": "最早出发"
+    },
+    "detail": {
+        "itinerary": "详细行程",
+        "customerExperience": "客户体验",
+        "customerExperienceDesc": "来自系统内客户的真实分享",
+        "customer": "客户",
+        "suggested": "推荐",
+        "notFoundDesc": "此旅游可能已停止或不存在。",
+        "perPerson": "/人",
+        "photos": "照片",
+        "highlights": "亮点",
+        "priceIncludes": "价格包含",
+        "priceExcludes": "价格不包含",
+        "termsNotes": "条款和注意事项",
+        "cancellationPolicy": "取消政策"
+    },
+    "card": {
+        "durationDaysNights": "{{days}} 天 {{nights}} 晚",
+        "durationDays": "{{days}} 天",
+        "from": "起价",
+        "promotion": "促销",
+        "featured": "精选",
+        "contact": "联系"
+    }
+}

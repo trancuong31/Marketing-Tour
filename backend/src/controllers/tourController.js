@@ -1,5 +1,5 @@
 const { Op, Sequelize } = require('sequelize');
-const { Tour, TourImage, TourItinerary, TourDeparture, TourPickupLocation, TourOption, Category, Banner } = require('../models');
+const { Tour, TourImage, TourItinerary, TourDeparture, TourPickupLocation, TourOption, Category, Banner, TourTranslation, CategoryTranslation, TourItineraryTranslation } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -12,10 +12,11 @@ const { HTTP_CODES } = require('../constants/httpCodes');
 const getTours = catchAsync(async (req, res) => {
     const { type, q, date, budget } = req.query;
 
+    const lang = req.language || 'vi';
     const whereClause = { status: 'active' };
 
     if (q) {
-        whereClause.title = {
+        whereClause['$translations.title$'] = {
             [Op.like]: `%${q}%`
         };
     }
@@ -69,8 +70,17 @@ const getTours = catchAsync(async (req, res) => {
         where: whereClause,
         include: [
             { 
+                model: TourTranslation, 
+                as: 'translations', 
+                where: { language: lang }, 
+                required: !!q 
+            },
+            { 
                 model: Category, 
-                attributes: ['id', 'name', 'slug', 'is_international'] 
+                attributes: ['id', 'name', 'slug', 'is_international'],
+                include: [
+                    { model: CategoryTranslation, as: 'translations', where: { language: lang }, required: false }
+                ]
             },
             { 
                 model: TourImage, 
@@ -92,22 +102,59 @@ const getTours = catchAsync(async (req, res) => {
         order: [['tour_badge', 'DESC'], ['id', 'DESC']],
     });
 
+    const resultData = tours.map(t => {
+        const data = t.toJSON();
+        if (data.translations && data.translations.length > 0) {
+            const tr = data.translations[0];
+            data.title = tr.title || data.title;
+            data.slug = tr.slug || data.slug;
+            data.summary = tr.summary || data.summary;
+        }
+        delete data.translations;
+
+        if (data.Category && data.Category.translations && data.Category.translations.length > 0) {
+            const ctr = data.Category.translations[0];
+            data.Category.name = ctr.name || data.Category.name;
+            data.Category.slug = ctr.slug || data.Category.slug;
+            delete data.Category.translations;
+        }
+        return data;
+    });
+
     res.status(200).json({
         status: 'success',
-        results: tours.length,
-        data: tours,
+        results: resultData.length,
+        data: resultData,
     });
 });
 
 const getTourBySlug = catchAsync(async (req, res, next) => {
     const { slug } = req.params;
+    const lang = req.language || 'vi';
 
     const tour = await Tour.findOne({
-        where: { slug, status: 'active' },
+        where: { 
+            status: 'active',
+            [Op.or]: [
+                { slug: slug },
+                { '$translations.slug$': slug }
+            ]
+        },
+        subQuery: false,
         include: [
-            { model: Category, attributes: ['id', 'name', 'slug', 'is_international'] },
+            { model: TourTranslation, as: 'translations', where: { language: lang }, required: false },
+            { 
+                model: Category, 
+                attributes: ['id', 'name', 'slug', 'is_international'],
+                include: [{ model: CategoryTranslation, as: 'translations', where: { language: lang }, required: false }]
+            },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], order: [['sort_order', 'ASC']] },
-            { model: TourItinerary, as: 'itineraries', order: [['day_number', 'ASC']] },
+            { 
+                model: TourItinerary, 
+                as: 'itineraries', 
+                order: [['day_number', 'ASC']],
+                include: [{ model: TourItineraryTranslation, as: 'translations', where: { language: lang }, required: false }]
+            },
             {
                 model: TourDeparture,
                 as: 'departures',
@@ -124,9 +171,42 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy tour này', HTTP_CODES.NOT_FOUND));
     }
 
+    const data = tour.toJSON();
+    if (data.translations && data.translations.length > 0) {
+        const tr = data.translations[0];
+        data.title = tr.title || data.title;
+        data.slug = tr.slug || data.slug;
+        data.summary = tr.summary || data.summary;
+        data.highlights = tr.highlights || data.highlights;
+        data.price_includes = tr.price_includes || data.price_includes;
+        data.price_excludes = tr.price_excludes || data.price_excludes;
+        data.terms_and_notes = tr.terms_and_notes || data.terms_and_notes;
+        data.cancellation_policy = tr.cancellation_policy || data.cancellation_policy;
+    }
+    delete data.translations;
+
+    if (data.Category && data.Category.translations && data.Category.translations.length > 0) {
+        const ctr = data.Category.translations[0];
+        data.Category.name = ctr.name || data.Category.name;
+        data.Category.slug = ctr.slug || data.Category.slug;
+        delete data.Category.translations;
+    }
+
+    if (data.itineraries) {
+        data.itineraries = data.itineraries.map(iti => {
+            if (iti.translations && iti.translations.length > 0) {
+                const itr = iti.translations[0];
+                iti.title = itr.title || iti.title;
+                iti.content = itr.content || iti.content;
+            }
+            delete iti.translations;
+            return iti;
+        });
+    }
+
     res.status(200).json({
         status: 'success',
-        data: tour,
+        data: data,
     });
 });
 

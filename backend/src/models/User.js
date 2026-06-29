@@ -38,6 +38,10 @@ const User = sequelize.define('User', {
         type: DataTypes.TINYINT,
         defaultValue: 1,
     },
+    language: {
+        type: DataTypes.STRING(5),
+        defaultValue: 'vi',
+    },
     last_login: {
         type: DataTypes.DATE,
         allowNull: true,

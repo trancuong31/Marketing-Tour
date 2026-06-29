@@ -1,0 +1,12 @@
+{
+    "home": "Home",
+    "domesticTour": "Domestic Tours",
+    "internationalTour": "International Tours",
+    "lookupBooking": "Lookup Booking",
+    "guides": "Guides",
+    "adminPanel": "Admin Panel",
+    "profile": "Profile",
+    "history": "Booking History",
+    "logout": "Logout",
+    "guest": "Guest"
+}

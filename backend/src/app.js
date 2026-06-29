@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const routes = require('./routes');
-const { errorHandler, apiLimiter } = require('./middlewares');
+const { errorHandler, apiLimiter, detectLanguage } = require('./middlewares');
 const { AppError } = require('./utils/appError');
 const { HTTP_CODES } = require('./constants/httpCodes');
 const path = require('path');
@@ -41,7 +41,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
-app.use('/api', routes);
+app.use('/api', detectLanguage, routes);
 
 // Catch all → React routing
 app.get('*', (req, res, next) => {

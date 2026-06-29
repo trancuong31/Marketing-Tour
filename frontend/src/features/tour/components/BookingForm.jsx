@@ -7,12 +7,13 @@ import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check, Chevron
 import { useNavigate } from 'react-router-dom';
 import { CustomSelect } from '@/components/ui';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
 // ─── Helper: tách thông tin departure ───────────────────────────────────────
-const parseDeparture = (d) => {
+const parseDeparture = (d, t) => {
     const date = new Date(d.departure_date);
     const day = date.getDate();
     const month = date.getMonth() + 1;
@@ -22,10 +23,10 @@ const parseDeparture = (d) => {
     const seats = d.available_seats;
     const seatBadge =
         seats === 0
-            ? { label: 'Hết chỗ', variant: 'danger' }
+            ? { label: t('booking.soldOut'), variant: 'danger' }
             : seats <= 5
-            ? { label: `Còn ${seats} chỗ`, variant: 'warning' }
-            : { label: `Còn ${seats} chỗ`, variant: 'success' };
+            ? { label: t('booking.seatsLeft', { count: seats }), variant: 'warning' }
+            : { label: t('booking.seatsLeft', { count: seats }), variant: 'success' };
 
     return { day, month, year, weekday, seatBadge, disabled: seats === 0 };
 };
@@ -37,7 +38,7 @@ const BADGE_CLASS = {
 };
 
 // ─── DepartureSelect ─────────────────────────────────────────────────────────
-const DepartureSelect = ({ departures, value, onChange, placeholder = '— Chọn ngày khởi hành —' }) => {
+const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
 
@@ -49,7 +50,7 @@ const DepartureSelect = ({ departures, value, onChange, placeholder = '— Chọ
     }, []);
 
     const selected = departures.find(d => String(d.id) === String(value));
-    const parsed = selected ? parseDeparture(selected) : null;
+    const parsed = selected ? parseDeparture(selected, t) : null;
 
     return (
         <div ref={ref} className="relative">
@@ -93,10 +94,10 @@ const DepartureSelect = ({ departures, value, onChange, placeholder = '— Chọ
             {open && (
                 <ul className="absolute z-50 mt-1.5 w-full bg-white border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-64 overflow-y-auto">
                     {departures.length === 0 && (
-                        <li className="px-4 py-3 text-sm text-text-muted text-center">Không có lịch khởi hành</li>
+                        <li className="px-4 py-3 text-sm text-text-muted text-center">{t('booking.noDepartureList')}</li>
                     )}
                     {departures.map(d => {
-                        const p = parseDeparture(d);
+                        const p = parseDeparture(d, t);
                         const isSelected = String(d.id) === String(value);
 
                         return (
@@ -208,6 +209,7 @@ const CustomCheckbox = ({ checked, onChange, label, className = '' }) => (
 
 // ─── BookingForm ──────────────────────────────────────────────────────────────
 const BookingForm = ({ tour }) => {
+    const { t } = useTranslation();
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
@@ -228,8 +230,8 @@ const BookingForm = ({ tour }) => {
 
     const pickupOptions = useMemo(() => pickupLocations.map(p => ({
         value: String(p.id),
-        label: `${p.location_name}${p.pickup_time ? ` · ${p.pickup_time}` : ''}${parseFloat(p.surcharge_amount) > 0 ? ` · +${formatPrice(p.surcharge_amount)}/người` : ''}`
-    })), [pickupLocations]);
+        label: `${p.location_name}${p.pickup_time ? ` · ${p.pickup_time}` : ''}${parseFloat(p.surcharge_amount) > 0 ? ` · +${formatPrice(p.surcharge_amount)}${t('booking.perPerson')}` : ''}`
+    })), [pickupLocations, t]);
 
     const selectedDeparture = useMemo(
         () => departures.find(d => String(d.id) === String(selectedDepartureId)),
@@ -280,9 +282,9 @@ const BookingForm = ({ tour }) => {
     };
 
     const onSubmit = async (data) => {
-        if (!selectedDepartureId) { toast.error('Vui lòng chọn ngày khởi hành!'); return; }
-        if (!selectedPickupId)    { toast.error('Vui lòng chọn điểm đón!');       return; }
-        if (!user)                { toast.error('Vui lòng đăng nhập để đặt tour!'); return; }
+        if (!selectedDepartureId) { toast.error(t('booking.errSelectDeparture')); return; }
+        if (!selectedPickupId)    { toast.error(t('booking.errSelectPickup'));       return; }
+        if (!user)                { toast.error(t('booking.errLoginRequired')); return; }
 
         setSubmitting(true);
         try {
@@ -315,7 +317,7 @@ const BookingForm = ({ tour }) => {
             setAdults(1); setChildren(0); setInfants(0);
             setSelectedDepartureId(''); setSelectedPickupId(''); setSelectedOptions({});
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+            toast.error(err.response?.data?.message || t('booking.errGeneric'));
         } finally {
             setSubmitting(false);
         }
@@ -329,17 +331,17 @@ const BookingForm = ({ tour }) => {
     return (
         <>
             <div className="bg-white rounded-2xl border-2 border-primary/20 shadow-lg p-5">
-                <h3 className="text-lg font-bold text-text mb-1">Đặt Tour Ngay</h3>
+                <h3 className="text-lg font-bold text-text mb-1">{t('booking.bookNow')}</h3>
                 {departures.length > 0 ? (
                     <p className="text-sm text-text-muted mb-5">
-                        Giá từ{' '}
+                        {t('booking.priceFrom')}{' '}
                         <span className="font-bold text-primary">
                             {formatPrice(Math.min(...departures.map(d => parseFloat(d.price_adult))))}
                         </span>
-                        /người lớn
+                        {t('booking.perAdult')}
                     </p>
                 ) : (
-                    <p className="text-sm text-warning mb-5">Chưa có lịch khởi hành</p>
+                    <p className="text-sm text-warning mb-5">{t('booking.noDepartures')}</p>
                 )}
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -347,11 +349,13 @@ const BookingForm = ({ tour }) => {
                     <div>
                         <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-1">
                             <Calendar className="w-3.5 h-3.5 text-text-muted" />
-                            Ngày khởi hành <span className="text-error">*</span>
+                            {t('booking.departureDate')} <span className="text-error">*</span>
                         </label>
                         <DepartureSelect
                             departures={departures}
                             value={selectedDepartureId}
+                            t={t}
+                            placeholder={t('booking.selectDeparture')}
                             onChange={(val) => {
                                 setSelectedDepartureId(val);
                                 setAdults(1); setChildren(0); setInfants(0);
@@ -363,17 +367,17 @@ const BookingForm = ({ tour }) => {
                     <div>
                         <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-2">
                             <Users className="w-3.5 h-3.5 text-text-muted" />
-                            Hành khách
+                            {t('booking.passengers')}
                         </label>
                         <div className="bg-surface-alt rounded-xl border border-border p-3 divide-y divide-border">
-                            <PassengerCounter label="Người lớn" ageDesc="Trên 10 tuổi"    count={adults}   onChange={setAdults}   min={1} max={maxSeats}                             price={adultPrice} />
-                            <PassengerCounter label="Trẻ em"    ageDesc="Từ 5 - 10 tuổi"  count={children} onChange={setChildren}         max={Math.max(0, maxSeats - adults)}         price={childPrice} />
-                            <PassengerCounter label="Em bé"     ageDesc="Dưới 5 tuổi"     count={infants}  onChange={setInfants}          max={Math.max(0, maxSeats - adults - children)} price={infantPrice} />
+                            <PassengerCounter label={t('booking.adult')} ageDesc={t('booking.adultAge')} count={adults} onChange={setAdults} min={1} max={maxSeats} price={adultPrice} />
+                            <PassengerCounter label={t('booking.child')} ageDesc={t('booking.childAge')} count={children} onChange={setChildren} max={Math.max(0, maxSeats - adults)} price={childPrice} />
+                            <PassengerCounter label={t('booking.infant')} ageDesc={t('booking.infantAge')} count={infants} onChange={setInfants} max={Math.max(0, maxSeats - adults - children)} price={infantPrice} />
                         </div>
                         <p className="text-xs text-text-muted mt-1.5 text-right">
-                            Tổng: <span className="font-semibold text-text">{totalPassengers}</span> hành khách
+                            <span className="font-semibold text-text">{t('booking.totalPassengers', { count: totalPassengers })}</span>
                             {selectedDeparture?.available_seats > 0 && (
-                                <span className="text-text-muted"> / {selectedDeparture.available_seats} chỗ</span>
+                                <span className="text-text-muted"> / {selectedDeparture.available_seats} {t('booking.seats')}</span>
                             )}
                         </p>
                     </div>
@@ -383,13 +387,13 @@ const BookingForm = ({ tour }) => {
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-1">
                                 <MapPin className="w-3.5 h-3.5 text-text-muted" />
-                                Điểm đón <span className="text-red-500">*</span>
+                                {t('booking.pickupPoint')} <span className="text-red-500">*</span>
                             </label>
                             <CustomSelect
                                 value={selectedPickupId}
                                 onChange={val => setSelectedPickupId(val)}
                                 options={pickupOptions}
-                                placeholder="— Chọn điểm đón —"
+                                placeholder={t('booking.selectPickup')}
                             />
                         </div>
                     )}
@@ -399,14 +403,14 @@ const BookingForm = ({ tour }) => {
                         <div>
                             <label className="flex items-center gap-1.5 text-sm font-medium text-text mb-2">
                                 <Settings className="w-3.5 h-3.5 text-text-muted" />
-                                Dịch vụ thêm (tùy chọn)
+                                {t('booking.extraServices')}
                             </label>
                             <div className="bg-surface-alt rounded-xl border border-border divide-y divide-border">
                                 {tourOptions.map(opt => {
                                     const sel = selectedOptions[opt.id];
                                     const isSelected = sel?.selected;
-                                    const chargeLabel = opt.charge_type === 'per_person' ? '/người'
-                                        : opt.charge_type === 'per_booking' ? '/đơn' : '';
+                                    const chargeLabel = opt.charge_type === 'per_person' ? t('booking.perPerson')
+                                        : opt.charge_type === 'per_booking' ? t('booking.perBooking') : '';
                                     return (
                                         <div key={opt.id} className="px-3 py-2.5">
                                             <div className="flex items-center justify-between">
@@ -422,7 +426,7 @@ const BookingForm = ({ tour }) => {
                                             </div>
                                             {isSelected && opt.charge_type === 'quantity' && (
                                                 <div className="flex items-center gap-2 ml-6 mt-1.5">
-                                                    <span className="text-xs text-text-muted">Số lượng:</span>
+                                                    <span className="text-xs text-text-muted">{t('booking.quantity')}</span>
                                                     <div className="flex items-center gap-1">
                                                         <button type="button" onClick={() => setOptionQuantity(opt.id, (sel?.quantity || 1) - 1)}
                                                             className="w-6 h-6 rounded border border-border flex items-center justify-center hover:bg-surface-hover text-xs">-</button>
@@ -443,35 +447,35 @@ const BookingForm = ({ tour }) => {
                     {selectedDeparture && (
                         <div className="pt-3 border-t border-border space-y-1.5">
                             <div className="flex justify-between text-xs text-text-secondary">
-                                <span>{adults} Người lớn × {formatPrice(adultPrice)}</span>
+                                <span>{t('booking.adultPrice', { count: adults, price: formatPrice(adultPrice) })}</span>
                                 <span className="font-medium">{formatPrice(adults * adultPrice)}</span>
                             </div>
                             {children > 0 && childPrice > 0 && (
                                 <div className="flex justify-between text-xs text-text-secondary">
-                                    <span>{children} Trẻ em × {formatPrice(childPrice)}</span>
+                                    <span>{t('booking.childPrice', { count: children, price: formatPrice(childPrice) })}</span>
                                     <span className="font-medium">{formatPrice(children * childPrice)}</span>
                                 </div>
                             )}
                             {infants > 0 && infantPrice > 0 && (
                                 <div className="flex justify-between text-xs text-text-secondary">
-                                    <span>{infants} Trẻ nhỏ × {formatPrice(infantPrice)}</span>
+                                    <span>{t('booking.infantPrice', { count: infants, price: formatPrice(infantPrice) })}</span>
                                     <span className="font-medium">{formatPrice(infants * infantPrice)}</span>
                                 </div>
                             )}
                             {pickupSurcharge > 0 && (
                                 <div className="flex justify-between text-xs text-text-secondary">
-                                    <span>Phụ thu đón ({totalPassengers} người)</span>
+                                    <span>{t('booking.pickupSurcharge', { count: totalPassengers })}</span>
                                     <span className="font-medium">{formatPrice(pickupSurcharge * totalPassengers)}</span>
                                 </div>
                             )}
                             {optionsTotal > 0 && (
                                 <div className="flex justify-between text-xs text-text-secondary">
-                                    <span>Dịch vụ thêm</span>
+                                    <span>{t('booking.extraServiceTotal')}</span>
                                     <span className="font-medium">{formatPrice(optionsTotal)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-base font-bold text-primary pt-2 border-t border-border">
-                                <span>Tổng cộng</span>
+                                <span>{t('booking.total')}</span>
                                 <span className="text-lg">{formatPrice(totalPrice)}</span>
                             </div>
                         </div>
@@ -484,9 +488,9 @@ const BookingForm = ({ tour }) => {
                         className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {submitting ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" />Đang xử lý...</>
+                            <><Loader2 className="w-4 h-4 animate-spin" />{t('booking.processing')}</>
                         ) : (
-                            'Đặt Tour Ngay'
+                            t('booking.submitBooking')
                         )}
                     </button>
                 </form>
@@ -495,8 +499,8 @@ const BookingForm = ({ tour }) => {
             <SuccessModal
                 isOpen={modal.open}
                 onClose={handleCloseModal}
-                title="Đặt Tour Thành Công!"
-                message="Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất."
+                title={t('booking.successTitle')}
+                message={t('booking.successMessage')}
                 bookingCode={modal.code}
                 totalAmount={modal.amount}
             />

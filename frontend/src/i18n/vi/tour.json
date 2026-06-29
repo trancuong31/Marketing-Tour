@@ -1,0 +1,62 @@
+{
+    "list": {
+        "domesticLabel": "Tour Nội Địa",
+        "domesticDesc": "Khám phá vẻ đẹp Việt Nam từ Bắc đến Nam",
+        "internationalLabel": "Tour Quốc Tế",
+        "internationalDesc": "Trải nghiệm văn hóa đa dạng khắp thế giới",
+        "allLabel": "Kết quả tìm kiếm",
+        "allDesc": "Khám phá những hành trình phù hợp nhất với bạn",
+        "filterTitle": "Bộ lọc tìm kiếm",
+        "clearAll": "Xóa tất cả",
+        "filterDepartureDate": "Ngày khởi hành",
+        "filterType": "Loại tour",
+        "filterBudget": "Ngân sách",
+        "filterDeparturePoint": "Điểm khởi hành",
+        "filterDestination": "Điểm đến",
+        "filterSort": "Sắp xếp theo",
+        "apply": "Áp dụng",
+        "filterBtn": "Bộ lọc",
+        "showingResults": "Hiển thị {{count}} / {{total}} tour",
+        "noResults": "Không tìm thấy tour",
+        "changeFilter": "Thử thay đổi bộ lọc để xem thêm kết quả",
+        "clearFilterBtn": "Xóa bộ lọc"
+    },
+    "filter": {
+        "all": "Tất cả",
+        "budgetUnder5M": "Dưới 5 triệu",
+        "budget5To10M": "5 - 10 triệu",
+        "budget10To20M": "10 - 20 triệu",
+        "budgetOver20M": "Trên 20 triệu",
+        "badgeFeatured": "Tour nổi bật",
+        "badgePromotion": "Tour ưu đãi"
+    },
+    "sort": {
+        "default": "Mặc định",
+        "priceAsc": "Giá thấp → cao",
+        "priceDesc": "Giá cao → thấp",
+        "dateAsc": "Ngày khởi hành gần nhất"
+    },
+    "detail": {
+        "itinerary": "Lịch trình chi tiết",
+        "customerExperience": "Trải nghiệm thực tế từ khách hàng",
+        "customerExperienceDesc": "Những chia sẻ chân thực từ khách hàng trên toàn hệ thống",
+        "customer": "Khách hàng",
+        "suggested": "Gợi ý",
+        "notFoundDesc": "Tour này có thể đã ngừng hoặc không tồn tại.",
+        "perPerson": "/người",
+        "photos": "Ảnh",
+        "highlights": "Điểm nổi bật",
+        "priceIncludes": "Giá bao gồm",
+        "priceExcludes": "Giá không bao gồm",
+        "termsNotes": "Điều khoản & Lưu ý",
+        "cancellationPolicy": "Quy định hoàn hủy"
+    },
+    "card": {
+        "durationDaysNights": "{{days}} Ngày {{nights}} Đêm",
+        "durationDays": "{{days}} Ngày",
+        "from": "Giá từ",
+        "promotion": "Khuyến mãi",
+        "featured": "Nổi bật",
+        "contact": "Liên hệ"
+    }
+}

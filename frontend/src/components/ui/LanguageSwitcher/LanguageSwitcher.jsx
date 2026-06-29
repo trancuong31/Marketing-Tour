@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 const languages = [
     { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
     { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'kr', label: '한국어', flag: '🇰🇷' },
+    { code: 'zh', label: '中文', flag: '🇨🇳' },
 ];
 
 /**
@@ -36,21 +36,11 @@ const LanguageSwitcher = () => {
         <div ref={dropdownRef} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-sm text-text-muted hover:text-text hover:border-primary/30 transition-all duration-200"
+                className="flex items-center justify-center w-8 h-8 rounded-full bg-surface-alt hover:bg-border transition-colors duration-200 shadow-sm border border-border/50 text-[18px] leading-none select-none"
                 aria-label="Change language"
+                title={currentLang.label}
             >
-                <span className="text-base leading-none">{currentLang.flag}</span>
-                <span className="hidden sm:inline text-xs font-medium">{currentLang.code.toUpperCase()}</span>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                {currentLang.flag}
             </button>
 
             {/* Dropdown */}

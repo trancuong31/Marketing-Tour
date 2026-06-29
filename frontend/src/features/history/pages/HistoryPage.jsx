@@ -9,10 +9,12 @@ import {
     DollarSign, ChevronRight, ChevronLeft, Trash2,
     CheckCircle2, FileCheck, XCircle, MapPin, Phone, ChevronDown, Info
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ITEMS_PER_PAGE = 10;
 
 const HistoryPage = () => {
+    const { t } = useTranslation();
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -34,7 +36,7 @@ const HistoryPage = () => {
             setError('');
         } catch (err) {
             console.error(err);
-            setError(err.response?.data?.message || 'Lỗi khi lấy lịch sử đặt tour. Vui lòng thử lại sau.');
+            setError(err.response?.data?.message || t('history.errorFetchHistory'));
         } finally {
             setLoading(false);
         }
@@ -54,7 +56,7 @@ const HistoryPage = () => {
     const performCancel = async (bookingId) => {
         try {
             await userService.cancelBooking(bookingId);
-            toast.success('Hủy booking thành công!');
+            toast.success(t('history.cancelSuccess'));
             setBookings(prevBookings =>
                 prevBookings.map(b =>
                     b.id === bookingId ? { ...b, status: 'cancelled' } : b
@@ -62,19 +64,19 @@ const HistoryPage = () => {
             );
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.message || 'Hủy booking thất bại.');
+            toast.error(err.response?.data?.message || t('history.cancelFail'));
         }
     };
 
     const handleCancel = (bookingId) => {
-        toast('Xác nhận hủy', {
-            description: 'Bạn có chắc chắn muốn hủy booking này không? Thao tác không thể hoàn tác.',
+        toast(t('history.confirmCancel'), {
+            description: t('history.confirmCancelDesc'),
             action: {
-                label: 'Hủy',
+                label: t('history.cancelBooking'),
                 onClick: () => performCancel(bookingId)
             },
             cancel: {
-                label: 'Quay lại'
+                label: t('history.goBack')
             },
             duration: 5000,
         });
@@ -83,31 +85,31 @@ const HistoryPage = () => {
     const performDelete = async (bookingId) => {
         try {
             await userService.deleteBooking(bookingId);
-            toast.success('Xóa lịch sử thành công!');
+            toast.success(t('history.deleteSuccess'));
             setBookings(prevBookings => prevBookings.filter(b => b.id !== bookingId));
             setTotalItems(prev => prev - 1);
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.message || 'Xóa lịch sử thất bại.');
+            toast.error(err.response?.data?.message || t('history.deleteFail'));
         }
     };
 
     const handleDelete = (bookingId) => {
-        toast('Xác nhận xóa', {
-            description: 'Bạn có chắc chắn muốn xóa lịch sử này không?',
+        toast(t('history.confirmDelete'), {
+            description: t('history.confirmDeleteDesc'),
             action: {
-                label: 'Xóa',
+                label: t('history.deleteHistory'),
                 onClick: () => performDelete(bookingId)
             },
             cancel: {
-                label: 'Hủy'
+                label: t('history.cancelBooking')
             },
             duration: 5000,
         });
     };
 
     const formatPrice = (price) => {
-        if (!price && price !== 0) return 'Liên hệ';
+        if (!price && price !== 0) return t('history.contact');
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
     };
 
@@ -124,11 +126,11 @@ const HistoryPage = () => {
 
     const getStatusText = (status) => {
         switch (status) {
-            case 'pending': return 'Đang xử lý';
-            case 'confirmed': return 'Đã xác nhận';
+            case 'pending': return t('history.statusPending');
+            case 'confirmed': return t('history.statusConfirmed');
             case 'completed':
-            case 'approved': return 'Hoàn thành';
-            case 'cancelled': return 'Đã hủy';
+            case 'approved': return t('history.statusCompleted');
+            case 'cancelled': return t('history.statusCancelled');
             default: return status;
         }
     };
@@ -214,14 +216,14 @@ const HistoryPage = () => {
                             <Ticket className="w-8 h-8 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Lịch sử đặt tour</h1>
-                            <p className="text-gray-500 mt-1">Quản lý và theo dõi các chuyến đi của bạn</p>
+                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{t('history.bookingHistory')}</h1>
+                            <p className="text-gray-500 mt-1">{t('history.manageTrips')}</p>
                         </div>
                     </div>
                     {totalItems > 0 && (
                         <span className="hidden sm:inline-flex items-center gap-1.5 text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg">
                             <Ticket className="w-4 h-4" />
-                            {totalItems} booking
+                            {totalItems} {t('history.bookings')}
                         </span>
                     )}
                 </div>
@@ -229,7 +231,7 @@ const HistoryPage = () => {
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                        <span className="ml-3 text-lg text-gray-500 font-medium">Đang tải lịch sử...</span>
+                        <span className="ml-3 text-lg text-gray-500 font-medium">{t('history.loadingHistory')}</span>
                     </div>
                 ) : error ? (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-5 rounded-2xl shadow-sm text-center">
@@ -238,10 +240,10 @@ const HistoryPage = () => {
                 ) : !bookings.length ? (
                     <div className="bg-white border text-center border-gray-100 rounded-3xl p-12 shadow-sm flex flex-col items-center">
                         <img src="/assets/images/empty_booking.svg" alt="Trống" className="w-48 h-48 opacity-50 mb-6 object-contain" onError={(e) => e.target.style.display = 'none'} />
-                        <h3 className="text-2xl font-bold text-gray-800">Chưa có chuyến đi nào</h3>
-                        <p className="text-gray-500 mt-2 max-w-md">Bạn chưa đặt tour nào. Đừng bỏ lỡ các ưu đãi tuyệt vời, hãy bắt đầu chuyến hành trình của mình ngay hôm nay!</p>
+                        <h3 className="text-2xl font-bold text-gray-800">{t('history.noTrips')}</h3>
+                        <p className="text-gray-500 mt-2 max-w-md">{t('history.noTripsDesc')}</p>
                         <a href="/" className="mt-6 px-6 py-3 bg-primary hover:bg-primary-dark transition text-white rounded-xl font-bold tracking-wide shadow-lg shadow-primary/30">
-                            Khám phá tour ngay
+                            {t('history.exploreTours')}
                         </a>
                     </div>
                 ) : (
@@ -256,7 +258,7 @@ const HistoryPage = () => {
                                 const cleanNote = getCleanNote(b);
                                 const duration = (b.tour?.duration_days && b.tour?.duration_nights)
                                     ? `${b.tour.duration_days} ngày ${b.tour.duration_nights} đêm`
-                                    : (b.tour?.duration_days ? `${b.tour.duration_days} ngày` : 'Chưa cập nhật');
+                                    : (b.tour?.duration_days ? `${b.tour.duration_days} ngày` : t('history.notUpdated'));
 
                                 return (
                                     <div
@@ -284,12 +286,12 @@ const HistoryPage = () => {
                                             onClick={() => handleTourClick(b)}
                                         >
                                             <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-1 mb-2 group-hover:text-primary transition-colors">
-                                                {b.tour?.title || b.tour_title_snapshot || 'Tour ưu đãi chưa cập nhật tên'}
+                                                {b.tour?.title || b.tour_title_snapshot || t('history.nameNotUpdated')}
                                             </h3>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="w-4 h-4 text-gray-400" />
                                                 <span className="text-sm font-medium text-gray-600">
-                                                    Khởi hành: {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}
+                                                    {t('history.departure')}: {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : t('history.notSelected')}
                                                 </span>
                                             </div>
                                         </div>
@@ -300,7 +302,7 @@ const HistoryPage = () => {
                                                 onClick={(e) => { e.stopPropagation(); setExpandedId(expandedId === b.id ? null : b.id); }}
                                                 className="px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition-all duration-200 text-sm flex items-center gap-1.5"
                                             >
-                                                <span>{expandedId === b.id ? 'Thu gọn' : 'Xem chi tiết'}</span>
+                                                <span>{expandedId === b.id ? t('history.collapse') : t('history.viewDetails')}</span>
                                                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${expandedId === b.id ? 'rotate-180' : ''}`} />
                                             </button>
 
@@ -309,7 +311,7 @@ const HistoryPage = () => {
                                                     onClick={(e) => { e.stopPropagation(); handleCancel(b.id); }}
                                                     className="px-4 py-2 border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg transition-colors text-sm flex items-center gap-1.5"
                                                 >
-                                                    <Ban className="w-4 h-4" /> Hủy
+                                                    <Ban className="w-4 h-4" /> {t('history.cancelBooking')}
                                                 </button>
                                             )}
 
@@ -318,7 +320,7 @@ const HistoryPage = () => {
                                                     onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }}
                                                     className="px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition-colors text-sm flex items-center gap-1.5"
                                                 >
-                                                    <Trash2 className="w-4 h-4" /> Xóa
+                                                    <Trash2 className="w-4 h-4" /> {t('history.deleteHistory')}
                                                 </button>
                                             )}
                                         </div>
@@ -334,40 +336,40 @@ const HistoryPage = () => {
                                                 <div className="p-6 bg-gray-50 border-t border-gray-100">
                                                     <h4 className="font-bold text-gray-900 mb-4 inline-flex items-center gap-2">
                                                         <Info className="w-4.5 h-4.5 text-primary" />
-                                                        <span>Chi tiết đặt tour</span>
+                                                        <span>{t('history.bookingDetails')}</span>
                                                     </h4>
 
-                                                    <p className="text-sm font-semibold text-gray-900 mb-6">Tên tour: {b.tour?.title || b.tour_title_snapshot || 'Chưa cập nhật'}</p>
+                                                    <p className="text-sm font-semibold text-gray-900 mb-6">{t('history.tourName')}: {b.tour?.title || b.tour_title_snapshot || t('history.notUpdated')}</p>
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                         {/* Chi tiết tour */}
                                                         <div>
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                                <MapPin className="w-3.5 h-3.5" /> Chi tiết tour
+                                                                <MapPin className="w-3.5 h-3.5" /> {t('history.bookingDetails')}
                                                             </p>
                                                             <div className="space-y-1">
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Khởi hành:</span> {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa chọn'}</p>
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Thời lượng:</span> {duration}</p>
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || 'Không có'}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.departure')}:</span> {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : t('history.notSelected')}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.duration')}:</span> {duration}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.pickupPoint')}:</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || t('history.none')}</p>
                                                             </div>
                                                         </div>
 
                                                         {/* Hành khách */}
                                                         <div>
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                                <Users className="w-3.5 h-3.5" /> Hành khách
+                                                                <Users className="w-3.5 h-3.5" /> {t('history.adults')}
                                                             </p>
                                                             <div className="space-y-1">
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Người lớn:</span> {passengers.adults}</p>
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ em:</span> {passengers.children}</p>
-                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ nhỏ:</span> {passengers.infants}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.adults')}:</span> {passengers.adults}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.children')}:</span> {passengers.children}</p>
+                                                                <p className="text-sm text-gray-700"><span className="text-gray-500">{t('history.infants')}:</span> {passengers.infants}</p>
                                                             </div>
                                                         </div>
 
                                                         {/* Người liên hệ */}
                                                         <div>
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                                <Phone className="w-3.5 h-3.5" /> Người liên hệ
+                                                                <Phone className="w-3.5 h-3.5" /> {t('history.contactPerson')}
                                                             </p>
                                                             <div className="space-y-1">
                                                                 <p className="text-sm text-gray-700">{b.customer_name}</p>
@@ -379,14 +381,14 @@ const HistoryPage = () => {
                                                         {/* Ngày đặt & Tổng tiền */}
                                                         <div>
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                                                <Calendar className="w-3.5 h-3.5" /> Ngày đặt
+                                                                <Calendar className="w-3.5 h-3.5" /> {t('history.bookingDate')}
                                                             </p>
                                                             <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy') : 'N/A'}</p>
                                                             <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
                                                                 <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                                    <DollarSign className="w-3 h-3" /> Tổng tiền
+                                                                    <DollarSign className="w-3 h-3" /> {t('history.totalAmount')}
                                                                 </p>
-                                                                <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : 'Liên hệ'}</p>
+                                                                <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : t('history.contact')}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -394,7 +396,7 @@ const HistoryPage = () => {
                                                     {cleanNote && (
                                                         <div className="mt-6 p-4 bg-white rounded-xl border border-gray-100">
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                                <FileText className="w-3 h-3" /> Ghi chú từ bạn
+                                                                <FileText className="w-3 h-3" /> {t('history.yourNote')}
                                                             </p>
                                                             <p className="text-sm text-gray-800 italic">&ldquo;{cleanNote}&rdquo;</p>
                                                         </div>
@@ -417,7 +419,7 @@ const HistoryPage = () => {
                                     className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Trước</span>
+                                    <span className="hidden sm:inline">{t('history.prev')}</span>
                                 </button>
 
                                 {/* Page numbers */}
@@ -468,7 +470,7 @@ const HistoryPage = () => {
                                     disabled={currentPage === totalPages}
                                     className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
                                 >
-                                    <span className="hidden sm:inline">Sau</span>
+                                    <span className="hidden sm:inline">{t('history.next')}</span>
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
@@ -477,7 +479,7 @@ const HistoryPage = () => {
                         {/* Page info */}
                         {totalPages > 1 && (
                             <p className="mt-3 text-center text-xs text-gray-400">
-                                Trang {currentPage} / {totalPages} • Tổng {totalItems} booking
+                                {t('history.page')} {currentPage} / {totalPages} • {t('history.total')} {totalItems} {t('history.bookings')}
                             </p>
                         )}
                     </>

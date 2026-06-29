@@ -3,9 +3,11 @@ import { useAuthStore } from '@/store';
 import { userService } from '@/services/userService';
 import { toast } from 'sonner';
 import { User, Camera, Loader2, Save, Lock, Mail, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { getImageUrl } from '@/utils/imageUrl';
 const ProfilePage = () => {
+    const { t } = useTranslation();
     const { user, updateUser } = useAuthStore();
     const [loading, setLoading] = useState(false);
 
@@ -34,7 +36,7 @@ const ProfilePage = () => {
         // Validate phone
         const phoneRegex = /^[0-9]{10,11}$/;
         if (profileData.phone_number && !phoneRegex.test(profileData.phone_number)) {
-            toast.error('Số điện thoại không hợp lệ (10-11 số)');
+            toast.error(t('profile.invalidPhone'));
             return;
         }
 
@@ -47,11 +49,11 @@ const ProfilePage = () => {
 
             const res = await userService.updateProfile(formData);
             if (res.data.status === 'success') {
-                toast.success('Cập nhật hồ sơ thành công!');
+                toast.success(t('profile.profileUpdateSuccess'));
                 updateUser(res.data.data);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Cập nhật thất bại');
+            toast.error(error.response?.data?.message || t('profile.profileUpdateFail'));
         } finally {
             setLoading(false);
         }
@@ -71,12 +73,12 @@ const ProfilePage = () => {
         // Check strong password
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         if (!passwordRegex.test(passwordData.newPassword)) {
-            toast.error('Mật khẩu mới phải từ 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt');
+            toast.error(t('profile.passwordRequirements'));
             return;
         }
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            toast.error('Mật khẩu xác nhận không khớp');
+            toast.error(t('profile.passwordMismatch'));
             return;
         }
 
@@ -87,11 +89,11 @@ const ProfilePage = () => {
                 newPassword: passwordData.newPassword
             });
             if (res.data.status === 'success') {
-                toast.success('Đổi mật khẩu thành công!');
+                toast.success(t('profile.passwordChangeSuccess'));
                 setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Đổi mật khẩu thất bại');
+            toast.error(error.response?.data?.message || t('profile.passwordChangeFail'));
         } finally {
             setLoading(false);
         }
@@ -100,7 +102,7 @@ const ProfilePage = () => {
     return (
         <ClientLayout>
             <div className="max-w-4xl mx-auto py-2 px-4">
-                <h1 className="text-2xl font-bold text-text mb-6">Tài khoản của tôi</h1>
+                <h1 className="text-2xl font-bold text-text mb-6">{t('profile.myAccount')}</h1>
 
                 {/* Header Profile Box */}
                 <div className="bg-surface rounded-2xl border border-border shadow-sm p-6 mb-8 flex items-center gap-6">
@@ -132,21 +134,21 @@ const ProfilePage = () => {
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* Thông tin */}
                     <div className="bg-surface rounded-2xl border border-border shadow-sm p-6">
-                        <h2 className="text-lg font-bold text-text mb-4 border-b border-border pb-3">Thông tin cá nhân</h2>
+                        <h2 className="text-lg font-bold text-text mb-4 border-b border-border pb-3">{t('profile.personalInfo')}</h2>
                         <form onSubmit={handleProfileSubmit} className="space-y-4">
 
                             {/* Avatar File Input (Hidden, Triggered by Label) */}
                             <div className="flex items-center gap-4 mb-4">
                                 <label className="flex items-center gap-3 px-4 py-2 border border-border rounded-xl cursor-pointer hover:bg-surface-alt transition-colors duration-200">
                                     <Camera className="w-5 h-5 text-primary" />
-                                    <span className="text-sm font-medium text-text">Tải ảnh đại diện</span>
+                                    <span className="text-sm font-medium text-text">{t('profile.uploadAvatar')}</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                                 </label>
                                 {avatarFile && <span className="text-xs text-text-muted truncate max-w-[150px]">{avatarFile.name}</span>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Họ và tên</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.fullName')}</label>
                                 <input
                                     type="text"
                                     value={profileData.full_name}
@@ -157,7 +159,7 @@ const ProfilePage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Email (Read-only)</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.emailReadOnly')}</label>
                                 <input
                                     type="email"
                                     value={profileData.email}
@@ -168,7 +170,7 @@ const ProfilePage = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Số điện thoại</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.phoneNumber')}</label>
                                 <input
                                     type="tel"
                                     value={profileData.phone_number}
@@ -183,17 +185,17 @@ const ProfilePage = () => {
                                 className="w-full mt-4 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors flex justify-center items-center gap-2"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                                Lưu thay đổi
+                                {t('profile.saveChanges')}
                             </button>
                         </form>
                     </div>
 
                     {/* Password */}
                     <div className="bg-surface rounded-2xl border border-border shadow-sm p-6 flex flex-col">
-                        <h2 className="text-lg font-bold text-text mb-4 border-b border-border pb-3">Đổi mật khẩu</h2>
+                        <h2 className="text-lg font-bold text-text mb-4 border-b border-border pb-3">{t('profile.changePassword')}</h2>
                         <form onSubmit={handlePasswordSubmit} className="space-y-4 flex-1 flex flex-col">
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Mật khẩu hiện tại</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.currentPassword')}</label>
                                 <input
                                     type="password"
                                     value={passwordData.currentPassword}
@@ -203,7 +205,7 @@ const ProfilePage = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Mật khẩu mới</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.newPassword')}</label>
                                 <input
                                     type="password"
                                     value={passwordData.newPassword}
@@ -213,7 +215,7 @@ const ProfilePage = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-text mb-1.5">Xác nhận mật khẩu mới</label>
+                                <label className="block text-sm font-medium text-text mb-1.5">{t('profile.confirmNewPassword')}</label>
                                 <input
                                     type="password"
                                     value={passwordData.confirmPassword}
@@ -230,7 +232,7 @@ const ProfilePage = () => {
                                     className="w-full py-3 bg-text text-white font-semibold rounded-xl hover:bg-black transition-colors flex justify-center items-center gap-2"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
-                                    Cập nhật mật khẩu
+                                    {t('profile.updatePassword')}
                                 </button>
                             </div>
                         </form>

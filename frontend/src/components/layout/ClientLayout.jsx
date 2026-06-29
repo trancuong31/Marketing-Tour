@@ -1,18 +1,20 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Phone, Mail, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
 import { getImageUrl } from '@/utils/imageUrl';
 import zalo from '../../assets/images/zalo-2.png';
 import logo from '../../../public/logo.jpg';
 import NotificationBell from '../NotificationBell';
+import LanguageSwitcher from '../ui/LanguageSwitcher/LanguageSwitcher';
 const navLinks = [
-    { path: '/', label: 'Trang chủ' },
-    { path: '/tours/noi-dia', label: 'Tour Nội Địa', icon: MapPin },
-    { path: '/tours/quoc-te', label: 'Tour Quốc Tế', icon: Globe2 },
-    { path: '/lookup-booking', label: 'Tra cứu đơn' },
-    { path: '/guides', label: 'Hướng dẫn' },
+    { path: '/', key: 'header.home' },
+    { path: '/tours/noi-dia', key: 'header.domesticTour', icon: MapPin },
+    { path: '/tours/quoc-te', key: 'header.internationalTour', icon: Globe2 },
+    { path: '/lookup-booking', key: 'header.lookupBooking' },
+    { path: '/guides', key: 'header.guides' },
 ];
 
 const ClientLayout = ({ children }) => {
@@ -23,7 +25,12 @@ const ClientLayout = ({ children }) => {
     const [authMode, setAuthMode] = useState('login');
     const [mobileMenuUserOpen, setMobileMenuUserOpen] = useState(false);
     const { isAuthenticated, user, logout } = useAuthStore();
+    const { t, i18n } = useTranslation();
     const ignoreScrollRef = useRef(false);
+
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
 
     useEffect(() => {
         let lastScrollY = window.scrollY;
@@ -59,35 +66,32 @@ const ClientLayout = ({ children }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center gap-2 group">
-                            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+                        <Link to="/" className="flex items-center gap-2 group shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center overflow-hidden shrink-0">
                                 <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="font-pacifico pb-2 pr-2 text-3xl bg-gradient-to-r from-[#e8401c] to-[#1E6FBF] bg-clip-text text-transparent">
-                                <i>Kỳ nghỉ tuyệt vời</i>
+                            <span className="font-pacifico pb-1 text-xl lg:text-2xl whitespace-nowrap bg-gradient-to-r from-[#e8401c] to-[#1E6FBF] bg-clip-text text-transparent hidden sm:block">
+                                <i>{t('header.brandName', 'Kỳ nghỉ tuyệt vời')}</i>
                             </span>
                         </Link>
 
                         {/* Desktop Nav */}
-                        <div className="hidden md:flex items-center gap-4">
-                            <nav className="flex items-center gap-0.5">
+                        <div className="hidden lg:flex items-center gap-2 xl:gap-4 ml-auto">
+                            <nav className="flex items-center gap-1 xl:gap-2 whitespace-nowrap">
                                 {navLinks.map(link => (
                                     <Link
                                         key={link.path}
                                         to={link.path}
-                                        className={`px-3.5 py-2 rounded-lg text-base font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
+                                        className={`px-2 xl:px-3 py-2 rounded-lg text-sm xl:text-base font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
                                             ? 'bg-primary/10 text-primary'
                                             : 'text-text-secondary hover:bg-surface-alt hover:text-text'
                                             }`}
                                     >
                                         {link.icon && <link.icon className="w-3.5 h-3.5" />}
-                                        {link.label}
+                                        {t(link.key)}
                                     </Link>
                                 ))}
                             </nav>
-
-                            {/* Divider line */}
-                            <div className="w-px h-6 bg-border mx-2"></div>
 
                             {/* Auth buttons & Notifications */}
                             {isAuthenticated ? (
@@ -106,13 +110,13 @@ const ClientLayout = ({ children }) => {
                                                 </div>
                                             )}
                                             <div className="flex flex-col">
-                                                <span>{user?.full_name || 'Người dùng'}</span>
+                                                <span>{user?.full_name || t('header.guest')}</span>
                                                 {/* admin hoặc customer */}
                                                 {(user?.role_id === 1) && (
-                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Admin</span>
+                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">{t('header.roleAdmin', 'Admin')}</span>
                                                 )}
                                                 {(user?.role_id === 2) && (
-                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">Customer</span>
+                                                    <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">{t('header.roleCustomer', 'Customer')}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -127,16 +131,16 @@ const ClientLayout = ({ children }) => {
                                                 {(user?.role_id === 1) && (
                                                     <Link to="/admin" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors text-text group/item">
                                                         <Shield className="w-4 h-4 text-text-muted group-hover/item:text-primary transition-colors" />
-                                                        <span className="text-sm font-medium">Trang quản trị</span>
+                                                        <span className="text-sm font-medium">{t('header.adminPanel')}</span>
                                                     </Link>
                                                 )}
                                                 <Link to="/profile" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
                                                     <UserIcon className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
-                                                    <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+                                                    <span className="text-sm font-medium">{t('header.profile')}</span>
                                                 </Link>
                                                 <Link to="/history" className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-surface-alt transition-colors text-text group/item">
                                                     <List className="w-4 h-4 text-text-muted group-hover/item:text-text transition-colors" />
-                                                    <span className="text-sm font-medium">Lịch sử đặt tour</span>
+                                                    <span className="text-sm font-medium">{t('header.history')}</span>
                                                 </Link>
                                             </div>
                                             <div className="border-t border-border py-1.5 px-1.5 flex flex-col">
@@ -145,7 +149,7 @@ const ClientLayout = ({ children }) => {
                                                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-error/10 text-error transition-colors group/item"
                                                 >
                                                     <LogOut className="w-4 h-4 text-error/70 group-hover/item:text-error transition-colors" />
-                                                    <span className="text-sm font-medium">Đăng xuất</span>
+                                                    <span className="text-sm font-medium">{t('header.logout')}</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -164,21 +168,29 @@ const ClientLayout = ({ children }) => {
                                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors border border-transparent"
                                     >
                                         <LogIn className="w-4 h-4" />
-                                        <span>Đăng nhập</span>
+                                        <span>{t('common.login')}</span>
                                     </button>
                                     <button
                                         onClick={() => openAuth('register')}
                                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors shadow-sm"
                                     >
                                         <UserPlus className="w-4 h-4" />
-                                        <span>Đăng ký</span>
+                                        <span>{t('common.register')}</span>
                                     </button>
                                 </div>
                             )}
+
+                            {/* Divider line */}
+                            <div className="w-px h-6 bg-border mx-2"></div>
+
+                            {/* Language Switcher */}
+                            <div className="flex items-center">
+                                <LanguageSwitcher />
+                            </div>
                         </div>
 
                         {/* Mobile Right Icons */}
-                        <div className="md:hidden flex items-center gap-3">
+                        <div className="lg:hidden flex items-center gap-3">
                             {isAuthenticated && <NotificationBell />}
                             <button
                                 className="p-2 rounded-lg hover:bg-surface-alt transition"
@@ -196,7 +208,7 @@ const ClientLayout = ({ children }) => {
 
                     {/* Mobile Nav */}
                     {menuOpen && (
-                        <nav className="md:hidden py-3 border-t border-border animate-slide-down">
+                        <nav className="lg:hidden py-3 border-t border-border animate-slide-down">
                             {navLinks.map(link => (
                                 <Link
                                     key={link.path}
@@ -208,7 +220,7 @@ const ClientLayout = ({ children }) => {
                                     onClick={() => setMenuOpen(false)}
                                 >
                                     {link.icon && <link.icon className="w-4 h-4" />}
-                                    {link.label}
+                                    {t(link.key)}
                                 </Link>
                             ))}
 
@@ -238,7 +250,7 @@ const ClientLayout = ({ children }) => {
                                             )}
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-text text-sm">
-                                                    {user?.full_name || 'Người dùng'}
+                                                    {user?.full_name || t('header.guest')}
                                                 </span>
                                                 <span className="text-xs text-text-muted">{user?.email}</span>
                                             </div>
@@ -258,7 +270,7 @@ const ClientLayout = ({ children }) => {
                                                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
                                                 >
                                                     <Shield className="w-4 h-4 text-text-muted" />
-                                                    <span className="text-sm font-medium">Trang quản trị</span>
+                                                    <span className="text-sm font-medium">{t('header.adminPanel')}</span>
                                                 </Link>
                                             )}
                                             <Link 
@@ -267,7 +279,7 @@ const ClientLayout = ({ children }) => {
                                                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
                                             >
                                                 <UserIcon className="w-4 h-4 text-text-muted" />
-                                                <span className="text-sm font-medium">Hồ sơ cá nhân</span>
+                                                <span className="text-sm font-medium">{t('header.profile')}</span>
                                             </Link>
                                             <Link 
                                                 to="/history" 
@@ -275,7 +287,7 @@ const ClientLayout = ({ children }) => {
                                                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
                                             >
                                                 <List className="w-4 h-4 text-text-muted" />
-                                                <span className="text-sm font-medium">Lịch sử đặt tour</span>
+                                                <span className="text-sm font-medium">{t('header.history')}</span>
                                             </Link>
                                         </div>
                                     </div>
@@ -289,7 +301,7 @@ const ClientLayout = ({ children }) => {
                                             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-colors shadow-sm"
                                         >
                                             <LogOut className="w-4 h-4" />
-                                            <span className="font-semibold text-sm">Đăng xuất</span>
+                                            <span className="font-semibold text-sm">{t('header.logout')}</span>
                                         </button>
                                     </div>
                                 </div>
@@ -303,7 +315,7 @@ const ClientLayout = ({ children }) => {
                                         className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-primary bg-primary/10 rounded-lg font-medium text-sm hover:bg-primary/20 transition-colors"
                                     >
                                         <LogIn className="w-4 h-4" />
-                                        Đăng nhập
+                                        {t('common.login')}
                                     </button>
                                     <button
                                         onClick={() => {
@@ -313,7 +325,7 @@ const ClientLayout = ({ children }) => {
                                         className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-white bg-primary rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm"
                                     >
                                         <UserPlus className="w-4 h-4" />
-                                        Đăng ký
+                                        {t('common.register')}
                                     </button>
                                 </div>
                             )}
@@ -341,7 +353,7 @@ const ClientLayout = ({ children }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="relative group"
-                    title="Chat Zalo"
+                    title={t('footer.chatZalo', 'Chat Zalo')}
                 >
                     {/* Ripple ring */}
                     <span className="absolute inset-0 rounded-full bg-[#0068FF]/30 animate-ring" />
@@ -355,7 +367,7 @@ const ClientLayout = ({ children }) => {
                 <a
                     href="tel:0987654321"
                     className="relative group"
-                    title="Gọi ngay"
+                    title={t('footer.callNow', 'Gọi ngay')}
                 >
                     <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring" />
                     <span className="absolute inset-0 rounded-full bg-primary/20 animate-ring delay-300" />
@@ -372,29 +384,28 @@ const ClientLayout = ({ children }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
                         {/* Col 1 - About */}
                         <div>
-                            <h4 className="font-bold text-text mb-4 text-base">Về KyNghiTuyetVoi</h4>
+                            <h4 className="font-bold text-text mb-4 text-base">{t('footer.aboutUs')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
-                                <li><Link to="/" className="hover:text-primary transition text-text-secondary">Chúng tôi</Link></li>
-                                <li><Link to="/guides" className="hover:text-primary transition text-text-secondary">Blog du lịch</Link></li>
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Quy chế hoạt động</a></li>
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Câu hỏi thường gặp</a></li>
+                                <li><Link to="/" className="hover:text-primary transition text-text-secondary">{t('footer.about')}</Link></li>
+                                <li><Link to="/guides" className="hover:text-primary transition text-text-secondary">{t('footer.blog')}</Link></li>
+                                <li><a href="#" className="hover:text-primary transition text-text-secondary">{t('footer.terms')}</a></li>
+                                <li><a href="#" className="hover:text-primary transition text-text-secondary">{t('footer.faq')}</a></li>
                             </ul>
                         </div>
 
                         {/* Col 2 - Info */}
                         <div>
-                            <h4 className="font-bold text-text mb-4 text-base">Thông Tin Cần Biết</h4>
+                            <h4 className="font-bold text-text mb-4 text-base">{t('footer.info')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Điều kiện & Điều khoản</a></li>
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Chính sách giá tốt</a></li>
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Chính sách bảo mật</a></li>
-                                <li><a href="#" className="hover:text-primary transition text-text-secondary">Hướng dẫn thanh toán</a></li>
+                                <li><a href="#" className="hover:text-primary transition text-text-secondary">{t('footer.terms')}</a></li>
+                                <li><a href="#" className="hover:text-primary transition text-text-secondary">{t('footer.policy')}</a></li>
+                                <li><a href="#" className="hover:text-primary transition text-text-secondary">{t('footer.payment')}</a></li>
                             </ul>
                         </div>
 
                         {/* Col 3 - Partners */}
                         <div>
-                            <h4 className="font-bold text-text mb-4 text-base">Đối Tác & Liên Kết</h4>
+                            <h4 className="font-bold text-text mb-4 text-base">{t('footer.partners')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
                                 <li><a href="#" className="hover:text-primary transition text-text-secondary">Vietnam Airlines</a></li>
                                 <li><a href="#" className="hover:text-primary transition text-text-secondary">VNExpress</a></li>
@@ -405,14 +416,14 @@ const ClientLayout = ({ children }) => {
 
                         {/* Col 4 - Contact + Hotline */}
                         <div>
-                            <h4 className="font-bold text-text mb-4 text-base">Bạn cần trợ giúp?</h4>
+                            <h4 className="font-bold text-text mb-4 text-base">{t('footer.needHelp')}</h4>
                             <div className="mb-4">
                                 <a href="tel:19002045" className="flex items-center gap-2 text-primary hover:text-primary-dark transition">
                                     <Phone className="w-5 h-5" />
                                     <span className="text-2xl font-extrabold tracking-wide">1900 0000</span>
                                 </a>
                                 <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> 7h30 → 21h hàng ngày
+                                    <Clock className="w-3 h-3" /> {t('footer.workingHours', '7h30 → 21h hàng ngày')}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 text-text-secondary mb-2">
@@ -444,9 +455,9 @@ const ClientLayout = ({ children }) => {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                                <span>1 Phố Nhổn, P. Bắc Từ Liêm, TP. Hà Nội</span>
+                                <span>{t('footer.address')}</span>
                             </div>
-                            <span>© {new Date().getFullYear()} Marketing Tour. Tất cả quyền được bảo lưu.</span>
+                            <span>{t('footer.copyright')}</span>
                         </div>
                     </div>
                 </div>

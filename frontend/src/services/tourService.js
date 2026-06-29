@@ -93,4 +93,7 @@ export const adminService = {
     createBanner: (formData) => api.post('/admin/banners', formData),
     updateBanner: (id, formData) => api.put(`/admin/banners/${id}`, formData),
     deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
+
+    // Translate
+    translateContent: (data) => api.post('/admin/translate', data),
 };

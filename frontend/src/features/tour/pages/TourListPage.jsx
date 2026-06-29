@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { tourService } from '@/services/tourService';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
@@ -9,52 +10,52 @@ import DepartureCalendar from '../../../components/ui/DepartureCalendar';
 import banahill from '../../../assets/images/banahill.webp';
 import tokyo from '../../../assets/images/tokyo.webp';
 
-const typeConfig = {
+const getTypeConfig = (t) => ({
     'noi-dia': {
-        label: 'Tour Nội Địa',
-        description: 'Khám phá vẻ đẹp Việt Nam từ Bắc đến Nam',
+        label: t('tour.list.domesticLabel', 'Tour Nội Địa'),
+        description: t('tour.list.domesticDesc', 'Khám phá vẻ đẹp Việt Nam từ Bắc đến Nam'),
         icon: MapPin,
         gradient: 'from-primary-400 to-primary-dark',
         apiType: 'domestic',
         img: banahill,
     },
     'quoc-te': {
-        label: 'Tour Quốc Tế',
-        description: 'Trải nghiệm văn hóa đa dạng khắp thế giới',
+        label: t('tour.list.internationalLabel', 'Tour Quốc Tế'),
+        description: t('tour.list.internationalDesc', 'Trải nghiệm văn hóa đa dạng khắp thế giới'),
         icon: Globe2,
         gradient: 'from-secondary-400 to-secondary-dark',
         apiType: 'international',
         img: tokyo,
     },
     'all': {
-        label: 'Kết quả tìm kiếm',
-        description: 'Khám phá những hành trình phù hợp nhất với bạn',
+        label: t('tour.list.allLabel', 'Kết quả tìm kiếm'),
+        description: t('tour.list.allDesc', 'Khám phá những hành trình phù hợp nhất với bạn'),
         icon: Search,
         gradient: 'from-slate-600 to-slate-800',
         apiType: '',
         img: banahill,
     },
-};
+});
 
-const BUDGET_OPTIONS = [
-    { label: 'Tất cả', value: '' },
-    { label: 'Dưới 5 triệu', value: 'under_5M' },
-    { label: '5 - 10 triệu', value: '5M_10M' },
-    { label: '10 - 20 triệu', value: '10M_20M' },
-    { label: 'Trên 20 triệu', value: 'over_20M' },
+const getBudgetOptions = (t) => [
+    { label: t('tour.filter.all', 'Tất cả'), value: '' },
+    { label: t('tour.filter.budgetUnder5M', 'Dưới 5 triệu'), value: 'under_5M' },
+    { label: t('tour.filter.budget5To10M', '5 - 10 triệu'), value: '5M_10M' },
+    { label: t('tour.filter.budget10To20M', '10 - 20 triệu'), value: '10M_20M' },
+    { label: t('tour.filter.budgetOver20M', 'Trên 20 triệu'), value: 'over_20M' },
 ];
 
-const BADGE_OPTIONS = [
-    { label: 'Tất cả', value: '' },
-    { label: 'Tour nổi bật', value: 'featured' },
-    { label: 'Tour ưu đãi', value: 'promotion' },
+const getBadgeOptions = (t) => [
+    { label: t('tour.filter.all', 'Tất cả'), value: '' },
+    { label: t('tour.filter.badgeFeatured', 'Tour nổi bật'), value: 'featured' },
+    { label: t('tour.filter.badgePromotion', 'Tour ưu đãi'), value: 'promotion' },
 ];
 
-const SORT_OPTIONS = [
-    { label: 'Mặc định', value: '' },
-    { label: 'Giá thấp → cao', value: 'price_asc' },
-    { label: 'Giá cao → thấp', value: 'price_desc' },
-    { label: 'Ngày khởi hành gần nhất', value: 'date_asc' },
+const getSortOptions = (t) => [
+    { label: t('tour.sort.default', 'Mặc định'), value: '' },
+    { label: t('tour.sort.priceAsc', 'Giá thấp → cao'), value: 'price_asc' },
+    { label: t('tour.sort.priceDesc', 'Giá cao → thấp'), value: 'price_desc' },
+    { label: t('tour.sort.dateAsc', 'Ngày khởi hành gần nhất'), value: 'date_asc' },
 ];
 
 const getMinPrice = (tour) => {
@@ -70,10 +71,15 @@ const getEarliestDate = (tour) => {
 
 /* ═══ Main Page ═══ */
 const TourListPage = () => {
+    const { t, i18n } = useTranslation();
     const location = useLocation();
     const type = location.pathname.includes('quoc-te') ? 'quoc-te' : location.pathname.includes('noi-dia') ? 'noi-dia' : 'all';
-    const config = typeConfig[type];
+    const config = getTypeConfig(t)[type];
     const Icon = config.icon;
+
+    const BUDGET_OPTIONS = getBudgetOptions(t);
+    const BADGE_OPTIONS = getBadgeOptions(t);
+    const SORT_OPTIONS = getSortOptions(t);
 
     const searchParams = new URLSearchParams(location.search);
     const initialQ = searchParams.get('q') || '';
@@ -108,7 +114,7 @@ const TourListPage = () => {
             finally { setLoading(false); }
         };
         fetchTours();
-    }, [config.apiType, initialQ, filters.budget]);
+    }, [config.apiType, initialQ, filters.budget, i18n.language]);
 
     // Aggregate: dateStr → min price across ALL tours
     const departurePriceMap = useMemo(() => {
@@ -124,14 +130,14 @@ const TourListPage = () => {
     }, [tours]);
 
     const departureOptions = useMemo(() => [
-        { label: 'Tất cả', value: '' },
+        { label: t('tour.filter.all', 'Tất cả'), value: '' },
         ...departurePoints.map(d => ({ label: d, value: d })),
-    ], [departurePoints]);
+    ], [departurePoints, t]);
 
     const destinationOptions = useMemo(() => {
         const set = new Set(tours.map(t => t.Category?.name).filter(Boolean));
-        return [{ label: 'Tất cả', value: '' }, ...[...set].sort().map(d => ({ label: d, value: d }))];
-    }, [tours]);
+        return [{ label: t('tour.filter.all', 'Tất cả'), value: '' }, ...[...set].sort().map(d => ({ label: d, value: d }))];
+    }, [tours, t]);
 
     const filteredTours = useMemo(() => {
         let result = tours.filter(tour => {
@@ -168,30 +174,30 @@ const TourListPage = () => {
             <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-[#1a3c6e] uppercase tracking-wide flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" />
-                    Bộ lọc tìm kiếm
+                    {t('tour.list.filterTitle', 'Bộ lọc tìm kiếm')}
                 </h3>
                 {hasActiveFilter && (
-                    <button onClick={clearFilters} className="text-xs text-primary hover:underline font-medium">Xóa tất cả</button>
+                    <button onClick={clearFilters} className="text-xs text-primary hover:underline font-medium">{t('tour.list.clearAll', 'Xóa tất cả')}</button>
                 )}
             </div>
             <DepartureCalendar
-                label="Ngày khởi hành"
+                label={t('tour.list.filterDepartureDate', 'Ngày khởi hành')}
                 labelIcon={<CalendarDays className="w-3.5 h-3.5" />}
                 value={filters.departureDate}
                 onChange={(v) => setFilters(f => ({ ...f, departureDate: v }))}
                 departurePriceMap={departurePriceMap}
             />
-            <CustomSelect label="Loại tour" labelIcon={<Star className="w-3.5 h-3.5" />} value={filters.badge} onChange={(v) => setFilters(f => ({ ...f, badge: v }))} options={BADGE_OPTIONS} placeholder="Tất cả" />
-            <CustomSelect label="Ngân sách" labelIcon={<Filter className="w-3.5 h-3.5" />} value={filters.budget} onChange={(v) => setFilters(f => ({ ...f, budget: v }))} options={BUDGET_OPTIONS} placeholder="Tất cả" />
-            <CustomSelect label="Điểm khởi hành" labelIcon={<MapPin className="w-3.5 h-3.5" />} value={filters.departure} onChange={(v) => setFilters(f => ({ ...f, departure: v }))} options={departureOptions} placeholder="Tất cả" />
-            <CustomSelect label="Điểm đến" labelIcon={<Globe2 className="w-3.5 h-3.5" />} value={filters.destination} onChange={(v) => setFilters(f => ({ ...f, destination: v }))} options={destinationOptions} placeholder="Tất cả" />
+            <CustomSelect label={t('tour.list.filterType', 'Loại tour')} labelIcon={<Star className="w-3.5 h-3.5" />} value={filters.badge} onChange={(v) => setFilters(f => ({ ...f, badge: v }))} options={BADGE_OPTIONS} placeholder={t('tour.filter.all', 'Tất cả')} />
+            <CustomSelect label={t('tour.list.filterBudget', 'Ngân sách')} labelIcon={<Filter className="w-3.5 h-3.5" />} value={filters.budget} onChange={(v) => setFilters(f => ({ ...f, budget: v }))} options={BUDGET_OPTIONS} placeholder={t('tour.filter.all', 'Tất cả')} />
+            <CustomSelect label={t('tour.list.filterDeparturePoint', 'Điểm khởi hành')} labelIcon={<MapPin className="w-3.5 h-3.5" />} value={filters.departure} onChange={(v) => setFilters(f => ({ ...f, departure: v }))} options={departureOptions} placeholder={t('tour.filter.all', 'Tất cả')} />
+            <CustomSelect label={t('tour.list.filterDestination', 'Điểm đến')} labelIcon={<Globe2 className="w-3.5 h-3.5" />} value={filters.destination} onChange={(v) => setFilters(f => ({ ...f, destination: v }))} options={destinationOptions} placeholder={t('tour.filter.all', 'Tất cả')} />
 
             
 
-            <CustomSelect label="Sắp xếp theo" labelIcon={<SlidersHorizontal className="w-3.5 h-3.5" />} value={sortBy} onChange={(v) => setSortBy(v)} options={SORT_OPTIONS} placeholder="Mặc định" />
+            <CustomSelect label={t('tour.list.filterSort', 'Sắp xếp theo')} labelIcon={<SlidersHorizontal className="w-3.5 h-3.5" />} value={sortBy} onChange={(v) => setSortBy(v)} options={SORT_OPTIONS} placeholder={t('tour.sort.default', 'Mặc định')} />
 
             <button onClick={() => setShowMobileFilter(false)} className="w-full py-3 bg-[#1a3c6e] text-white font-bold rounded-xl hover:bg-[#15325c] transition lg:hidden">
-                Áp dụng
+                {t('tour.list.apply', 'Áp dụng')}
             </button>
         </div>
     );
@@ -214,7 +220,7 @@ const TourListPage = () => {
             <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
                 <button onClick={() => setShowMobileFilter(true)} className="lg:hidden mb-4 inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-medium text-text shadow-sm hover:shadow transition">
                     <Filter className="w-4 h-4" />
-                    Bộ lọc
+                    {t('tour.list.filterBtn', 'Bộ lọc')}
                     {hasActiveFilter && <span className="w-2 h-2 rounded-full bg-primary" />}
                 </button>
 
@@ -230,7 +236,7 @@ const TourListPage = () => {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-6">
                             <p className="text-text-muted text-sm">
-                                {loading ? 'Đang tải...' : `Hiển thị ${filteredTours.length} / ${tours.length} tour`}
+                                {loading ? t('common.loading', 'Đang tải...') : t('tour.list.showingResults', 'Hiển thị {{count}} / {{total}} tour', { count: filteredTours.length, total: tours.length })}
                             </p>
                             {hasActiveFilter && (
                                 <div className="hidden sm:flex items-center gap-2 flex-wrap">
@@ -264,11 +270,11 @@ const TourListPage = () => {
                         ) : (
                             <div className="text-center py-16">
                                 <Icon className="w-16 h-16 mx-auto text-text-muted/30 mb-4" />
-                                <p className="text-xl font-semibold text-text mb-1">Không tìm thấy tour</p>
-                                <p className="text-text-muted mb-4">Thử thay đổi bộ lọc để xem thêm kết quả</p>
+                                <p className="text-xl font-semibold text-text mb-1">{t('tour.list.noResults', 'Không tìm thấy tour')}</p>
+                                <p className="text-text-muted mb-4">{t('tour.list.changeFilter', 'Thử thay đổi bộ lọc để xem thêm kết quả')}</p>
                                 {hasActiveFilter && (
                                     <button onClick={clearFilters} className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition">
-                                        <X className="w-3.5 h-3.5" /> Xóa bộ lọc
+                                        <X className="w-3.5 h-3.5" /> {t('tour.list.clearFilterBtn', 'Xóa bộ lọc')}
                                     </button>
                                 )}
                             </div>
@@ -283,7 +289,7 @@ const TourListPage = () => {
                     <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileFilter(false)} />
                     <div className="absolute inset-y-0 left-0 w-[320px] max-w-[85vw] bg-white shadow-2xl overflow-y-auto animate-slide-left">
                         <div className="flex items-center justify-between p-4 border-b border-border">
-                            <h3 className="font-bold text-text">Bộ lọc tìm kiếm</h3>
+                            <h3 className="font-bold text-text">{t('tour.list.filterTitle', 'Bộ lọc tìm kiếm')}</h3>
                             <button onClick={() => setShowMobileFilter(false)} className="p-1.5 rounded-lg hover:bg-surface-alt transition"><X className="w-5 h-5" /></button>
                         </div>
                         <div className="p-5">{filterContent}</div>
