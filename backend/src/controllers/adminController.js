@@ -5,6 +5,7 @@ const { sequelize } = require('../config/database');
 const {
     User, Role, Tour, TourImage, TourItinerary, TourDeparture,
     TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner, Notification,
+    TourTranslation, TourItineraryTranslation,
 } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
