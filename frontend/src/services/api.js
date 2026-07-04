@@ -29,6 +29,8 @@ api.interceptors.request.use(
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
         }
+        const lang = localStorage.getItem('i18nextLng') || 'vi';
+        config.headers['x-language'] = lang;
         return config;
     },
     (error) => Promise.reject(error)

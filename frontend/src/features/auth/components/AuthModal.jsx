@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../store';
 import { Button } from '../../../components/ui';
 import { X, Mail, Lock, User, Phone, ArrowLeft, Shield, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-xl text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
 
@@ -18,6 +19,7 @@ const InputField = ({ icon, ...props }) => (
  * Views: login | register | otp_verify | forgot_password | forgot_otp | reset_password
  */
 const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const {
         isLoading, error, clearError,
@@ -119,7 +121,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         const result = await login(formData.email, formData.password);
         if (result.success) {
             onClose();
-            toast.success('Đăng nhập thành công!');
+            toast.success(t('auth.loginSuccess'));
 
             // Redirect admin to /admin after successful login
             if (result.data?.user?.role_id === 1) {
@@ -136,7 +138,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             setOtpType('register');
             startCountdown();
             switchView('otp_verify');
-            toast.success('Mã OTP đã được gửi!');
+            toast.success(t('auth.otpSent'));
         }
     };
 
@@ -148,7 +150,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             const result = await verifyEmail(otpEmail, code);
             if (result.success) {
                 onClose();
-                toast.success('Xác thực thành công!');
+                toast.success(t('auth.verifySuccess'));
             }
         } else {
             const result = await verifyResetOtp(otpEmail, code);
@@ -167,19 +169,19 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             setOtpType('reset_password');
             startCountdown();
             switchView('forgot_otp');
-            toast.success('Mã OTP đã được gửi!');
+            toast.success(t('auth.otpSent'));
         }
     };
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            toast.error('Mật khẩu không khớp!');
+            toast.error(t('auth.passwordMismatch'));
             return;
         }
         const result = await resetPassword(resetToken, formData.password, formData.confirmPassword);
         if (result.success) {
-            toast.success('Đặt lại mật khẩu thành công!');
+            toast.success(t('auth.resetSuccess'));
             switchView('login');
             setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
         }
@@ -191,7 +193,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         if (result.success) {
             startCountdown();
             setOtpDigits(['', '', '', '', '', '']);
-            toast.success('Đã gửi lại mã OTP!');
+            toast.success(t('auth.resendOtpSuccess'));
         }
     };
 
@@ -229,25 +231,25 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         <form className="flex flex-col gap-4" onSubmit={handleLogin}>
             {renderError()}
             <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder="Nhập địa chỉ email" required />
+                onChange={handleChange} placeholder={t('auth.emailPlaceholder')} required />
             <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder="Nhập mật khẩu" required />
+                onChange={handleChange} placeholder={t('auth.passwordPlaceholder')} required />
 
             <div className="flex justify-end">
                 <button type="button" onClick={() => switchView('forgot_password')}
                     className="text-sm text-primary hover:text-primary-dark hover:underline transition-colors">
-                    Quên mật khẩu?
+                    {t('auth.forgotPasswordText')}
                 </button>
             </div>
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full mt-1">
-                Đăng nhập
+                {t('auth.loginTitle')}
             </Button>
 
             <p className="text-center text-text-secondary text-sm mt-2">
-                Chưa có tài khoản?{' '}
+                {t('auth.noAccount')}{' '}
                 <button type="button" onClick={() => { switchView('register'); setFormData({ full_name: '', email: '', password: '', confirmPassword: '', phone_number: '' }); }}
-                    className="text-primary font-medium hover:underline">Đăng ký ngay</button>
+                    className="text-primary font-medium hover:underline">{t('auth.registerNow')}</button>
             </p>
         </form>
     );
@@ -256,24 +258,24 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         <form className="flex flex-col gap-3.5" onSubmit={handleRegister}>
             {renderError()}
             <InputField icon={<User size={18} />} type="text" name="full_name" value={formData.full_name}
-                onChange={handleChange} placeholder="Nhập họ và tên" required minLength={2} />
+                onChange={handleChange} placeholder={t('auth.fullNamePlaceholder')} required minLength={2} />
             <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder="Nhập địa chỉ email" required />
+                onChange={handleChange} placeholder={t('auth.emailPlaceholder')} required />
             <InputField icon={<Phone size={18} />} type="tel" name="phone_number" value={formData.phone_number}
-                onChange={handleChange} placeholder="Nhập số điện thoại" />
+                onChange={handleChange} placeholder={t('auth.phonePlaceholder')} />
             <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder="Tạo mật khẩu" required minLength={8} />
+                onChange={handleChange} placeholder={t('auth.createPasswordPlaceholder')} required minLength={8} />
             <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder="Xác nhận mật khẩu" required minLength={8} />
+                onChange={handleChange} placeholder={t('auth.confirmPasswordPlaceholder')} required minLength={8} />
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full mt-1">
-                Đăng ký
+                {t('auth.registerTitle')}
             </Button>
 
             <p className="text-center text-text-secondary text-sm mt-1">
-                Đã có tài khoản?{' '}
+                {t('auth.hasAccount')}{' '}
                 <button type="button" onClick={() => { switchView('login'); setFormData(prev => ({ ...prev, password: '', confirmPassword: '' })); }}
-                    className="text-primary font-medium hover:underline">Đăng nhập</button>
+                    className="text-primary font-medium hover:underline">{t('auth.loginTitle')}</button>
             </p>
         </form>
     );
@@ -284,29 +286,29 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
                 <Shield className="text-primary" size={32} />
             </div>
-            <h3 className="text-lg font-semibold mb-1">Xác thực Email</h3>
+            <h3 className="text-lg font-semibold mb-1">{t('auth.verifyEmailTitle')}</h3>
             <p className="text-text-muted text-sm text-center mb-1 max-w-[320px]">
-                Mã OTP đã được gửi đến <span className="font-medium text-text">{otpEmail}</span>
+                {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
             </p>
 
             {renderOtpInput()}
 
             {countdown > 0 && (
                 <p className="text-text-muted text-sm mb-4">
-                    Mã hết hạn sau <span className="font-mono font-semibold text-primary">{formatTime(countdown)}</span>
+                    {t('auth.expireIn')} <span className="font-mono font-semibold text-primary">{formatTime(countdown)}</span>
                 </p>
             )}
 
             <Button variant="primary" size="large" loading={isLoading} className="w-full"
                 onClick={handleVerifyOtp} disabled={otpDigits.join('').length !== 6}>
-                Xác thực
+                {t('auth.verifyBtn')}
             </Button>
 
             <button type="button" onClick={handleResendOtp}
                 disabled={countdown > 0 || isLoading}
                 className={`mt-4 text-sm transition-colors ${countdown > 0 ? 'text-text-muted cursor-not-allowed' : 'text-primary hover:text-primary-dark hover:underline'
                     }`}>
-                {countdown > 0 ? `Gửi lại mã sau ${formatTime(countdown)}` : 'Gửi lại mã OTP'}
+                {countdown > 0 ? `${t('auth.resendOtpAfter')} ${formatTime(countdown)}` : t('auth.resendOtpBtn')}
             </button>
         </div>
     );
@@ -318,19 +320,19 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4">
                     <KeyRound className="text-secondary" size={32} />
                 </div>
-                <p className="text-text-muted text-sm text-center max-w-[320px]">Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu.</p>
+                <p className="text-text-muted text-sm text-center max-w-[320px]">{t('auth.forgotPasswordDesc')}</p>
             </div>
 
             <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
-                onChange={handleChange} placeholder="Nhập địa chỉ email" required />
+                onChange={handleChange} placeholder={t('auth.emailPlaceholder')} required />
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full">
-                Gửi mã xác thực
+                {t('auth.sendOtpBtn')}
             </Button>
 
             <button type="button" onClick={() => switchView('login')}
                 className="flex items-center justify-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors mt-1">
-                <ArrowLeft size={16} /> Quay lại đăng nhập
+                <ArrowLeft size={16} /> {t('auth.backToLogin')}
             </button>
         </form>
     );
@@ -341,29 +343,29 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center mb-4">
                 <KeyRound className="text-secondary" size={32} />
             </div>
-            <h3 className="text-lg font-semibold mb-1">Xác thực mã OTP</h3>
+            <h3 className="text-lg font-semibold mb-1">{t('auth.verifyOtpTitle')}</h3>
             <p className="text-text-muted text-sm text-center mb-1 max-w-[320px]">
-                Mã OTP đã được gửi đến <span className="font-medium text-text">{otpEmail}</span>
+                {t('auth.otpSentTo')} <span className="font-medium text-text">{otpEmail}</span>
             </p>
 
             {renderOtpInput()}
 
             {countdown > 0 && (
                 <p className="text-text-muted text-sm mb-4">
-                    Mã hết hạn sau <span className="font-mono font-semibold text-secondary">{formatTime(countdown)}</span>
+                    {t('auth.expireIn')} <span className="font-mono font-semibold text-secondary">{formatTime(countdown)}</span>
                 </p>
             )}
 
             <Button variant="primary" size="large" loading={isLoading} className="w-full"
                 onClick={handleVerifyOtp} disabled={otpDigits.join('').length !== 6}>
-                Xác thực
+                {t('auth.verifyBtn')}
             </Button>
 
             <button type="button" onClick={handleResendOtp}
                 disabled={countdown > 0 || isLoading}
                 className={`mt-4 text-sm transition-colors ${countdown > 0 ? 'text-text-muted cursor-not-allowed' : 'text-primary hover:text-primary-dark hover:underline'
                     }`}>
-                {countdown > 0 ? `Gửi lại mã sau ${formatTime(countdown)}` : 'Gửi lại mã OTP'}
+                {countdown > 0 ? `${t('auth.resendOtpAfter')} ${formatTime(countdown)}` : t('auth.resendOtpBtn')}
             </button>
         </div>
     );
@@ -375,16 +377,16 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 <div className="w-16 h-16 bg-success/10 rounded-2xl flex items-center justify-center mb-4">
                     <Lock className="text-success" size={32} />
                 </div>
-                <p className="text-text-muted text-sm text-center max-w-[320px]">Vui lòng nhập mật khẩu mới của bạn.</p>
+                <p className="text-text-muted text-sm text-center max-w-[320px]">{t('auth.resetPasswordDesc')}</p>
             </div>
 
             <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder="Mật khẩu mới" required minLength={8} />
+                onChange={handleChange} placeholder={t('auth.newPasswordPlaceholder')} required minLength={8} />
             <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder="Xác nhận mật khẩu mới" required minLength={8} />
+                onChange={handleChange} placeholder={t('auth.confirmNewPasswordPlaceholder')} required minLength={8} />
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full">
-                Đặt lại mật khẩu
+                {t('auth.resetPasswordBtn')}
             </Button>
         </form>
     );
@@ -398,12 +400,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     );
 
     const viewTitles = {
-        login: { title: 'Chào mừng trở lại', desc: 'Vui lòng đăng nhập để tiếp tục' },
-        register: { title: 'Tạo tài khoản mới', desc: 'Đăng ký để trải nghiệm kỳ nghỉ tuyệt vời' },
-        otp_verify: { title: 'Xác thực Email', desc: '' },
-        forgot_password: { title: 'Quên mật khẩu', desc: '' },
-        forgot_otp: { title: 'Xác thực mã OTP', desc: '' },
-        reset_password: { title: 'Đặt lại mật khẩu', desc: '' },
+        login: { title: t('auth.welcomeBack'), desc: t('auth.loginDesc') },
+        register: { title: t('auth.createAccount'), desc: t('auth.registerDesc') },
+        otp_verify: { title: t('auth.verifyEmailTitle'), desc: '' },
+        forgot_password: { title: t('auth.forgotPasswordText'), desc: '' },
+        forgot_otp: { title: t('auth.verifyOtpTitle'), desc: '' },
+        reset_password: { title: t('auth.resetPasswordBtn'), desc: '' },
     };
 
     const currentView = viewTitles[view] || viewTitles.login;

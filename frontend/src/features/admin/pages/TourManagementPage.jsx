@@ -106,7 +106,7 @@ const PriceInput = ({ control, name, rules, error, placeholder }) => (
 );
 
 // ═══ TAB: THÔNG TIN CHUNG ═══
-const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage, errors, control }) => {
+const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFiles, handleDeleteImage, errors, control, currentLang }) => {
     const categoryOptions = useMemo(() => categories.map(c => ({ label: c.name, value: String(c.id) })), [categories]);
     const statusOptions = [
         { label: 'Hoạt động', value: 'active' },
@@ -126,6 +126,18 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
 
     const removeFile = (indexToRemove) => {
         setFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
+    const getFieldName = (name) => {
+        if (currentLang === 'vi') return name;
+        if (currentLang === 'en') return `translations.0.${name}`;
+        return `translations.1.${name}`;
+    };
+
+    const getFieldError = (name) => {
+        if (currentLang === 'vi') return errors[name];
+        if (currentLang === 'en') return errors?.translations?.[0]?.[name];
+        return errors?.translations?.[1]?.[name];
     };
 
     return (
@@ -170,25 +182,25 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
 
             {/* Title */}
             <div>
-                <label className="text-sm font-medium text-text mb-1 block">Tên tour *</label>
+                <label className="text-sm font-medium text-text mb-1 block">Tên tour ({currentLang.toUpperCase()}) *</label>
                 <input
-                    {...register('title', { required: 'Tên tour không được để trống' })}
-                    className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.title ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                    {...register(getFieldName('title'), { required: 'Tên tour không được để trống' })}
+                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
                     placeholder="Nhập tên tour..."
                 />
-                {errors.title && <p className="text-error text-xs mt-1 font-medium">{errors.title.message}</p>}
+                {getFieldError('title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('title').message}</p>}
             </div>
 
             {/* Summary */}
             <div>
-                <label className="text-sm font-medium text-text mb-1 block">Tóm tắt *</label>
+                <label className="text-sm font-medium text-text mb-1 block">Tóm tắt ({currentLang.toUpperCase()}) *</label>
                 <textarea
-                    {...register('summary', { required: 'Tóm tắt không được để trống' })}
+                    {...register(getFieldName('summary'), { required: 'Tóm tắt không được để trống' })}
                     rows={2}
-                    className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.summary ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
+                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('summary') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                     placeholder="Mô tả ngắn gọn về tour..."
                 />
-                {errors.summary && <p className="text-error text-xs mt-1 font-medium">{errors.summary.message}</p>}
+                {getFieldError('summary') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('summary').message}</p>}
             </div>
 
             {/* Duration */}
@@ -234,59 +246,59 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
             <div className="space-y-6 pt-2">
                 <div>
                     <label className="text-sm font-medium text-text mb-1 block">
-                        Điểm nổi bật *
+                        Điểm nổi bật ({currentLang.toUpperCase()}) *
                     </label>
                     <textarea
-                        {...register('highlights', { required: 'Vui lòng nhập điểm nổi bật' })}
+                        {...register(getFieldName('highlights'), { required: 'Vui lòng nhập điểm nổi bật' })}
                         rows={4}
-                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.highlights ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
+                        className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('highlights') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                         placeholder="Nhập các điểm nổi bật... (Lưu ý: Viết thành đoạn văn, mỗi điểm nổi bật kết thúc bằng 1 dấu chấm)"
                     />
-                    {errors.highlights && <p className="text-error text-xs mt-1 font-medium">{errors.highlights.message}</p>}
+                    {getFieldError('highlights') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('highlights').message}</p>}
                 </div>
 
                 <div>
                     <RichTextEditor
-                        value={watch('price_includes')}
-                        onChange={val => setValue('price_includes', val, { shouldValidate: true })}
-                        label="Giá tour bao gồm *"
+                        value={watch(getFieldName('price_includes'))}
+                        onChange={val => setValue(getFieldName('price_includes'), val, { shouldValidate: true })}
+                        label={`Giá tour bao gồm (${currentLang.toUpperCase()}) *`}
                         placeholder="Vé tham quan, khách sạn, xe đưa đón..."
-                        error={errors.price_includes?.message}
+                        error={getFieldError('price_includes')?.message}
                     />
-                    <input type="hidden" {...register('price_includes', { required: 'Vui lòng nhập thông tin giá bao gồm' })} />
+                    <input type="hidden" {...register(getFieldName('price_includes'), { required: 'Vui lòng nhập thông tin giá bao gồm' })} />
                 </div>
 
                 <div>
                     <RichTextEditor
-                        value={watch('price_excludes')}
-                        onChange={val => setValue('price_excludes', val, { shouldValidate: true })}
-                        label="Giá tour không bao gồm *"
+                        value={watch(getFieldName('price_excludes'))}
+                        onChange={val => setValue(getFieldName('price_excludes'), val, { shouldValidate: true })}
+                        label={`Giá tour không bao gồm (${currentLang.toUpperCase()}) *`}
                         placeholder="Chi phí cá nhân, tip HDV..."
-                        error={errors.price_excludes?.message}
+                        error={getFieldError('price_excludes')?.message}
                     />
-                    <input type="hidden" {...register('price_excludes', { required: 'Vui lòng nhập thông tin giá không bao gồm' })} />
+                    <input type="hidden" {...register(getFieldName('price_excludes'), { required: 'Vui lòng nhập thông tin giá không bao gồm' })} />
                 </div>
 
                 <div>
                     <RichTextEditor
-                        value={watch('terms_and_notes')}
-                        onChange={val => setValue('terms_and_notes', val, { shouldValidate: true })}
-                        label="Điều khoản và lưu ý *"
+                        value={watch(getFieldName('terms_and_notes'))}
+                        onChange={val => setValue(getFieldName('terms_and_notes'), val, { shouldValidate: true })}
+                        label={`Điều khoản và lưu ý (${currentLang.toUpperCase()}) *`}
                         placeholder="Quy định, lưu ý quan trọng..."
-                        error={errors.terms_and_notes?.message}
+                        error={getFieldError('terms_and_notes')?.message}
                     />
-                    <input type="hidden" {...register('terms_and_notes', { required: 'Vui lòng nhập điều khoản' })} />
+                    <input type="hidden" {...register(getFieldName('terms_and_notes'), { required: 'Vui lòng nhập điều khoản' })} />
                 </div>
 
                 <div>
                     <RichTextEditor
-                        value={watch('cancellation_policy')}
-                        onChange={val => setValue('cancellation_policy', val, { shouldValidate: true })}
-                        label="Quy định hoàn hủy *"
+                        value={watch(getFieldName('cancellation_policy'))}
+                        onChange={val => setValue(getFieldName('cancellation_policy'), val, { shouldValidate: true })}
+                        label={`Quy định hoàn hủy (${currentLang.toUpperCase()}) *`}
                         placeholder="Chính sách hoàn hủy tour..."
-                        error={errors.cancellation_policy?.message}
+                        error={getFieldError('cancellation_policy')?.message}
                     />
-                    <input type="hidden" {...register('cancellation_policy', { required: 'Vui lòng nhập chính sách hoàn hủy' })} />
+                    <input type="hidden" {...register(getFieldName('cancellation_policy'), { required: 'Vui lòng nhập chính sách hoàn hủy' })} />
                 </div>
             </div>
 
@@ -362,17 +374,37 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
 };
 
 // ═══ TAB: LỊCH TRÌNH ═══
-const ItinerariesTab = ({ control, register, watch, setValue, errors }) => {
+const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLang }) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'itineraries' });
+
+    const getFieldName = (index, name) => {
+        if (currentLang === 'vi') return `itineraries.${index}.${name}`;
+        if (currentLang === 'en') return `itineraries.${index}.translations.0.${name}`;
+        return `itineraries.${index}.translations.1.${name}`;
+    };
+
+    const getFieldError = (index, name) => {
+        if (currentLang === 'vi') return errors.itineraries?.[index]?.[name];
+        if (currentLang === 'en') return errors.itineraries?.[index]?.translations?.[0]?.[name];
+        return errors.itineraries?.[index]?.translations?.[1]?.[name];
+    };
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-text">Lịch trình từng ngày *</h4>
+                <h4 className="text-sm font-bold text-text">Lịch trình từng ngày ({currentLang.toUpperCase()}) *</h4>
                 <button
                     type="button"
                     onClick={() => {
-                        append({ day_number: fields.length + 1, title: '', content: '' });
+                        append({ 
+                            day_number: fields.length + 1, 
+                            title: '', 
+                            content: '',
+                            translations: [
+                                { language: 'en', title: '', content: '' },
+                                { language: 'zh', title: '', content: '' }
+                            ]
+                        });
                         setTimeout(() => {
                             const elements = document.querySelectorAll('.itinerary-day-card');
                             if (elements.length > 0) {
@@ -410,24 +442,24 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors }) => {
                     </div>
                     <input type="hidden" {...register(`itineraries.${index}.day_number`)} value={index + 1} />
                     <div>
-                        <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày *</label>
+                        <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày ({currentLang.toUpperCase()}) *</label>
                         <input
-                            {...register(`itineraries.${index}.title`, { required: 'Nhập tiêu đề ngày' })}
-                            className={`w-full px-3 py-2 bg-surface border ${errors.itineraries?.[index]?.title ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                            {...register(getFieldName(index, 'title'), { required: 'Nhập tiêu đề ngày' })}
+                            className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
                             placeholder="VD: Đón khách - Tham quan phố cổ"
                         />
-                        {errors.itineraries?.[index]?.title && <p className="text-error text-xs mt-1 font-medium">{errors.itineraries[index].title.message}</p>}
+                        {getFieldError(index, 'title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError(index, 'title').message}</p>}
                     </div>
                     
                     <div>
                         <RichTextEditor
-                            value={watch(`itineraries.${index}.content`)}
-                            onChange={val => setValue(`itineraries.${index}.content`, val, { shouldValidate: true })}
-                            label="Chi tiết hoạt động *"
+                            value={watch(getFieldName(index, 'content'))}
+                            onChange={val => setValue(getFieldName(index, 'content'), val, { shouldValidate: true })}
+                            label={`Chi tiết hoạt động (${currentLang.toUpperCase()}) *`}
                             placeholder="Mô tả chi tiết các hoạt động trong ngày..."
-                            error={errors.itineraries?.[index]?.content?.message}
+                            error={getFieldError(index, 'content')?.message}
                         />
-                        <input type="hidden" {...register(`itineraries.${index}.content`, { required: 'Nhập nội dung hoạt động' })} />
+                        <input type="hidden" {...register(getFieldName(index, 'content'), { required: 'Nhập nội dung hoạt động' })} />
                     </div>
                 </div>
             ))}
@@ -683,7 +715,9 @@ const TourManagementPage = () => {
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState({ open: false, tour: null });
     const [submitting, setSubmitting] = useState(false);
+    const [translating, setTranslating] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
+    const [currentLang, setCurrentLang] = useState('vi'); // Language Switcher State
     const [files, setFiles] = useState([]);
 
     // Pagination states
@@ -701,6 +735,10 @@ const TourManagementPage = () => {
         departures: [],
         pickup_locations: [],
         options: [],
+        translations: [
+            { language: 'en', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' },
+            { language: 'zh', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' }
+        ]
     };
 
     const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm({ defaultValues });
@@ -744,6 +782,7 @@ const TourManagementPage = () => {
         reset(defaultValues);
         setFiles([]);
         setActiveTab('general');
+        setCurrentLang('vi');
         setModal({ open: true, tour: null });
     };
 
@@ -770,6 +809,13 @@ const TourManagementPage = () => {
                     day_number: it.day_number,
                     title: it.title,
                     content: it.content,
+                    translations: [
+                        { language: 'en', title: '', content: '' },
+                        { language: 'zh', title: '', content: '' }
+                    ].map(defaultTr => {
+                        const found = it.translations?.find(t => t.language === defaultTr.language);
+                        return found || defaultTr;
+                    })
                 })),
                 departures: (detail.departures || []).map(d => ({
                     departure_date: d.departure_date,
@@ -789,10 +835,18 @@ const TourManagementPage = () => {
                     price: o.price || 0,
                     charge_type: o.charge_type || 'quantity',
                 })),
+                translations: [
+                    { language: 'en', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' },
+                    { language: 'zh', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' }
+                ].map(defaultTr => {
+                    const found = detail.translations?.find(t => t.language === defaultTr.language);
+                    return found || defaultTr;
+                })
             });
 
             setFiles([]);
             setActiveTab('general');
+            setCurrentLang('vi');
             setModal({ open: true, tour: detail });
         } catch (err) {
             toast.error('Lỗi tải chi tiết tour');
@@ -861,11 +915,80 @@ const TourManagementPage = () => {
             setModal({ open: false, tour: null });
             await fetchData();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Lỗi lưu tour');
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
         } finally {
             setSubmitting(false);
         }
     };
+
+    const handleTranslate = async () => {
+        if (currentLang === 'vi') {
+            toast.info('Vui lòng chọn ngôn ngữ đích (EN hoặc ZH) để dịch');
+            return;
+        }
+
+        const targetLang = currentLang;
+        const langIndex = targetLang === 'en' ? 0 : 1;
+        let viData = {};
+
+        if (activeTab === 'general') {
+            viData = {
+                title: watch('title'),
+                summary: watch('summary'),
+                highlights: watch('highlights'),
+                price_includes: watch('price_includes'),
+                price_excludes: watch('price_excludes'),
+                terms_and_notes: watch('terms_and_notes'),
+                cancellation_policy: watch('cancellation_policy'),
+            };
+        } else if (activeTab === 'itineraries') {
+            const itineraries = watch('itineraries') || [];
+            if (itineraries.length === 0) return toast.warning('Chưa có lịch trình nào để dịch');
+            itineraries.forEach((iti, index) => {
+                viData[`iti_${index}_title`] = iti.title;
+                viData[`iti_${index}_content`] = iti.content;
+            });
+        }
+
+        if (Object.values(viData).every(v => !v)) {
+            toast.warning('Chưa có nội dung Tiếng Việt để dịch');
+            return;
+        }
+
+        try {
+            setTranslating(true);
+            const toastId = toast.loading(`Đang dịch sang ${targetLang.toUpperCase()}...`);
+            const res = await adminService.translateContent({
+                texts: viData,
+                targetLang
+            });
+            const translated = res.data.data;
+            
+            if (activeTab === 'general') {
+                Object.keys(translated).forEach(key => {
+                    setValue(`translations.${langIndex}.${key}`, translated[key], { shouldValidate: true });
+                });
+            } else if (activeTab === 'itineraries') {
+                Object.keys(translated).forEach(key => {
+                    // key format: iti_0_title
+                    const parts = key.split('_');
+                    if (parts.length === 3) {
+                        const index = parts[1];
+                        const field = parts[2];
+                        setValue(`itineraries.${index}.translations.${langIndex}.${field}`, translated[key], { shouldValidate: true });
+                    }
+                });
+            }
+
+            toast.success('Dịch tự động thành công!', { id: toastId });
+        } catch (error) {
+            toast.error('Lỗi dịch tự động');
+        } finally {
+            setTranslating(false);
+        }
+    };
+
 
     const performDelete = async (id) => {
         try {
@@ -1133,6 +1256,41 @@ const TourManagementPage = () => {
                             })}
                         </div>
 
+                        {/* Language Switcher & AI Translation */}
+                        {['general', 'itineraries'].includes(activeTab) && (
+                            <div className="px-6 py-3 bg-surface-alt/50 border-b border-border flex items-center justify-between shadow-sm z-10 relative">
+                                <div className="flex gap-2">
+                                    {[
+                                        { id: 'vi', label: 'Tiếng Việt (Mặc định)' },
+                                        { id: 'en', label: 'English (EN)' },
+                                        { id: 'zh', label: '中文 (ZH)' }
+                                    ].map(lang => (
+                                        <button
+                                            key={lang.id}
+                                            type="button"
+                                            onClick={() => setCurrentLang(lang.id)}
+                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                currentLang === lang.id
+                                                    ? 'bg-primary text-white shadow-md'
+                                                    : 'bg-surface border border-border text-text-secondary hover:bg-surface-hover hover:text-text'
+                                            }`}
+                                        >
+                                            {lang.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onClick={handleTranslate}
+                                    disabled={translating}
+                                    className="flex items-center gap-1.5 text-xs font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                    <span className={`text-sm ${translating ? 'animate-spin' : ''}`}>🤖</span> 
+                                    {translating ? 'Đang dịch...' : 'Dịch tự động (Google)'}
+                                </button>
+                            </div>
+                        )}
+
                         {/* Tab Content */}
                         <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 overflow-hidden relative">
                             <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-surface-alt/30">
@@ -1152,10 +1310,11 @@ const TourManagementPage = () => {
                                             handleDeleteImage={handleDeleteImage}
                                             errors={errors}
                                             control={control}
+                                            currentLang={currentLang}
                                         />
                                     )}
                                     {activeTab === 'itineraries' && (
-                                        <ItinerariesTab control={control} register={register} watch={watch} setValue={setValue} errors={errors} />
+                                        <ItinerariesTab control={control} register={register} watch={watch} setValue={setValue} errors={errors} currentLang={currentLang} />
                                     )}
                                     {activeTab === 'departures' && (
                                         <DeparturesTab control={control} register={register} errors={errors} />

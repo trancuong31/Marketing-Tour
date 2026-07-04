@@ -1,0 +1,21 @@
+{
+    "myAccount": "Tài khoản của tôi",
+    "personalInfo": "Thông tin cá nhân",
+    "uploadAvatar": "Tải ảnh đại diện",
+    "fullName": "Họ và tên",
+    "emailReadOnly": "Email (Không thể thay đổi)",
+    "phoneNumber": "Số điện thoại",
+    "saveChanges": "Lưu thay đổi",
+    "changePassword": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "updatePassword": "Cập nhật mật khẩu",
+    "profileUpdateSuccess": "Cập nhật hồ sơ thành công!",
+    "profileUpdateFail": "Cập nhật thất bại",
+    "passwordChangeSuccess": "Đổi mật khẩu thành công!",
+    "passwordChangeFail": "Đổi mật khẩu thất bại",
+    "invalidPhone": "Số điện thoại không hợp lệ (10-11 số)",
+    "passwordRequirements": "Mật khẩu mới phải từ 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp"
+}

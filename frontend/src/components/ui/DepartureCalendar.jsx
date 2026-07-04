@@ -1,9 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import { CalendarDays, X, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const MONTH_NAMES = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-const DAY_HEADERS = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
+import { useTranslation } from 'react-i18next';
 
 const formatShortPrice = (price) => {
     const m = price / 1000000;
@@ -11,10 +9,15 @@ const formatShortPrice = (price) => {
 };
 
 const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMap = {}, className = '' }) => {
+    const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isDropdownAbove, setIsDropdownAbove] = useState(false);
     const [displayMonth, setDisplayMonth] = useState(() => new Date());
     const ref = useRef(null);
+
+    const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'zh' ? 'zh-CN' : 'vi-VN';
+    const monthNames = useMemo(() => Array.from({length: 12}, (_, i) => new Date(2000, i, 1).toLocaleString(locale, { month: 'long' })), [locale]);
+    const dayHeaders = useMemo(() => Array.from({length: 7}, (_, i) => new Date(2000, 0, 3 + i).toLocaleString(locale, { weekday: 'short' })), [locale]);
 
     // Measure space to decide dropdown direction
     useEffect(() => {
@@ -96,8 +99,8 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                 <div className="flex items-center gap-3 truncate">
                     <span className={`truncate text-sm text-left font-medium ${value ? 'text-text' : 'text-text-muted'}`}>
                         {value 
-                            ? new Date(value + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) 
-                            : 'Chọn ngày khởi hành...'}
+                            ? new Date(value + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+                            : t('home.search.selectDeparture', 'Chọn ngày khởi hành...')}
                     </span>
                 </div>
                 
@@ -125,15 +128,15 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                         <button type="button" onClick={() => setDisplayMonth(new Date(year, month - 1, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="font-bold text-base text-slate-800">{MONTH_NAMES[month]} {year}</span>
+                        <span className="font-bold text-base text-slate-800 capitalize">{monthNames[month]} {year}</span>
                         <button type="button" onClick={() => setDisplayMonth(new Date(year, month + 1, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
 
                     <div className="grid grid-cols-7 mb-2">
-                        {DAY_HEADERS.map(d => (
-                            <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+                        {dayHeaders.map(d => (
+                            <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1 capitalize">{d}</div>
                         ))}
                     </div>
 

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { tourService, bannerService } from '@/services/tourService';
-import { getImageUrl } from '@/utils/imageUrl';
+import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
 import SearchBar from '@/components/ui/SearchBar';
@@ -15,6 +16,8 @@ const HomePage = () => {
     const [heroBanners, setHeroBanners] = useState([]);
     const [heroIndex, setHeroIndex] = useState(0);
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -38,7 +41,7 @@ const HomePage = () => {
             }
         };
         fetchData();
-    }, []);
+    }, [i18n.language]);
 
     // Hero slideshow auto-play
     useEffect(() => {
@@ -95,9 +98,9 @@ const HomePage = () => {
         <ClientLayout>
             {/* ═══ HERO BANNER ═══ */}
             <section className="relative py-12 sm:py-20 px-4 min-h-[400px] lg:min-h-[500px] flex items-center justify-center group/hero z-30">
-                
+
                 {/* 1. Background (Clickable) */}
-                <div 
+                <div
                     className="absolute inset-0 cursor-pointer z-0 overflow-hidden bg-black"
                     onClick={() => heroBanners.length > 0 && handleBannerClick(heroBanners[heroIndex])}
                 >
@@ -108,11 +111,11 @@ const HomePage = () => {
                                     key={banner.id}
                                     src={getImageUrl(banner.image_url)}
                                     alt={banner.title}
-                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[1500ms] ease-in-out transform-gpu will-change-[opacity,transform] ${
-                                        idx === heroIndex 
-                                            ? 'opacity-100 z-10 animate-ken-burns' 
+                                    className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[1500ms] ease-in-out transform-gpu will-change-[opacity,transform] ${idx === heroIndex
+                                            ? 'opacity-100 z-10 animate-ken-burns'
                                             : 'opacity-0 z-0'
-                                    }`}
+                                        }`}
+                                    onError={onImgError('banner')}
                                 />
                             ))}
                         </>
@@ -122,38 +125,38 @@ const HomePage = () => {
                 </div>
                 {/* Cấu trúc Content linh hoạt */}
                 <div className="relative z-10 w-full max-w-[1400px] 2xl:max-w-[1800px] mx-auto pointer-events-none flex flex-col gap-6 xl:gap-8 px-2 sm:px-6 mt-4 mb-6">
-                    
+
                     {/* HÀNG TRÊN: Cột Trái (Slogan) & Cột Phải (Banner Info) */}
                     <div className="flex flex-col xl:flex-row items-center justify-between gap-8 xl:gap-10 w-full">
                         {/* Cột Trái: Slogan */}
                         <div className="text-center xl:text-left w-full max-w-3xl xl:max-w-4xl mx-auto xl:mx-0 flex-1">
                             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 border border-white/20 rounded-full text-xs sm:text-sm font-medium mb-4 text-white drop-shadow-md">
                                 <Compass className="w-4 h-4" />
-                                Khám phá thế giới cùng chúng tôi
+                                {t('home.sloganTag')}
                             </div>
 
                             {/* Title cố định */}
                             <div className="max-w-2xl mx-auto xl:mx-0">
-                                <h1 
+                                <h1
                                     className="text-3xl sm:text-5xl lg:text-6xl font-extrabold leading-tight mb-3 text-white drop-shadow-lg tracking-tight animate-fade-in-up"
                                 >
-                                    Hành trình đáng nhớ
+                                    {t('home.heroTitle1')}
                                     <br />
                                     <span className="bg-gradient-to-r from-secondary to-yellow-300 bg-clip-text text-transparent drop-shadow-md">
-                                        bắt đầu từ đây
+                                        {t('home.heroTitle2')}
                                     </span>
                                 </h1>
-                                <p 
+                                <p
                                     className="text-base sm:text-lg text-white/90 mb-4 drop-shadow-md font-medium max-w-xl mx-auto xl:mx-0 animate-fade-in-up delay-100"
                                 >
-                                    Tour du lịch nội địa và quốc tế chất lượng cao với giá tốt nhất trên thị trường.
+                                    {t('home.heroDesc')}
                                 </p>
                             </div>
                         </div>
 
                         {/* Cột Phải: Banner Info */}
                         {heroBanners.length > 0 && (
-                            <div 
+                            <div
                                 key={`banner-card-${heroIndex}`}
                                 className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm shrink-0 animate-fade-in-right"
                                 onClick={(e) => {
@@ -163,10 +166,10 @@ const HomePage = () => {
                             >
                                 <div className="p-5 rounded-3xl shadow-2xl transition-all duration-500 bg-white/10 border border-white/10 hover:bg-white/20 hover:scale-[1.02]">
                                     <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-2 flex flex-col gap-1">
-                                        <span className="text-xs normal-case font-medium text-white/60">Giá tour trọn gói chỉ từ</span> 
+                                        <span className="text-xs normal-case font-medium text-white/60">{t('home.priceFrom')}</span>
                                         <span className="text-4xl font-extrabold text-secondary drop-shadow-xl leading-none">
-                                            {formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)} 
-                                            <span className="text-base font-medium text-white/50 ml-1">/ Khách</span>
+                                            {formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)}
+                                            <span className="text-base font-medium text-white/50 ml-1">{t('home.perGuest')}</span>
                                         </span>
                                     </div>
                                     <div className="flex items-end gap-4 justify-between mt-6">
@@ -191,10 +194,10 @@ const HomePage = () => {
                 {/* 4. Sleek Slideshow Controls (Senior Style) */}
                 {heroBanners.length > 1 && (
                     <div className="absolute bottom-8 right-8 z-40 pointer-events-auto animate-fade-in flex flex-col items-end gap-5">
-                        
+
                         {/* 1. Next Up Preview */}
                         <div className="flex flex-col items-end opacity-0 group-hover/hero:opacity-100 transition-all duration-500 translate-y-2 group-hover/hero:translate-y-0">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-1">Khám phá tiếp</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-1">{t('home.exploreNext')}</span>
                             <span className="text-sm font-medium text-white/90 truncate max-w-[240px] drop-shadow-md">
                                 {heroBanners[(heroIndex + 1) % heroBanners.length].title}
                             </span>
@@ -231,10 +234,10 @@ const HomePage = () => {
                                 <ChevronRight className="w-5 h-5 transition-transform" />
                             </button>
                         </div>
-                        
+
                         {/* 3. Visual Progress Bar */}
                         <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden relative">
-                            <div 
+                            <div
                                 key={heroIndex}
                                 className="absolute left-0 top-0 h-full bg-secondary animate-slide-progress"
                             />
@@ -247,15 +250,15 @@ const HomePage = () => {
             <div className="w-full flex flex-col">
 
                 {/* ═══ PHẦN 1: TOUR NỔI BẬT ═══ */}
-                <div className="w-full py-12 bg-[#FFF3E0]"> 
+                <div className="w-full py-12 bg-[#FFF3E0]">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-6 w-full">
                         <div className="flex-1 min-w-0">
                             <section>
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3">
                                         <div>
-                                            <h2 className="text-3xl font-bold text-text">Tour Nổi Bật</h2>
-                                            <p className="text-sm text-text-muted">Những hành trình được yêu thích nhất</p>
+                                            <h2 className="text-3xl font-bold text-text">{t('home.featuredTours')}</h2>
+                                            <p className="text-sm text-text-muted">{t('home.featuredDesc')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -271,16 +274,16 @@ const HomePage = () => {
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-center text-text-muted py-8">Chưa có tour nổi bật nào</p>
+                                    <p className="text-center text-text-muted py-8">{t('home.noFeaturedTours')}</p>
                                 )}
-                                
+
                                 {featured.length >= 6 && (
                                     <div className="flex justify-center mt-8">
                                         <Link
                                             to="/tours?tour_badge=featured"
                                             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white border border-primary font-bold rounded-xl transition shadow-lg"
                                         >
-                                            Xem thêm
+                                            {t('home.viewMore')}
                                             <ChevronRight className="w-4 h-4" />
                                         </Link>
                                     </div>
@@ -293,24 +296,24 @@ const HomePage = () => {
 
                 {/* ═══ PHẦN 2: TOUR SALE ═══ */}
                 {(loading || onSale.length >= 0) && (
-                    <div className="w-full py-12 bg-[#EBF0F2] rounded-t-3xl"> 
+                    <div className="w-full py-12 bg-[#EBF0F2] rounded-t-3xl">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-6 w-full">
                             <div className="flex-1 min-w-0">
                                 <section>
                                     <div className="flex items-center justify-between mb-8">
                                         <div className="flex items-center gap-3">
                                             <div>
-                                                <h2 className="text-3xl font-bold text-text">Tour Ưu Đãi Tốt Nhất Hôm Nay</h2>
-                                                <p className="text-sm text-text-muted">Tour giảm giá đặc biệt, số lượng có hạn</p>
+                                                <h2 className="text-3xl font-bold text-text">{t('home.saleTours')}</h2>
+                                                <p className="text-sm text-text-muted">{t('home.saleDesc')}</p>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     {/* Logic hiển thị khi mảng rỗng */}
                                     {onSale.length === 0 && !loading && (
-                                        <p className="text-center text-text-muted py-8">Chưa có tour ưu đãi nào</p>
+                                        <p className="text-center text-text-muted py-8">{t('home.noSaleTours')}</p>
                                     )}
-                                    
+
                                     {loading ? (
                                         <SkeletonGrid />
                                     ) : onSale.length > 0 && (
@@ -322,14 +325,14 @@ const HomePage = () => {
                                             ))}
                                         </div>
                                     )}
-                                    
+
                                     {onSale.length >= 6 && (
                                         <div className="flex justify-center mt-8">
                                             <Link
                                                 to="/tours?tour_badge=promotion"
                                                 className="inline-flex items-center gap-2 px-6 py-3 text-white border border-primary font-bold rounded-xl transition shadow-lg"
                                             >
-                                                Xem thêm
+                                                {t('home.viewMore')}
                                                 <ChevronRight className="w-4 h-4" />
                                             </Link>
                                         </div>
@@ -352,10 +355,10 @@ const HomePage = () => {
                         id="browse-type-heading"
                         className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight"
                     >
-                        Khám Phá Hành Trình Của Bạn
+                        {t('home.browseTypeHeading')}
                     </h2>
                     <p className="text-gray-500 max-w-2xl mx-auto text-base sm:text-lg">
-                        Lựa chọn điểm đến lý tưởng cho kỳ nghỉ sắp tới với các tour du lịch đa dạng, chất lượng cao từ trong nước đến quốc tế.
+                        {t('home.browseTypeDesc')}
                     </p>
                 </div>
 
@@ -366,10 +369,10 @@ const HomePage = () => {
                         className="group relative overflow-hidden rounded-3xl p-8 sm:p-10 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between text-white shadow-lg hover:shadow-2xl transition-all duration-300"
                         aria-label="Xem tất cả Tour Nội Địa"
                     >
-                        <img 
-                            src={banahill} 
-                            alt="Tour Nội Địa" 
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
+                        <img
+                            src={banahill}
+                            alt="Tour Nội Địa"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]"
                         />
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
@@ -377,14 +380,14 @@ const HomePage = () => {
                             <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <MapPin className="w-7 h-7 text-white" strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Tour Nội Địa</h3>
+                            <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">{t('home.domesticTour')}</h3>
                             <p className="text-white/80 text-base sm:text-lg max-w-md line-clamp-2">
-                                Khám phá vẻ đẹp bất tận của Việt Nam từ miền non nước hữu tình đến những bãi biển thơ mộng.
+                                {t('home.domesticDesc')}
                             </p>
                         </div>
                         <div className="relative z-10 mt-8">
                             <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold bg-white text-[#0068FF] px-6 py-3 rounded-full group-hover:bg-gray-50 transition-colors w-fit shadow-md">
-                                Xem danh sách <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                {t('home.viewList')} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </span>
                         </div>
                     </Link>
@@ -395,10 +398,10 @@ const HomePage = () => {
                         className="group relative overflow-hidden rounded-3xl  p-8 sm:p-10 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between text-white shadow-lg hover:shadow-2xl transition-all duration-300"
                         aria-label="Xem tất cả Tour Quốc Tế"
                     >
-                        <img 
-                            src={tokyo} 
-                            alt="Tour Quốc Tế" 
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]" 
+                        <img
+                            src={tokyo}
+                            alt="Tour Quốc Tế"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 transform-gpu will-change-transform group-hover:scale-110 brightness-[0.5] group-hover:brightness-[0.3]"
                         />
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-white/20 transition-colors duration-500" />
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
@@ -406,14 +409,14 @@ const HomePage = () => {
                             <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <Globe2 className="w-7 h-7 text-white" strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">Tour Quốc Tế</h3>
+                            <h3 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">{t('home.internationalTour')}</h3>
                             <p className="text-white/80 text-base sm:text-lg max-w-md line-clamp-2">
-                                Trải nghiệm văn hóa đa dạng, thưởng thức ẩm thực độc đáo và chinh phục những vùng đất mới khắp thế giới.
+                                {t('home.internationalDesc')}
                             </p>
                         </div>
                         <div className="relative z-10 mt-8">
                             <span className="inline-flex items-center gap-2 text-sm sm:text-base font-bold bg-white text-teal-700 px-6 py-3 rounded-full group-hover:bg-gray-50 transition-colors w-fit shadow-md">
-                                Xem danh sách <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                {t('home.viewList')} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             </span>
                         </div>
                     </Link>

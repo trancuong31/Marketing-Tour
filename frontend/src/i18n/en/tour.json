@@ -1,0 +1,62 @@
+{
+    "list": {
+        "domesticLabel": "Domestic Tours",
+        "domesticDesc": "Discover the beauty of Vietnam from North to South",
+        "internationalLabel": "International Tours",
+        "internationalDesc": "Experience diverse cultures around the world",
+        "allLabel": "Search Results",
+        "allDesc": "Discover the best journeys for you",
+        "filterTitle": "Search Filters",
+        "clearAll": "Clear all",
+        "filterDepartureDate": "Departure Date",
+        "filterType": "Tour Type",
+        "filterBudget": "Budget",
+        "filterDeparturePoint": "Departure Point",
+        "filterDestination": "Destination",
+        "filterSort": "Sort by",
+        "apply": "Apply",
+        "filterBtn": "Filters",
+        "showingResults": "Showing {{count}} / {{total}} tours",
+        "noResults": "No tours found",
+        "changeFilter": "Try changing the filters to see more results",
+        "clearFilterBtn": "Clear filters"
+    },
+    "filter": {
+        "all": "All",
+        "budgetUnder5M": "Under 5 million",
+        "budget5To10M": "5 - 10 million",
+        "budget10To20M": "10 - 20 million",
+        "budgetOver20M": "Over 20 million",
+        "badgeFeatured": "Featured tours",
+        "badgePromotion": "Promotional tours"
+    },
+    "sort": {
+        "default": "Default",
+        "priceAsc": "Price: Low to High",
+        "priceDesc": "Price: High to Low",
+        "dateAsc": "Earliest Departure"
+    },
+    "detail": {
+        "itinerary": "Detailed Itinerary",
+        "customerExperience": "Customer Experiences",
+        "customerExperienceDesc": "Authentic shares from customers across the system",
+        "customer": "Customer",
+        "suggested": "Suggested",
+        "notFoundDesc": "This tour may have been discontinued or does not exist.",
+        "perPerson": "/person",
+        "photos": "Photos",
+        "highlights": "Highlights",
+        "priceIncludes": "Price Includes",
+        "priceExcludes": "Price Excludes",
+        "termsNotes": "Terms & Notes",
+        "cancellationPolicy": "Cancellation Policy"
+    },
+    "card": {
+        "durationDaysNights": "{{days}} Days {{nights}} Nights",
+        "durationDays": "{{days}} Days",
+        "from": "From",
+        "promotion": "Promotion",
+        "featured": "Featured",
+        "contact": "Contact"
+    }
+}

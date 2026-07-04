@@ -1,0 +1,21 @@
+{
+    "myAccount": "我的账户",
+    "personalInfo": "个人信息",
+    "uploadAvatar": "上传头像",
+    "fullName": "姓名",
+    "emailReadOnly": "邮箱（不可修改）",
+    "phoneNumber": "电话号码",
+    "saveChanges": "保存更改",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码",
+    "updatePassword": "更新密码",
+    "profileUpdateSuccess": "个人资料更新成功！",
+    "profileUpdateFail": "更新失败",
+    "passwordChangeSuccess": "密码修改成功！",
+    "passwordChangeFail": "密码修改失败",
+    "invalidPhone": "电话号码无效（10-11位数字）",
+    "passwordRequirements": "新密码至少8个字符，包含至少1个大写字母、1个小写字母、1个数字和1个特殊字符",
+    "passwordMismatch": "两次密码不一致"
+}

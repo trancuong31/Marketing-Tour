@@ -2,6 +2,7 @@ const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
 const uploadBanner = require('../middlewares/uploadBanner');
+const { translateContent } = require('../controllers/translateController');
 const {
     login,
     getAllTours,
@@ -36,6 +37,9 @@ router.post('/login', login);
 
 // ── Bảo vệ tất cả routes bên dưới bằng JWT ──
 router.use(authenticate);
+
+// ── Translation ──
+router.post('/translate', translateContent);
 
 // ── Tour CRUD ──
 router.get('/tours', getAllTours);

@@ -1,0 +1,21 @@
+{
+    "myAccount": "My Account",
+    "personalInfo": "Personal Information",
+    "uploadAvatar": "Upload Avatar",
+    "fullName": "Full Name",
+    "emailReadOnly": "Email (Read-only)",
+    "phoneNumber": "Phone Number",
+    "saveChanges": "Save Changes",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "updatePassword": "Update Password",
+    "profileUpdateSuccess": "Profile updated successfully!",
+    "profileUpdateFail": "Update failed",
+    "passwordChangeSuccess": "Password changed successfully!",
+    "passwordChangeFail": "Password change failed",
+    "invalidPhone": "Invalid phone number (10-11 digits)",
+    "passwordRequirements": "New password must be at least 8 characters, including 1 uppercase, 1 lowercase, 1 number, and 1 special character",
+    "passwordMismatch": "Passwords do not match"
+}

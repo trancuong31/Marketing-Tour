@@ -5,13 +5,14 @@ import { Search, Phone, Mail, Loader2, Calendar, Users, MapPin, ReceiptText, Fil
 import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
-const getStatusStyle = (status) => {
+const getStatusStyle = (status, t) => {
     switch (status) {
-        case 'pending': return { bg: '#FEF9C3', text: '#92400E', border: '#FDE68A', icon: '⏳', label: 'Đang xử lý' };
+        case 'pending': return { bg: '#FEF9C3', text: '#92400E', border: '#FDE68A', icon: '⏳', label: t('lookup.statusPending') };
         case 'completed':
-        case 'approved': return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋', label: 'Hoàn thành' };
-        case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', icon: '❌', label: 'Đã hủy' };
+        case 'approved': return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋', label: t('lookup.statusCompleted') };
+        case 'cancelled': return { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', icon: '❌', label: t('lookup.statusCancelled') };
         default: return { bg: '#F3F4F6', text: '#374151', border: '#E5E7EB', icon: '📋', label: status };
     }
 };
@@ -77,6 +78,7 @@ const getCleanNote = (b) => {
 };
 
 const LookupBookingPage = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [errors, setErrors] = useState({ email: '', phone: '' });
@@ -93,18 +95,18 @@ const LookupBookingPage = () => {
         let newErrors = { email: '', phone: '' };
 
         if (!email.trim()) {
-            newErrors.email = 'Vui lòng nhập email';
+            newErrors.email = t('lookup.errEmailRequired');
             valid = false;
         } else if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-            newErrors.email = 'Sai định dạng email (VD: abc@gmail.com)';
+            newErrors.email = t('lookup.errEmailFormat');
             valid = false;
         }
 
         if (!phone.trim()) {
-            newErrors.phone = 'Vui lòng nhập số điện thoại';
+            newErrors.phone = t('lookup.errPhoneRequired');
             valid = false;
         } else if (phone.trim().length < 9) {
-            newErrors.phone = 'Vui lòng nhập số điện thoại hợp lệ (từ 9 số)';
+            newErrors.phone = t('lookup.errPhoneFormat');
             valid = false;
         }
 
@@ -127,7 +129,7 @@ const LookupBookingPage = () => {
             setBookings(res.data?.data || []);
         } catch (err) {
             console.error('Lỗi tra cứu:', err);
-            toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi tra cứu. Vui lòng thử lại sau.');
+            toast.error(err.response?.data?.message || t('lookup.lookupError'));
             setBookings([]);
         } finally {
             setLoading(false);
@@ -144,9 +146,9 @@ const LookupBookingPage = () => {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
                 {/* Header */}
                 <div className="text-center mb-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Tra Cứu Đơn Đặt Tour</h1>
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">{t('lookup.lookupBooking')}</h1>
                     <p className="text-text-muted text-lg max-w-xl mx-auto">
-                        Nhập email và số điện thoại đã sử dụng khi đặt tour để xem chi tiết lịch trình của bạn.
+                        {t('lookup.lookupDesc')}
                     </p>
                 </div>
 
@@ -157,7 +159,7 @@ const LookupBookingPage = () => {
                         <div className="flex-1 relative">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Mail className="w-4 h-4 text-primary" />
-                                Email
+                                {t('lookup.email')}
                             </label>
                             <input
                                 type="text"
@@ -175,7 +177,7 @@ const LookupBookingPage = () => {
                         <div className="flex-1 relative">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Phone className="w-4 h-4 text-primary" />
-                                Số điện thoại
+                                {t('lookup.phoneNumber')}
                             </label>
                             <input
                                 type="tel"
@@ -198,11 +200,11 @@ const LookupBookingPage = () => {
                         >
                             {loading ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" /> Đang tra cứu...
+                                    <Loader2 className="w-5 h-5 animate-spin" /> {t('lookup.searching')}
                                 </>
                             ) : (
                                 <>
-                                    <Search className="w-5 h-5" /> Tra cứu ngay
+                                    <Search className="w-5 h-5" /> {t('lookup.searchNow')}
                                 </>
                             )}
                         </button>
@@ -232,26 +234,26 @@ const LookupBookingPage = () => {
                                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                                     <MapPin className="w-10 h-10 text-gray-400 opacity-50" />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">Không tìm thấy đơn đặt tour nào</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">{t('lookup.noBookingsFound')}</h3>
                                 <p className="text-gray-500 max-w-sm mx-auto">
-                                    Vui lòng kiểm tra lại email hoặc số điện thoại bạn đã điền hoặc liên hệ hotline để được hỗ trợ.
+                                    {t('lookup.noBookingsDesc')}
                                 </p>
                             </div>
                         ) : (
                             <div>
                                 <h2 className="text-lg font-bold text-gray-800 mb-4 pl-2 border-l-4 border-primary">
-                                    Kết quả tra cứu ({bookings.length} đơn)
+                                    {t('lookup.searchResults', { count: bookings.length })}
                                 </h2>
                                 <div className="space-y-6">
                                     {bookings.map((b) => {
-                                        const status = getStatusStyle(b.status);
+                                        const status = getStatusStyle(b.status, t);
                                         const passengers = getPassengers(b);
                                         const departureDate = getDepartureDate(b);
                                         const total = computeTotal(b);
                                         const cleanNote = getCleanNote(b);
                                         const duration = (b.tour?.duration_days && b.tour?.duration_nights)
-                                            ? `${b.tour.duration_days} ngày ${b.tour.duration_nights} đêm`
-                                            : (b.tour?.duration_days ? `${b.tour.duration_days} ngày` : 'Chưa cập nhật');
+                                            ? `${b.tour.duration_days} ${t('lookup.days')} ${b.tour.duration_nights} ${t('lookup.nights')}`
+                                            : (b.tour?.duration_days ? `${b.tour.duration_days} ${t('lookup.days')}` : t('lookup.notDetermined'));
 
                                         return (
                                             <div
@@ -261,7 +263,7 @@ const LookupBookingPage = () => {
                                                 {/* Card Header */}
                                                 <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b border-gray-100">
                                                     <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">
-                                                        Mã đơn: {b.booking_code}
+                                                        {t('lookup.bookingCode')} {b.booking_code}
                                                     </span>
                                                     <span
                                                         className="text-xs font-bold px-3 py-1 rounded-md border uppercase tracking-wider"
@@ -277,12 +279,12 @@ const LookupBookingPage = () => {
                                                     onClick={() => handleTourClick(b)}
                                                 >
                                                     <h3 className="text-xl font-bold text-gray-900 leading-snug line-clamp-1 mb-2 hover:text-primary transition-colors">
-                                                        {b.tour?.title || b.tour_title_snapshot || 'Tour chưa cập nhật tên'}
+                                                        {b.tour?.title || b.tour_title_snapshot || t('lookup.tourNameNotUpdated')}
                                                     </h3>
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4 text-gray-400" />
                                                         <span className="text-sm font-medium text-gray-600">
-                                                            Khởi hành: {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : 'Chưa xác định'}
+                                                            {t('lookup.departure')} {departureDate ? format(new Date(departureDate), 'dd/MM/yyyy') : t('lookup.notDetermined')}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -293,7 +295,7 @@ const LookupBookingPage = () => {
                                                         onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
                                                         className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all text-sm shadow-md"
                                                     >
-                                                        {expandedId === b.id ? 'Thu gọn' : 'Xem chi tiết'}
+                                                        {expandedId === b.id ? t('lookup.collapse') : t('lookup.viewDetails')}
                                                     </button>
                                                 </div>
 
@@ -301,33 +303,33 @@ const LookupBookingPage = () => {
                                                 {expandedId === b.id && (
                                                     <div className="p-6 bg-gray-50 border-t border-gray-100 animate-in fade-in slide-in-from-top-2 duration-300">
                                                         <h4 className="font-bold text-gray-900 mb-6 inline-flex items-center gap-2">
-                                                            <span className="text-primary text-xs">▼</span> Thông tin đặt tour chi tiết
+                                                            <span className="text-primary text-xs">▼</span> {t('lookup.bookingDetails')}
                                                         </h4>
 
                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                                             {/* Chi tiết tour */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📍 Chi tiết lịch trình</p>
+                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📍 {t('lookup.itineraryDetails')}</p>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Người đặt:</span> {b.customer_name}</p>
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Thời lượng:</span> {duration}</p>
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Điểm đón:</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || 'Không có yêu cầu'}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.booker')}</span> {b.customer_name}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.duration')}</span> {duration}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.pickupPoint')}</span> {b.pickupLocation?.location_name || b.pickup_location_snapshot || t('lookup.noRequest')}</p>
                                                                 </div>
                                                             </div>
 
                                                             {/* Hành khách */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">👥 Số người tham gia</p>
+                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">👥 {t('lookup.participants')}</p>
                                                                 <div className="space-y-1">
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Người lớn:</span> {passengers.adults}</p>
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ em:</span> {passengers.children}</p>
-                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">Trẻ nhỏ:</span> {passengers.infants}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.adults')}</span> {passengers.adults}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.children')}</span> {passengers.children}</p>
+                                                                    <p className="text-sm text-gray-700"><span className="text-gray-500">{t('lookup.infants')}</span> {passengers.infants}</p>
                                                                 </div>
                                                             </div>
 
                                                             {/* Liên hệ */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📞 Thông tin liên hệ</p>
+                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📞 {t('lookup.contactInfo')}</p>
                                                                 <div className="space-y-1">
                                                                     <p className="text-sm text-gray-700">{b.customer_phone}</p>
                                                                     <p className="text-sm text-gray-700">{b.customer_email}</p>
@@ -336,12 +338,12 @@ const LookupBookingPage = () => {
 
                                                             {/* Tổng tiền */}
                                                             <div>
-                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📅 Ngày lập đơn</p>
+                                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📅 {t('lookup.createdDate')}</p>
                                                                 <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
                                                                 
                                                                 <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 shadow-inner">
-                                                                    <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1">💰 Tổng tiền dự kiến</p>
-                                                                    <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : 'Liên hệ để nhận báo giá'}</p>
+                                                                    <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1">💰 {t('lookup.estimatedTotal')}</p>
+                                                                    <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : t('lookup.contactForQuote')}</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -349,7 +351,7 @@ const LookupBookingPage = () => {
                                                         {cleanNote && (
                                                             <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200">
                                                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                                    <FileText className="w-3 h-3" /> Ghi chú từ khách hàng
+                                                                    <FileText className="w-3 h-3" /> {t('lookup.customerNote')}
                                                                 </p>
                                                                 <p className="text-sm text-gray-800 italic">"{cleanNote}"</p>
                                                             </div>

@@ -1,5 +1,5 @@
 import { List } from 'lucide-react';
-import { getImageUrl } from '@/utils/imageUrl';
+import { getImageUrl, onImgError } from '@/utils/imageUrl';
 
 const TourOverviewListItem = ({ tour, onSelectTour }) => {
     return (
@@ -11,6 +11,7 @@ const TourOverviewListItem = ({ tour, onSelectTour }) => {
                     src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700"
+                    onError={onImgError('tour')}
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover/img:bg-transparent transition-colors" />
                 {tour.pending > 0 && (
