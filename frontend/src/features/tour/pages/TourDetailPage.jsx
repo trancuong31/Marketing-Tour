@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
@@ -7,6 +7,7 @@ import { tourService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
 import BookingForm from '@/features/tour/components/BookingForm';
 import VoteForm from '@/features/tour/components/VoteForm';
+import TourCard from '@/components/tour/TourCard';
 import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -18,8 +19,129 @@ import {
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
+const RELATED_DESTINATION_KEYWORDS = [
+    'phu quoc',
+    'hon thom',
+    'ha noi',
+    'ho chi minh',
+    'sapa',
+    'fansipan',
+    'da nang',
+    'hoi an',
+    'ba na',
+    'malaysia',
+    'singapore',
+    'dai loan',
+    'cao hung',
+    'dai trung',
+    'dai bac',
+    'x park',
+];
+
+const RELATED_STOP_WORDS = new Set([
+    'tour',
+    'kham',
+    'pha',
+    'hanh',
+    'trinh',
+    'nghi',
+    'duong',
+    'chinh',
+    'phuc',
+    'ngay',
+    'dem',
+    'nature',
+    'park',
+]);
+
+const getTourCategoryId = (tour) => tour?.category_id || tour?.Category?.id || null;
+
+const normalizeSearchText = (text = '') => text
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const getTourSearchText = (tour) => normalizeSearchText([
+    tour?.title,
+    tour?.slug,
+    tour?.summary,
+    tour?.Category?.name,
+].filter(Boolean).join(' '));
+
+const getDestinationKeywords = (tour) => {
+    const searchText = getTourSearchText(tour);
+    const knownKeywords = RELATED_DESTINATION_KEYWORDS.filter((keyword) => searchText.includes(keyword));
+
+    if (knownKeywords.length > 0) {
+        return knownKeywords;
+    }
+
+    return normalizeSearchText(tour?.title)
+        .split(' ')
+        .filter((word) => word.length > 2 && !RELATED_STOP_WORDS.has(word))
+        .slice(0, 5);
+};
+
+const getDestinationScore = (currentKeywords, candidateText) => currentKeywords.reduce((score, keyword) => {
+    if (!candidateText.includes(keyword)) return score;
+    return score + (keyword.includes(' ') ? 90 : 45);
+}, 0);
+
+const hasOpenDepartures = (tour) => (tour?.departures || []).length > 0;
+
+const mergeUniqueTours = (groups) => {
+    const seen = new Set();
+
+    return groups.flat().filter((tour) => {
+        if (!tour || seen.has(tour.id)) return false;
+        seen.add(tour.id);
+        return true;
+    });
+};
+
+const getRelatedTours = (currentTour, tours) => {
+    const currentCategoryId = getTourCategoryId(currentTour);
+    const currentKeywords = getDestinationKeywords(currentTour);
+
+    const candidates = tours.filter((tour) => {
+        if (!tour || tour.id === currentTour?.id) return false;
+        return tour.slug !== currentTour?.slug && hasOpenDepartures(tour);
+    });
+
+    const withDestinationScore = candidates.map((tour) => ({
+        tour,
+        destinationScore: getDestinationScore(currentKeywords, getTourSearchText(tour)),
+    }));
+
+    const promotionTours = withDestinationScore
+        .filter(({ tour }) => tour.tour_badge === 'promotion')
+        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .map(({ tour }) => tour);
+
+    const featuredTours = withDestinationScore
+        .filter(({ tour }) => tour.tour_badge === 'featured')
+        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .map(({ tour }) => tour);
+
+    const keywordTours = withDestinationScore
+        .filter(({ destinationScore }) => destinationScore > 0)
+        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .map(({ tour }) => tour);
+
+    const categoryTours = candidates
+        .filter((tour) => currentCategoryId && getTourCategoryId(tour) === currentCategoryId)
+        .sort((a, b) => b.id - a.id);
+
+    return mergeUniqueTours([promotionTours, featuredTours, keywordTours, categoryTours]).slice(0, 10);
+};
+
 /* ═══ MODERN REVIEWS LIST (Facebook/TikTok Style) ═══ */
-const SubReviewItem = ({ reply, onLike, onReply, onDelete }) => {
+const SubReviewItem = ({ reply, onReply, onDelete }) => {
     const { user } = useAuthStore();
     const [localLikes, setLocalLikes] = useState(reply.likes_count || 0);
     const [isLiked, setIsLiked] = useState(reply.user_has_liked || false);
@@ -248,7 +370,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase">Chính thức</span>
                                 </div>
                                 <p className="text-sm text-text-secondary italic pl-8">
-                                    "{vote.admin_reply}"
+                                    &quot;{vote.admin_reply}&quot;
                                 </p>
                             </div>
                         )}
@@ -467,9 +589,15 @@ const FeaturedReviewsCarousel = ({ votes }) => {
             
             <div className="relative">
                 <div ref={scrollRef} className="flex gap-5 will-change-transform" style={{ width: 'max-content' }}>
-                    {items.map((vote, idx) => (
-                        <div
+                    {items.map((vote, idx) => {
+                        const tourSlug = vote.Tour?.slug;
+                        const CardWrapper = tourSlug ? Link : 'div';
+                        const wrapperProps = tourSlug ? { to: `/tours/${tourSlug}` } : {};
+
+                        return (
+                        <CardWrapper
                             key={`${vote.id}-${idx}`}
+                            {...wrapperProps}
                             className="w-[320px] shrink-0 p-6 bg-white rounded-2xl border border-border/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all duration-300 group"
                         >
                             <div className="flex items-center gap-3 mb-4">
@@ -495,29 +623,138 @@ const FeaturedReviewsCarousel = ({ votes }) => {
                             <div className="relative">
                                 <span className="absolute -top-3 -left-2 text-4xl text-primary/10 font-serif leading-none">“</span>
                                 <p className="text-sm text-text-secondary leading-relaxed italic line-clamp-3 relative z-10 px-1">
-                                    {vote.comment || "Chuyến đi thật tuyệt vời! Mọi thứ từ khách sạn đến hướng dẫn viên đều vượt mong đợi. Chắc chắn tôi sẽ đặt thêm nhiều tour nữa tại đây."}
+                                    {vote.comment || t('tour.detail.defaultReviewComment')}
                                 </p>
                             </div>
                             <div className="mt-4 pt-4 border-t border-border/50">
                                 <p className="text-[11px] text-primary font-semibold uppercase tracking-wider flex items-center gap-1.5">
                                     <Tag className="w-3 h-3" />
-                                    {vote.Tour?.title || "Tour Khuyến Mãi Đặc Biệt"}
+                                    {vote.Tour?.title || t('tour.detail.defaultReviewTour')}
                                 </p>
                             </div>
-                        </div>
-                    ))}
+                        </CardWrapper>
+                        );
+                    })}
                 </div>
             </div>
         </div>
     );
 };
 
+/* ═══ RELATED TOURS CAROUSEL ═══ */
+const RelatedToursCarousel = ({ tours }) => {
+    const { t } = useTranslation();
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el || tours.length <= 1) return undefined;
+
+        const timer = setInterval(() => {
+            const nextLeft = el.scrollLeft + 320;
+            const reachedEnd = nextLeft + el.clientWidth >= el.scrollWidth - 8;
+
+            el.scrollTo({
+                left: reachedEnd ? 0 : nextLeft,
+                behavior: 'smooth',
+            });
+        }, 4500);
+
+        return () => clearInterval(timer);
+    }, [tours.length]);
+
+    const scrollBy = (direction) => {
+        scrollRef.current?.scrollBy({
+            left: direction * 320,
+            behavior: 'smooth',
+        });
+    };
+
+    if (tours.length === 0) return null;
+
+    return (
+        <section className="py-12 bg-white border-t border-border">
+            <div className="max-w-6xl mx-auto px-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-7">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-6 bg-primary rounded-full" />
+                            <h2 className="text-xl font-bold text-text uppercase tracking-tight">
+                                {t('tour.detail.relatedTours')}
+                            </h2>
+                        </div>
+                        <p className="text-sm text-text-muted mt-1">
+                            {t('tour.detail.relatedToursDesc')}
+                        </p>
+                    </div>
+
+                    {tours.length > 1 && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => scrollBy(-1)}
+                                className="w-10 h-10 rounded-full border border-border bg-white text-text hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
+                                aria-label={t('tour.detail.prevRelatedTours')}
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => scrollBy(1)}
+                                className="w-10 h-10 rounded-full border border-border bg-white text-text hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
+                                aria-label={t('tour.detail.nextRelatedTours')}
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div
+                    ref={scrollRef}
+                    className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3"
+                >
+                    {tours.map((tour) => (
+                        <div
+                            key={tour.id}
+                            className="w-[280px] sm:w-[310px] lg:w-[330px] shrink-0 snap-start"
+                        >
+                            <TourCard tour={tour} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+};
+
 /* ═══ MOCK DATA FOR THE CAROUSEL (Show when DB is empty) ═══ */
-const MOCK_REVIEWS = [
-    { id: 'm1', customer_name: 'Minh Tuyền', comment: 'Chuyến đi Malaysia thật tuyệt vời, công ty tổ chức rất chuyên nghiệp!', Tour: { title: 'Tour Malaysia 5N4Đ' }, rating: 5, is_mock: true },
-    { id: 'm2', customer_name: 'Hoàng Nam', comment: 'Hướng dẫn viên nhiệt tình, hỗ trợ đoàn rất chu đáo suốt hành trình.', Tour: { title: 'Hàn Quốc Mùa Thu' }, rating: 5, is_mock: true },
-    { id: 'm3', customer_name: 'Thanh Thủy', comment: 'Gia đình tôi đã có những kỷ niệm khó quên. Cảm ơn KyNghiTuyetVoi!', Tour: { title: 'Đà Nẵng Hội An 4N3Đ' }, rating: 5, is_mock: true },
-];
+const getMockReviews = (t) => ([
+    {
+        id: 'm1',
+        customer_name: t('tour.detail.mockReviews.0.customer'),
+        comment: t('tour.detail.mockReviews.0.comment'),
+        Tour: { title: t('tour.detail.mockReviews.0.tour') },
+        rating: 5,
+        is_mock: true,
+    },
+    {
+        id: 'm2',
+        customer_name: t('tour.detail.mockReviews.1.customer'),
+        comment: t('tour.detail.mockReviews.1.comment'),
+        Tour: { title: t('tour.detail.mockReviews.1.tour') },
+        rating: 5,
+        is_mock: true,
+    },
+    {
+        id: 'm3',
+        customer_name: t('tour.detail.mockReviews.2.customer'),
+        comment: t('tour.detail.mockReviews.2.comment'),
+        Tour: { title: t('tour.detail.mockReviews.2.tour') },
+        rating: 5,
+        is_mock: true,
+    },
+]);
 
 /* ═══ MAIN PAGE ═══ */
 const TourDetailPage = () => {
@@ -526,6 +763,7 @@ const TourDetailPage = () => {
     const [tour, setTour] = useState(null);
     const [votes, setVotes] = useState([]);
     const [featuredVotes, setFeaturedVotes] = useState([]);
+    const [relatedTours, setRelatedTours] = useState([]);
     const [loading, setLoading] = useState(true);
     const [gallery, setGallery] = useState({ open: false, index: 0 });
 
@@ -543,24 +781,28 @@ const TourDetailPage = () => {
                     fetchPromises.push(Promise.resolve({ data: { data: [] } }));
                 }
                 fetchPromises.push(tourService.getFeaturedVotes());
+                fetchPromises.push(tourService.getAll());
                 
-                const [votesRes, featuredRes] = await Promise.all(fetchPromises);
+                const [votesRes, featuredRes, toursRes] = await Promise.all(fetchPromises);
                 
                 const fetchedVotes = votesRes.data.data || [];
-                console.log(`[TourDetail] ID: ${tourData?.id || '?'}, Votes:`, fetchedVotes);
                 setVotes(fetchedVotes);
                 
                 const realFeatured = featuredRes.data.data || [];
-                setFeaturedVotes(realFeatured.length > 0 ? realFeatured : MOCK_REVIEWS);
+                setFeaturedVotes(realFeatured.length > 0 ? realFeatured : getMockReviews(t));
+
+                const allTours = toursRes.data.data || [];
+                setRelatedTours(getRelatedTours(tourData, allTours));
             } catch (err) {
                 console.error('Lỗi tải dữ liệu:', err);
-                setFeaturedVotes(MOCK_REVIEWS);
+                setFeaturedVotes(getMockReviews(t));
+                setRelatedTours([]);
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [slug, i18n.language]);
+    }, [slug, i18n.language, t]);
 
     const refreshVotes = async () => {
         if (tour?.id) {
@@ -820,10 +1062,10 @@ const TourDetailPage = () => {
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
                             <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
-                            <h2 className="text-2xl font-bold text-text">Đánh giá cộng đồng ({votes.length})</h2>
+                            <h2 className="text-2xl font-bold text-text">{t('tour.detail.communityReviews', { count: votes.length })}</h2>
                         </div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-text-muted">
-                            Sắp xếp: <span className="text-primary cursor-pointer">Mới nhất</span>
+                            {t('tour.detail.sortLabel')}: <span className="text-primary cursor-pointer">{t('tour.detail.sortNewest')}</span>
                         </div>
                     </div>
                     
@@ -840,12 +1082,14 @@ const TourDetailPage = () => {
                             ))
                         ) : (
                             <div className="py-12 text-center bg-surface-alt rounded-2xl border border-dashed border-border">
-                                <p className="text-text-muted italic">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+                                <p className="text-text-muted italic">{t('tour.detail.noCommunityReviews')}</p>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
+            <RelatedToursCarousel tours={relatedTours} />
 
             {/* ═══ ĐÁNH GIÁ ĐẶC SẮC (GLOBAL 5-STAR) ═══ */}
             <FeaturedReviewsCarousel votes={featuredVotes} />

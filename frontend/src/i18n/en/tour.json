@@ -40,8 +40,35 @@
         "itinerary": "Detailed Itinerary",
         "customerExperience": "Customer Experiences",
         "customerExperienceDesc": "Authentic shares from customers across the system",
+        "relatedTours": "Related Tours for You",
+        "relatedToursDesc": "Suggested by tour type, featured picks, and active deals",
+        "prevRelatedTours": "View previous related tours",
+        "nextRelatedTours": "View next related tours",
         "customer": "Customer",
         "suggested": "Suggested",
+        "defaultReviewComment": "The trip was wonderful! Everything from the hotel to the tour guide exceeded expectations. I will definitely book more tours here.",
+        "defaultReviewTour": "Special Promotion Tour",
+        "communityReviews": "Community Reviews ({{count}})",
+        "noCommunityReviews": "No reviews yet. Be the first to share your experience!",
+        "sortLabel": "Sort",
+        "sortNewest": "Newest",
+        "mockReviews": [
+            {
+                "customer": "Minh Tuyen",
+                "comment": "The Malaysia trip was wonderful, and the company organized everything very professionally!",
+                "tour": "Malaysia Tour 5D4N"
+            },
+            {
+                "customer": "Hoang Nam",
+                "comment": "The tour guide was enthusiastic and supported the group thoughtfully throughout the journey.",
+                "tour": "Korea Autumn Tour"
+            },
+            {
+                "customer": "Thanh Thuy",
+                "comment": "My family made unforgettable memories. Thank you, KyNghiTuyetVoi!",
+                "tour": "Da Nang Hoi An 4D3N"
+            }
+        ],
         "notFoundDesc": "This tour may have been discontinued or does not exist.",
         "perPerson": "/person",
         "photos": "Photos",
@@ -50,6 +77,30 @@
         "priceExcludes": "Price Excludes",
         "termsNotes": "Terms & Notes",
         "cancellationPolicy": "Cancellation Policy"
+    },
+    "review": {
+        "cannotCheckEligibility": "Unable to check review eligibility.",
+        "maxImages": "You can upload up to 5 images.",
+        "genericError": "Something went wrong",
+        "thankYou": "Thank you for your review!",
+        "pendingApproval": "Your review is pending approval and will appear after it is approved.",
+        "loginTitle": "Sign in to review",
+        "loginDesc": "You need to sign in to submit comments and photos for this tour.",
+        "checkingEligibility": "Checking review eligibility...",
+        "notEligibleTitle": "Review not available yet",
+        "formTitle": "Send your review",
+        "ratingLabel": "Star rating",
+        "ratingRequired": "Please select a star rating",
+        "imagesLabel": "Real photos (up to 5 images)",
+        "addImage": "Add photo",
+        "commentPlaceholder": "Your comment...",
+        "submitting": "Submitting...",
+        "submit": "Submit review",
+        "reasons": {
+            "alreadyReviewed": "You have already reviewed this tour.",
+            "bookingRequired": "You need an approved booking for this tour before you can review it.",
+            "tourNotFinished": "You can only review after the trip has ended."
+        }
     },
     "card": {
         "durationDaysNights": "{{days}} Days {{nights}} Nights",

@@ -1,32 +1,38 @@
+/**
+ * Migration: add images column to votes table.
+ * Run: node src/migrations/run_vote_migration.js
+ */
 require('../config/env');
-const { sequelize } = require('../config/database');
 const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const logger = require('../config/logger');
 
 const run = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Connected to database');
+        logger.info('Connected to database.');
 
-        const columns = await sequelize.getQueryInterface().describeTable('votes');
-        
+        const queryInterface = sequelize.getQueryInterface();
+        const columns = await queryInterface.describeTable('votes');
+
         if (columns.images) {
-            console.log('⚠️  Column "images" already exists, skipping migration.');
-            process.exit(0);
+            logger.warn('Column images already exists, skipping migration.');
+            process.exitCode = 0;
+            return;
         }
 
-        await sequelize.getQueryInterface().addColumn('votes', 'images', {
+        await queryInterface.addColumn('votes', 'images', {
             type: DataTypes.JSON,
             allowNull: true,
             after: 'comment',
         });
-        console.log('  + images');
-
-        console.log('✅ Migration successful!');
-        process.exit(0);
+        logger.info('Added images column to votes table.');
+        process.exitCode = 0;
     } catch (error) {
-        console.error('❌ Migration failed:', error.message);
-        console.error(error.stack);
-        process.exit(1);
+        logger.error('Migration failed:', error);
+        process.exitCode = 1;
+    } finally {
+        await sequelize.close();
     }
 };
 

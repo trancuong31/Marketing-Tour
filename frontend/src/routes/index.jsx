@@ -8,6 +8,7 @@ const HomePage = lazy(() => import('../features/home/pages/HomePage'));
 const TourListPage = lazy(() => import('../features/tour/pages/TourListPage'));
 const TourDetailPage = lazy(() => import('../features/tour/pages/TourDetailPage'));
 const HistoryPage = lazy(() => import('../features/history/pages/HistoryPage'));
+const NotificationsPage = lazy(() => import('../features/notification/pages/NotificationsPage'));
 const LookupBookingPage = lazy(() => import('../features/lookup/pages/LookupBookingPage'));
 const GuidePage = lazy(() => import('../features/guide/pages/GuidePage'));
 const NotFoundPage = lazy(() => import('../features/common/pages/NotFoundPage'));
@@ -42,6 +43,7 @@ const AppRoutes = () => {
                 <Route path="/tours" element={<TourListPage />} />
                 <Route path="/tours/:slug" element={<TourDetailPage />} />
                 <Route path="/history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
+                <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
                 <Route path="/lookup-booking" element={<LookupBookingPage />} />
                 <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
                 <Route path="/guides" element={<GuidePage />} />

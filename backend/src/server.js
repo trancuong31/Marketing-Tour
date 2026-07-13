@@ -7,13 +7,15 @@ const logger = require('./config/logger');
 require('./models');
 
 const PORT = process.env.PORT || 3000;
+let server;
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
     logger.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-    console.error('Full error:', err);
-    console.error('Stack:', err.stack);
-    process.exit(1);
+    logger.error('Full error:', err);
+    logger.error('Stack:', err.stack);
+    process.exitCode = 1;
+    throw err;
 });
 
 // Connect to database and start server
@@ -30,7 +32,7 @@ const startServer = async () => {
         }
 
         // Start server
-        const server = app.listen(PORT, () => {
+        server = app.listen(PORT, () => {
             logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
         });
 
@@ -39,7 +41,7 @@ const startServer = async () => {
             logger.error('UNHANDLED REJECTION! 💥 Shutting down...');
             logger.error(err.name, err.message);
             server.close(() => {
-                process.exit(1);
+                process.exitCode = 1;
             });
         });
 
@@ -52,7 +54,8 @@ const startServer = async () => {
         });
     } catch (error) {
         logger.error('Failed to start server:', error);
-        process.exit(1);
+        process.exitCode = 1;
+        throw error;
     }
 };
 

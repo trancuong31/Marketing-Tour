@@ -37,13 +37,14 @@ const TourCard = ({ tour }) => {
             className="group block bg-white rounded-2xl overflow-hidden border-2 border-transparent shadow-[0_2px_12px_rgba(0,0,0,0.2)] transition-all duration-300"
         >
             {/* Ảnh */}
-            <div className="relative aspect-[16/10] overflow-hidden">
+            <div className="relative aspect-[16/10] overflow-hidden bg-surface-alt">
                 <img
                     src={thumbnail}
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                     onError={onImgError('tour')}
+                    style={{ color: 'transparent' }}
                 />
 
                 {/* Badge Featured */}

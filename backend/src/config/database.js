@@ -35,7 +35,7 @@ const connectDB = async () => {
         }
     } catch (error) {
         logger.error('Unable to connect to MariaDB:', error);
-        process.exit(1);
+        throw error;
     }
 };
 

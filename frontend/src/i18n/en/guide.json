@@ -1,0 +1,10 @@
+{
+    "title": "Travel Guides",
+    "subtitle": "Helpful tips and information for your trip",
+    "updatedAt": "Updated",
+    "empty": "No guide articles yet",
+    "backToList": "Back to list",
+    "notFoundTitle": "Not found",
+    "notFoundDesc": "This guide article does not exist or has been hidden.",
+    "back": "Back"
+}

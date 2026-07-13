@@ -50,7 +50,7 @@ export const bannerService = {
 // NOTIFICATIONS
 // ══════════════════════════════════════
 export const notificationService = {
-    getAll: () => api.get('/notifications'),
+    getAll: (params) => api.get('/notifications', { params }),
     markAsRead: () => api.patch('/notifications/mark-as-read'),
     markOneAsRead: (id) => api.patch(`/notifications/${id}/mark-as-read`),
 };

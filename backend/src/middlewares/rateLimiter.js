@@ -1,5 +1,4 @@
 const rateLimit = require('express-rate-limit');
-const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
 
 /**

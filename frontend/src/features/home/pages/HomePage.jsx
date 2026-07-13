@@ -112,10 +112,11 @@ const HomePage = () => {
                                     src={getImageUrl(banner.image_url)}
                                     alt={banner.title}
                                     className={`absolute inset-0 w-full h-full object-cover brightness-[0.45] transition-opacity duration-[1500ms] ease-in-out transform-gpu will-change-[opacity,transform] ${idx === heroIndex
-                                            ? 'opacity-100 z-10 animate-ken-burns'
-                                            : 'opacity-0 z-0'
+                                        ? 'opacity-100 z-10 animate-ken-burns'
+                                        : 'opacity-0 z-0'
                                         }`}
                                     onError={onImgError('banner')}
+                                    style={{ color: 'transparent' }}
                                 />
                             ))}
                         </>
@@ -193,7 +194,7 @@ const HomePage = () => {
 
                 {/* 4. Sleek Slideshow Controls (Senior Style) */}
                 {heroBanners.length > 1 && (
-                    <div className="absolute bottom-8 right-8 z-40 pointer-events-auto animate-fade-in flex flex-col items-end gap-5">
+                    <div className="absolute bottom-8 right-8 z-40 pointer-events-auto animate-fade-in hidden lg:flex flex-col items-end gap-5">
 
                         {/* 1. Next Up Preview */}
                         <div className="flex flex-col items-end opacity-0 group-hover/hero:opacity-100 transition-all duration-500 translate-y-2 group-hover/hero:translate-y-0">

@@ -1,9 +1,6 @@
 const cron = require('node-cron');
 const env = require('../config/env');
 const logger = require('../config/logger');
-const { getLogs } = require('../services/dataLogService');
-const { sendEmail } = require('../utils/email');
-const { buildAlertEmail } = require('../utils/alertEmailTemplate');
 
 const checkAndAlert = async () => {
     

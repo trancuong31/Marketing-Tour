@@ -1,0 +1,16 @@
+{
+    "title": "通知",
+    "pageTitle": "所有通知",
+    "pageSubtitle": "您的账户中有 {{count}} 条通知",
+    "openNotifications": "打开通知",
+    "markAllRead": "全部标为已读",
+    "markAllReadSuccess": "所有通知已标为已读",
+    "viewAll": "查看所有通知",
+    "emptyTitle": "您还没有通知",
+    "emptyDescription": "点赞、评论回复和预订更新会显示在这里。",
+    "fetchError": "无法加载通知列表。",
+    "markReadError": "无法更新通知状态。",
+    "retry": "重试",
+    "previousPage": "上一页",
+    "nextPage": "下一页"
+}

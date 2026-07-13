@@ -1,32 +1,39 @@
+/**
+ * Migration: add language column to users table.
+ * Run: node src/migrations/add_user_language_column.js
+ */
 require('../config/env');
-const { sequelize } = require('../config/database');
 const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const logger = require('../config/logger');
 
-async function up() {
+const run = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Connected to database');
+        logger.info('Connected to database.');
 
         const queryInterface = sequelize.getQueryInterface();
         const columns = await queryInterface.describeTable('users');
-        
+
         if (columns.language) {
-            console.log('⚠️  Column "language" already exists in "users" table, skipping migration.');
-            process.exit(0);
+            logger.warn('Column language already exists in users table, skipping migration.');
+            process.exitCode = 0;
+            return;
         }
 
-        console.log('Adding language column to users table...');
         await queryInterface.addColumn('users', 'language', {
             type: DataTypes.STRING(10),
             allowNull: false,
             defaultValue: 'vi',
         });
-        console.log('Successfully added language column.');
-        process.exit(0);
+        logger.info('Added language column to users table.');
+        process.exitCode = 0;
     } catch (error) {
-        console.error('Error running migration:', error);
-        process.exit(1);
+        logger.error('Error running migration:', error);
+        process.exitCode = 1;
+    } finally {
+        await sequelize.close();
     }
-}
+};
 
-up();
+run();

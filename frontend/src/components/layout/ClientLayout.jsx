@@ -25,12 +25,8 @@ const ClientLayout = ({ children }) => {
     const [authMode, setAuthMode] = useState('login');
     const [mobileMenuUserOpen, setMobileMenuUserOpen] = useState(false);
     const { isAuthenticated, user, logout } = useAuthStore();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const ignoreScrollRef = useRef(false);
-
-    const changeLanguage = (lng) => {
-        i18n.changeLanguage(lng);
-    };
 
     useEffect(() => {
         let lastScrollY = window.scrollY;
@@ -66,23 +62,23 @@ const ClientLayout = ({ children }) => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
-                        <Link to="/" className="flex items-center gap-2 group shrink-0">
+                        <Link to="/" className="flex items-center gap-2 group shrink-0 min-w-fit">
                             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center overflow-hidden shrink-0">
                                 <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="font-pacifico pb-1 text-xl lg:text-2xl whitespace-nowrap bg-gradient-to-r from-[#e8401c] to-[#1E6FBF] bg-clip-text text-transparent hidden sm:block">
-                                <i>{t('header.brandName', 'Kỳ nghỉ tuyệt vời')}</i>
+                            <span className="font-pacifico pb-1 text-sm min-[380px]:text-base sm:text-xl xl:text-lg 2xl:text-xl whitespace-nowrap bg-gradient-to-r from-[#e8401c] to-[#1E6FBF] bg-clip-text text-transparent">
+                                <i>{t('header.brandName')}</i>
                             </span>
                         </Link>
 
                         {/* Desktop Nav */}
-                        <div className="hidden lg:flex items-center gap-2 xl:gap-4 ml-auto">
-                            <nav className="flex items-center gap-1 xl:gap-2 whitespace-nowrap">
+                        <div className="hidden xl:flex items-center gap-2 ml-auto">
+                            <nav className="flex items-center gap-1 whitespace-nowrap">
                                 {navLinks.map(link => (
                                     <Link
                                         key={link.path}
                                         to={link.path}
-                                        className={`px-2 xl:px-3 py-2 rounded-lg text-sm xl:text-base font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
+                                        className={`px-2 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${location.pathname === link.path
                                             ? 'bg-primary/10 text-primary'
                                             : 'text-text-secondary hover:bg-surface-alt hover:text-text'
                                             }`}
@@ -95,8 +91,8 @@ const ClientLayout = ({ children }) => {
 
                             {/* Auth buttons & Notifications */}
                             {isAuthenticated ? (
-                                <div className="flex items-center gap-4">
-                                    <div className="relative group cursor-pointer flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="relative group cursor-pointer flex items-center gap-2">
                                         <div className="flex items-center gap-2 text-sm font-medium text-text">
                                             {user?.avatar_url ? (
                                                 <img
@@ -110,7 +106,7 @@ const ClientLayout = ({ children }) => {
                                                 </div>
                                             )}
                                             <div className="flex flex-col">
-                                                <span>{user?.full_name || t('header.guest')}</span>
+                                                <span className="max-w-[110px] truncate">{user?.full_name || t('header.guest')}</span>
                                                 {/* admin hoặc customer */}
                                                 {(user?.role_id === 1) && (
                                                     <span className="text-[10px] uppercase font-bold text-primary/80 leading-none">{t('header.roleAdmin', 'Admin')}</span>
@@ -122,7 +118,7 @@ const ClientLayout = ({ children }) => {
                                         </div>
 
                                         {/* Dropdown Menu */}
-                                        <div className="absolute right-0 top-full mt-2 w-56 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-2xl border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col pt-1 pb-1 z-50">
+                                        <div className="absolute left-1/2 top-full mt-2 w-56 -translate-x-1/2 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-2xl border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col pt-1 pb-1 z-50">
                                             <div className="px-4 py-3 border-b border-border bg-surface-alt/50 rounded-t-2xl">
                                                 <p className="text-sm font-semibold text-text truncate">{user?.full_name}</p>
                                                 <p className="text-xs text-text-muted truncate">{user?.email}</p>
@@ -190,8 +186,9 @@ const ClientLayout = ({ children }) => {
                         </div>
 
                         {/* Mobile Right Icons */}
-                        <div className="lg:hidden flex items-center gap-3">
+                        <div className="xl:hidden flex items-center gap-2 min-[380px]:gap-3">
                             {isAuthenticated && <NotificationBell />}
+                            <LanguageSwitcher compact />
                             <button
                                 className="p-2 rounded-lg hover:bg-surface-alt transition"
                                 onClick={() => {
@@ -206,130 +203,139 @@ const ClientLayout = ({ children }) => {
                         </div>
                     </div>
 
-                    {/* Mobile Nav */}
+                    {/* Mobile Nav — Full-screen overlay */}
                     {menuOpen && (
-                        <nav className="lg:hidden py-3 border-t border-border animate-slide-down">
-                            {navLinks.map(link => (
-                                <Link
-                                    key={link.path}
-                                    to={link.path}
-                                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${location.pathname === link.path
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:bg-surface-alt'
-                                        }`}
-                                    onClick={() => setMenuOpen(false)}
-                                >
-                                    {link.icon && <link.icon className="w-4 h-4" />}
-                                    {t(link.key)}
-                                </Link>
-                            ))}
+                        <>
+                            {/* Backdrop */}
+                            <div
+                                className="xl:hidden fixed inset-0 top-16 bg-black/40 z-40"
+                                onClick={() => { setMenuOpen(false); setMobileMenuUserOpen(false); }}
+                            />
+                            <nav className="xl:hidden fixed left-0 right-0 top-16 bottom-0 z-50 bg-white overflow-y-auto animate-slide-down">
+                                <div className="py-3 px-2">
+                                    {navLinks.map(link => (
+                                        <Link
+                                            key={link.path}
+                                            to={link.path}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${location.pathname === link.path
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'text-text-secondary hover:bg-surface-alt'
+                                                }`}
+                                            onClick={() => setMenuOpen(false)}
+                                        >
+                                            {link.icon && <link.icon className="w-4 h-4" />}
+                                            {t(link.key)}
+                                        </Link>
+                                    ))}
 
-                            <div className="my-2 border-t border-border"></div>
+                                    <div className="my-2 border-t border-border"></div>
 
-                            {isAuthenticated ? (
-                                <div className="px-4 py-2">
-                                    <div 
-                                        className="flex items-center justify-between bg-surface-alt/50 p-3 rounded-xl cursor-pointer hover:bg-surface-alt transition-colors"
-                                        onClick={() => {
-                                            ignoreScrollRef.current = true;
-                                            setMobileMenuUserOpen(!mobileMenuUserOpen);
-                                            setTimeout(() => { ignoreScrollRef.current = false; }, 400);
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {user?.avatar_url ? (
-                                                <img
-                                                    src={getImageUrl(user.avatar_url)}
-                                                    alt={user.full_name}
-                                                    className="w-10 h-10 rounded-full object-cover border border-border"
-                                                />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                    <UserIcon className="w-5 h-5" />
+                                    {isAuthenticated ? (
+                                        <div className="px-4 py-2">
+                                            <div
+                                                className="flex items-center justify-between bg-surface-alt/50 p-3 rounded-xl cursor-pointer hover:bg-surface-alt transition-colors"
+                                                onClick={() => {
+                                                    ignoreScrollRef.current = true;
+                                                    setMobileMenuUserOpen(!mobileMenuUserOpen);
+                                                    setTimeout(() => { ignoreScrollRef.current = false; }, 400);
+                                                }}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {user?.avatar_url ? (
+                                                        <img
+                                                            src={getImageUrl(user.avatar_url)}
+                                                            alt={user.full_name}
+                                                            className="w-10 h-10 rounded-full object-cover border border-border"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                            <UserIcon className="w-5 h-5" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-text text-sm">
+                                                            {user?.full_name || t('header.guest')}
+                                                        </span>
+                                                        <span className="text-xs text-text-muted">{user?.email}</span>
+                                                    </div>
                                                 </div>
-                                            )}
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-text text-sm">
-                                                    {user?.full_name || t('header.guest')}
-                                                </span>
-                                                <span className="text-xs text-text-muted">{user?.email}</span>
+                                                <svg className={`w-5 h-5 text-text-muted transition-transform duration-200 ${mobileMenuUserOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+
+                                            {/* Mobile Dropdown Menu */}
+                                            <div className={`overflow-hidden transition-all duration-300 ${mobileMenuUserOpen ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                                                <div className="flex flex-col px-2 gap-1 bg-surface-alt/30 rounded-xl p-2 border border-border/50">
+                                                    {user?.role_id === 1 && (
+                                                        <Link
+                                                            to="/admin"
+                                                            onClick={() => setMenuOpen(false)}
+                                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                                        >
+                                                            <Shield className="w-4 h-4 text-text-muted" />
+                                                            <span className="text-sm font-medium">{t('header.adminPanel')}</span>
+                                                        </Link>
+                                                    )}
+                                                    <Link
+                                                        to="/profile"
+                                                        onClick={() => setMenuOpen(false)}
+                                                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                                    >
+                                                        <UserIcon className="w-4 h-4 text-text-muted" />
+                                                        <span className="text-sm font-medium">{t('header.profile')}</span>
+                                                    </Link>
+                                                    <Link
+                                                        to="/history"
+                                                        onClick={() => setMenuOpen(false)}
+                                                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                                    >
+                                                        <List className="w-4 h-4 text-text-muted" />
+                                                        <span className="text-sm font-medium">{t('header.history')}</span>
+                                                    </Link>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2 border-t border-border pt-2 px-1">
+                                                <button
+                                                    onClick={() => {
+                                                        handleLogout();
+                                                        setMenuOpen(false);
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-colors shadow-sm"
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                    <span className="font-semibold text-sm">{t('header.logout')}</span>
+                                                </button>
                                             </div>
                                         </div>
-                                        <svg className={`w-5 h-5 text-text-muted transition-transform duration-200 ${mobileMenuUserOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
-
-                                    {/* Mobile Dropdown Menu */}
-                                    <div className={`overflow-hidden transition-all duration-300 ${mobileMenuUserOpen ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-                                        <div className="flex flex-col px-2 gap-1 bg-surface-alt/30 rounded-xl p-2 border border-border/50">
-                                            {user?.role_id === 1 && (
-                                                <Link 
-                                                    to="/admin" 
-                                                    onClick={() => setMenuOpen(false)} 
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
-                                                >
-                                                    <Shield className="w-4 h-4 text-text-muted" />
-                                                    <span className="text-sm font-medium">{t('header.adminPanel')}</span>
-                                                </Link>
-                                            )}
-                                            <Link 
-                                                to="/profile" 
-                                                onClick={() => setMenuOpen(false)} 
-                                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                    ) : (
+                                        <div className="flex flex-col gap-2 px-4 py-2">
+                                            <button
+                                                onClick={() => {
+                                                    setMenuOpen(false);
+                                                    openAuth('login');
+                                                }}
+                                                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-primary bg-primary/10 rounded-lg font-medium text-sm hover:bg-primary/20 transition-colors"
                                             >
-                                                <UserIcon className="w-4 h-4 text-text-muted" />
-                                                <span className="text-sm font-medium">{t('header.profile')}</span>
-                                            </Link>
-                                            <Link 
-                                                to="/history" 
-                                                onClick={() => setMenuOpen(false)} 
-                                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-surface-alt transition-colors text-text"
+                                                <LogIn className="w-4 h-4" />
+                                                {t('common.login')}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setMenuOpen(false);
+                                                    openAuth('register');
+                                                }}
+                                                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-white bg-primary rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm"
                                             >
-                                                <List className="w-4 h-4 text-text-muted" />
-                                                <span className="text-sm font-medium">{t('header.history')}</span>
-                                            </Link>
+                                                <UserPlus className="w-4 h-4" />
+                                                {t('common.register')}
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    <div className="mt-2 border-t border-border pt-2 px-1">
-                                        <button
-                                            onClick={() => {
-                                                handleLogout();
-                                                setMenuOpen(false);
-                                            }}
-                                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-error/10 hover:bg-error/20 text-error transition-colors shadow-sm"
-                                        >
-                                            <LogOut className="w-4 h-4" />
-                                            <span className="font-semibold text-sm">{t('header.logout')}</span>
-                                        </button>
-                                    </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="flex flex-col gap-2 px-4 py-2">
-                                    <button
-                                        onClick={() => {
-                                            setMenuOpen(false);
-                                            openAuth('login');
-                                        }}
-                                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-primary bg-primary/10 rounded-lg font-medium text-sm hover:bg-primary/20 transition-colors"
-                                    >
-                                        <LogIn className="w-4 h-4" />
-                                        {t('common.login')}
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setMenuOpen(false);
-                                            openAuth('register');
-                                        }}
-                                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 text-white bg-primary rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm"
-                                    >
-                                        <UserPlus className="w-4 h-4" />
-                                        {t('common.register')}
-                                    </button>
-                                </div>
-                            )}
-                        </nav>
+                            </nav>
+                        </>
                     )}
 
                     <AuthModal
@@ -346,7 +352,7 @@ const ClientLayout = ({ children }) => {
             </main>
 
             {/* ═══ FLOATING SUPPORT BUTTONS ═══ */}
-            <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+            <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3">
                 {/* Zalo */}
                 <a
                     href="https://zalo.me/0987654321"
@@ -358,8 +364,8 @@ const ClientLayout = ({ children }) => {
                     {/* Ripple ring */}
                     <span className="absolute inset-0 rounded-full bg-[#0068FF]/30 animate-ring" />
                     <span className="absolute inset-0 rounded-full bg-[#0068FF]/20 animate-ring delay-300" />
-                    <div className="relative w-14 h-14 rounded-full bg-[#0068FF] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer">
-                        <img src={zalo} alt="Zalo" className="w-10 h-10" />
+                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[#0068FF] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                        <img src={zalo} alt="Zalo" className="w-7 h-7 sm:w-10 sm:h-10" />
                     </div>
                 </a>
 
@@ -371,8 +377,8 @@ const ClientLayout = ({ children }) => {
                 >
                     <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring" />
                     <span className="absolute inset-0 rounded-full bg-primary/20 animate-ring delay-300" />
-                    <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl hover:scale-110 transition-transform delay-200 cursor-pointer">
-                        <Phone className="w-6 h-6 text-white" />
+                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl hover:scale-110 transition-transform delay-200 cursor-pointer">
+                        <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                 </a>
             </div>

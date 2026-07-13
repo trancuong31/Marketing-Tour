@@ -1,5 +1,4 @@
-const { Vote, Tour, Notification, VoteLike, Booking, TourDeparture } = require('../models');
-const { Op } = require('sequelize');
+const { Vote, Tour, TourTranslation, Notification, VoteLike, Booking, TourDeparture } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -178,20 +177,43 @@ const createVote = catchAsync(async (req, res, next) => {
  * GET /api/tours/featured-reviews
  */
 const getFeaturedVotes = catchAsync(async (req, res) => {
+    const lang = req.language || 'vi';
     const votes = await Vote.findAll({
         where: { rating: 5, is_approved: 1 },
         include: [{
             model: Tour,
-            attributes: ['id', 'title'],
+            attributes: ['id', 'title', 'slug'],
+            include: [{
+                model: TourTranslation,
+                as: 'translations',
+                where: { language: lang },
+                required: false,
+            }],
         }],
         limit: 15,
         order: [['created_at', 'DESC']],
     });
 
+    const data = votes.map((vote) => {
+        const item = vote.toJSON();
+        const translation = item.Tour?.translations?.[0];
+
+        if (translation) {
+            item.Tour.title = translation.title || item.Tour.title;
+            item.Tour.slug = translation.slug || item.Tour.slug;
+        }
+
+        if (item.Tour) {
+            delete item.Tour.translations;
+        }
+
+        return item;
+    });
+
     res.status(200).json({
         status: 'success',
-        results: votes.length,
-        data: votes,
+        results: data.length,
+        data,
     });
 });
 
@@ -298,7 +320,11 @@ const checkVoteEligibility = catchAsync(async (req, res, next) => {
     if (existingVote) {
         return res.status(200).json({
             status: 'success',
-            data: { eligible: false, reason: 'Bạn đã đánh giá tour này rồi.' },
+            data: {
+                eligible: false,
+                reasonCode: 'alreadyReviewed',
+                reason: 'Bạn đã đánh giá tour này rồi.',
+            },
         });
     }
 
@@ -319,7 +345,11 @@ const checkVoteEligibility = catchAsync(async (req, res, next) => {
     if (!approvedBooking) {
         return res.status(200).json({
             status: 'success',
-            data: { eligible: false, reason: 'Bạn cần có booking đã được duyệt cho tour này để đánh giá.' },
+            data: {
+                eligible: false,
+                reasonCode: 'bookingRequired',
+                reason: 'Bạn cần có booking đã được duyệt cho tour này để đánh giá.',
+            },
         });
     }
 
@@ -332,7 +362,11 @@ const checkVoteEligibility = catchAsync(async (req, res, next) => {
     if (new Date() < tourEndDate) {
         return res.status(200).json({
             status: 'success',
-            data: { eligible: false, reason: 'Bạn chỉ có thể đánh giá sau khi chuyến du lịch kết thúc.' },
+            data: {
+                eligible: false,
+                reasonCode: 'tourNotFinished',
+                reason: 'Bạn chỉ có thể đánh giá sau khi chuyến du lịch kết thúc.',
+            },
         });
     }
 

@@ -4,7 +4,7 @@ const { Otp } = require('../models');
 const { AppError } = require('../utils/appError');
 const { sendOtpEmail } = require('../utils/email');
 const { HTTP_CODES } = require('../constants/httpCodes');
-const { OTP_CONFIG, OTP_TYPES } = require('../constants/otp');
+const { OTP_CONFIG } = require('../constants/otp');
 
 /**
  * Generate a random numeric OTP code

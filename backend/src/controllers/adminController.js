@@ -5,12 +5,13 @@ const { sequelize } = require('../config/database');
 const {
     User, Role, Tour, TourImage, TourItinerary, TourDeparture,
     TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner, Notification,
-    TourTranslation, TourItineraryTranslation,
+    TourTranslation, TourItineraryTranslation, GuideTranslation,
 } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
+const { translateTexts } = require('../services/translationService');
 
 // ══════════════════════════════════════
 // AUTH
@@ -76,6 +77,108 @@ const parseJsonField = (value) => {
     }
 };
 
+const AUTO_TRANSLATION_LANGUAGES = ['en', 'zh'];
+const TOUR_TRANSLATABLE_FIELDS = [
+    'title',
+    'summary',
+    'highlights',
+    'price_includes',
+    'price_excludes',
+    'terms_and_notes',
+    'cancellation_policy',
+];
+
+const hasText = (value) => typeof value === 'string' && value.trim().length > 0;
+
+const buildTourTranslationSource = ({
+    title,
+    summary,
+    highlights,
+    price_includes,
+    price_excludes,
+    terms_and_notes,
+    cancellation_policy,
+}) => ({
+    title,
+    summary,
+    highlights,
+    price_includes,
+    price_excludes,
+    terms_and_notes,
+    cancellation_policy,
+});
+
+const mergeTranslatedFields = (source, existingTranslation, translatedFields) => {
+    const merged = { ...existingTranslation };
+
+    Object.keys(source).forEach((field) => {
+        if (!hasText(merged[field])) {
+            merged[field] = translatedFields[field] || source[field] || '';
+        }
+    });
+
+    return merged;
+};
+
+const ensureTourTranslations = async ({ translations, source, slug }) => {
+    const existingTranslations = parseJsonField(translations);
+
+    return Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
+        const existing = existingTranslations.find(item => item.language === language) || { language };
+        const missingFields = Object.fromEntries(
+            TOUR_TRANSLATABLE_FIELDS
+                .filter(field => hasText(source[field]) && !hasText(existing[field]))
+                .map(field => [field, source[field]]),
+        );
+
+        const translatedFields = Object.keys(missingFields).length > 0
+            ? await translateTexts({ texts: missingFields, targetLang: language })
+            : {};
+
+        return {
+            ...mergeTranslatedFields(source, existing, translatedFields),
+            language,
+            slug: existing.slug || slug,
+        };
+    }));
+};
+
+const ensureItineraryTranslations = async (itinerary) => {
+    const existingTranslations = Array.isArray(itinerary.translations) ? itinerary.translations : [];
+
+    const translations = await Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
+        const existing = existingTranslations.find(item => item.language === language) || { language };
+        const missingFields = {};
+
+        if (hasText(itinerary.title) && !hasText(existing.title)) {
+            missingFields.title = itinerary.title;
+        }
+
+        if (hasText(itinerary.content) && !hasText(existing.content)) {
+            missingFields.content = itinerary.content;
+        }
+
+        const translatedFields = Object.keys(missingFields).length > 0
+            ? await translateTexts({ texts: missingFields, targetLang: language })
+            : {};
+
+        return {
+            language,
+            title: existing.title || translatedFields.title || itinerary.title || '',
+            content: existing.content || translatedFields.content || itinerary.content || '',
+        };
+    }));
+
+    return {
+        ...itinerary,
+        translations,
+    };
+};
+
+const ensureTranslatedItineraries = (itineraries) => (
+    Promise.all(parseJsonField(itineraries).map(ensureItineraryTranslations))
+);
+
 // ══════════════════════════════════════
 // TOUR CRUD
 // ══════════════════════════════════════
@@ -130,10 +233,16 @@ const getTourById = catchAsync(async (req, res, next) => {
         include: [
             { model: Category, attributes: ['id', 'name'] },
             { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], order: [['sort_order', 'ASC']] },
-            { model: TourItinerary, as: 'itineraries', order: [['day_number', 'ASC']] },
+            {
+                model: TourItinerary,
+                as: 'itineraries',
+                order: [['day_number', 'ASC']],
+                include: [{ model: TourItineraryTranslation, as: 'translations' }],
+            },
             { model: TourDeparture, as: 'departures', order: [['departure_date', 'ASC']] },
             { model: TourPickupLocation, as: 'pickupLocations' },
             { model: TourOption, as: 'options' },
+            { model: TourTranslation, as: 'translations' },
         ],
     });
 
@@ -169,6 +278,20 @@ const createTour = catchAsync(async (req, res, next) => {
     const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
     const existingSlug = await Tour.findOne({ where: { slug } });
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+    const translatedTourContent = await ensureTourTranslations({
+        translations,
+        source: buildTourTranslationSource({
+            title,
+            summary,
+            highlights,
+            price_includes,
+            price_excludes,
+            terms_and_notes,
+            cancellation_policy,
+        }),
+        slug: finalSlug,
+    });
+    const translatedItineraries = await ensureTranslatedItineraries(itineraries);
 
     const result = await sequelize.transaction(async (t) => {
         // 1. Tạo tour chính
@@ -201,9 +324,8 @@ const createTour = catchAsync(async (req, res, next) => {
         }
 
         // 3. Lịch trình
-        const parsedItineraries = parseJsonField(itineraries);
-        if (parsedItineraries.length > 0) {
-            for (const item of parsedItineraries) {
+        if (translatedItineraries.length > 0) {
+            for (const item of translatedItineraries) {
                 const iti = await TourItinerary.create({
                     tour_id: tour.id,
                     day_number: item.day_number,
@@ -271,10 +393,9 @@ const createTour = catchAsync(async (req, res, next) => {
         }
 
         // 7. Tour Translations
-        const parsedTranslations = parseJsonField(translations);
-        if (parsedTranslations.length > 0) {
+        if (translatedTourContent.length > 0) {
             await TourTranslation.bulkCreate(
-                parsedTranslations.map((item) => ({
+                translatedTourContent.map((item) => ({
                     tour_id: tour.id,
                     language: item.language,
                     title: item.title || title,
@@ -342,6 +463,23 @@ const updateTour = catchAsync(async (req, res, next) => {
         if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
     }
 
+    const translatedTourContent = await ensureTourTranslations({
+        translations,
+        source: buildTourTranslationSource({
+            title: title || tour.title,
+            summary: summary !== undefined ? summary : tour.summary,
+            highlights: highlights !== undefined ? highlights : tour.highlights,
+            price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
+            price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
+            terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
+            cancellation_policy: cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
+        }),
+        slug: newSlug,
+    });
+    const translatedItineraries = itineraries !== undefined
+        ? await ensureTranslatedItineraries(itineraries)
+        : null;
+
     await sequelize.transaction(async (t) => {
         // 1. Update tour chính
         await tour.update({
@@ -380,9 +518,8 @@ const updateTour = catchAsync(async (req, res, next) => {
         // 3. Replace-all satellite data (chỉ khi client gửi dữ liệu)
         if (itineraries !== undefined) {
             await TourItinerary.destroy({ where: { tour_id: id }, transaction: t });
-            const parsedItineraries = parseJsonField(itineraries);
-            if (parsedItineraries.length > 0) {
-                for (const item of parsedItineraries) {
+            if (translatedItineraries.length > 0) {
+                for (const item of translatedItineraries) {
                     const iti = await TourItinerary.create({
                         tour_id: id,
                         day_number: item.day_number,
@@ -456,26 +593,23 @@ const updateTour = catchAsync(async (req, res, next) => {
             }
         }
 
-        if (translations !== undefined) {
-            await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
-            const parsedTranslations = parseJsonField(translations);
-            if (parsedTranslations.length > 0) {
-                await TourTranslation.bulkCreate(
-                    parsedTranslations.map((item) => ({
-                        tour_id: id,
-                        language: item.language,
-                        title: item.title,
-                        slug: item.slug || newSlug,
-                        summary: item.summary || null,
-                        highlights: item.highlights || null,
-                        price_includes: item.price_includes || null,
-                        price_excludes: item.price_excludes || null,
-                        terms_and_notes: item.terms_and_notes || null,
-                        cancellation_policy: item.cancellation_policy || null,
-                    })),
-                    { transaction: t }
-                );
-            }
+        await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
+        if (translatedTourContent.length > 0) {
+            await TourTranslation.bulkCreate(
+                translatedTourContent.map((item) => ({
+                    tour_id: id,
+                    language: item.language,
+                    title: item.title,
+                    slug: item.slug || newSlug,
+                    summary: item.summary || null,
+                    highlights: item.highlights || null,
+                    price_includes: item.price_includes || null,
+                    price_excludes: item.price_excludes || null,
+                    terms_and_notes: item.terms_and_notes || null,
+                    cancellation_policy: item.cancellation_policy || null,
+                })),
+                { transaction: t }
+            );
         }
     });
 
@@ -958,6 +1092,49 @@ const getReviewStats = catchAsync(async (req, res) => {
 // GUIDE MANAGEMENT
 // ══════════════════════════════════════
 
+const GUIDE_TRANSLATION_LANGUAGES = ['en', 'zh'];
+
+const upsertGuideTranslation = async ({ guide, language, title, slug, content, transaction }) => {
+    await GuideTranslation.upsert({
+        guide_id: guide.id,
+        language,
+        title,
+        slug,
+        content,
+    }, { transaction });
+};
+
+const syncGuideTranslations = async ({ guide, title, slug, content, transaction }) => {
+    await upsertGuideTranslation({
+        guide,
+        language: 'vi',
+        title,
+        slug,
+        content,
+        transaction,
+    });
+
+    await Promise.all(GUIDE_TRANSLATION_LANGUAGES.map(async (language) => {
+        const translated = await translateTexts({
+            targetLang: language,
+            texts: {
+                title,
+                content,
+            },
+        });
+        const translatedTitle = translated.title || title;
+
+        await upsertGuideTranslation({
+            guide,
+            language,
+            title: translatedTitle,
+            slug: slugify(translatedTitle, { lower: true, strict: true }) || slug,
+            content: translated.content || content,
+            transaction,
+        });
+    }));
+};
+
 const getAllGuides = catchAsync(async (req, res) => {
     const guides = await Guide.findAll({ order: [['updated_at', 'DESC']] });
 
@@ -975,11 +1152,23 @@ const createGuide = catchAsync(async (req, res) => {
     const existingSlug = await Guide.findOne({ where: { slug } });
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
 
-    const guide = await Guide.create({
-        title,
-        slug: finalSlug,
-        content,
-        is_active: is_active !== undefined ? is_active : 1,
+    const guide = await sequelize.transaction(async (transaction) => {
+        const createdGuide = await Guide.create({
+            title,
+            slug: finalSlug,
+            content,
+            is_active: is_active !== undefined ? is_active : 1,
+        }, { transaction });
+
+        await syncGuideTranslations({
+            guide: createdGuide,
+            title,
+            slug: finalSlug,
+            content,
+            transaction,
+        });
+
+        return createdGuide;
     });
 
     res.status(201).json({
@@ -1006,11 +1195,24 @@ const updateGuide = catchAsync(async (req, res, next) => {
         if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
     }
 
-    await guide.update({
-        title: title || guide.title,
-        slug: newSlug,
-        content: content !== undefined ? content : guide.content,
-        is_active: is_active !== undefined ? is_active : guide.is_active,
+    const nextTitle = title || guide.title;
+    const nextContent = content !== undefined ? content : guide.content;
+
+    await sequelize.transaction(async (transaction) => {
+        await guide.update({
+            title: nextTitle,
+            slug: newSlug,
+            content: nextContent,
+            is_active: is_active !== undefined ? is_active : guide.is_active,
+        }, { transaction });
+
+        await syncGuideTranslations({
+            guide,
+            title: nextTitle,
+            slug: newSlug,
+            content: nextContent,
+            transaction,
+        });
     });
 
     res.status(200).json({

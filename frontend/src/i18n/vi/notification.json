@@ -1,0 +1,16 @@
+{
+    "title": "Thông báo",
+    "pageTitle": "Tất cả thông báo",
+    "pageSubtitle": "{{count}} thông báo trong tài khoản của bạn",
+    "openNotifications": "Mở thông báo",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "markAllReadSuccess": "Đã đánh dấu tất cả thông báo là đã đọc",
+    "viewAll": "Xem tất cả thông báo",
+    "emptyTitle": "Bạn chưa có thông báo nào",
+    "emptyDescription": "Khi có lượt thích, phản hồi bình luận hoặc cập nhật đặt tour, thông báo sẽ xuất hiện ở đây.",
+    "fetchError": "Không thể tải danh sách thông báo.",
+    "markReadError": "Không thể cập nhật trạng thái thông báo.",
+    "retry": "Thử lại",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau"
+}

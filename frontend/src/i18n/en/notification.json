@@ -1,0 +1,16 @@
+{
+    "title": "Notifications",
+    "pageTitle": "All Notifications",
+    "pageSubtitle": "{{count}} notifications in your account",
+    "openNotifications": "Open notifications",
+    "markAllRead": "Mark all as read",
+    "markAllReadSuccess": "All notifications have been marked as read",
+    "viewAll": "View all notifications",
+    "emptyTitle": "You do not have any notifications yet",
+    "emptyDescription": "Likes, comment replies, and booking updates will appear here.",
+    "fetchError": "Unable to load notifications.",
+    "markReadError": "Unable to update notification status.",
+    "retry": "Try again",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
+}

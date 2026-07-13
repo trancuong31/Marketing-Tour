@@ -4,6 +4,7 @@ import { adminService, categoryService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
+import TranslationToolbar from '@/features/admin/components/TranslationToolbar';
 import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -364,7 +365,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                     
                     {(files.length === 0 && (!modal.tour?.images || modal.tour.images.length === 0)) && (
                         <div className="text-center py-4 text-text-muted">
-                            <p className="text-xs font-medium">Kéo thả ảnh vào đây hoặc nhấp "Thêm ảnh"</p>
+                            <p className="text-xs font-medium">Kéo thả ảnh vào đây hoặc nhấp &quot;Thêm ảnh&quot;</p>
                         </div>
                     )}
                 </div>
@@ -900,6 +901,7 @@ const TourManagementPage = () => {
             fd.append('departures', JSON.stringify(data.departures || []));
             fd.append('pickup_locations', JSON.stringify(data.pickup_locations || []));
             fd.append('options', JSON.stringify(data.options || []));
+            fd.append('translations', JSON.stringify(data.translations || []));
 
             // Images
             files.forEach(f => fd.append('images', f));
@@ -922,68 +924,79 @@ const TourManagementPage = () => {
         }
     };
 
-    const handleTranslate = async () => {
-        if (currentLang === 'vi') {
-            toast.info('Vui lòng chọn ngôn ngữ đích (EN hoặc ZH) để dịch');
-            return;
-        }
-
-        const targetLang = currentLang;
+    const applyTranslatedContent = (translated, targetLang) => {
         const langIndex = targetLang === 'en' ? 0 : 1;
-        let viData = {};
-
-        if (activeTab === 'general') {
-            viData = {
-                title: watch('title'),
-                summary: watch('summary'),
-                highlights: watch('highlights'),
-                price_includes: watch('price_includes'),
-                price_excludes: watch('price_excludes'),
-                terms_and_notes: watch('terms_and_notes'),
-                cancellation_policy: watch('cancellation_policy'),
-            };
-        } else if (activeTab === 'itineraries') {
-            const itineraries = watch('itineraries') || [];
-            if (itineraries.length === 0) return toast.warning('Chưa có lịch trình nào để dịch');
-            itineraries.forEach((iti, index) => {
-                viData[`iti_${index}_title`] = iti.title;
-                viData[`iti_${index}_content`] = iti.content;
+        const setTranslatedValue = (fieldName, value) => {
+            setValue(fieldName, value, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
             });
-        }
+        };
+
+        Object.keys(translated).forEach(key => {
+            if (key.startsWith('tour_')) {
+                const field = key.replace(/^tour_/, '');
+                setTranslatedValue(`translations.${langIndex}.${field}`, translated[key]);
+                return;
+            }
+
+            const parts = key.split('_');
+            if (parts.length === 3) {
+                const index = parts[1];
+                const field = parts[2];
+                setTranslatedValue(`itineraries.${index}.translations.${langIndex}.${field}`, translated[key]);
+            }
+        });
+    };
+
+    const getVietnameseContentForTranslation = () => {
+        const viData = {
+            tour_title: watch('title'),
+            tour_summary: watch('summary'),
+            tour_highlights: watch('highlights'),
+            tour_price_includes: watch('price_includes'),
+            tour_price_excludes: watch('price_excludes'),
+            tour_terms_and_notes: watch('terms_and_notes'),
+            tour_cancellation_policy: watch('cancellation_policy'),
+        };
+
+        const itineraries = watch('itineraries') || [];
+        itineraries.forEach((iti, index) => {
+            viData[`iti_${index}_title`] = iti.title;
+            viData[`iti_${index}_content`] = iti.content;
+        });
+
+        return viData;
+    };
+
+    const handleTranslate = async () => {
+        const viData = getVietnameseContentForTranslation();
 
         if (Object.values(viData).every(v => !v)) {
             toast.warning('Chưa có nội dung Tiếng Việt để dịch');
             return;
         }
 
+        const targetLanguages = currentLang === 'vi' ? ['en', 'zh'] : [currentLang];
+
         try {
             setTranslating(true);
-            const toastId = toast.loading(`Đang dịch sang ${targetLang.toUpperCase()}...`);
-            const res = await adminService.translateContent({
-                texts: viData,
-                targetLang
-            });
-            const translated = res.data.data;
-            
-            if (activeTab === 'general') {
-                Object.keys(translated).forEach(key => {
-                    setValue(`translations.${langIndex}.${key}`, translated[key], { shouldValidate: true });
+            const toastId = toast.loading(
+                targetLanguages.length === 2 ? 'Đang dịch sang EN và ZH...' : `Đang dịch sang ${targetLanguages[0].toUpperCase()}...`,
+            );
+
+            for (const targetLang of targetLanguages) {
+                const res = await adminService.translateContent({
+                    texts: viData,
+                    targetLang,
                 });
-            } else if (activeTab === 'itineraries') {
-                Object.keys(translated).forEach(key => {
-                    // key format: iti_0_title
-                    const parts = key.split('_');
-                    if (parts.length === 3) {
-                        const index = parts[1];
-                        const field = parts[2];
-                        setValue(`itineraries.${index}.translations.${langIndex}.${field}`, translated[key], { shouldValidate: true });
-                    }
-                });
+                applyTranslatedContent(res.data.data, targetLang);
             }
 
             toast.success('Dịch tự động thành công!', { id: toastId });
         } catch (error) {
-            toast.error('Lỗi dịch tự động');
+            toast.error(error.response?.data?.message || 'Lỗi dịch tự động');
         } finally {
             setTranslating(false);
         }
@@ -1258,37 +1271,12 @@ const TourManagementPage = () => {
 
                         {/* Language Switcher & AI Translation */}
                         {['general', 'itineraries'].includes(activeTab) && (
-                            <div className="px-6 py-3 bg-surface-alt/50 border-b border-border flex items-center justify-between shadow-sm z-10 relative">
-                                <div className="flex gap-2">
-                                    {[
-                                        { id: 'vi', label: 'Tiếng Việt (Mặc định)' },
-                                        { id: 'en', label: 'English (EN)' },
-                                        { id: 'zh', label: '中文 (ZH)' }
-                                    ].map(lang => (
-                                        <button
-                                            key={lang.id}
-                                            type="button"
-                                            onClick={() => setCurrentLang(lang.id)}
-                                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                                currentLang === lang.id
-                                                    ? 'bg-primary text-white shadow-md'
-                                                    : 'bg-surface border border-border text-text-secondary hover:bg-surface-hover hover:text-text'
-                                            }`}
-                                        >
-                                            {lang.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <button 
-                                    type="button" 
-                                    onClick={handleTranslate}
-                                    disabled={translating}
-                                    className="flex items-center gap-1.5 text-xs font-bold bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors shadow-sm disabled:opacity-50"
-                                >
-                                    <span className={`text-sm ${translating ? 'animate-spin' : ''}`}>🤖</span> 
-                                    {translating ? 'Đang dịch...' : 'Dịch tự động (Google)'}
-                                </button>
-                            </div>
+                            <TranslationToolbar
+                                currentLang={currentLang}
+                                translating={translating}
+                                onLanguageChange={setCurrentLang}
+                                onTranslate={handleTranslate}
+                            />
                         )}
 
                         {/* Tab Content */}

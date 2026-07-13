@@ -212,6 +212,7 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
 
 const getBannersByPosition = catchAsync(async (req, res) => {
     const { position } = req.query;
+    const lang = req.language || 'vi';
     const whereClause = { is_active: 1 };
     const today = new Date();
     const formattedToday = today.toISOString().split('T')[0];
@@ -226,9 +227,15 @@ const getBannersByPosition = catchAsync(async (req, res) => {
             {
                 model: Tour,
                 as: 'tour',
-                attributes: ['id', 'slug'],
+                attributes: ['id', 'title', 'slug'],
                 required: false,
                 include: [
+                    {
+                        model: TourTranslation,
+                        as: 'translations',
+                        where: { language: lang },
+                        required: false,
+                    },
                     {
                         model: TourDeparture,
                         as: 'departures',
@@ -243,10 +250,31 @@ const getBannersByPosition = catchAsync(async (req, res) => {
         order: [['id', 'DESC']],
     });
 
+    const data = banners.map((banner) => {
+        const item = banner.toJSON();
+        const translation = item.tour?.translations?.[0];
+
+        if (translation) {
+            item.title = translation.title || item.title;
+            item.tour.title = translation.title || item.tour.title;
+            item.tour.slug = translation.slug || item.tour.slug;
+
+            if (item.target_link?.startsWith('/tours/')) {
+                item.target_link = `/tours/${item.tour.slug}`;
+            }
+        }
+
+        if (item.tour) {
+            delete item.tour.translations;
+        }
+
+        return item;
+    });
+
     res.status(200).json({
         status: 'success',
-        results: banners.length,
-        data: banners,
+        results: data.length,
+        data,
     });
 });
 

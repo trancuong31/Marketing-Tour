@@ -1,33 +1,37 @@
 /**
- * Migration: Add refresh_token column to users table
+ * Migration: add refresh_token column to users table.
  * Run: node src/migrations/add_refresh_token_column.js
  */
 require('../config/env');
-const { sequelize } = require('../config/database');
 const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const logger = require('../config/logger');
 
 const run = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Connected to database');
+        logger.info('Connected to database.');
 
-        const columns = await sequelize.getQueryInterface().describeTable('users');
-        
+        const queryInterface = sequelize.getQueryInterface();
+        const columns = await queryInterface.describeTable('users');
+
         if (columns.refresh_token) {
-            console.log('⚠️  Column refresh_token already exists, skipping.');
+            logger.warn('Column refresh_token already exists, skipping.');
         } else {
-            await sequelize.getQueryInterface().addColumn('users', 'refresh_token', {
+            await queryInterface.addColumn('users', 'refresh_token', {
                 type: DataTypes.TEXT,
                 allowNull: true,
-                after: 'last_login'
+                after: 'last_login',
             });
-            console.log('✅ Added refresh_token column');
+            logger.info('Added refresh_token column.');
         }
 
-        process.exit(0);
+        process.exitCode = 0;
     } catch (error) {
-        console.error('❌ Migration failed:', error.message);
-        process.exit(1);
+        logger.error('Migration failed:', error);
+        process.exitCode = 1;
+    } finally {
+        await sequelize.close();
     }
 };
 

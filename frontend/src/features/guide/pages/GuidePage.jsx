@@ -4,12 +4,21 @@ import DOMPurify from 'dompurify';
 import { guideService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
 import { BookOpen, ArrowLeft, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+const getDateLocale = (language) => {
+    if (language?.startsWith('zh')) return 'zh-CN';
+    if (language?.startsWith('en')) return 'en-US';
+    return 'vi-VN';
+};
 
 const GuidePage = () => {
     const { slug } = useParams();
+    const { t, i18n } = useTranslation();
     const [guide, setGuide] = useState(null);
     const [guides, setGuides] = useState([]);
     const [loading, setLoading] = useState(true);
+    const dateLocale = getDateLocale(i18n.language);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -29,7 +38,7 @@ const GuidePage = () => {
             }
         };
         fetchData();
-    }, [slug]);
+    }, [slug, i18n.language]);
 
     // Trang danh sách
     if (!slug) {
@@ -37,8 +46,8 @@ const GuidePage = () => {
             <ClientLayout>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
                     <div className="text-center mb-8">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">Hướng Dẫn Du Lịch</h1>
-                        <p className="text-text-muted">Mẹo và thông tin hữu ích cho chuyến đi của bạn</p>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">{t('guide.title')}</h1>
+                        <p className="text-text-muted">{t('guide.subtitle')}</p>
                     </div>
 
                     {loading ? (
@@ -61,7 +70,7 @@ const GuidePage = () => {
                                         <div>
                                             <h3 className="font-bold text-text">{g.title}</h3>
                                             <p className="text-xs text-text-muted mt-0.5">
-                                                Cập nhật: {new Date(g.updated_at).toLocaleDateString('vi-VN')}
+                                                {t('guide.updatedAt')}: {new Date(g.updated_at).toLocaleDateString(dateLocale)}
                                             </p>
                                         </div>
                                     </div>
@@ -69,7 +78,7 @@ const GuidePage = () => {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-center text-text-muted py-12">Chưa có bài hướng dẫn nào</p>
+                        <p className="text-center text-text-muted py-12">{t('guide.empty')}</p>
                     )}
                 </div>
             </ClientLayout>
@@ -87,12 +96,12 @@ const GuidePage = () => {
                 ) : guide ? (
                     <>
                         <Link to="/guides" className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary-dark mb-6 transition">
-                            <ArrowLeft className="w-4 h-4" /> Quay lại danh sách
+                            <ArrowLeft className="w-4 h-4" /> {t('guide.backToList')}
                         </Link>
 
                         <h1 className="text-3xl font-extrabold text-text mb-4">{guide.title}</h1>
                         <p className="text-sm text-text-muted mb-6">
-                            Cập nhật: {new Date(guide.updated_at).toLocaleDateString('vi-VN')}
+                            {t('guide.updatedAt')}: {new Date(guide.updated_at).toLocaleDateString(dateLocale)}
                         </p>
 
                         <div
@@ -102,9 +111,9 @@ const GuidePage = () => {
                     </>
                 ) : (
                     <div className="text-center py-20">
-                        <h2 className="text-xl font-bold text-text mb-2">Không tìm thấy</h2>
-                        <p className="text-text-muted mb-4">Bài hướng dẫn không tồn tại hoặc đã bị ẩn.</p>
-                        <Link to="/guides" className="text-primary hover:text-primary-dark">← Quay lại</Link>
+                        <h2 className="text-xl font-bold text-text mb-2">{t('guide.notFoundTitle')}</h2>
+                        <p className="text-text-muted mb-4">{t('guide.notFoundDesc')}</p>
+                        <Link to="/guides" className="text-primary hover:text-primary-dark">{t('guide.back')}</Link>
                     </div>
                 )}
             </div>

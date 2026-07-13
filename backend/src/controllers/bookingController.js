@@ -1,16 +1,53 @@
-const { Booking, Tour, TourDeparture, TourPickupLocation, TourOption, BookingOption, Notification } = require('../models');
+const {
+    Booking,
+    Tour,
+    TourDeparture,
+    TourPickupLocation,
+    TourOption,
+    BookingOption,
+    Notification,
+    TourTranslation,
+} = require('../models');
 const { sequelize } = require('../config/database');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const crypto = require('crypto');
-const { Op } = require('sequelize');
 
 // Sinh booking code duy nhất
 const generateBookingCode = () => {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = crypto.randomBytes(3).toString('hex').toUpperCase();
     return `BK${timestamp}${random}`;
+};
+
+const getTourInclude = (language) => ({
+    model: Tour,
+    attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'],
+    include: [
+        {
+            model: TourTranslation,
+            as: 'translations',
+            attributes: ['title', 'slug'],
+            where: { language },
+            required: false,
+        },
+    ],
+});
+
+const mapTranslatedTour = (tour) => {
+    if (!tour) return null;
+
+    const translation = tour.translations?.[0];
+
+    return {
+        id: tour.id,
+        title: translation?.title || tour.title,
+        slug: translation?.slug || tour.slug,
+        status: tour.status,
+        duration_days: tour.duration_days,
+        duration_nights: tour.duration_nights,
+    };
 };
 
 // --------- Tạo booking ---------
@@ -186,6 +223,7 @@ const createBooking = catchAsync(async (req, res) => {
 // --------- Lấy lịch sử booking theo user login ---------
 const getMyBookings = catchAsync(async (req, res) => {
     const userId = req.user.id;
+    const language = req.language || 'vi';
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
     const offset = (page - 1) * limit;
@@ -195,7 +233,7 @@ const getMyBookings = catchAsync(async (req, res) => {
         distinct: true,
         col: 'id',
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'] },
+            getTourInclude(language),
             { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
             { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
             { model: BookingOption, as: 'bookingOptions' },
@@ -234,14 +272,7 @@ const getMyBookings = catchAsync(async (req, res) => {
         pickup_location_snapshot: b.pickup_location_snapshot,
         pickup_price_snapshot: b.pickup_price_snapshot,
 
-        tour: b.Tour ? {
-            id: b.Tour.id,
-            title: b.Tour.title,
-            slug: b.Tour.slug,
-            status: b.Tour.status,
-            duration_days: b.Tour.duration_days,
-            duration_nights: b.Tour.duration_nights,
-        } : null,
+        tour: mapTranslatedTour(b.Tour),
         departure: b.departure ? {
             id: b.departure.id,
             departure_date: b.departure.departure_date,
@@ -319,6 +350,7 @@ const deleteMyBooking = catchAsync(async (req, res) => {
 // --------- Tra cứu booking (Public) ---------
 const lookupBooking = catchAsync(async (req, res, next) => {
     const { email, phone } = req.query;
+    const language = req.language || 'vi';
 
     if (!email || !phone) {
         return next(new AppError('Vui lòng cung cấp đầy đủ email và số điện thoại.', HTTP_CODES.BAD_REQUEST));
@@ -330,7 +362,7 @@ const lookupBooking = catchAsync(async (req, res, next) => {
             customer_phone: phone,
         },
         include: [
-            { model: Tour, attributes: ['id', 'title', 'slug', 'status', 'duration_days', 'duration_nights'] },
+            getTourInclude(language),
             { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
             { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
             { model: BookingOption, as: 'bookingOptions' },
@@ -367,14 +399,7 @@ const lookupBooking = catchAsync(async (req, res, next) => {
         pickup_location_snapshot: b.pickup_location_snapshot,
         pickup_price_snapshot: b.pickup_price_snapshot,
 
-        tour: b.Tour ? {
-            id: b.Tour.id,
-            title: b.Tour.title,
-            slug: b.Tour.slug,
-            status: b.Tour.status,
-            duration_days: b.Tour.duration_days,
-            duration_nights: b.Tour.duration_nights,
-        } : null,
+        tour: mapTranslatedTour(b.Tour),
         departure: b.departure ? {
             id: b.departure.id,
             departure_date: b.departure.departure_date,

@@ -40,8 +40,35 @@
         "itinerary": "详细行程",
         "customerExperience": "客户体验",
         "customerExperienceDesc": "来自系统内客户的真实分享",
+        "relatedTours": "为您推荐的相关旅游",
+        "relatedToursDesc": "根据同类旅游、精选产品和当前优惠为您推荐",
+        "prevRelatedTours": "查看上一个相关旅游",
+        "nextRelatedTours": "查看下一个相关旅游",
         "customer": "客户",
         "suggested": "推荐",
+        "defaultReviewComment": "这次旅行非常棒！从酒店到导游，一切都超出预期。我一定会继续在这里预订更多旅游。",
+        "defaultReviewTour": "特别促销旅游",
+        "communityReviews": "社区评价（{{count}}）",
+        "noCommunityReviews": "暂无评价。成为第一个分享体验的人吧！",
+        "sortLabel": "排序",
+        "sortNewest": "最新",
+        "mockReviews": [
+            {
+                "customer": "明泉",
+                "comment": "马来西亚之旅非常棒，公司组织得非常专业！",
+                "tour": "马来西亚 5天4晚"
+            },
+            {
+                "customer": "黄南",
+                "comment": "导游非常热情，整个行程中都给予团队周到的帮助。",
+                "tour": "韩国秋季之旅"
+            },
+            {
+                "customer": "清水",
+                "comment": "我们一家留下了难忘的回忆。感谢 KyNghiTuyetVoi！",
+                "tour": "岘港会安 4天3晚"
+            }
+        ],
         "notFoundDesc": "此旅游可能已停止或不存在。",
         "perPerson": "/人",
         "photos": "照片",
@@ -50,6 +77,30 @@
         "priceExcludes": "价格不包含",
         "termsNotes": "条款和注意事项",
         "cancellationPolicy": "取消政策"
+    },
+    "review": {
+        "cannotCheckEligibility": "无法检查评价资格。",
+        "maxImages": "最多只能上传 5 张图片。",
+        "genericError": "发生错误",
+        "thankYou": "感谢您的评价！",
+        "pendingApproval": "您的评价正在等待审核，审核通过后将显示。",
+        "loginTitle": "登录后评价",
+        "loginDesc": "您需要登录后才能为此旅游提交评论和图片。",
+        "checkingEligibility": "正在检查评价资格...",
+        "notEligibleTitle": "暂时无法评价",
+        "formTitle": "提交您的评价",
+        "ratingLabel": "星级评分",
+        "ratingRequired": "请选择星级评分",
+        "imagesLabel": "真实照片（最多 5 张）",
+        "addImage": "添加照片",
+        "commentPlaceholder": "您的评论...",
+        "submitting": "正在提交...",
+        "submit": "提交评价",
+        "reasons": {
+            "alreadyReviewed": "您已经评价过此旅游。",
+            "bookingRequired": "您需要有此旅游的已批准预订后才能评价。",
+            "tourNotFinished": "您只能在行程结束后进行评价。"
+        }
     },
     "card": {
         "durationDaysNights": "{{days}} 天 {{nights}} 晚",
