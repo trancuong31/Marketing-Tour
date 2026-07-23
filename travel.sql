@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS `banners` (
 -- Dumping data for table db_marketing_tour.banners: ~6 rows (approximately)
 DELETE FROM `banners`;
 INSERT INTO `banners` (`id`, `tour_id`, `title`, `image_url`, `target_link`, `position`, `is_active`, `created_at`, `updated_at`) VALUES
-	(7, 2, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1777299559761-562877284.jpg', '/tours/nghi-duong-phu-quoc-hon-thom', 'hero', 1, '2026-04-01 11:54:59', '2026-04-27 14:19:19'),
-	(9, 11, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1777476492776-338103359.jpg', '/tours/nghi-duong-phu-quoc-hon-thom2', 'hero', 1, '2026-04-29 15:28:12', '2026-04-29 15:28:12'),
-	(12, 10, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1777476549017-229992436.jpg', '/tours/nghi-duong-phu-quoc-hon-thom1', 'hero', 1, '2026-04-29 15:29:09', '2026-04-29 15:29:09'),
-	(13, 9, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan', '/uploads/banners/banner-1777476550442-669196842.jpg', '/tours/tour-kham-pha-sapa-chinh-phuc-fansipan2', 'hero', 1, '2026-04-29 15:29:10', '2026-04-29 15:29:10'),
-	(14, 8, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan', '/uploads/banners/banner-1777476550894-892454798.jpg', '/tours/tour-kham-pha-sapa-chinh-phuc-fansipan1', 'hero', 1, '2026-04-29 15:29:10', '2026-04-29 15:29:10'),
-	(18, 15, 'Tour Đài Loan 5N4Đ: HCM - Cao Hùng - Đài Trung - Đài Bắc - Thủy Cung X-park', '/uploads/banners/banner-1778326102895-854054055.jpg', '/tours/tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', 'hero', 1, '2026-05-09 11:28:22', '2026-05-09 11:28:22');
+	(7, 2, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/nghi-duong-phu-quoc-hon-thom', 'hero', 1, '2026-04-01 11:54:59', '2026-07-18 19:52:40'),
+	(9, 11, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/nghi-duong-phu-quoc-hon-thom2', 'hero', 1, '2026-04-29 15:28:12', '2026-07-18 19:52:42'),
+	(12, 10, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/nghi-duong-phu-quoc-hon-thom1', 'hero', 1, '2026-04-29 15:29:09', '2026-07-18 19:52:45'),
+	(13, 9, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/tour-kham-pha-sapa-chinh-phuc-fansipan2', 'hero', 1, '2026-04-29 15:29:10', '2026-07-18 19:52:44'),
+	(14, 8, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/tour-kham-pha-sapa-chinh-phuc-fansipan1', 'hero', 1, '2026-04-29 15:29:10', '2026-07-18 19:52:46'),
+	(18, 15, 'Tour Đài Loan 5N4Đ: HCM - Cao Hùng - Đài Trung - Đài Bắc - Thủy Cung X-park', '/uploads/banners/banner-1775569844027-472097368.jpg', '/tours/tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', 'hero', 1, '2026-05-09 11:28:22', '2026-07-18 19:52:48');
 
 -- Dumping structure for table db_marketing_tour.booking_options
 DROP TABLE IF EXISTS `booking_options`;
@@ -84,6 +84,8 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   `child_qty` int(11) DEFAULT 0 COMMENT 'Số trẻ em',
   `infant_qty` int(11) DEFAULT 0 COMMENT 'Số em bé',
   `customer_note` text DEFAULT NULL,
+  `language` varchar(5) NOT NULL DEFAULT 'vi',
+  `review_email_sent_at` datetime DEFAULT NULL,
   `departure_date` date DEFAULT NULL,
   `adult_count` int(11) NOT NULL DEFAULT 1,
   `child_count` int(11) NOT NULL DEFAULT 0,
@@ -106,6 +108,8 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   KEY `user_id` (`user_id`),
   KEY `customer_phone` (`customer_phone`),
   KEY `customer_email` (`customer_email`),
+  KEY `booking_language` (`language`),
+  KEY `booking_review_email_sent_at` (`review_email_sent_at`),
   KEY `status` (`status`),
   KEY `fk_bookings_departure` (`departure_id`),
   KEY `fk_bookings_pickup` (`pickup_location_id`),

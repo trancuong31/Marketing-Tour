@@ -33,6 +33,8 @@ export default function ReviewManagementPage() {
     const [totalItems, setTotalItems] = useState(0);
 
     const [topTours, setTopTours] = useState([]);
+    const [improvementTours, setImprovementTours] = useState([]);
+    const [rankingTab, setRankingTab] = useState('top');
     const [stats, setStats] = useState([]);
     const [reviews, setReviews] = useState([]);
     
@@ -187,19 +189,22 @@ export default function ReviewManagementPage() {
             if (selectedTime) params.time = selectedTime;
 
             // Stats calls don't need pagination
-            const statsParams = { ...params };
-            const topParams = { time: selectedTime }; // Tour selection shouldn't filter top tours ranking usually, but let's stick to system level top tours.
+            const statsParams = { time: selectedTime };
+            const topParams = { time: selectedTime };
+            const improvementParams = { time: selectedTime, mode: 'improvement' };
 
             const voteParams = { ...params, page: currentPage, limit: 10 };
             if (approvalFilter !== '') voteParams.approved = approvalFilter;
 
-            const [topRes, statsRes, reviewsRes] = await Promise.all([
+            const [topRes, improvementRes, statsRes, reviewsRes] = await Promise.all([
                 adminService.getTopRatedTours(topParams),
+                adminService.getTopRatedTours(improvementParams),
                 adminService.getReviewStats(statsParams),
                 adminService.getVotes(voteParams)
             ]);
 
             setTopTours(topRes.data?.data || []);
+            setImprovementTours(improvementRes.data?.data || []);
             setStats(statsRes.data?.data || []);
             
             if (reviewsRes.data?.data) {
@@ -271,6 +276,12 @@ export default function ReviewManagementPage() {
     const avgRating = totalVotes > 0 
         ? (stats.reduce((acc, s) => acc + (s.rating * s.count), 0) / totalVotes).toFixed(1)
         : '0.0';
+    const rankingTabs = [
+        { value: 'top', label: 'Top 5 Tour nổi bật' },
+        { value: 'improvement', label: 'Top 5 Tour cần cải thiện' },
+    ];
+    const activeRankingTours = rankingTab === 'top' ? topTours : improvementTours;
+    const activeRankingTitle = rankingTabs.find(tab => tab.value === rankingTab)?.label || rankingTabs[0].label;
 
     const pieChartOptions = {
         chart: { type: 'pie', backgroundColor: 'transparent', height: 350 },
@@ -282,6 +293,7 @@ export default function ReviewManagementPage() {
             y: 15
         },
         credits: { enabled: false },
+        accessibility: { enabled: false },
         tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
         plotOptions: {
             pie: {
@@ -446,11 +458,27 @@ export default function ReviewManagementPage() {
                         {/* Top Tours Ranking */}
                         <div className="lg:col-span-1 bg-surface border border-border rounded-2xl p-6 shadow-sm">
                             <h2 className="text-sm font-bold text-text mb-4 uppercase tracking-wider flex items-center gap-2">
-                                <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> Top 5 Tour Đánh Giá Cao
+                                <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {activeRankingTitle}
                             </h2>
-                            {topTours.length > 0 ? (
+                            <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface-alt p-1">
+                                {rankingTabs.map(tab => (
+                                    <button
+                                        key={tab.value}
+                                        type="button"
+                                        onClick={() => setRankingTab(tab.value)}
+                                        className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${
+                                            rankingTab === tab.value
+                                                ? 'bg-primary text-white shadow-sm'
+                                                : 'text-text-secondary hover:bg-surface hover:text-text'
+                                        }`}
+                                    >
+                                        {tab.value === 'top' ? 'Đánh giá cao' : 'Cần cải thiện'}
+                                    </button>
+                                ))}
+                            </div>
+                            {activeRankingTours.length > 0 ? (
                                 <div className="space-y-4">
-                                    {topTours.map((t, index) => (
+                                    {activeRankingTours.map((t, index) => (
                                         <div key={index} className="flex items-center gap-3 p-3 bg-surface-alt rounded-xl">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-black text-primary">
                                                 {index + 1}
@@ -475,7 +503,7 @@ export default function ReviewManagementPage() {
                         <div className="lg:col-span-2 bg-surface border border-border rounded-2xl p-6 shadow-sm">
                             <h2 className="text-sm font-bold text-text mb-6 uppercase tracking-wider flex items-center gap-2 border-b border-border pb-3">
                                 <MessageSquare className="w-4 h-4 text-blue-500" />
-                                {selectedTour ? 'Phân tích phản hồi Tour' : 'Thống kê đánh giá toàn hệ thống'}
+                                Đánh giá toàn hệ thống
                             </h2>
                             
                             {stats.length > 0 ? (

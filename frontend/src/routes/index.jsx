@@ -22,6 +22,7 @@ const TourManagementPage = lazy(() => import('../features/admin/pages/TourManage
 const ContentManagementPage = lazy(() => import('../features/admin/pages/ContentManagementPage'));
 const BannerManagementPage = lazy(() => import('../features/admin/pages/BannerManagementPage'));
 const ReviewManagementPage = lazy(() => import('../features/admin/pages/ReviewManagementPage'));
+const TranslationManagementPage = lazy(() => import('../features/admin/pages/TranslationManagementPage'));
 
 const Loading = () => (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -56,6 +57,7 @@ const AppRoutes = () => {
                 <Route path="/admin/banners" element={<AdminRoute><BannerManagementPage /></AdminRoute>} />
                 <Route path="/admin/content" element={<AdminRoute><ContentManagementPage /></AdminRoute>} />
                 <Route path="/admin/reviews" element={<AdminRoute><ReviewManagementPage /></AdminRoute>} />
+                <Route path="/admin/translations" element={<AdminRoute><TranslationManagementPage /></AdminRoute>} />
                 <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
 
                 {/* 404 */}

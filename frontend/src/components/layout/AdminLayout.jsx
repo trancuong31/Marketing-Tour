@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
+import { useTranslation } from 'react-i18next';
 import {
     ShoppingCart, Map, FileText, Star,
-    LogOut, Menu, X, ChevronRight, User, Home, Image
+    LogOut, Menu, X, ChevronRight, User, Home, Image, Languages
 } from 'lucide-react';
 import logo from "../../../public/logo.jpg";
 
@@ -13,13 +14,17 @@ const menuItems = [
     { path: '/admin/banners', label: 'Quản lý Banner', icon: Image },
     { path: '/admin/content', label: 'Bài viết', icon: FileText },
     { path: '/admin/reviews', label: 'Quản lý Đánh giá', icon: Star },
+    { path: '/admin/translations', labelKey: 'admin.menu.translations', fallback: 'Translations', icon: Languages },
 ];
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = ({ children, hidePageTitle = false }) => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { user, logout } = useAuthStore();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const getMenuLabel = (item) => item.labelKey ? t(item.labelKey, item.fallback) : item.label;
+    const shouldShowPageTitle = !hidePageTitle;
 
     const handleLogout = () => {
         logout();
@@ -60,7 +65,7 @@ const AdminLayout = ({ children }) => {
                                     }`}
                             >
                                 <item.icon className="w-4.5 h-4.5" />
-                                {item.label}
+                                {getMenuLabel(item)}
                                 {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                             </Link>
                         );
@@ -103,9 +108,14 @@ const AdminLayout = ({ children }) => {
                     >
                         <Menu className="w-5 h-5" />
                     </button>
-                    <h1 className="text-lg font-bold text-text">
-                        {menuItems.find(m => location.pathname.startsWith(m.path))?.label || 'Dashboard'}
-                    </h1>
+                    {shouldShowPageTitle && (
+                        <h1 className="text-lg font-bold text-text">
+                            {(() => {
+                                const currentItem = menuItems.find(m => location.pathname.startsWith(m.path));
+                                return currentItem ? getMenuLabel(currentItem) : t('admin.menu.dashboard', 'Dashboard');
+                            })()}
+                        </h1>
+                    )}
                 </header>
 
                 {/* Page Content */}

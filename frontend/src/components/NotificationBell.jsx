@@ -11,7 +11,7 @@ const MOBILE_QUERY = '(max-width: 767px)';
 
 const NotificationBell = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { isAuthenticated } = useAuthStore();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -29,7 +29,7 @@ const NotificationBell = () => {
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, i18n.language]);
 
     useEffect(() => {
         const mediaQuery = window.matchMedia(MOBILE_QUERY);

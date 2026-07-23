@@ -40,7 +40,7 @@ const checkSendRateLimit = async (email, type) => {
 /**
  * Generate and send OTP to email
  */
-const generateAndSendOtp = async (email, type) => {
+const generateAndSendOtp = async (email, type, language = 'vi') => {
     // Check rate limit
     await checkSendRateLimit(email, type);
 
@@ -64,7 +64,7 @@ const generateAndSendOtp = async (email, type) => {
     });
 
     // Send OTP email
-    await sendOtpEmail(email, otpCode, type);
+    await sendOtpEmail(email, otpCode, type, language);
 
     return { expiredAt };
 };

@@ -19,6 +19,7 @@ const TourTranslation = require('./TourTranslation');
 const TourItineraryTranslation = require('./TourItineraryTranslation');
 const CategoryTranslation = require('./CategoryTranslation');
 const GuideTranslation = require('./GuideTranslation');
+const UiTranslation = require('./UiTranslation');
 
 // ── Associations ──
 
@@ -128,4 +129,5 @@ module.exports = {
     TourItineraryTranslation,
     CategoryTranslation,
     GuideTranslation,
+    UiTranslation,
 };

@@ -34,6 +34,7 @@ const NotificationItem = ({ notification, onClick, variant = 'dropdown' }) => {
     const iconConfig = notificationIcons[notification.type] || notificationIcons.booking;
     const Icon = iconConfig.Icon;
     const isPageVariant = variant === 'page';
+    const message = notification.localized_message || notification.message;
 
     return (
         <button
@@ -53,7 +54,7 @@ const NotificationItem = ({ notification, onClick, variant = 'dropdown' }) => {
                     {notification.sender_name && (
                         <span className="font-semibold">{notification.sender_name} </span>
                     )}
-                    {notification.message}
+                    {message}
                 </p>
                 <span className={`${isPageVariant ? 'text-[11px] mt-1.5' : 'text-[10px] mt-1'} text-text-muted font-medium block`}>
                     {formatDistanceToNow(new Date(notification.created_at), {

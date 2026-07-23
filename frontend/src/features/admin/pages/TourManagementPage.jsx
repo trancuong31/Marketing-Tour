@@ -970,25 +970,96 @@ const TourManagementPage = () => {
         return viData;
     };
 
+    const getOriginalVietnameseContentForTranslation = () => {
+        if (!modal.tour) return {};
+
+        const originalData = {
+            tour_title: modal.tour.title,
+            tour_summary: modal.tour.summary,
+            tour_highlights: modal.tour.highlights,
+            tour_price_includes: modal.tour.price_includes,
+            tour_price_excludes: modal.tour.price_excludes,
+            tour_terms_and_notes: modal.tour.terms_and_notes,
+            tour_cancellation_policy: modal.tour.cancellation_policy,
+        };
+
+        (modal.tour.itineraries || []).forEach((iti, index) => {
+            originalData[`iti_${index}_title`] = iti.title;
+            originalData[`iti_${index}_content`] = iti.content;
+        });
+
+        return originalData;
+    };
+
+    const normalizeTranslationSource = (value) => String(value || '').trim();
+
+    const getTargetTranslationValue = (key, targetLang) => {
+        const langIndex = targetLang === 'en' ? 0 : 1;
+
+        if (key.startsWith('tour_')) {
+            const field = key.replace(/^tour_/, '');
+            return watch(`translations.${langIndex}.${field}`);
+        }
+
+        const parts = key.split('_');
+        if (parts.length === 3) {
+            const index = parts[1];
+            const field = parts[2];
+            return watch(`itineraries.${index}.translations.${langIndex}.${field}`);
+        }
+
+        return '';
+    };
+
+    const getTranslatableFields = (viData, targetLang) => {
+        const originalViData = getOriginalVietnameseContentForTranslation();
+
+        return Object.fromEntries(
+            Object.entries(viData).filter(([key, value]) => {
+                const currentSource = normalizeTranslationSource(value);
+                if (!currentSource) return false;
+
+                const targetValue = normalizeTranslationSource(getTargetTranslationValue(key, targetLang));
+                const originalSource = normalizeTranslationSource(originalViData[key]);
+                const hasNewSource = !modal.tour || currentSource !== originalSource;
+
+                return !targetValue || hasNewSource;
+            }),
+        );
+    };
+
     const handleTranslate = async () => {
         const viData = getVietnameseContentForTranslation();
 
-        if (Object.values(viData).every(v => !v)) {
+        if (Object.values(viData).every(v => !normalizeTranslationSource(v))) {
             toast.warning('Chưa có nội dung Tiếng Việt để dịch');
             return;
         }
 
         const targetLanguages = currentLang === 'vi' ? ['en', 'zh'] : [currentLang];
+        const translationPayloadByLanguage = targetLanguages.reduce((payloads, targetLang) => {
+            const fields = getTranslatableFields(viData, targetLang);
+            if (Object.keys(fields).length > 0) {
+                payloads[targetLang] = fields;
+            }
+            return payloads;
+        }, {});
+        const languagesToTranslate = targetLanguages.filter(targetLang => translationPayloadByLanguage[targetLang]);
+
+        if (languagesToTranslate.length === 0) {
+            toast.info('KhÃ´ng cÃ³ ná»™i dung má»›i cáº§n dá»‹ch');
+            return;
+        }
 
         try {
             setTranslating(true);
             const toastId = toast.loading(
-                targetLanguages.length === 2 ? 'Đang dịch sang EN và ZH...' : `Đang dịch sang ${targetLanguages[0].toUpperCase()}...`,
+                languagesToTranslate.length === 2 ? 'Đang dịch sang EN và ZH...' : `Đang dịch sang ${languagesToTranslate[0].toUpperCase()}...`,
             );
 
-            for (const targetLang of targetLanguages) {
+            for (const targetLang of languagesToTranslate) {
                 const res = await adminService.translateContent({
-                    texts: viData,
+                    texts: translationPayloadByLanguage[targetLang],
                     targetLang,
                 });
                 applyTranslatedContent(res.data.data, targetLang);

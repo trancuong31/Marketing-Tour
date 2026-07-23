@@ -94,21 +94,23 @@ const LanguageSwitcher = ({ compact = false }) => {
                 onClick={() => setIsOpen((prev) => !prev)}
                 className={`relative overflow-hidden bg-white text-text shadow-[0_4px_12px_rgba(30,64,175,0.10)] transition-all duration-200 hover:bg-surface-alt hover:shadow-[0_6px_16px_rgba(30,64,175,0.14)] ${
                     compact
-                        ? 'h-9 w-9 rounded-xl p-0 inline-flex items-center justify-center'
+                        ? 'h-8 w-8 rounded-lg p-0 inline-flex items-center justify-center'
                         : 'h-8 min-w-[104px] max-w-[112px] rounded-lg px-2.5'
                 }`}
                 aria-label="Change language"
                 aria-expanded={isOpen}
             >
-                <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="relative h-12 w-16">
-                        <FlagIcon code={currentLang.code} watermark />
+                {!compact && (
+                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="relative h-12 w-16">
+                            <FlagIcon code={currentLang.code} watermark />
+                        </span>
                     </span>
-                </span>
+                )}
 
                 <span className={`relative z-10 flex h-full items-center ${compact ? 'justify-center' : 'justify-between gap-2'}`}>
                     <span className="flex min-w-0 items-center gap-2">
-                        <FlagIcon code={currentLang.code} className="h-5 w-8 rounded" />
+                        <FlagIcon code={currentLang.code} className={compact ? 'h-4 w-6 rounded-[5px]' : 'h-5 w-8 rounded'} />
                         {!compact && (
                             <span className="shrink-0 text-sm font-medium leading-none text-text-secondary">
                                 {currentLang.shortName}

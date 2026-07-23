@@ -36,7 +36,7 @@ const sendTokenResponse = (res, statusCode, message, result) => {
  * Register a new user
  */
 const register = catchAsync(async (req, res) => {
-    const result = await authService.register(req.body);
+    const result = await authService.register(req.body, req.language);
 
     res.status(HTTP_CODES.CREATED).json({
         status: 'success',
@@ -98,7 +98,7 @@ const getMe = catchAsync(async (req, res) => {
  */
 const forgotPassword = catchAsync(async (req, res) => {
     const { email } = req.body;
-    const result = await authService.forgotPassword(email);
+    const result = await authService.forgotPassword(email, req.language);
 
     res.status(HTTP_CODES.OK).json({
         status: 'success',
@@ -138,7 +138,7 @@ const resetPassword = catchAsync(async (req, res) => {
  */
 const resendOtp = catchAsync(async (req, res) => {
     const { email, type } = req.body;
-    const result = await authService.resendOtp(email, type);
+    const result = await authService.resendOtp(email, type, req.language);
 
     res.status(HTTP_CODES.OK).json({
         status: 'success',

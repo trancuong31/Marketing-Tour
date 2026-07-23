@@ -11,7 +11,7 @@ const ITEMS_PER_PAGE = 12;
 
 const NotificationsPage = () => {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -38,7 +38,7 @@ const NotificationsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [t]);
+    }, [t, i18n.language]);
 
     useEffect(() => {
         fetchNotifications(1);

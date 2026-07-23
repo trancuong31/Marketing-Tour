@@ -4,6 +4,12 @@ const upload = require('../middlewares/upload');
 const uploadBanner = require('../middlewares/uploadBanner');
 const { translateContent } = require('../controllers/translateController');
 const {
+    listTranslations,
+    createUiTranslation,
+    updateUiTranslation,
+    deleteUiTranslation,
+} = require('../controllers/uiTranslationController');
+const {
     login,
     getAllTours,
     getTourById,
@@ -40,6 +46,10 @@ router.use(authenticate);
 
 // ── Translation ──
 router.post('/translate', translateContent);
+router.get('/translations', listTranslations);
+router.post('/translations', createUiTranslation);
+router.put('/translations/:id', updateUiTranslation);
+router.delete('/translations/:id', deleteUiTranslation);
 
 // ── Tour CRUD ──
 router.get('/tours', getAllTours);

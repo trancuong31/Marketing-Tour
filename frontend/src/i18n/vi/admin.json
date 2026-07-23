@@ -1,0 +1,33 @@
+{
+    "menu": {
+        "bookings": "Quan ly don",
+        "tours": "Quan ly tour",
+        "banners": "Quan ly banner",
+        "content": "Bai viet",
+        "reviews": "Quan ly danh gia",
+        "translations": "Quản lý Ngôn ngữ",
+        "dashboard": "Bang dieu khien"
+    },
+    "translations": {
+        "actions": "Hanh dong",
+        "add": "Them key",
+        "chinese": "Tieng Trung",
+        "confirmDelete": "Xoa ban dich nay?",
+        "createTitle": "Them ban dich",
+        "deleteError": "Khong the xoa ban dich",
+        "deleteSuccess": "Da xoa ban dich",
+        "description": "Mo ta",
+        "editTitle": "Sua ban dich",
+        "editorHint": "Gia tri luu o day se uu tien hon JSON local.",
+        "empty": "Khong tim thay ban dich",
+        "english": "Tieng Anh",
+        "key": "Key",
+        "loadError": "Khong the tai danh sach ngon ngu",
+        "saveError": "Khong the luu ban dich",
+        "saveSuccess": "Da luu ban dich",
+        "searchPlaceholder": "Tim key hoac noi dung...",
+        "subtitle": "Quản lý Translate VI,EN,ZH",
+        "total": "{{count}} key",
+        "vietnamese": "Tieng Viet"
+    }
+}

@@ -1,5 +1,6 @@
 const { Notification } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
+const { localizeNotifications } = require('../utils/notificationPresenter');
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -25,6 +26,8 @@ const getMyNotifications = catchAsync(async (req, res) => {
         where: { user_id: req.user.id, is_read: 0 },
     });
 
+    const localizedNotifications = await localizeNotifications(notifications, req.language);
+
     res.status(200).json({
         status: 'success',
         unreadCount,
@@ -34,7 +37,7 @@ const getMyNotifications = catchAsync(async (req, res) => {
             totalItems: count,
             limit,
         },
-        data: notifications,
+        data: localizedNotifications,
     });
 });
 

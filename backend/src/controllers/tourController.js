@@ -3,6 +3,7 @@ const { Tour, TourImage, TourItinerary, TourDeparture, TourPickupLocation, TourO
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
+const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
 
 /**
  * Lấy danh sách tour, lọc theo type (domestic|international)
@@ -253,6 +254,7 @@ const getBannersByPosition = catchAsync(async (req, res) => {
     const data = banners.map((banner) => {
         const item = banner.toJSON();
         const translation = item.tour?.translations?.[0];
+        item.image_url = normalizePublicUploadUrl(item.image_url);
 
         if (translation) {
             item.title = translation.title || item.title;

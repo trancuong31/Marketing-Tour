@@ -12,6 +12,10 @@ const api = axios.create({
 
 // ─── Token management (in-memory only, no localStorage) ──────────────────────
 let accessToken = null;
+let authStateHandlers = {
+    onRefreshSuccess: null,
+    onRefreshFailure: null,
+};
 
 export const setAccessToken = (token) => {
     accessToken = token;
@@ -21,6 +25,13 @@ export const getAccessToken = () => accessToken;
 
 export const clearAccessToken = () => {
     accessToken = null;
+};
+
+export const setAuthStateHandlers = (handlers = {}) => {
+    authStateHandlers = {
+        onRefreshSuccess: handlers.onRefreshSuccess || null,
+        onRefreshFailure: handlers.onRefreshFailure || null,
+    };
 };
 
 // ─── Request interceptor — attach access token from memory ───────────────────
@@ -85,10 +96,7 @@ api.interceptors.response.use(
 
             const newAccessToken = data.data.accessToken;
             accessToken = newAccessToken;
-
-            // Sync to Zustand store (lazy import to avoid circular dependency)
-            const { useAuthStore } = await import('@/store');
-            useAuthStore.getState().setAuth(newAccessToken, data.data.user);
+            authStateHandlers.onRefreshSuccess?.(newAccessToken, data.data.user);
 
             processQueue(null, newAccessToken);
 
@@ -98,10 +106,7 @@ api.interceptors.response.use(
         } catch (refreshError) {
             processQueue(refreshError, null);
             accessToken = null;
-
-            // Lazy import to avoid circular dep
-            const { useAuthStore } = await import('@/store');
-            useAuthStore.getState().logout();
+            authStateHandlers.onRefreshFailure?.();
 
             return Promise.reject(refreshError);
         } finally {

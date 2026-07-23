@@ -6,6 +6,7 @@ const { HTTP_CODES } = require('../constants/httpCodes');
 const { OTP_TYPES } = require('../constants/otp');
 const env = require('../config/env');
 const otpService = require('./otpService');
+const { normalizeLanguage } = require('../utils/language');
 
 /**
  * Generate JWT token
@@ -67,8 +68,9 @@ const formatUserResponse = (user) => {
 /**
  * REGISTER
  */
-const register = async (userData) => {
+const register = async (userData, language = 'vi') => {
     const { full_name, email, password, phone_number } = userData;
+    const preferredLanguage = normalizeLanguage(language || userData.language);
 
     const existingEmail = await User.findOne({ where: { email } });
     if (existingEmail) {
@@ -84,9 +86,10 @@ const register = async (userData) => {
         phone_number: phone_number || null,
         role_id: 2,
         is_active: 0,
+        language: preferredLanguage,
     });
 
-    await otpService.generateAndSendOtp(email, OTP_TYPES.REGISTER);
+    await otpService.generateAndSendOtp(email, OTP_TYPES.REGISTER, preferredLanguage);
 
     return { user: formatUserResponse(user) };
 };
@@ -156,14 +159,14 @@ const login = async (email, password) => {
 /**
  * FORGOT PASSWORD
  */
-const forgotPassword = async (email) => {
+const forgotPassword = async (email, language = 'vi') => {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
         throw new AppError('Email không tồn tại', HTTP_CODES.NOT_FOUND);
     }
 
-    await otpService.generateAndSendOtp(email, OTP_TYPES.RESET_PASSWORD);
+    await otpService.generateAndSendOtp(email, OTP_TYPES.RESET_PASSWORD, language || user.language);
 
     return { message: 'OTP đã gửi về email' };
 };
@@ -219,7 +222,7 @@ const resetPassword = async (resetToken, password) => {
 /**
  * RESEND OTP
  */
-const resendOtp = async (email, type) => {
+const resendOtp = async (email, type, language = 'vi') => {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -230,7 +233,7 @@ const resendOtp = async (email, type) => {
         throw new AppError('Tài khoản đã kích hoạt', HTTP_CODES.BAD_REQUEST);
     }
 
-    await otpService.generateAndSendOtp(email, type);
+    await otpService.generateAndSendOtp(email, type, language || user.language);
 
     return { message: 'OTP mới đã được gửi' };
 };

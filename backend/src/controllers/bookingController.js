@@ -12,6 +12,8 @@ const { sequelize } = require('../config/database');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
+const { normalizeLanguage } = require('../utils/language');
+const { getNotificationCopy } = require('../utils/notificationMessages');
 const crypto = require('crypto');
 
 // Sinh booking code duy nhất
@@ -48,6 +50,17 @@ const mapTranslatedTour = (tour) => {
         duration_days: tour.duration_days,
         duration_nights: tour.duration_nights,
     };
+};
+
+const getTranslatedTourTitle = async (tour, language) => {
+    if (!tour || language === 'vi') return tour?.title || '';
+
+    const translation = await TourTranslation.findOne({
+        where: { tour_id: tour.id, language },
+        attributes: ['title'],
+    });
+
+    return translation?.title || tour.title;
 };
 
 // --------- Tạo booking ---------
@@ -147,6 +160,7 @@ const createBooking = catchAsync(async (req, res) => {
 
     // 8. Lấy user_id (nếu có user từ middleware optionalAuthenticate)
     const user_id = req.user ? req.user.id : null;
+    const language = normalizeLanguage(req.language || req.body.language || req.user?.language);
 
     // 9. Tạo booking + options trong transaction
     const booking = await sequelize.transaction(async (t) => {
@@ -163,6 +177,7 @@ const createBooking = catchAsync(async (req, res) => {
             child_qty: children,
             infant_qty: infants,
             customer_note: customer_note || null,
+            language,
             status: 'pending',
             total_price: totalPrice,
             // Snapshot fields
@@ -196,11 +211,14 @@ const createBooking = catchAsync(async (req, res) => {
 
     // 10. Tạo thông báo cho user (nếu có user_id)
     if (user_id) {
+        const notificationCopy = getNotificationCopy(language);
+        const notificationTourTitle = await getTranslatedTourTitle(tour, language);
+
         await Notification.create({
             user_id: user_id,
             type: 'booking',
-            sender_name: 'Hệ thống',
-            message: `bạn đã đặt thành công tour "${tour.title}". Vui lòng chờ nhân viên liên hệ xác nhận.`,
+            sender_name: notificationCopy.system,
+            message: notificationCopy.bookingCreated(notificationTourTitle),
             related_id: booking.id,
             related_slug: tour.slug
         });
@@ -254,6 +272,8 @@ const getMyBookings = catchAsync(async (req, res) => {
         infant_qty: b.infant_qty,
         total_price: b.total_price,
         customer_note: b.customer_note,
+        language: b.language,
+        review_email_sent_at: b.review_email_sent_at,
         status: b.status,
         created_at: b.created_at,
         
@@ -381,6 +401,8 @@ const lookupBooking = catchAsync(async (req, res, next) => {
         infant_qty: b.infant_qty,
         total_price: b.total_price,
         customer_note: b.customer_note,
+        language: b.language,
+        review_email_sent_at: b.review_email_sent_at,
         status: b.status,
         created_at: b.created_at,
         

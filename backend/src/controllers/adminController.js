@@ -12,6 +12,8 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
 const { translateTexts } = require('../services/translationService');
+const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
+const { getNotificationCopy } = require('../utils/notificationMessages');
 
 // ══════════════════════════════════════
 // AUTH
@@ -178,6 +180,17 @@ const ensureItineraryTranslations = async (itinerary) => {
 const ensureTranslatedItineraries = (itineraries) => (
     Promise.all(parseJsonField(itineraries).map(ensureItineraryTranslations))
 );
+
+const getTranslatedTourTitle = async (tour, language) => {
+    if (!tour || language === 'vi') return tour?.title || '';
+
+    const translation = await TourTranslation.findOne({
+        where: { tour_id: tour.id, language },
+        attributes: ['title'],
+    });
+
+    return translation?.title || tour.title;
+};
 
 // ══════════════════════════════════════
 // TOUR CRUD
@@ -740,6 +753,8 @@ const getBookings = catchAsync(async (req, res) => {
         infant_qty: b.infant_qty,
         total_price: b.total_price,
         customer_note: b.customer_note,
+        language: b.language,
+        review_email_sent_at: b.review_email_sent_at,
         status: b.status,
         admin_note: b.admin_note,
         created_at: b.created_at,
@@ -849,11 +864,14 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
 
     // Nếu trạng thái chuyển thành 'approved', tạo thông báo cho user
     if (status === 'approved' && oldStatus !== 'approved' && booking.user_id) {
+        const notificationCopy = getNotificationCopy(booking.language);
+        const notificationTourTitle = await getTranslatedTourTitle(booking.Tour, booking.language);
+
         await Notification.create({
             user_id: booking.user_id,
             type: 'booking',
-            sender_name: 'Hệ thống',
-            message: `đơn đặt tour "${booking.Tour?.title}" của bạn đã được duyệt`,
+            sender_name: notificationCopy.system,
+            message: notificationCopy.bookingApproved(notificationTourTitle),
             related_id: booking.id,
             related_slug: booking.Tour.slug
         });
@@ -1038,14 +1056,18 @@ const deleteVote = catchAsync(async (req, res, next) => {
     });
 });
 
+const REVIEW_RANKING_LIMIT = 5;
+
 const getTopRatedTours = catchAsync(async (req, res) => {
-    const { time } = req.query;
+    const { time, mode = 'top' } = req.query;
     const whereClause = {};
 
     const timeFilter = getTimeFilter(time);
     if (timeFilter) whereClause.created_at = timeFilter;
 
-    // Lấy top 5 tour có xếp hạng trung bình cao nhất (điều kiện có ít nhất 1 rating)
+    // Lấy nhóm tour theo điểm trung bình, dùng cho danh sách nổi bật/cần cải thiện.
+    const isImprovementMode = mode === 'improvement';
+
     const topTours = await Vote.findAll({
         where: whereClause,
         attributes: [
@@ -1054,8 +1076,11 @@ const getTopRatedTours = catchAsync(async (req, res) => {
         ],
         include: [{ model: Tour, attributes: ['id', 'title'] }],
         group: ['Vote.tour_id', 'Tour.id', 'Tour.title'],
-        order: [[sequelize.literal('avgRating'), 'DESC'], [sequelize.literal('reviewCount'), 'DESC']],
-        limit: 5
+        order: [
+            [sequelize.literal('avgRating'), isImprovementMode ? 'ASC' : 'DESC'],
+            [sequelize.literal('reviewCount'), 'DESC'],
+        ],
+        limit: REVIEW_RANKING_LIMIT
     });
 
     res.status(200).json({
@@ -1064,13 +1089,55 @@ const getTopRatedTours = catchAsync(async (req, res) => {
     });
 });
 
-const getReviewStats = catchAsync(async (req, res) => {
-    const { tour_id, time } = req.query;
+const getRankedTourIds = async ({ time, mode = 'top' }) => {
     const whereClause = {};
-    
-    if (tour_id) whereClause.tour_id = tour_id;
+
     const timeFilter = getTimeFilter(time);
     if (timeFilter) whereClause.created_at = timeFilter;
+
+    const rankedTours = await Vote.findAll({
+        where: whereClause,
+        attributes: [
+            'tour_id',
+            [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
+            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount'],
+        ],
+        group: ['tour_id'],
+        order: [
+            [sequelize.literal('avgRating'), mode === 'improvement' ? 'ASC' : 'DESC'],
+            [sequelize.literal('reviewCount'), 'DESC'],
+        ],
+        limit: REVIEW_RANKING_LIMIT,
+        raw: true,
+    });
+
+    return rankedTours.map(item => item.tour_id).filter(Boolean);
+};
+
+const getReviewStats = catchAsync(async (req, res) => {
+    const { tour_id, time, scope = 'system' } = req.query;
+    const whereClause = {};
+    
+    const timeFilter = getTimeFilter(time);
+    if (timeFilter) whereClause.created_at = timeFilter;
+
+    if (scope === 'featured' || scope === 'improvement') {
+        const tourIds = await getRankedTourIds({
+            time,
+            mode: scope === 'improvement' ? 'improvement' : 'top',
+        });
+
+        if (tourIds.length === 0) {
+            return res.status(200).json({
+                status: 'success',
+                data: [],
+            });
+        }
+
+        whereClause.tour_id = { [Op.in]: tourIds };
+    } else if (tour_id) {
+        whereClause.tour_id = tour_id;
+    }
 
     const stats = await Vote.findAll({
         where: whereClause,
@@ -1263,11 +1330,16 @@ const getAllBanners = catchAsync(async (req, res) => {
     const banners = await Banner.findAll({
         order: [['position', 'ASC'], ['id', 'DESC']],
     });
+    const data = banners.map((banner) => {
+        const item = banner.toJSON();
+        item.image_url = normalizePublicUploadUrl(item.image_url);
+        return item;
+    });
 
     res.status(200).json({
         status: 'success',
-        results: banners.length,
-        data: banners,
+        results: data.length,
+        data,
     });
 });
 
@@ -1299,7 +1371,10 @@ const createBanner = catchAsync(async (req, res, next) => {
     res.status(201).json({
         status: 'success',
         message: 'Tạo banner thành công',
-        data: banner,
+        data: {
+            ...banner.toJSON(),
+            image_url: normalizePublicUploadUrl(banner.image_url),
+        },
     });
 });
 
@@ -1337,7 +1412,10 @@ const updateBanner = catchAsync(async (req, res, next) => {
     res.status(200).json({
         status: 'success',
         message: 'Cập nhật banner thành công',
-        data: banner,
+        data: {
+            ...banner.toJSON(),
+            image_url: normalizePublicUploadUrl(banner.image_url),
+        },
     });
 });
 

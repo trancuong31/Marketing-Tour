@@ -35,6 +35,12 @@ const envVars = {
         from: process.env.EMAIL_FROM || 'noreply@marketingtour.com',
     },
 
+    reviewReminder: {
+        enabled: process.env.REVIEW_REMINDER_ENABLED === 'true',
+        cron: process.env.REVIEW_REMINDER_CRON || '0 9 * * *',
+        limit: parseInt(process.env.REVIEW_REMINDER_LIMIT, 10) || 50,
+    },
+
     // Rate Limiting
     rateLimit: {
         windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,

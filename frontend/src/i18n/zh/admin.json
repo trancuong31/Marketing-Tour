@@ -1,0 +1,33 @@
+{
+    "menu": {
+        "bookings": "Booking Management",
+        "tours": "Tour Management",
+        "banners": "Banner Management",
+        "content": "Content",
+        "reviews": "Review Management",
+        "translations": "Translations",
+        "dashboard": "Dashboard"
+    },
+    "translations": {
+        "actions": "Actions",
+        "add": "Add key",
+        "chinese": "Chinese",
+        "confirmDelete": "Delete this translation?",
+        "createTitle": "Create translation",
+        "deleteError": "Unable to delete translation",
+        "deleteSuccess": "Translation deleted",
+        "description": "Description",
+        "editTitle": "Edit translation",
+        "editorHint": "Values saved here override local JSON translations.",
+        "empty": "No translations found",
+        "english": "English",
+        "key": "Key",
+        "loadError": "Unable to load translations",
+        "saveError": "Unable to save translation",
+        "saveSuccess": "Translation saved",
+        "searchPlaceholder": "Search key or content...",
+        "subtitle": "Manage Translate VI,EN,ZH",
+        "total": "{{count}} keys",
+        "vietnamese": "Vietnamese"
+    }
+}

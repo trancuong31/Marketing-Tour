@@ -14,4 +14,4 @@ Code UIUX phải hiện đại, responsive cho các thiết bị.
 
 - **Security (Bảo Mật)**: Tuân theo các best practices về bảo mật
 
-- **Internationalization (Đa Ngôn Ngữ)**: Tất cả text phải hỗ trợ đa ngôn ngữ
+- **Internationalization (Đa Ngôn Ngữ)**: Tất cả text phải hỗ trợ đa ngôn 

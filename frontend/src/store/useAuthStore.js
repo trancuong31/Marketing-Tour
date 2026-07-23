@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import authService from '../services/authService';
-import { setAccessToken, clearAccessToken } from '../services/api';
+import { setAccessToken, clearAccessToken, setAuthStateHandlers } from '../services/api';
 
 const useAuthStore = create((set, get) => ({
     user: null,
@@ -35,6 +35,15 @@ const useAuthStore = create((set, get) => ({
      * Clear error
      */
     clearError: () => set({ error: null }),
+
+    clearSession: () => {
+        clearAccessToken();
+        set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+        });
+    },
 
     /**
      * Initialize auth on app load — try refresh token cookie
@@ -217,5 +226,14 @@ const useAuthStore = create((set, get) => ({
         });
     },
 }));
+
+setAuthStateHandlers({
+    onRefreshSuccess: (accessToken, user) => {
+        useAuthStore.getState().setAuth(accessToken, user);
+    },
+    onRefreshFailure: () => {
+        useAuthStore.getState().clearSession();
+    },
+});
 
 export { useAuthStore };

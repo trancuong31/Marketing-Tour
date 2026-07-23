@@ -8,6 +8,7 @@ const guideRoutes = require('./guideRoutes');
 const bannerRoutes = require('./bannerRoutes');
 const adminRoutes = require('./adminRoutes');
 const userRoutes = require('./userRoutes');
+const translationRoutes = require('./translationRoutes');
 
 const router = express.Router();
 
@@ -21,6 +22,7 @@ router.use('/tours', tourRoutes); // /api/tours/:slug
 router.use('/bookings', bookingRoutes);
 router.use('/guides', guideRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/translations', translationRoutes);
 
 // ── User API ──
 router.use('/users', userRoutes);

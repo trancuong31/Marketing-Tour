@@ -62,6 +62,15 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    language: {
+        type: DataTypes.STRING(5),
+        allowNull: false,
+        defaultValue: 'vi',
+    },
+    review_email_sent_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 
     status: {
         type: DataTypes.ENUM('pending', 'approved', 'cancelled'),
