@@ -27,22 +27,22 @@ const TourOverviewGridItem = ({ tour, onSelectTour }) => {
         
             <div className="p-5">
                 <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="bg-warning/5 border border-warning/10 p-3 rounded-xl flex flex-col items-center justify-center">
+                    <div className="bg-warning/5 border border-warning/10 p-3 rounded-lg flex flex-col items-center justify-center">
                         <span className="text-xs text-warning font-medium mb-1 uppercase tracking-wider">Đang chờ</span>
                         <span className="text-xl font-bold text-warning">{tour.pending}</span>
                     </div>
-                    <div className="bg-success/5 border border-success/10 p-3 rounded-xl flex flex-col items-center justify-center">
+                    <div className="bg-success/5 border border-success/10 p-3 rounded-lg flex flex-col items-center justify-center">
                         <span className="text-xs text-success font-medium mb-1 uppercase tracking-wider">Đã duyệt</span>
                         <span className="text-xl font-bold text-success">{tour.approved}</span>
                     </div>
-                    <div className="bg-error/5 border border-error/10 p-3 rounded-xl flex flex-col items-center justify-center">
+                    <div className="bg-error/5 border border-error/10 p-3 rounded-lg flex flex-col items-center justify-center">
                         <span className="text-xs text-error font-medium mb-1 uppercase tracking-wider">Đã hủy</span>
                         <span className="text-xl font-bold text-error">{tour.cancelled}</span>
                     </div>
                 </div>                                    
                 <button 
                     onClick={() => onSelectTour(tour)}
-                    className="w-full py-3 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20 group-hover:border-primary"
+                    className="w-full py-3 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20 group-hover:border-primary"
                 >
                     <List className="w-4 h-4" />
                     Xem chi tiết

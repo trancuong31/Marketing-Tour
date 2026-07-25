@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { tourService, bannerService } from '@/services/tourService';
-import { getImageUrl, onImgError } from '@/utils/imageUrl';
+import { getImageUrl } from '@/utils/imageUrl';
 import TourCard from '@/components/tour/TourCard';
 import ClientLayout from '@/components/layout/ClientLayout';
 import SearchBar from '@/components/ui/SearchBar';
 import { Compass, MapPin, Globe2, ChevronRight, ChevronLeft } from 'lucide-react';
 import banahill from '@/assets/images/banahill.webp';
 import tokyo from '@/assets/images/tokyo.webp';
+import fallbackHero from '@/assets/images/bg1.jpg';
 
 const HomePage = () => {
     const [tours, setTours] = useState([]);
@@ -52,8 +53,14 @@ const HomePage = () => {
         return () => clearInterval(timer);
     }, [heroBanners.length]);
 
+    useEffect(() => {
+        setHeroIndex(prev => (heroBanners.length === 0 ? 0 : Math.min(prev, heroBanners.length - 1)));
+    }, [heroBanners.length]);
+
     const featured = tours.filter(t => t.tour_badge === 'featured' && t.departures?.length > 0).slice(0, 6);
     const onSale = tours.filter(t => t.tour_badge === 'promotion' && t.departures?.length > 0).slice(0, 6);
+    const activeHeroBanner = heroBanners[heroIndex] || null;
+    const nextHeroBanner = heroBanners.length > 0 ? heroBanners[(heroIndex + 1) % heroBanners.length] : null;
 
     const departurePriceMap = useMemo(() => {
         const map = {};
@@ -75,6 +82,12 @@ const HomePage = () => {
                 navigate(banner.target_link);
             }
         }
+    };
+
+    const handleHeroImageError = (event) => {
+        if (event.currentTarget.dataset.fallbackApplied) return;
+        event.currentTarget.dataset.fallbackApplied = 'true';
+        event.currentTarget.src = fallbackHero;
     };
 
     const SkeletonGrid = () => (
@@ -102,9 +115,9 @@ const HomePage = () => {
                 {/* 1. Background (Clickable) */}
                 <div
                     className="absolute inset-0 cursor-pointer z-0 overflow-hidden bg-black"
-                    onClick={() => heroBanners.length > 0 && handleBannerClick(heroBanners[heroIndex])}
+                    onClick={() => activeHeroBanner && handleBannerClick(activeHeroBanner)}
                 >
-                    {heroBanners.length > 0 ? (
+                    {
                         <>
                             {heroBanners.map((banner, idx) => (
                                 <img
@@ -115,14 +128,12 @@ const HomePage = () => {
                                         ? 'opacity-100 z-10 animate-ken-burns'
                                         : 'opacity-0 z-0'
                                         }`}
-                                    onError={onImgError('banner')}
+                                    onError={handleHeroImageError}
                                     style={{ color: 'transparent' }}
                                 />
                             ))}
                         </>
-                    ) : (
-                        <div className="w-full h-full bg-black" />
-                    )}
+                    }
                 </div>
                 {/* Cấu trúc Content linh hoạt */}
                 <div className="relative z-10 w-full max-w-[1400px] 2xl:max-w-[1800px] mx-auto pointer-events-none flex flex-col gap-6 xl:gap-8 px-2 sm:px-6 mt-4 mb-6">
@@ -156,28 +167,28 @@ const HomePage = () => {
                         </div>
 
                         {/* Cột Phải: Banner Info */}
-                        {heroBanners.length > 0 && (
+                        {activeHeroBanner && (
                             <div
                                 key={`banner-card-${heroIndex}`}
                                 className="hidden xl:block pointer-events-auto cursor-pointer group w-full max-w-sm shrink-0 animate-fade-in-right"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleBannerClick(heroBanners[heroIndex]);
+                                    handleBannerClick(activeHeroBanner);
                                 }}
                             >
                                 <div className="p-5 rounded-3xl shadow-2xl transition-all duration-500 bg-white/10 border border-white/10 hover:bg-white/20 hover:scale-[1.02]">
                                     <div className="text-white/90 text-sm font-semibold uppercase tracking-wider mb-2 flex flex-col gap-1">
                                         <span className="text-xs normal-case font-medium text-white/60">{t('home.priceFrom')}</span>
                                         <span className="text-4xl font-extrabold text-secondary drop-shadow-xl leading-none">
-                                            {formatCurrency(heroBanners[heroIndex].tour?.departures?.[0]?.price_adult || 0)}
+                                            {formatCurrency(activeHeroBanner.tour?.departures?.[0]?.price_adult || 0)}
                                             <span className="text-base font-medium text-white/50 ml-1">{t('home.perGuest')}</span>
                                         </span>
                                     </div>
                                     <div className="flex items-end gap-4 justify-between mt-6">
                                         <h3 className="text-white font-bold text-xl leading-tight line-clamp-2 drop-shadow-md">
-                                            {heroBanners[heroIndex].title}
+                                            {activeHeroBanner.title}
                                         </h3>
-                                        <div className="bg-primary p-3 rounded-xl group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
+                                        <div className="bg-primary p-3 rounded-lg group-hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all duration-300 shrink-0">
                                             <ChevronRight className="w-5 h-5 text-white transition-transform duration-300" />
                                         </div>
                                     </div>
@@ -200,7 +211,7 @@ const HomePage = () => {
                         <div className="flex flex-col items-end opacity-0 group-hover/hero:opacity-100 transition-all duration-500 translate-y-2 group-hover/hero:translate-y-0">
                             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary mb-1">{t('home.exploreNext')}</span>
                             <span className="text-sm font-medium text-white/90 truncate max-w-[240px] drop-shadow-md">
-                                {heroBanners[(heroIndex + 1) % heroBanners.length].title}
+                                {nextHeroBanner?.title}
                             </span>
                         </div>
 
@@ -212,7 +223,7 @@ const HomePage = () => {
                                     e.stopPropagation();
                                     setHeroIndex(prev => (prev - 1 + heroBanners.length) % heroBanners.length);
                                 }}
-                                className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                                className="w-12 h-12 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
                             >
                                 <ChevronLeft className="w-5 h-5 transition-transform" />
                             </button>
@@ -230,7 +241,7 @@ const HomePage = () => {
                                     e.stopPropagation();
                                     setHeroIndex(prev => (prev + 1) % heroBanners.length);
                                 }}
-                                className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
+                                className="w-12 h-12 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-primary hover:border-transparent transition-all duration-300 flex items-center justify-center group/btn"
                             >
                                 <ChevronRight className="w-5 h-5 transition-transform" />
                             </button>
@@ -258,7 +269,7 @@ const HomePage = () => {
                                 <div className="flex items-center justify-between mb-8">
                                     <div className="flex items-center gap-3">
                                         <div>
-                                            <h2 className="text-3xl font-bold text-text">{t('home.featuredTours')}</h2>
+                                            <h2 className="text-2xl font-bold text-text">{t('home.featuredTours')}</h2>
                                             <p className="text-sm text-text-muted">{t('home.featuredDesc')}</p>
                                         </div>
                                     </div>
@@ -282,7 +293,7 @@ const HomePage = () => {
                                     <div className="flex justify-center mt-8">
                                         <Link
                                             to="/tours?tour_badge=featured"
-                                            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white border border-primary font-bold rounded-xl transition shadow-lg"
+                                            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white border border-primary font-bold rounded-lg transition shadow-lg"
                                         >
                                             {t('home.viewMore')}
                                             <ChevronRight className="w-4 h-4" />
@@ -297,14 +308,14 @@ const HomePage = () => {
 
                 {/* ═══ PHẦN 2: TOUR SALE ═══ */}
                 {(loading || onSale.length >= 0) && (
-                    <div className="w-full py-12 bg-[#EBF0F2] rounded-t-3xl">
+                    <div className="w-full py-12 bg-[#EBF0F2]">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-6 w-full">
                             <div className="flex-1 min-w-0">
                                 <section>
                                     <div className="flex items-center justify-between mb-8">
                                         <div className="flex items-center gap-3">
                                             <div>
-                                                <h2 className="text-3xl font-bold text-text">{t('home.saleTours')}</h2>
+                                                <h2 className="text-2xl font-bold text-text">{t('home.saleTours')}</h2>
                                                 <p className="text-sm text-text-muted">{t('home.saleDesc')}</p>
                                             </div>
                                         </div>
@@ -331,7 +342,7 @@ const HomePage = () => {
                                         <div className="flex justify-center mt-8">
                                             <Link
                                                 to="/tours?tour_badge=promotion"
-                                                className="inline-flex items-center gap-2 px-6 py-3 text-white border border-primary font-bold rounded-xl transition shadow-lg"
+                                                className="inline-flex items-center gap-2 px-6 py-3 text-white border border-primary font-bold rounded-lg transition shadow-lg"
                                             >
                                                 {t('home.viewMore')}
                                                 <ChevronRight className="w-4 h-4" />

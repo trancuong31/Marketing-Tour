@@ -42,12 +42,12 @@ const VoteTable = ({ votes = [], onApprove, onReject }) => {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         placeholder="Tìm theo tên, email hoặc tour..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                        className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                     />
                 </div>
 
                 {/* Status filter pills */}
-                <div className="flex items-center gap-1.5 bg-surface-alt p-1 rounded-xl">
+                <div className="flex items-center gap-1.5 bg-surface-alt p-1 rounded-lg">
                     <Filter className="w-3.5 h-3.5 text-text-muted ml-2" />
                     {filterOptions.map(opt => (
                         <button
@@ -73,7 +73,7 @@ const VoteTable = ({ votes = [], onApprove, onReject }) => {
                     <p className="text-xs mt-1">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
                 </div>
             ) : (
-                <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <div className="bg-surface rounded-lg border border-border overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>

@@ -153,7 +153,7 @@ const LookupBookingPage = () => {
                 </div>
 
                 {/* Form Tra Cứu */}
-                <form onSubmit={handleSearch} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-10 max-w-2xl mx-auto relative overflow-hidden">
+                <form onSubmit={handleSearch} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-10 max-w-2xl mx-auto relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row gap-5 mb-6 focus-within:relative">
                         {/* Email */}
                         <div className="flex-1 relative">
@@ -166,7 +166,7 @@ const LookupBookingPage = () => {
                                 value={email}
                                 onChange={(e) => { setEmail(e.target.value); if(errors.email) setErrors({...errors, email: ''}); }}
                                 placeholder="nguyenvana@gmail.com"
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
                                     errors.email ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
                                 }`}
                             />
@@ -184,7 +184,7 @@ const LookupBookingPage = () => {
                                 value={phone}
                                 onChange={(e) => { setPhone(e.target.value); if(errors.phone) setErrors({...errors, phone: ''}); }}
                                 placeholder="0987654321"
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
                                     errors.phone ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
                                 }`}
                             />
@@ -196,7 +196,7 @@ const LookupBookingPage = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full sm:w-auto px-8 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 mx-auto"
+                            className="w-full sm:w-auto px-8 py-3.5 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 mx-auto"
                         >
                             {loading ? (
                                 <>
@@ -293,7 +293,7 @@ const LookupBookingPage = () => {
                                                 <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-start gap-3 bg-white">
                                                     <button
                                                         onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
-                                                        className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-all text-sm shadow-md"
+                                                        className="px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg transition-all text-sm shadow-md"
                                                     >
                                                         {expandedId === b.id ? t('lookup.collapse') : t('lookup.viewDetails')}
                                                     </button>
@@ -341,7 +341,7 @@ const LookupBookingPage = () => {
                                                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📅 {t('lookup.createdDate')}</p>
                                                                 <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
                                                                 
-                                                                <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 shadow-inner">
+                                                                <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 shadow-inner">
                                                                     <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1">💰 {t('lookup.estimatedTotal')}</p>
                                                                     <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : t('lookup.contactForQuote')}</p>
                                                                 </div>
@@ -349,7 +349,7 @@ const LookupBookingPage = () => {
                                                         </div>
 
                                                         {cleanNote && (
-                                                            <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200">
+                                                            <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
                                                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                                                                     <FileText className="w-3 h-3" /> {t('lookup.customerNote')}
                                                                 </p>

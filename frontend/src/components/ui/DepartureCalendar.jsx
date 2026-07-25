@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { CalendarDays, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -12,31 +13,64 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
     const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isDropdownAbove, setIsDropdownAbove] = useState(false);
+    const [dropdownStyle, setDropdownStyle] = useState({});
     const [displayMonth, setDisplayMonth] = useState(() => new Date());
     const ref = useRef(null);
+    const dropdownRef = useRef(null);
 
     const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'zh' ? 'zh-CN' : 'vi-VN';
     const monthNames = useMemo(() => Array.from({length: 12}, (_, i) => new Date(2000, i, 1).toLocaleString(locale, { month: 'long' })), [locale]);
     const dayHeaders = useMemo(() => Array.from({length: 7}, (_, i) => new Date(2000, 0, 3 + i).toLocaleString(locale, { weekday: 'short' })), [locale]);
 
-    // Measure space to decide dropdown direction
+    // Render the calendar as a viewport-level floating layer so parent overflow never clips it.
     useEffect(() => {
-        if (isOpen && ref.current) {
+        if (!isOpen || !ref.current) return;
+
+        const updateDropdownPosition = () => {
             const rect = ref.current.getBoundingClientRect();
-            const spaceBelow = window.innerHeight - rect.bottom;
+            const horizontalPadding = 16;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const width = Math.min(340, viewportWidth - horizontalPadding * 2);
+            const measuredHeight = dropdownRef.current?.offsetHeight || 360;
+            const spaceBelow = viewportHeight - rect.bottom;
             const spaceAbove = rect.top;
-            // Estimated calendar height is ~380px
-            if (spaceBelow < 380 && spaceAbove > spaceBelow) {
-                setIsDropdownAbove(true);
-            } else {
-                setIsDropdownAbove(false);
-            }
-        }
-    }, [isOpen]);
+            const isAbove = spaceBelow < measuredHeight + 16 && spaceAbove > spaceBelow;
+            const left = Math.min(
+                Math.max(rect.left, horizontalPadding),
+                Math.max(horizontalPadding, viewportWidth - width - horizontalPadding)
+            );
+            const top = isAbove
+                ? Math.max(horizontalPadding, rect.top - measuredHeight - 8)
+                : Math.min(rect.bottom + 8, Math.max(horizontalPadding, viewportHeight - measuredHeight - horizontalPadding));
+
+            setIsDropdownAbove(isAbove);
+            setDropdownStyle({
+                left,
+                top,
+                width,
+            });
+        };
+
+        updateDropdownPosition();
+        const frame = requestAnimationFrame(updateDropdownPosition);
+        window.addEventListener('resize', updateDropdownPosition);
+        window.addEventListener('scroll', updateDropdownPosition, true);
+
+        return () => {
+            cancelAnimationFrame(frame);
+            window.removeEventListener('resize', updateDropdownPosition);
+            window.removeEventListener('scroll', updateDropdownPosition, true);
+        };
+    }, [isOpen, displayMonth]);
 
     useEffect(() => {
         const handler = (e) => { 
-            if (ref.current && !ref.current.contains(e.target)) setIsOpen(false); 
+            const isInsideTrigger = ref.current?.contains(e.target);
+            const isInsideDropdown = dropdownRef.current?.contains(e.target);
+            if (!isInsideTrigger && !isInsideDropdown) {
+                setIsOpen(false);
+            }
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
@@ -91,7 +125,7 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`
-                    w-full flex items-center justify-between gap-2 px-3.5 py-2.5 
+                    w-full flex items-center justify-between gap-2 px-3 py-2 
                     bg-white border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20
                     ${isOpen ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 hover:border-gray-300'}
                 `}
@@ -120,10 +154,13 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
             </button>
 
             {/* Dropdown Calendar */}
-            {isOpen && (
-                <div className={`absolute left-0 z-[9999] bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 p-4 w-[340px] ${
-                    isDropdownAbove ? 'bottom-[105%] mb-2' : 'top-[105%] mt-2'
-                }`}>
+            {isOpen && typeof document !== 'undefined' && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className="fixed z-[10000] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white p-3 shadow-xl shadow-black/10 sm:rounded-2xl sm:p-4"
+                    style={dropdownStyle}
+                    data-placement={isDropdownAbove ? 'top' : 'bottom'}
+                >
                     <div className="flex items-center justify-between mb-4">
                         <button type="button" onClick={() => setDisplayMonth(new Date(year, month - 1, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
                             <ChevronLeft className="w-5 h-5" />
@@ -143,7 +180,7 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                     {weeks.map((week, wi) => (
                         <div key={wi} className="grid grid-cols-7 gap-y-1">
                             {week.map((day, di) => {
-                                if (!day) return <div key={di} className="h-12" />;
+                                if (!day) return <div key={di} className="h-11 sm:h-12" />;
                                 
                                 const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
                                 const dateObj = new Date(year, month, day);
@@ -160,7 +197,7 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                                         disabled={isPast || !hasDep}
                                         onClick={() => handleDayClick(day)}
                                         className={`
-                                            h-12 flex flex-col items-center justify-center rounded-xl text-sm transition-all relative
+                                            h-11 sm:h-12 flex flex-col items-center justify-center rounded-lg text-sm transition-all relative
                                             ${isSelected ? 'bg-primary text-white shadow-md' : ''}
                                             ${isPast ? 'text-slate-200 cursor-not-allowed' : ''}
                                             ${!hasDep && !isPast ? 'text-slate-300 cursor-default' : ''}
@@ -178,7 +215,8 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                             })}
                         </div>
                     ))}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

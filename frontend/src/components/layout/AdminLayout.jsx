@@ -59,7 +59,7 @@ const AdminLayout = ({ children, hidePageTitle = false }) => {
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active
                                     ? 'bg-primary/10 text-primary'
                                     : 'text-text-secondary hover:bg-surface-hover hover:text-text'
                                     }`}
@@ -76,11 +76,11 @@ const AdminLayout = ({ children, hidePageTitle = false }) => {
                 <div className="p-3 border-t border-border">
                     <Link
                         to="/"
-                        className="mb-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 rounded-xl transition-colors"
+                        className="mb-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                     >
                         <Home className="w-4 h-4" /> Về trang chủ
                     </Link>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-alt">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-alt">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                             <User className="w-4 h-4 text-primary" />
                         </div>
@@ -91,7 +91,7 @@ const AdminLayout = ({ children, hidePageTitle = false }) => {
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/5 rounded-xl transition"
+                        className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/5 rounded-lg transition"
                     >
                         <LogOut className="w-4 h-4" /> Đăng xuất
                     </button>

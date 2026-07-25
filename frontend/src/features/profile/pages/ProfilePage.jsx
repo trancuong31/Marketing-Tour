@@ -139,7 +139,7 @@ const ProfilePage = () => {
 
                             {/* Avatar File Input (Hidden, Triggered by Label) */}
                             <div className="flex items-center gap-4 mb-4">
-                                <label className="flex items-center gap-3 px-4 py-2 border border-border rounded-xl cursor-pointer hover:bg-surface-alt transition-colors duration-200">
+                                <label className="flex items-center gap-3 px-4 py-2 border border-border rounded-lg cursor-pointer hover:bg-surface-alt transition-colors duration-200">
                                     <Camera className="w-5 h-5 text-primary" />
                                     <span className="text-sm font-medium text-text">{t('profile.uploadAvatar')}</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
@@ -153,7 +153,7 @@ const ProfilePage = () => {
                                     type="text"
                                     value={profileData.full_name}
                                     onChange={e => setProfileData(p => ({ ...p, full_name: e.target.value }))}
-                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                                     required
                                 />
                             </div>
@@ -165,7 +165,7 @@ const ProfilePage = () => {
                                     value={profileData.email}
                                     readOnly
                                     disabled
-                                    className="w-full px-4 py-2.5 bg-surface-alt/70 text-text-muted border border-border/50 rounded-xl cursor-not-allowed"
+                                    className="w-full px-4 py-2.5 bg-surface-alt/70 text-text-muted border border-border/50 rounded-lg cursor-not-allowed"
                                 />
                             </div>
 
@@ -175,14 +175,14 @@ const ProfilePage = () => {
                                     type="tel"
                                     value={profileData.phone_number}
                                     onChange={e => setProfileData(p => ({ ...p, phone_number: e.target.value }))}
-                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                                 />
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full mt-4 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors flex justify-center items-center gap-2"
+                                className="w-full mt-4 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors flex justify-center items-center gap-2"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                                 {t('profile.saveChanges')}
@@ -200,7 +200,7 @@ const ProfilePage = () => {
                                     type="password"
                                     value={passwordData.currentPassword}
                                     onChange={e => setPasswordData(p => ({ ...p, currentPassword: e.target.value }))}
-                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                                     required
                                 />
                             </div>
@@ -210,7 +210,7 @@ const ProfilePage = () => {
                                     type="password"
                                     value={passwordData.newPassword}
                                     onChange={e => setPasswordData(p => ({ ...p, newPassword: e.target.value }))}
-                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                                     required
                                 />
                             </div>
@@ -220,7 +220,7 @@ const ProfilePage = () => {
                                     type="password"
                                     value={passwordData.confirmPassword}
                                     onChange={e => setPasswordData(p => ({ ...p, confirmPassword: e.target.value }))}
-                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl focus:ring-2 focus:ring-primary/20"
+                                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
                                     required
                                 />
                             </div>
@@ -229,7 +229,7 @@ const ProfilePage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full py-3 bg-text text-white font-semibold rounded-xl hover:bg-black transition-colors flex justify-center items-center gap-2"
+                                    className="w-full py-3 bg-text text-white font-semibold rounded-lg hover:bg-primary transition-colors flex justify-center items-center gap-2"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
                                     {t('profile.updatePassword')}

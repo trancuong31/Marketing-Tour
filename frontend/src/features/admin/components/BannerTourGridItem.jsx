@@ -32,7 +32,7 @@ const BannerTourGridItem = ({ tour, isPinned, isActionLoading, isItemLoading, on
                 <button
                     onClick={() => onToggle(tour)}
                     disabled={isActionLoading}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                    className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                         isPinned 
                             ? 'bg-error/10 text-error hover:bg-error hover:text-white' 
                             : 'bg-primary text-white hover:bg-primary-dark shadow-md hover:shadow-primary/30'

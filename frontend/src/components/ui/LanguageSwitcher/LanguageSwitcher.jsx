@@ -28,7 +28,7 @@ const getLanguageCode = (language) => language?.split('-')[0] || 'vi';
 const FlagIcon = ({ code, className = '', watermark = false }) => {
     const baseClassName = watermark
         ? 'absolute inset-0 opacity-20 blur-[1px] scale-125'
-        : `relative h-6 w-10 shrink-0 overflow-hidden rounded-md shadow-sm ring-1 ring-black/5 ${className}`;
+        : `relative h-6 w-10 shrink-0 overflow-hidden shadow-sm ring-1 ring-black/5 ${className}`;
 
     if (code === 'vi') {
         return (
@@ -100,13 +100,6 @@ const LanguageSwitcher = ({ compact = false }) => {
                 aria-label="Change language"
                 aria-expanded={isOpen}
             >
-                {!compact && (
-                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="relative h-12 w-16">
-                            <FlagIcon code={currentLang.code} watermark />
-                        </span>
-                    </span>
-                )}
 
                 <span className={`relative z-10 flex h-full items-center ${compact ? 'justify-center' : 'justify-between gap-2'}`}>
                     <span className="flex min-w-0 items-center gap-2">
@@ -124,7 +117,7 @@ const LanguageSwitcher = ({ compact = false }) => {
             </button>
 
             <div
-                className={`absolute left-1/2 top-full z-50 mt-2 w-44 -translate-x-1/2 origin-top overflow-hidden rounded-xl border border-border bg-white shadow-lg transition-all duration-200 ${
+                className={`absolute left-1/2 top-full z-50 mt-2 w-[64px] -translate-x-1/2 origin-top overflow-hidden rounded-lg border border-border bg-white shadow-lg transition-all duration-200 sm:w-44 ${
                     isOpen ? 'visible scale-100 opacity-100' : 'invisible scale-95 opacity-0 pointer-events-none'
                 }`}
             >
@@ -136,16 +129,17 @@ const LanguageSwitcher = ({ compact = false }) => {
                             key={language.code}
                             type="button"
                             onClick={() => handleSelect(language.code)}
-                            className={`flex w-full items-center gap-2 px-3 py-2 text-left transition-colors duration-150 ${
+                            aria-label={`${language.countryName} - ${language.languageName}`}
+                            className={`flex w-full items-center justify-center px-3 py-2 text-left transition-colors duration-150 sm:justify-start sm:gap-2 ${
                                 isActive ? 'bg-primary/10 text-primary' : 'text-text hover:bg-surface-alt'
                             }`}
                         >
                             <FlagIcon code={language.code} className="h-5 w-8 rounded" />
-                            <span className="min-w-0 flex-1">
+                            <span className="hidden min-w-0 flex-1 sm:block">
                                 <span className="block truncate text-xs font-medium">{language.countryName}</span>
                                 <span className="block truncate text-[11px] text-text-muted">{language.languageName}</span>
                             </span>
-                            {isActive && <Check className="h-3.5 w-3.5 shrink-0" />}
+                            {isActive && <Check className="hidden h-3.5 w-3.5 shrink-0 sm:block" />}
                         </button>
                     );
                 })}

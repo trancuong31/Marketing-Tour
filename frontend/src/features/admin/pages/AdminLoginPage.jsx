@@ -50,7 +50,7 @@ const AdminLoginPage = () => {
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="bg-surface rounded-2xl border border-border shadow-lg p-6 space-y-4">
                     {error && (
-                        <div className="p-3 bg-error/10 border border-error/20 rounded-xl text-sm text-error text-center">
+                        <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-sm text-error text-center">
                             {error}
                         </div>
                     )}
@@ -63,7 +63,7 @@ const AdminLoginPage = () => {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+                            className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
                             placeholder="admin@email.com"
                             required
                         />
@@ -77,7 +77,7 @@ const AdminLoginPage = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+                            className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
                             placeholder="••••••••"
                             required
                         />
@@ -86,7 +86,7 @@ const AdminLoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}

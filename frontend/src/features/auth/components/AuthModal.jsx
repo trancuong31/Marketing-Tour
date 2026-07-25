@@ -6,7 +6,7 @@ import { X, Mail, Lock, User, Phone, ArrowLeft, Shield, KeyRound } from 'lucide-
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
-const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-xl text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
+const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-lg text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
 
 const InputField = ({ icon, ...props }) => (
     <div className="relative">
@@ -215,7 +215,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
                     onPaste={i === 0 ? handleOtpPaste : undefined}
-                    className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none ${digit
+                    className={`w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 transition-all duration-200 focus:outline-none ${digit
                         ? 'border-primary bg-primary/5 text-primary'
                         : 'border-border bg-surface-alt text-text'
                         } focus:border-primary focus:ring-2 focus:ring-primary/20`}
@@ -394,7 +394,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     // ── Shared Components ──
 
     const renderError = () => error && (
-        <div className="bg-error/5 text-error px-4 py-3 rounded-xl border border-error/20 text-sm animate-fade-in">
+        <div className="bg-error/5 text-error px-4 py-3 rounded-lg border border-error/20 text-sm animate-fade-in">
             {error}
         </div>
     );
@@ -421,7 +421,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 onClick={e => e.stopPropagation()}>
                 {/* Close */}
                 <button onClick={onClose}
-                    className="absolute top-4 right-4 z-10 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-xl transition-colors duration-150"
+                    className="absolute top-4 right-4 z-10 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-lg transition-colors duration-150"
                     aria-label="Close">
                     <X size={20} />
                 </button>
@@ -432,7 +432,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                     <div className="text-center mb-6">
                         {showBackButton && view !== 'otp_verify' && view !== 'forgot_otp' && view !== 'reset_password' && (
                             <button onClick={() => switchView('login')}
-                                className="absolute top-4 left-4 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-xl transition-colors">
+                                className="absolute top-4 left-4 p-2 text-text-muted hover:text-text hover:bg-surface-hover rounded-lg transition-colors">
                                 <ArrowLeft size={20} />
                             </button>
                         )}

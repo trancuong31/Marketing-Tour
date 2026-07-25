@@ -69,7 +69,7 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                                 pattern="(?:[A-Za-z0-9_.]|-){2,160}"
                                 maxLength={160}
                                 required
-                                className="w-full rounded-xl border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                className="w-full rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </label>
 
@@ -81,7 +81,7 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                                 value={form.description}
                                 onChange={event => updateField('description', event.target.value)}
                                 maxLength={255}
-                                className="w-full rounded-xl border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                className="w-full rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </label>
                     </div>
@@ -98,7 +98,7 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                                 onChange={event => updateField(field, event.target.value)}
                                 maxLength={5000}
                                 rows={3}
-                                className="w-full resize-y rounded-xl border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                className="w-full resize-y rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
                         </label>
                     ))}
@@ -108,14 +108,14 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-xl bg-surface-alt px-5 py-2.5 text-sm font-bold text-text-secondary hover:bg-surface-hover"
+                        className="rounded-lg bg-surface-alt px-5 py-2.5 text-sm font-bold text-text-secondary hover:bg-surface-hover"
                     >
                         {t('common.cancel', 'Cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={saving}
-                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary-dark disabled:opacity-60"
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary-dark disabled:opacity-60"
                     >
                         {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                         {t('common.save', 'Save')}

@@ -3,13 +3,6 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const logger = require('../config/logger');
 
-const SUPPORTED_LANGUAGES = new Map([
-    ['vi', 'vi'],
-    ['en', 'en'],
-    ['zh', 'zh-CN'],
-    ['zh-CN', 'zh-CN'],
-]);
-
 const MAX_FIELDS = 80;
 const MAX_FIELD_LENGTH = 12000;
 const TRANSLATION_CONCURRENCY = 5;
@@ -17,7 +10,13 @@ const FIELD_NAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 
 const normalizeTargetLanguage = (language) => {
     if (!language || typeof language !== 'string') return null;
-    return SUPPORTED_LANGUAGES.get(language.trim()) || null;
+
+    const normalized = language.trim().toLowerCase();
+    if (normalized.startsWith('vi')) return 'vi';
+    if (normalized.startsWith('en')) return 'en';
+    if (normalized.startsWith('zh')) return 'zh-CN';
+
+    return null;
 };
 
 const validateTexts = (texts) => {
@@ -44,7 +43,7 @@ const validateTexts = (texts) => {
     });
 };
 
-const translateTextEntry = async ([key, value], targetLanguage) => {
+const translateTextEntry = async ([key, value], targetLanguage, { strict = false } = {}) => {
     if (!value) return [key, ''];
 
     try {
@@ -52,17 +51,20 @@ const translateTextEntry = async ([key, value], targetLanguage) => {
         return [key, result.text];
     } catch (error) {
         logger.warn(`Translate failed for field "${key}": ${error.message}`);
+        if (strict) {
+            throw new AppError(`Không dịch được trường "${key}". Vui lòng thử lại.`, HTTP_CODES.BAD_GATEWAY);
+        }
         return [key, value];
     }
 };
 
-const translateEntries = async (entries, targetLanguage) => {
+const translateEntries = async (entries, targetLanguage, options = {}) => {
     const translatedEntries = [];
 
     for (let index = 0; index < entries.length; index += TRANSLATION_CONCURRENCY) {
         const chunk = entries.slice(index, index + TRANSLATION_CONCURRENCY);
         const translatedChunk = await Promise.all(
-            chunk.map((entry) => translateTextEntry(entry, targetLanguage)),
+            chunk.map((entry) => translateTextEntry(entry, targetLanguage, options)),
         );
         translatedEntries.push(...translatedChunk);
     }
@@ -70,7 +72,7 @@ const translateEntries = async (entries, targetLanguage) => {
     return translatedEntries;
 };
 
-const translateTexts = async ({ texts, targetLang }) => {
+const translateTexts = async ({ texts, targetLang, strict = false }) => {
     const targetLanguage = normalizeTargetLanguage(targetLang);
     if (!targetLanguage) {
         throw new AppError('Ngôn ngữ đích không hợp lệ', HTTP_CODES.BAD_REQUEST);
@@ -81,7 +83,7 @@ const translateTexts = async ({ texts, targetLang }) => {
         return Object.fromEntries(entries);
     }
 
-    return Object.fromEntries(await translateEntries(entries, targetLanguage));
+    return Object.fromEntries(await translateEntries(entries, targetLanguage, { strict }));
 };
 
 module.exports = {

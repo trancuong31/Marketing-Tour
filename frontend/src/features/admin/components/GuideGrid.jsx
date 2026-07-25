@@ -17,7 +17,7 @@ const GuideGrid = ({ guides = [], onEdit, onCreate }) => {
                 </p>
                 <button
                     onClick={onCreate}
-                    className="px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-sm"
+                    className="px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-2 text-sm"
                 >
                     <Plus className="w-4 h-4" /> Thêm bài viết
                 </button>

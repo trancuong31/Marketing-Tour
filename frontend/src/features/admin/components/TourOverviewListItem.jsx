@@ -33,15 +33,15 @@ const TourOverviewListItem = ({ tour, onSelectTour }) => {
                     </div>
                     
                     <div className="flex gap-2 shrink-0 overflow-x-auto pb-2 xl:pb-0">
-                        <div className="bg-warning/5 border border-warning/10 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[75px]">
+                        <div className="bg-warning/5 border border-warning/10 px-4 py-2 rounded-lg flex flex-col items-center justify-center min-w-[75px]">
                             <span className="text-[10px] text-warning font-medium mb-0.5 uppercase tracking-wider">Đang chờ</span>
                             <span className="text-lg font-bold text-warning leading-none">{tour.pending}</span>
                         </div>
-                        <div className="bg-success/5 border border-success/10 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[75px]">
+                        <div className="bg-success/5 border border-success/10 px-4 py-2 rounded-lg flex flex-col items-center justify-center min-w-[75px]">
                             <span className="text-[10px] text-success font-medium mb-0.5 uppercase tracking-wider">Đã duyệt</span>
                             <span className="text-lg font-bold text-success leading-none">{tour.approved}</span>
                         </div>
-                        <div className="bg-error/5 border border-error/10 px-4 py-2 rounded-xl flex flex-col items-center justify-center min-w-[75px]">
+                        <div className="bg-error/5 border border-error/10 px-4 py-2 rounded-lg flex flex-col items-center justify-center min-w-[75px]">
                             <span className="text-[10px] text-error font-medium mb-0.5 uppercase tracking-wider">Đã hủy</span>
                             <span className="text-lg font-bold text-error leading-none">{tour.cancelled}</span>
                         </div>
@@ -51,7 +51,7 @@ const TourOverviewListItem = ({ tour, onSelectTour }) => {
                 <div className="flex justify-end pt-4 border-t border-border/50">
                     <button 
                         onClick={() => onSelectTour(tour)}
-                        className="px-6 py-2.5 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20"
+                        className="px-6 py-2.5 bg-primary/5 hover:bg-primary text-primary hover:text-white font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-primary/20"
                     >
                         <List className="w-4 h-4" />
                         Xem chi tiết đơn hàng

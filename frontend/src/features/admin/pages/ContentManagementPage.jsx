@@ -104,7 +104,7 @@ const ContentManagementPage = () => {
                             </div>
                             <button
                                 onClick={closeGuideModal}
-                                className="p-2 rounded-xl hover:bg-surface-hover transition-colors"
+                                className="p-2 rounded-lg hover:bg-surface-hover transition-colors"
                             >
                                 <X className="w-5 h-5 text-text-muted" />
                             </button>
@@ -121,7 +121,7 @@ const ContentManagementPage = () => {
                                     value={guideForm.title}
                                     onChange={e => setGuideForm(p => ({ ...p, title: e.target.value }))}
                                     placeholder="Nhập tiêu đề bài viết..."
-                                    className="w-full px-4 py-3 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition"
+                                    className="w-full px-4 py-3 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition"
                                     required
                                 />
                             </div>
@@ -136,7 +136,7 @@ const ContentManagementPage = () => {
                                         theme="snow"
                                         value={guideForm.content}
                                         onChange={val => setGuideForm(p => ({ ...p, content: val }))}
-                                        className="bg-surface rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[240px] [&_.ql-toolbar]:border-border [&_.ql-container]:border-border"
+                                        className="bg-surface rounded-lg [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[240px] [&_.ql-toolbar]:border-border [&_.ql-container]:border-border"
                                     />
                                 ) : (
                                     <textarea
@@ -144,13 +144,13 @@ const ContentManagementPage = () => {
                                         onChange={e => setGuideForm(p => ({ ...p, content: e.target.value }))}
                                         rows={10}
                                         placeholder="Viết nội dung bài hướng dẫn..."
-                                        className="w-full px-4 py-3 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-none"
+                                        className="w-full px-4 py-3 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-none"
                                     />
                                 )}
                             </div>
 
                             {/* Active toggle */}
-                            <div className="flex items-center gap-3 p-3 bg-surface-alt rounded-xl">
+                            <div className="flex items-center gap-3 p-3 bg-surface-alt rounded-lg">
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -171,14 +171,14 @@ const ContentManagementPage = () => {
                                 <button
                                     type="button"
                                     onClick={closeGuideModal}
-                                    className="flex-1 py-3 bg-surface-alt text-text-secondary font-semibold rounded-xl hover:bg-surface-hover transition text-sm"
+                                    className="flex-1 py-3 bg-surface-alt text-text-secondary font-semibold rounded-lg hover:bg-surface-hover transition text-sm"
                                 >
                                     Hủy bỏ
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 text-sm disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+                                    className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-300 text-sm disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
                                 >
                                     {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                                     {guideModal.guide ? 'Cập nhật bài viết' : 'Tạo bài viết'}

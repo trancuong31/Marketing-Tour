@@ -103,7 +103,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, icon, label, labe
             {/* Dropdown */}
             <div
                 className={`
-                    absolute z-[9999] w-full mt-1.5 rounded-xl shadow-lg overflow-hidden
+                    absolute z-[9999] w-full mt-1.5 rounded-lg shadow-lg overflow-hidden
                     transition-all duration-200 ease-in-out origin-top
                     bg-surface border border-border 
                     ${isOpen

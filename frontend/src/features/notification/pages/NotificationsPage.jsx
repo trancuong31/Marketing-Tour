@@ -104,7 +104,7 @@ const NotificationsPage = () => {
             <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                             <Bell className="w-6 h-6 text-primary" />
                         </div>
                         <div>
@@ -129,7 +129,7 @@ const NotificationsPage = () => {
                     )}
                 </div>
 
-                <section className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+                <section className="bg-white border border-border rounded-lg overflow-hidden shadow-sm">
                     {isLoading ? (
                         <div className="min-h-[320px] flex items-center justify-center">
                             <Loader2 className="w-8 h-8 text-primary animate-spin" />

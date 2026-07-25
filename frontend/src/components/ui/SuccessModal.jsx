@@ -37,7 +37,7 @@ const SuccessModal = ({ isOpen, onClose, title, message, bookingCode, totalAmoun
                 </p>
 
                 {bookingCode && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4 text-center">
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4 text-center">
                         <p className="text-sm text-text-secondary mb-1">Mã đặt tour của bạn</p>
                         <p className="text-2xl font-bold text-primary tracking-wider">{bookingCode}</p>
                         
@@ -56,7 +56,7 @@ const SuccessModal = ({ isOpen, onClose, title, message, bookingCode, totalAmoun
 
                 <button
                     onClick={onClose}
-                    className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap"
+                    className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
                 >
                     Đóng và xem lịch sử
                 </button>

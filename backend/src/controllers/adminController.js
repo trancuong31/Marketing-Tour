@@ -14,6 +14,7 @@ const env = require('../config/env');
 const { translateTexts } = require('../services/translationService');
 const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
 const { getNotificationCopy } = require('../utils/notificationMessages');
+const { normalizeLanguage } = require('../utils/language');
 
 // ══════════════════════════════════════
 // AUTH
@@ -92,6 +93,14 @@ const TOUR_TRANSLATABLE_FIELDS = [
 
 const hasText = (value) => typeof value === 'string' && value.trim().length > 0;
 
+const normalizeTranslationList = (translations) => {
+    const parsedTranslations = Array.isArray(translations) ? translations : parseJsonField(translations);
+
+    return parsedTranslations
+        .map(item => ({ ...item, language: normalizeLanguage(item.language) }))
+        .filter(item => AUTO_TRANSLATION_LANGUAGES.includes(item.language));
+};
+
 const buildTourTranslationSource = ({
     title,
     summary,
@@ -123,7 +132,7 @@ const mergeTranslatedFields = (source, existingTranslation, translatedFields) =>
 };
 
 const ensureTourTranslations = async ({ translations, source, slug }) => {
-    const existingTranslations = parseJsonField(translations);
+    const existingTranslations = normalizeTranslationList(translations);
 
     return Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
         const existing = existingTranslations.find(item => item.language === language) || { language };
@@ -146,7 +155,7 @@ const ensureTourTranslations = async ({ translations, source, slug }) => {
 };
 
 const ensureItineraryTranslations = async (itinerary) => {
-    const existingTranslations = Array.isArray(itinerary.translations) ? itinerary.translations : [];
+    const existingTranslations = normalizeTranslationList(itinerary.translations);
 
     const translations = await Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
         const existing = existingTranslations.find(item => item.language === language) || { language };

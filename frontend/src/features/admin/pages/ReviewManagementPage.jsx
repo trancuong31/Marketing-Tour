@@ -39,6 +39,17 @@ export default function ReviewManagementPage() {
     const [reviews, setReviews] = useState([]);
     
     const [loading, setLoading] = useState(true);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const initialLoadsRef = useRef({ overview: false, reviews: false });
+    const overviewRequestRef = useRef({ key: '', promise: null });
+    const reviewsRequestRef = useRef({ key: '', promise: null });
+
+    const markInitialLoadDone = useCallback((key) => {
+        initialLoadsRef.current[key] = true;
+        if (initialLoadsRef.current.overview && initialLoadsRef.current.reviews) {
+            setLoading(false);
+        }
+    }, []);
 
     // Time filter options for CustomSelect - Dynamically generated for last few years
     const timeOptions = useMemo(() => {
@@ -180,53 +191,100 @@ export default function ReviewManagementPage() {
         };
     }, []);
 
-    // Main fetch data logic
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = {};
-            if (selectedTour) params.tour_id = selectedTour;
-            if (selectedTime) params.time = selectedTime;
+    const fetchOverviewData = useCallback(async (force = false) => {
+        const requestKey = JSON.stringify({ selectedTime });
+        if (!force && overviewRequestRef.current.key === requestKey && overviewRequestRef.current.promise) {
+            return overviewRequestRef.current.promise;
+        }
 
-            // Stats calls don't need pagination
+        const requestPromise = (async () => {
             const statsParams = { time: selectedTime };
             const topParams = { time: selectedTime };
             const improvementParams = { time: selectedTime, mode: 'improvement' };
 
-            const voteParams = { ...params, page: currentPage, limit: 10 };
-            if (approvalFilter !== '') voteParams.approved = approvalFilter;
-
-            const [topRes, improvementRes, statsRes, reviewsRes] = await Promise.all([
+            const [topRes, improvementRes, statsRes] = await Promise.all([
                 adminService.getTopRatedTours(topParams),
                 adminService.getTopRatedTours(improvementParams),
                 adminService.getReviewStats(statsParams),
-                adminService.getVotes(voteParams)
             ]);
 
             setTopTours(topRes.data?.data || []);
             setImprovementTours(improvementRes.data?.data || []);
             setStats(statsRes.data?.data || []);
-            
+        })();
+
+        overviewRequestRef.current = { key: requestKey, promise: requestPromise };
+
+        try {
+            await requestPromise;
+        } catch (error) {
+            console.error(error);
+            toast.error('Có lỗi xảy ra khi tải thống kê đánh giá');
+        } finally {
+            markInitialLoadDone('overview');
+            if (overviewRequestRef.current.promise === requestPromise) {
+                overviewRequestRef.current.promise = null;
+            }
+        }
+    }, [selectedTime, markInitialLoadDone]);
+
+    const fetchReviewsData = useCallback(async (force = false) => {
+        const requestKey = JSON.stringify({ selectedTour, selectedTime, currentPage, approvalFilter });
+        if (!force && reviewsRequestRef.current.key === requestKey && reviewsRequestRef.current.promise) {
+            return reviewsRequestRef.current.promise;
+        }
+
+        setReviewsLoading(true);
+
+        const requestPromise = (async () => {
+            const voteParams = { page: currentPage, limit: 10 };
+            if (selectedTour) voteParams.tour_id = selectedTour;
+            if (selectedTime) voteParams.time = selectedTime;
+            if (approvalFilter !== '') voteParams.approved = approvalFilter;
+
+            const reviewsRes = await adminService.getVotes(voteParams);
+
             if (reviewsRes.data?.data) {
                 setReviews(reviewsRes.data.data);
                 setTotalPages(reviewsRes.data.totalPages || 1);
                 setTotalItems(reviewsRes.data.totalItems || 0);
             }
+        })();
+
+        reviewsRequestRef.current = { key: requestKey, promise: requestPromise };
+
+        try {
+            await requestPromise;
         } catch (error) {
             console.error(error);
             toast.error('Có lỗi xảy ra khi tải dữ liệu đánh giá');
         } finally {
-            setLoading(false);
+            markInitialLoadDone('reviews');
+            if (reviewsRequestRef.current.promise === requestPromise) {
+                setReviewsLoading(false);
+                reviewsRequestRef.current.promise = null;
+            }
         }
-    }, [selectedTour, selectedTime, currentPage, approvalFilter]);
+    }, [selectedTour, selectedTime, currentPage, approvalFilter, markInitialLoadDone]);
+
+    const fetchData = useCallback(async () => {
+        await Promise.all([
+            fetchOverviewData(true),
+            fetchReviewsData(true),
+        ]);
+    }, [fetchOverviewData, fetchReviewsData]);
 
     useEffect(() => {
         fetchToursDropdown(); // Load initial tours
     }, [fetchToursDropdown]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        fetchOverviewData();
+    }, [fetchOverviewData]);
+
+    useEffect(() => {
+        fetchReviewsData();
+    }, [fetchReviewsData]);
 
     const handleDelete = async (id) => {
         toast('Bạn có chắc chắn muốn xóa đánh giá này?', {
@@ -272,10 +330,14 @@ export default function ReviewManagementPage() {
 
     // Highcharts options
     // Calculate total average for middle display
-    const totalVotes = stats.reduce((acc, s) => acc + parseInt(s.count), 0);
-    const avgRating = totalVotes > 0 
+    const chartData = useMemo(() => stats.map(s => ({
+        name: `${s.rating} Sao`,
+        y: parseInt(s.count),
+    })), [stats]);
+    const totalVotes = useMemo(() => stats.reduce((acc, s) => acc + parseInt(s.count), 0), [stats]);
+    const avgRating = useMemo(() => totalVotes > 0
         ? (stats.reduce((acc, s) => acc + (s.rating * s.count), 0) / totalVotes).toFixed(1)
-        : '0.0';
+        : '0.0', [stats, totalVotes]);
     const rankingTabs = [
         { value: 'top', label: 'Top 5 Tour nổi bật' },
         { value: 'improvement', label: 'Top 5 Tour cần cải thiện' },
@@ -283,7 +345,7 @@ export default function ReviewManagementPage() {
     const activeRankingTours = rankingTab === 'top' ? topTours : improvementTours;
     const activeRankingTitle = rankingTabs.find(tab => tab.value === rankingTab)?.label || rankingTabs[0].label;
 
-    const pieChartOptions = {
+    const pieChartOptions = useMemo(() => ({
         chart: { type: 'pie', backgroundColor: 'transparent', height: 350 },
         title: { 
             text: `<div style="text-align:center"><span style="font-size:32px; font-weight:bold; color:var(--text)">${avgRating}</span><br><span style="font-size:14px; color:var(--text-muted)">Sao Trung Bình</span></div>`,
@@ -309,13 +371,10 @@ export default function ReviewManagementPage() {
         series: [{
             name: 'Đánh giá',
             colorByPoint: true,
-            data: stats.map(s => ({
-                name: `${s.rating} Sao`,
-                y: parseInt(s.count),
-            }))
+            data: chartData
         }],
         colors: ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
-    };
+    }), [avgRating, chartData]);
 
     return (
         <AdminLayout>
@@ -383,7 +442,7 @@ export default function ReviewManagementPage() {
 
                         {/* Suggestions Dropdown */}
                         {showTourSuggestions && (
-                            <div className="absolute z-[9999] w-full mt-1.5 rounded-xl shadow-lg overflow-hidden bg-surface border border-border animate-in fade-in slide-in-from-top-1 duration-200">
+                            <div className="absolute z-[9999] w-full mt-1.5 rounded-lg shadow-lg overflow-hidden bg-surface border border-border animate-in fade-in slide-in-from-top-1 duration-200">
                                 <div
                                     ref={suggestionsRef}
                                     className="overflow-y-auto max-h-64 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600"
@@ -460,7 +519,7 @@ export default function ReviewManagementPage() {
                             <h2 className="text-sm font-bold text-text mb-4 uppercase tracking-wider flex items-center gap-2">
                                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" /> {activeRankingTitle}
                             </h2>
-                            <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface-alt p-1">
+                            <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-surface-alt p-1">
                                 {rankingTabs.map(tab => (
                                     <button
                                         key={tab.value}
@@ -479,7 +538,7 @@ export default function ReviewManagementPage() {
                             {activeRankingTours.length > 0 ? (
                                 <div className="space-y-4">
                                     {activeRankingTours.map((t, index) => (
-                                        <div key={index} className="flex items-center gap-3 p-3 bg-surface-alt rounded-xl">
+                                        <div key={index} className="flex items-center gap-3 p-3 bg-surface-alt rounded-lg">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center font-black text-primary">
                                                 {index + 1}
                                             </div>
@@ -552,7 +611,7 @@ export default function ReviewManagementPage() {
                                         </div>
                                         
                                         <div className="pt-4 border-t border-border/50">
-                                            <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
+                                            <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
                                                 <p className="text-[11px] text-primary font-medium leading-relaxed italic">
                                                     "Hầu hết khách hàng hài lòng với chất lượng dịch vụ và hướng dẫn viên nhiệt tình."
                                                 </p>
@@ -577,9 +636,12 @@ export default function ReviewManagementPage() {
                     {/* Table */}
                     <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[400px]">
                         <div className="p-4 border-b border-border bg-surface-alt flex flex-wrap justify-between items-center gap-3">
-                            <h2 className="font-bold text-text">Danh sách bình luận ({totalItems})</h2>
+                            <h2 className="font-bold text-text flex items-center gap-2">
+                                Danh sách bình luận ({totalItems})
+                                {reviewsLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                            </h2>
                             {/* Approval Tab Bar */}
-                            <div className="flex items-center gap-1 p-1 bg-surface rounded-xl">
+                            <div className="flex items-center gap-1 p-1 bg-surface rounded-lg">
                                 {[
                                     { value: '', label: 'Tất cả' },
                                     { value: '1', label: 'Đã duyệt' },
@@ -719,7 +781,7 @@ export default function ReviewManagementPage() {
                                     <button
                                         disabled={currentPage === 1}
                                         onClick={() => setCurrentPage(p => p - 1)}
-                                        className="p-2 border border-border rounded-xl text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="p-2 border border-border rounded-lg text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
@@ -728,7 +790,7 @@ export default function ReviewManagementPage() {
                                             <button
                                                 key={i + 1}
                                                 onClick={() => setCurrentPage(i + 1)}
-                                                className={`w-9 h-9 rounded-xl text-sm font-medium ${
+                                                className={`w-9 h-9 rounded-lg text-sm font-medium ${
                                                     currentPage === i + 1 
                                                     ? 'bg-primary text-white shadow-md' 
                                                     : 'text-text hover:bg-surface-hover'
@@ -741,7 +803,7 @@ export default function ReviewManagementPage() {
                                     <button
                                         disabled={currentPage === totalPages}
                                         onClick={() => setCurrentPage(p => p + 1)}
-                                        className="p-2 border border-border rounded-xl text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="p-2 border border-border rounded-lg text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <ChevronRight className="w-5 h-5" />
                                     </button>

@@ -96,7 +96,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
 
     if (submitted) {
         return (
-            <div className="mt-6 p-5 bg-success/5 border border-success/20 rounded-xl flex items-center gap-3">
+            <div className="mt-6 p-5 bg-success/5 border border-success/20 rounded-lg flex items-center gap-3">
                 <CheckCircle2 className="w-6 h-6 text-success flex-shrink-0" />
                 <div>
                     <p className="font-semibold text-success">{t('tour.review.thankYou')}</p>
@@ -108,7 +108,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
 
     if (!isAuthenticated) {
         return (
-            <div className="mt-6 p-6 bg-surface-alt rounded-xl border border-border text-center">
+            <div className="mt-6 p-6 bg-surface-alt rounded-lg border border-border text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <LogIn className="w-6 h-6 text-primary" />
                 </div>
@@ -121,7 +121,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
     // Loading eligibility
     if (eligibility.loading) {
         return (
-            <div className="mt-6 p-6 bg-surface-alt rounded-xl border border-border text-center">
+            <div className="mt-6 p-6 bg-surface-alt rounded-lg border border-border text-center">
                 <Loader2 className="w-6 h-6 text-primary animate-spin mx-auto mb-2" />
                 <p className="text-sm text-text-muted">{t('tour.review.checkingEligibility')}</p>
             </div>
@@ -131,7 +131,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
     // Not eligible
     if (!eligibility.eligible) {
         return (
-            <div className="mt-6 p-5 bg-warning/5 border border-warning/20 rounded-xl flex items-center gap-3">
+            <div className="mt-6 p-5 bg-warning/5 border border-warning/20 rounded-lg flex items-center gap-3">
                 <ShieldX className="w-6 h-6 text-warning flex-shrink-0" />
                 <div>
                     <p className="font-semibold text-warning">{t('tour.review.notEligibleTitle')}</p>
@@ -142,7 +142,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
     }
 
     return (
-        <div className="mt-6 p-5 bg-surface-alt rounded-xl border border-border">
+        <div className="mt-6 p-5 bg-surface-alt rounded-lg border border-border">
             <h4 className="font-semibold text-text mb-4 flex items-center gap-2">
                 <Send className="w-4 h-4" />
                 {t('tour.review.formTitle')}
@@ -218,14 +218,14 @@ const VoteForm = ({ tourId, onSuccess }) => {
                 <textarea
                     {...register('comment')}
                     rows={3}
-                    className="w-full px-3 py-2.5 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none"
+                    className="w-full px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none"
                     placeholder={t('tour.review.commentPlaceholder')}
                 />
 
                 <button
                     type="submit"
                     disabled={submitting || currentRating === 0}
-                    className="px-6 py-2.5 bg-gradient-to-r from-secondary to-secondary-dark text-white font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-2.5 bg-gradient-to-r from-secondary to-secondary-dark text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                 >
                     {submitting ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> {t('tour.review.submitting')}</>

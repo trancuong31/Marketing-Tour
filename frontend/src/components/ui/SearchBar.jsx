@@ -39,7 +39,7 @@ const SearchBar = ({ departurePriceMap = {} }) => {
   return (
     <form
       onSubmit={handleSearch}
-      className="w-full bg-white/95 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/50 p-3 sm:p-4 flex flex-col lg:flex-row items-end gap-4"
+      className="w-full bg-white/95 backdrop-blur-xl rounded-lg shadow-xl shadow-black/5 border border-white/50 p-3 sm:p-4 flex flex-col lg:flex-row items-end gap-4"
     >
       {/* Điểm đến */}
       {/* Điểm đến */}
@@ -52,7 +52,7 @@ const SearchBar = ({ departurePriceMap = {} }) => {
           <input
             type="text"
             placeholder={t('home.search.destinationPlaceholder', 'Tên tour, điểm đến...')}
-            className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm text-text font-medium placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+            className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-sm text-text font-medium placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
             value={searchParams.keyword}
             onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
           />
@@ -90,7 +90,7 @@ const SearchBar = ({ departurePriceMap = {} }) => {
       <div className="w-full lg:w-auto pt-2 lg:pt-0">
         <button
           type="submit"
-          className="w-full lg:w-auto flex items-center justify-center gap-2 px-8 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0"
+          className="w-full lg:w-auto flex items-center justify-center gap-2 px-8 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold text-sm sm:text-base rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0"
         >
           <Search className="w-5 h-5" />
           <span>{t('home.search.button', 'Tìm Kiếm')}</span>

@@ -346,7 +346,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                 {images.map((img, i) => (
                                     <div 
                                         key={i} 
-                                        className="w-20 h-20 rounded-xl overflow-hidden border border-border/50 cursor-pointer hover:opacity-90 transition shadow-sm"
+                                        className="w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:opacity-90 transition shadow-sm"
                                     >
                                         <img 
                                             src={getImageUrl(img)} 
@@ -361,7 +361,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
 
                         {/* Admin Reply */}
                         {vote.admin_reply && (
-                            <div className="mt-4 p-4 bg-white/50 rounded-xl border-l-4 border-primary shadow-sm">
+                            <div className="mt-4 p-4 bg-white/50 rounded-lg border-l-4 border-primary shadow-sm">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                                         <span className="text-[10px] text-white font-bold">A</span>
@@ -421,7 +421,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                         value={replyContent}
                                         onChange={(e) => setReplyContent(e.target.value)}
                                         placeholder="Viết phản hồi của bạn..."
-                                        className="w-full bg-surface-alt rounded-xl p-3 text-xs border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none h-20"
+                                        className="w-full bg-surface-alt rounded-lg p-3 text-xs border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none h-20"
                                         autoFocus
                                     />
                                     <div className="absolute bottom-2 right-2 flex gap-2">
@@ -521,7 +521,7 @@ const ItineraryAccordion = ({ itineraries, t }) => {
         <div className="space-y-2">
             <h2 className="text-xl font-bold text-text mb-4">{t('tour.detail.itinerary', 'Lịch trình chi tiết')}</h2>
             {itineraries.map((item, idx) => (
-                <div key={item.id || idx} className="rounded-xl border border-border overflow-hidden">
+                <div key={item.id || idx} className="rounded-lg border border-border overflow-hidden">
                     <button
                         type="button"
                         onClick={() => setOpenDay(openDay === idx ? -1 : idx)}
@@ -582,7 +582,9 @@ const FeaturedReviewsCarousel = ({ votes }) => {
             <div className="max-w-6xl mx-auto px-4 mb-8">
                 <div className="flex items-center gap-2">
                     <div className="w-1.5 h-6 bg-primary rounded-full" />
-                    <h2 className="text-xl font-bold text-text uppercase tracking-tight">{t('tour.detail.customerExperience', 'Trải nghiệm thực tế từ khách hàng')}</h2>
+                    <h2 className="text-lg font-bold text-text uppercase tracking-tight sm:text-2xl">
+                        {t('tour.detail.customerExperience', 'Trải nghiệm thực tế từ khách hàng')}
+                    </h2>
                 </div>
                 <p className="text-sm text-text-muted mt-1">{t('tour.detail.customerExperienceDesc', 'Những chia sẻ chân thực từ khách hàng trên toàn hệ thống')}</p>
             </div>
@@ -989,7 +991,7 @@ const TourDetailPage = () => {
                         {(tour.price_includes || tour.price_excludes) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {tour.price_includes && (
-                                    <div className="rounded-xl border border-success/20 bg-success/5 p-4 overflow-hidden">
+                                    <div className="rounded-lg border border-success/20 bg-success/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <CheckCircle className="w-5 h-5 text-success" />
                                             <h3 className="text-sm font-bold text-success">{t('tour.detail.priceIncludes', 'Giá bao gồm')}</h3>
@@ -1001,7 +1003,7 @@ const TourDetailPage = () => {
                                     </div>
                                 )}
                                 {tour.price_excludes && (
-                                    <div className="rounded-xl border border-error/20 bg-error/5 p-4 overflow-hidden">
+                                    <div className="rounded-lg border border-error/20 bg-error/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <XCircle className="w-5 h-5 text-error" />
                                             <h3 className="text-sm font-bold text-error">{t('tour.detail.priceExcludes', 'Giá không bao gồm')}</h3>
@@ -1062,7 +1064,9 @@ const TourDetailPage = () => {
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
                             <Star className="w-6 h-6 text-amber-500 fill-amber-500" />
-                            <h2 className="text-2xl font-bold text-text">{t('tour.detail.communityReviews', { count: votes.length })}</h2>
+                            <h2 className="text-lg uppercase font-bold text-text sm:text-2xl">
+                                {t('tour.detail.communityReviews', { count: votes.length })}
+                            </h2>
                         </div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-text-muted">
                             {t('tour.detail.sortLabel')}: <span className="text-primary cursor-pointer">{t('tour.detail.sortNewest')}</span>

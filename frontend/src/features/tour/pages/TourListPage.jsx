@@ -89,6 +89,7 @@ const TourListPage = () => {
     const [tours, setTours] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showMobileFilter, setShowMobileFilter] = useState(false);
+    const showMobileFilterRef = useRef(false);
     const [departurePoints, setDeparturePoints] = useState([]);
     const [filters, setFilters] = useState({
         budget: initialBudget || '', departureDate: initialDate || '',
@@ -101,6 +102,52 @@ const TourListPage = () => {
             .then(res => { if (res.data?.data) setDeparturePoints(res.data.data); })
             .catch(err => console.error('Lỗi tải điểm đón:', err));
     }, []);
+
+    useEffect(() => {
+        showMobileFilterRef.current = showMobileFilter;
+    }, [showMobileFilter]);
+
+    useEffect(() => {
+        if (!showMobileFilter) return;
+
+        const scrollY = window.scrollY;
+        const originalBodyStyle = {
+            position: document.body.style.position,
+            top: document.body.style.top,
+            left: document.body.style.left,
+            right: document.body.style.right,
+            width: document.body.style.width,
+            overflow: document.body.style.overflow,
+            overscrollBehavior: document.body.style.overscrollBehavior,
+        };
+        const originalHtmlStyle = {
+            overflow: document.documentElement.style.overflow,
+            overscrollBehavior: document.documentElement.style.overscrollBehavior,
+        };
+
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+        document.body.style.overscrollBehavior = 'contain';
+        document.documentElement.style.overflow = 'hidden';
+        document.documentElement.style.overscrollBehavior = 'contain';
+
+        return () => {
+            document.body.style.position = originalBodyStyle.position;
+            document.body.style.top = originalBodyStyle.top;
+            document.body.style.left = originalBodyStyle.left;
+            document.body.style.right = originalBodyStyle.right;
+            document.body.style.width = originalBodyStyle.width;
+            document.body.style.overflow = originalBodyStyle.overflow;
+            document.body.style.overscrollBehavior = originalBodyStyle.overscrollBehavior;
+            document.documentElement.style.overflow = originalHtmlStyle.overflow;
+            document.documentElement.style.overscrollBehavior = originalHtmlStyle.overscrollBehavior;
+            window.scrollTo(0, scrollY);
+        };
+    }, [showMobileFilter]);
 
     useEffect(() => {
         const fetchTours = async () => {
@@ -159,6 +206,7 @@ const TourListPage = () => {
 
     // Cuộn lên đầu trang khi thay đổi bộ lọc hoặc sắp xếp
     useEffect(() => {
+        if (showMobileFilterRef.current) return;
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [filters, sortBy]);
 
@@ -172,7 +220,7 @@ const TourListPage = () => {
     const filterContent = (
         <div className="space-y-5">
             <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-[#1a3c6e] uppercase tracking-wide flex items-center gap-2">
+                <h3 className="hidden sm:flex text-base font-bold text-[#1a3c6e] uppercase tracking-wide items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" />
                     {t('tour.list.filterTitle', 'Bộ lọc tìm kiếm')}
                 </h3>
@@ -196,7 +244,7 @@ const TourListPage = () => {
 
             <CustomSelect label={t('tour.list.filterSort', 'Sắp xếp theo')} labelIcon={<SlidersHorizontal className="w-3.5 h-3.5" />} value={sortBy} onChange={(v) => setSortBy(v)} options={SORT_OPTIONS} placeholder={t('tour.sort.default', 'Mặc định')} />
 
-            <button onClick={() => setShowMobileFilter(false)} className="w-full py-3 bg-[#1a3c6e] text-white font-bold rounded-xl hover:bg-[#15325c] transition lg:hidden">
+            <button onClick={() => setShowMobileFilter(false)} className="w-full py-3 bg-[#1a3c6e] text-white font-bold rounded-lg hover:bg-[#15325c] transition lg:hidden">
                 {t('tour.list.apply', 'Áp dụng')}
             </button>
         </div>
@@ -218,7 +266,7 @@ const TourListPage = () => {
 
             {/* Content: Sidebar + Grid */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-                <button onClick={() => setShowMobileFilter(true)} className="lg:hidden mb-4 inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-medium text-text shadow-sm hover:shadow transition">
+                <button onClick={() => setShowMobileFilter(true)} className="lg:hidden mb-4 inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-sm font-medium text-text shadow-sm hover:shadow transition">
                     <Filter className="w-4 h-4" />
                     {t('tour.list.filterBtn', 'Bộ lọc')}
                     {hasActiveFilter && <span className="w-2 h-2 rounded-full bg-primary" />}
@@ -227,7 +275,7 @@ const TourListPage = () => {
                 <div className="flex gap-8">
                     {/* SIDEBAR — z-10 so calendar popup renders above tour grid */}
                     <aside className="hidden lg:block w-[280px] shrink-0 relative z-10">
-                        <div className="sticky top-20 bg-white rounded-xl border border-border shadow-sm p-5 overflow-visible">
+                        <div className="sticky top-20 bg-white rounded-lg border border-border shadow-sm p-5 overflow-visible">
                             {filterContent}
                         </div>
                     </aside>
@@ -292,7 +340,7 @@ const TourListPage = () => {
                             <h3 className="font-bold text-text">{t('tour.list.filterTitle', 'Bộ lọc tìm kiếm')}</h3>
                             <button onClick={() => setShowMobileFilter(false)} className="p-1.5 rounded-lg hover:bg-surface-alt transition"><X className="w-5 h-5" /></button>
                         </div>
-                        <div className="p-5">{filterContent}</div>
+                        <div className="p-2">{filterContent}</div>
                     </div>
                 </div>
             )}

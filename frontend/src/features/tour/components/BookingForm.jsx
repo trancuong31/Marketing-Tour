@@ -60,7 +60,7 @@ const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
                 onClick={() => setOpen(o => !o)}
                 className={`
                     w-full flex items-center justify-between gap-3
-                    px-3 py-2.5 rounded-xl border bg-white text-left
+                    px-3 py-2.5 rounded-lg border bg-white text-left
                     transition-all duration-150
                     ${open ? 'border-primary ring-2 ring-primary/10' : 'border-border hover:border-primary/50'}
                 `}
@@ -92,7 +92,7 @@ const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
 
             {/* Dropdown */}
             {open && (
-                <ul className="absolute z-50 mt-1.5 w-full bg-white border border-border rounded-xl shadow-lg overflow-hidden py-1 max-h-64 overflow-y-auto">
+                <ul className="absolute z-50 mt-1.5 w-full bg-white border border-border rounded-lg shadow-lg overflow-hidden py-1 max-h-64 overflow-y-auto">
                     {departures.length === 0 && (
                         <li className="px-4 py-3 text-sm text-text-muted text-center">{t('booking.noDepartureList')}</li>
                     )}
@@ -369,7 +369,7 @@ const BookingForm = ({ tour }) => {
                             <Users className="w-3.5 h-3.5 text-text-muted" />
                             {t('booking.passengers')}
                         </label>
-                        <div className="bg-surface-alt rounded-xl border border-border p-3 divide-y divide-border">
+                        <div className="bg-surface-alt rounded-lg border border-border p-3 divide-y divide-border">
                             <PassengerCounter label={t('booking.adult')} ageDesc={t('booking.adultAge')} count={adults} onChange={setAdults} min={1} max={maxSeats} price={adultPrice} />
                             <PassengerCounter label={t('booking.child')} ageDesc={t('booking.childAge')} count={children} onChange={setChildren} max={Math.max(0, maxSeats - adults)} price={childPrice} />
                             <PassengerCounter label={t('booking.infant')} ageDesc={t('booking.infantAge')} count={infants} onChange={setInfants} max={Math.max(0, maxSeats - adults - children)} price={infantPrice} />
@@ -405,7 +405,7 @@ const BookingForm = ({ tour }) => {
                                 <Settings className="w-3.5 h-3.5 text-text-muted" />
                                 {t('booking.extraServices')}
                             </label>
-                            <div className="bg-surface-alt rounded-xl border border-border divide-y divide-border">
+                            <div className="bg-surface-alt rounded-lg border border-border divide-y divide-border">
                                 {tourOptions.map(opt => {
                                     const sel = selectedOptions[opt.id];
                                     const isSelected = sel?.selected;
@@ -485,7 +485,7 @@ const BookingForm = ({ tour }) => {
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {submitting ? (
                             <><Loader2 className="w-4 h-4 animate-spin" />{t('booking.processing')}</>

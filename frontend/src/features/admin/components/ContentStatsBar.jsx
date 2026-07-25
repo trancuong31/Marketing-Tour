@@ -45,7 +45,7 @@ const ContentStatsBar = ({ votes = [], guides = [] }) => {
                     <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${stat.gradient}`} />
 
                     {/* Icon */}
-                    <div className={`w-12 h-12 rounded-xl ${stat.bgLight} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-12 h-12 rounded-lg ${stat.bgLight} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}>
                         <stat.icon className={`w-5.5 h-5.5 bg-gradient-to-br ${stat.gradient} bg-clip-text`}
                             style={{ color: 'var(--color-primary)' }}
                         />

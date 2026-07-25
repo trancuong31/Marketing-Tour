@@ -129,7 +129,7 @@ const TranslationManagementPage = () => {
                     <button
                         type="button"
                         onClick={openCreate}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary-dark"
+                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary-dark"
                     >
                         <Plus className="h-4 w-4" />
                         {t('admin.translations.add', 'Add key')}
@@ -142,7 +142,7 @@ const TranslationManagementPage = () => {
                         value={search}
                         onChange={event => setSearch(event.target.value)}
                         placeholder={t('admin.translations.searchPlaceholder', 'Search key or content...')}
-                        className="w-full rounded-xl border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        className="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
 
@@ -160,7 +160,7 @@ const TranslationManagementPage = () => {
                             type="button"
                             onClick={() => fetchTranslations(pagination.page - 1)}
                             disabled={pagination.page <= 1}
-                            className="rounded-xl border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+                            className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
                             aria-label={t('common.previous', 'Previous')}
                         >
                             <ChevronLeft className="h-4 w-4" />
@@ -171,7 +171,7 @@ const TranslationManagementPage = () => {
                                 key={page}
                                 type="button"
                                 onClick={() => fetchTranslations(page)}
-                                className={`h-10 w-10 rounded-xl border text-sm font-bold ${
+                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${
                                     page === pagination.page
                                         ? 'border-primary bg-primary text-white'
                                         : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
@@ -185,7 +185,7 @@ const TranslationManagementPage = () => {
                             type="button"
                             onClick={() => fetchTranslations(pagination.page + 1)}
                             disabled={pagination.page >= pagination.totalPages}
-                            className="rounded-xl border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+                            className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
                             aria-label={t('common.next', 'Next')}
                         >
                             <ChevronRight className="h-4 w-4" />

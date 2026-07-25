@@ -6,6 +6,11 @@ const LANGUAGE_OPTIONS = [
     { id: 'zh', label: '中文' },
 ];
 
+const TRANSLATE_LABELS = {
+    en: 'English',
+    zh: 'Tiếng Trung',
+};
+
 const TranslationToolbar = ({ currentLang, translating, onLanguageChange, onTranslate }) => (
     <div className="px-4 sm:px-6 py-3 bg-surface-alt/50 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm z-10 relative">
         <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
@@ -36,7 +41,7 @@ const TranslationToolbar = ({ currentLang, translating, onLanguageChange, onTran
             ) : (
                 <Languages className="w-4 h-4" />
             )}
-            {translating ? 'Đang dịch...' : currentLang === 'vi' ? 'Dịch EN + ZH' : `Dịch sang ${currentLang.toUpperCase()}`}
+            {translating ? 'Đang dịch...' : currentLang === 'vi' ? 'Dịch EN + Trung' : `Dịch sang ${TRANSLATE_LABELS[currentLang] || currentLang.toUpperCase()}`}
         </button>
     </div>
 );

@@ -135,10 +135,10 @@ const BannerManagementPage = () => {
                             placeholder="Tìm tour nhanh..."
                             value={tourSearch}
                             onChange={e => setTourSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                         />
                     </div>
-                    <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border w-full sm:w-auto justify-center">
+                    <div className="flex items-center gap-1 bg-surface p-1 rounded-lg border border-border w-full sm:w-auto justify-center">
                         <button 
                             onClick={() => setViewLayout('grid')}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${viewLayout === 'grid' ? 'bg-surface-alt shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}`}

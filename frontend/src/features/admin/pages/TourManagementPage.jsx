@@ -5,7 +5,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
 import TranslationToolbar from '@/features/admin/components/TranslationToolbar';
-import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 const formatPrice = (price) =>
@@ -20,6 +20,85 @@ const TABS = [
     { key: 'options', label: 'Tùy chọn', icon: Settings },
 ];
 
+const normalizeAdminTranslationLanguage = (language) => {
+    const normalized = String(language || '').trim().toLowerCase();
+    if (normalized.startsWith('zh')) return 'zh';
+    if (normalized.startsWith('en')) return 'en';
+    return normalized;
+};
+
+const getTranslationLangIndex = (language) => (normalizeAdminTranslationLanguage(language) === 'en' ? 0 : 1);
+
+const getTranslationDisplayName = (language) => (
+    normalizeAdminTranslationLanguage(language) === 'zh' ? 'Tiếng Trung' : 'English'
+);
+
+const TOUR_TRANSLATION_FIELD_LABELS = {
+    title: 'Tên tour',
+    summary: 'Tóm tắt',
+    highlights: 'Điểm nổi bật',
+    price_includes: 'Giá tour bao gồm',
+    price_excludes: 'Giá tour không bao gồm',
+    terms_and_notes: 'Điều khoản và lưu ý',
+    cancellation_policy: 'Quy định hoàn hủy',
+};
+
+const ITINERARY_TRANSLATION_FIELD_LABELS = {
+    title: 'Tiêu đề ngày',
+    content: 'Chi tiết hoạt động',
+};
+
+const getTranslationFieldLabel = (fieldKey, targetLang) => {
+    if (!fieldKey) return `nội dung ${getTranslationDisplayName(targetLang)}`;
+
+    if (fieldKey.startsWith('tour_')) {
+        const field = fieldKey.replace(/^tour_/, '');
+        return `${TOUR_TRANSLATION_FIELD_LABELS[field] || fieldKey} (${getTranslationDisplayName(targetLang)})`;
+    }
+
+    const itineraryMatch = fieldKey.match(/^iti_(\d+)_(.+)$/);
+    if (itineraryMatch) {
+        const dayNumber = Number(itineraryMatch[1]) + 1;
+        const field = itineraryMatch[2];
+        return `Ngày ${dayNumber} - ${ITINERARY_TRANSLATION_FIELD_LABELS[field] || field} (${getTranslationDisplayName(targetLang)})`;
+    }
+
+    return `${fieldKey} (${getTranslationDisplayName(targetLang)})`;
+};
+
+const getFailedTranslationFieldKey = (error) => {
+    const message = error?.response?.data?.message || error?.message || '';
+    return String(message).match(/"([^"]+)"/)?.[1] || '';
+};
+
+const getEmptyTourTranslation = (language) => ({
+    language,
+    title: '',
+    summary: '',
+    highlights: '',
+    price_includes: '',
+    price_excludes: '',
+    terms_and_notes: '',
+    cancellation_policy: '',
+});
+
+const getEmptyItineraryTranslation = (language) => ({
+    language,
+    title: '',
+    content: '',
+});
+
+const mergeTranslationsByLanguage = (defaults, translations = []) => (
+    defaults.map(defaultTranslation => {
+        const found = translations.find(
+            item => normalizeAdminTranslationLanguage(item.language) === defaultTranslation.language,
+        );
+        return found
+            ? { ...defaultTranslation, ...found, language: defaultTranslation.language }
+            : defaultTranslation;
+    })
+);
+
 // ═══ RICH TEXT EDITOR WRAPPER ═══
 const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     const [ReactQuill, setReactQuill] = useState(null);
@@ -31,7 +110,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
 
     const formats = [
         'header', 'bold', 'italic', 'underline', 'strike', 'blockquote',
-        'list', 'bullet', 'indent', 'link', 'align'
+        'list', 'indent', 'link', 'align'
     ];
 
     const modules = {
@@ -54,7 +133,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
                     {label} {error && <span className="text-error text-xs font-normal ml-1">({error})</span>}
                 </label>
             )}
-            <div className={`rounded-xl border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}>
+            <div className={`rounded-lg border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}>
                 {ReactQuill ? (
                     <ReactQuill
                         theme="snow"
@@ -63,14 +142,14 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
                         placeholder={placeholder}
                         formats={formats}
                         modules={modules}
-                        className="bg-transparent rounded-xl [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
+                        className="bg-transparent rounded-lg [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
                     />
                 ) : (
                     <textarea
                         value={value || ''}
                         onChange={e => onChange(e.target.value)}
                         rows={4}
-                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                        className="w-full px-3 py-2.5 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
                         placeholder={placeholder}
                     />
                 )}
@@ -98,7 +177,7 @@ const PriceInput = ({ control, name, rules, error, placeholder }) => (
                             field.onChange(val === '' ? '' : Number(val));
                         }
                     }}
-                    className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                    className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                     placeholder={placeholder}
                 />
             );
@@ -186,7 +265,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                 <label className="text-sm font-medium text-text mb-1 block">Tên tour ({currentLang.toUpperCase()}) *</label>
                 <input
                     {...register(getFieldName('title'), { required: 'Tên tour không được để trống' })}
-                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                     placeholder="Nhập tên tour..."
                 />
                 {getFieldError('title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('title').message}</p>}
@@ -198,7 +277,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                 <textarea
                     {...register(getFieldName('summary'), { required: 'Tóm tắt không được để trống' })}
                     rows={2}
-                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('summary') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
+                    className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('summary') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                     placeholder="Mô tả ngắn gọn về tour..."
                 />
                 {getFieldError('summary') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('summary').message}</p>}
@@ -211,7 +290,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                     <input
                         type="number"
                         {...register('duration_days', { required: 'Nhập số ngày', min: { value: 1, message: 'Tối thiểu 1 ngày' } })}
-                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_days ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_days ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                         placeholder="VD: 3"
                     />
                     {errors.duration_days && <p className="text-error text-xs mt-1 font-medium">{errors.duration_days.message}</p>}
@@ -221,7 +300,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                     <input
                         type="number"
                         {...register('duration_nights', { required: 'Nhập số đêm', min: { value: 0, message: 'Tối thiểu 0 đêm' }, max: { value: 30, message: 'Tối đa 30 đêm' } })}
-                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_nights ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                        className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_nights ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                         placeholder="VD: 2"
                     />
                     {errors.duration_nights && <p className="text-error text-xs mt-1 font-medium">{errors.duration_nights.message}</p>}
@@ -252,7 +331,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                     <textarea
                         {...register(getFieldName('highlights'), { required: 'Vui lòng nhập điểm nổi bật' })}
                         rows={4}
-                        className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('highlights') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
+                        className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('highlights') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                         placeholder="Nhập các điểm nổi bật... (Lưu ý: Viết thành đoạn văn, mỗi điểm nổi bật kết thúc bằng 1 dấu chấm)"
                     />
                     {getFieldError('highlights') && <p className="text-error text-xs mt-1 font-medium">{getFieldError('highlights').message}</p>}
@@ -327,7 +406,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                         {/* Existing Images */}
                         {modal.tour?.images?.map(img => (
-                            <div key={img.id} className="relative aspect-square group rounded-xl overflow-hidden border border-border shadow-sm bg-surface">
+                            <div key={img.id} className="relative aspect-square group rounded-lg overflow-hidden border border-border shadow-sm bg-surface">
                                 <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" />
                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
                                     <button type="button" onClick={() => handleDeleteImage(img.id)}
@@ -342,7 +421,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         {files.map((file, idx) => {
                             const previewUrl = URL.createObjectURL(file);
                             return (
-                                <div key={idx} className="relative aspect-square group rounded-xl overflow-hidden border border-border shadow-sm bg-surface">
+                                <div key={idx} className="relative aspect-square group rounded-lg overflow-hidden border border-border shadow-sm bg-surface">
                                     <img src={previewUrl} alt="" className="w-full h-full object-cover" />
                                     <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-primary text-white text-[8px] font-bold rounded-md shadow-sm z-10">MỚI</div>
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-[2px]">
@@ -356,7 +435,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         })}
 
                         {/* Upload Button Tile */}
-                        <label className="relative aspect-square flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all text-text-muted group">
+                        <label className="relative aspect-square flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 hover:text-primary transition-all text-text-muted group">
                             <Upload className="w-5 h-5 group-hover:scale-110 transition-transform" />
                             <span className="text-[10px] font-bold uppercase tracking-tighter">Thêm ảnh</span>
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -399,11 +478,11 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                     onClick={() => {
                         append({ 
                             day_number: fields.length + 1, 
-                            title: '', 
+                            title: '',
                             content: '',
                             translations: [
-                                { language: 'en', title: '', content: '' },
-                                { language: 'zh', title: '', content: '' }
+                                getEmptyItineraryTranslation('en'),
+                                getEmptyItineraryTranslation('zh')
                             ]
                         });
                         setTimeout(() => {
@@ -446,7 +525,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                         <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày ({currentLang.toUpperCase()}) *</label>
                         <input
                             {...register(getFieldName(index, 'title'), { required: 'Nhập tiêu đề ngày' })}
-                            className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                            className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                             placeholder="VD: Đón khách - Tham quan phố cổ"
                         />
                         {getFieldError(index, 'title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError(index, 'title').message}</p>}
@@ -514,7 +593,7 @@ const DeparturesTab = ({ control, register, errors }) => {
                             <input
                                 type="date"
                                 {...register(`departures.${index}.departure_date`, { required: 'Bắt buộc chọn' })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.departure_date ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.departure_date ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                             />
                             {errors.departures?.[index]?.departure_date && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].departure_date.message}</p>}
                         </div>
@@ -538,7 +617,7 @@ const DeparturesTab = ({ control, register, errors }) => {
                             <input
                                 type="number"
                                 {...register(`departures.${index}.available_seats`, { required: 'Bắt buộc', min: { value: 1, message: '>0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.available_seats ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.available_seats ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                                 placeholder="20"
                             />
                             {errors.departures?.[index]?.available_seats && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].available_seats.message}</p>}
@@ -604,7 +683,7 @@ const PickupsTab = ({ control, register, errors }) => {
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tên điểm đón *</label>
                             <input
                                 {...register(`pickup_locations.${index}.location_name`, { required: 'Nhập tên điểm đón' })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.location_name ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.location_name ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                                 placeholder="VD: Khách sạn Saigon"
                             />
                             {errors.pickup_locations?.[index]?.location_name && <p className="text-error text-[10px] mt-1 font-medium">{errors.pickup_locations[index].location_name.message}</p>}
@@ -614,7 +693,7 @@ const PickupsTab = ({ control, register, errors }) => {
                             <input
                                 type="time"
                                 {...register(`pickup_locations.${index}.pickup_time`, { required: 'Nhập giờ đón' })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.pickup_time ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.pickup_time ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                             />
                             {errors.pickup_locations?.[index]?.pickup_time && <p className="text-error text-[10px] mt-1 font-medium">{errors.pickup_locations[index].pickup_time.message}</p>}
                         </div>
@@ -675,7 +754,7 @@ const OptionsTab = ({ control, register, errors }) => {
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tên dịch vụ *</label>
                             <input
                                 {...register(`options.${index}.option_name`, { required: 'Bắt buộc' })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.options?.[index]?.option_name ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-xl text-sm focus:outline-none focus:ring-2 transition-all`}
+                                className={`w-full px-3 py-2 bg-surface border ${errors.options?.[index]?.option_name ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                                 placeholder="VD: Phụ thu phòng đơn"
                             />
                             {errors.options?.[index]?.option_name && <p className="text-error text-[10px] mt-1 font-medium">{errors.options[index].option_name.message}</p>}
@@ -725,6 +804,8 @@ const TourManagementPage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     const defaultValues = {
         category_id: '', title: '', summary: '',
@@ -737,8 +818,8 @@ const TourManagementPage = () => {
         pickup_locations: [],
         options: [],
         translations: [
-            { language: 'en', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' },
-            { language: 'zh', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' }
+            getEmptyTourTranslation('en'),
+            getEmptyTourTranslation('zh'),
         ]
     };
 
@@ -747,8 +828,13 @@ const TourManagementPage = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
+            const tourParams = {
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                ...(debouncedSearch ? { search: debouncedSearch } : {}),
+            };
             const [toursRes, catsRes] = await Promise.all([
-                adminService.getTours({ page: currentPage, limit: ITEMS_PER_PAGE }),
+                adminService.getTours(tourParams),
                 categoryService.getAll(),
             ]);
             setTours(toursRes.data.data || []);
@@ -760,13 +846,24 @@ const TourManagementPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentPage]);
+    }, [currentPage, debouncedSearch]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handlePageChange = (page) => {
         if (page < 1 || page > totalPages || page === currentPage) return;
         setCurrentPage(page);
+    };
+
+    const handleSearchTours = () => {
+        setCurrentPage(1);
+        setDebouncedSearch(searchQuery.trim());
+    };
+
+    const clearSearchTours = () => {
+        setSearchQuery('');
+        setCurrentPage(1);
+        setDebouncedSearch('');
     };
 
     const getPageNumbers = () => {
@@ -810,13 +907,10 @@ const TourManagementPage = () => {
                     day_number: it.day_number,
                     title: it.title,
                     content: it.content,
-                    translations: [
-                        { language: 'en', title: '', content: '' },
-                        { language: 'zh', title: '', content: '' }
-                    ].map(defaultTr => {
-                        const found = it.translations?.find(t => t.language === defaultTr.language);
-                        return found || defaultTr;
-                    })
+                    translations: mergeTranslationsByLanguage(
+                        [getEmptyItineraryTranslation('en'), getEmptyItineraryTranslation('zh')],
+                        it.translations,
+                    )
                 })),
                 departures: (detail.departures || []).map(d => ({
                     departure_date: d.departure_date,
@@ -836,13 +930,10 @@ const TourManagementPage = () => {
                     price: o.price || 0,
                     charge_type: o.charge_type || 'quantity',
                 })),
-                translations: [
-                    { language: 'en', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' },
-                    { language: 'zh', title: '', summary: '', highlights: '', price_includes: '', price_excludes: '', terms_and_notes: '', cancellation_policy: '' }
-                ].map(defaultTr => {
-                    const found = detail.translations?.find(t => t.language === defaultTr.language);
-                    return found || defaultTr;
-                })
+                translations: mergeTranslationsByLanguage(
+                    [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
+                    detail.translations,
+                )
             });
 
             setFiles([]);
@@ -925,7 +1016,7 @@ const TourManagementPage = () => {
     };
 
     const applyTranslatedContent = (translated, targetLang) => {
-        const langIndex = targetLang === 'en' ? 0 : 1;
+        const langIndex = getTranslationLangIndex(targetLang);
         const setTranslatedValue = (fieldName, value) => {
             setValue(fieldName, value, {
                 shouldDirty: true,
@@ -994,7 +1085,7 @@ const TourManagementPage = () => {
     const normalizeTranslationSource = (value) => String(value || '').trim();
 
     const getTargetTranslationValue = (key, targetLang) => {
-        const langIndex = targetLang === 'en' ? 0 : 1;
+        const langIndex = getTranslationLangIndex(targetLang);
 
         if (key.startsWith('tour_')) {
             const field = key.replace(/^tour_/, '');
@@ -1047,27 +1138,41 @@ const TourManagementPage = () => {
         const languagesToTranslate = targetLanguages.filter(targetLang => translationPayloadByLanguage[targetLang]);
 
         if (languagesToTranslate.length === 0) {
-            toast.info('KhÃ´ng cÃ³ ná»™i dung má»›i cáº§n dá»‹ch');
+            toast.info('Không có nội dung mới cần dịch');
             return;
         }
 
+        let toastId;
+        let activeTargetLang = languagesToTranslate[0];
+
         try {
             setTranslating(true);
-            const toastId = toast.loading(
-                languagesToTranslate.length === 2 ? 'Đang dịch sang EN và ZH...' : `Đang dịch sang ${languagesToTranslate[0].toUpperCase()}...`,
+            toastId = toast.loading(
+                languagesToTranslate.length === 2 ? 'Đang dịch sang English và Tiếng Trung...' : `Đang dịch sang ${getTranslationDisplayName(activeTargetLang)}...`,
             );
 
             for (const targetLang of languagesToTranslate) {
+                activeTargetLang = targetLang;
                 const res = await adminService.translateContent({
                     texts: translationPayloadByLanguage[targetLang],
                     targetLang,
+                    strict: true,
                 });
                 applyTranslatedContent(res.data.data, targetLang);
             }
 
             toast.success('Dịch tự động thành công!', { id: toastId });
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Lỗi dịch tự động');
+            const failedFieldKey = getFailedTranslationFieldKey(error);
+            const failedFieldLabel = getTranslationFieldLabel(failedFieldKey, activeTargetLang);
+            const fallbackMessage = `Không dịch được ${failedFieldLabel}. Vui lòng thử lại.`;
+            console.error('[TourTranslation] Translate failed', {
+                targetLang: normalizeAdminTranslationLanguage(activeTargetLang),
+                fieldKey: failedFieldKey,
+                fieldLabel: failedFieldLabel,
+                error,
+            });
+            toast.error(fallbackMessage, toastId ? { id: toastId } : undefined);
         } finally {
             setTranslating(false);
         }
@@ -1177,11 +1282,49 @@ const TourManagementPage = () => {
     return (
         <AdminLayout>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-text-muted">Tổng cộng {totalItems} tour trong hệ thống</p>
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
+                <div className="flex-1">
+                    <div className="w-full max-w-2xl">
+                        <div className="flex items-stretch gap-2">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm tên tour..."
+                                    className="w-full pl-12 pr-11 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSearchTours();
+                                    }}
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={clearSearchTours}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-text"
+                                        aria-label="Xóa tìm kiếm"
+                                        title="Xóa tìm kiếm"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleSearchTours}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition text-sm shadow-sm shrink-0"
+                            >
+                                <Search className="w-4 h-4" />
+                                <span className="hidden sm:inline">Tìm kiếm</span>
+                            </button>
+                        </div>
+                        <p className="mt-1.5 text-[11px] font-medium text-text-muted">Hiển thị {totalItems} tour</p>
+                    </div>
+                </div>
                 <button
                     onClick={openCreate}
-                    className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:opacity-90 transition flex items-center gap-2 text-sm shadow-md"
+                    className="min-h-[46px] px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2 text-sm shadow-md shrink-0 lg:self-start"
                 >
                     <Plus className="w-4 h-4" /> Thêm Tour
                 </button>
@@ -1260,7 +1403,7 @@ const TourManagementPage = () => {
                             })}
                         </tbody>
                     </table>
-                    {tours.length === 0 && <div className="text-center py-12 text-text-muted font-medium">Chưa có tour nào</div>}
+                    {tours.length === 0 && <div className="text-center py-12 text-text-muted font-medium">Không dữ liệu</div>}
                 </div>
             )}
 
@@ -1271,7 +1414,7 @@ const TourManagementPage = () => {
                         <button
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -1280,7 +1423,7 @@ const TourManagementPage = () => {
                             <button
                                 key={page}
                                 onClick={() => handlePageChange(page)}
-                                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition ${page === currentPage
+                                className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${page === currentPage
                                         ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
                                         : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
                                     }`}
@@ -1292,7 +1435,7 @@ const TourManagementPage = () => {
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-xl border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
@@ -1311,7 +1454,7 @@ const TourManagementPage = () => {
                         {/* Header */}
                         <div className="sticky top-0 bg-surface z-10 px-6 py-4 border-b border-border flex items-center justify-between shrink-0 rounded-t-2xl">
                             <h3 className="text-xl font-extrabold text-text tracking-tight">{modal.tour ? 'Sửa Tour' : 'Thêm Tour Mới'}</h3>
-                            <button type="button" onClick={() => setModal({ open: false, tour: null })} className="p-2 rounded-xl hover:bg-surface-hover transition text-text-secondary hover:text-error hover:bg-error/10">
+                            <button type="button" onClick={() => setModal({ open: false, tour: null })} className="p-2 rounded-lg hover:bg-surface-hover transition text-text-secondary hover:text-error hover:bg-error/10">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1390,11 +1533,11 @@ const TourManagementPage = () => {
                             {/* Actions */}
                             <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 shrink-0 bg-surface rounded-b-2xl">
                                 <button type="button" onClick={() => setModal({ open: false, tour: null })}
-                                    className="px-6 py-2.5 bg-surface-alt text-text-secondary font-bold rounded-xl hover:bg-surface-hover transition text-sm">
+                                    className="px-6 py-2.5 bg-surface-alt text-text-secondary font-bold rounded-lg hover:bg-surface-hover transition text-sm">
                                     Hủy bỏ
                                 </button>
                                 <button type="submit" disabled={submitting}
-                                    className="px-8 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl hover:opacity-90 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                                    className="px-8 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-lg hover:opacity-90 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
                                     {submitting ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />

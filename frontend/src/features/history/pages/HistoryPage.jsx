@@ -212,7 +212,7 @@ const HistoryPage = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-primary/10 rounded-xl">
+                        <div className="p-3 bg-primary/10 rounded-lg">
                             <Ticket className="w-8 h-8 text-primary" />
                         </div>
                         <div>
@@ -242,7 +242,7 @@ const HistoryPage = () => {
                         <img src="/assets/images/empty_booking.svg" alt="Trống" className="w-48 h-48 opacity-50 mb-6 object-contain" onError={(e) => e.target.style.display = 'none'} />
                         <h3 className="text-2xl font-bold text-gray-800">{t('history.noTrips')}</h3>
                         <p className="text-gray-500 mt-2 max-w-md">{t('history.noTripsDesc')}</p>
-                        <a href="/" className="mt-6 px-6 py-3 bg-primary hover:bg-primary-dark transition text-white rounded-xl font-bold tracking-wide shadow-lg shadow-primary/30">
+                        <a href="/" className="mt-6 px-6 py-3 bg-primary hover:bg-primary-dark transition text-white rounded-lg font-bold tracking-wide shadow-lg shadow-primary/30">
                             {t('history.exploreTours')}
                         </a>
                     </div>
@@ -384,7 +384,7 @@ const HistoryPage = () => {
                                                                 <Calendar className="w-3.5 h-3.5" /> {t('history.bookingDate')}
                                                             </p>
                                                             <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy') : 'N/A'}</p>
-                                                            <div className="bg-primary/5 border border-primary/10 rounded-xl p-3">
+                                                            <div className="bg-primary/5 border border-primary/10 rounded-lg p-3">
                                                                 <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1 flex items-center gap-1">
                                                                     <DollarSign className="w-3 h-3" /> {t('history.totalAmount')}
                                                                 </p>
@@ -394,7 +394,7 @@ const HistoryPage = () => {
                                                     </div>
 
                                                     {cleanNote && (
-                                                        <div className="mt-6 p-4 bg-white rounded-xl border border-gray-100">
+                                                        <div className="mt-6 p-4 bg-white rounded-lg border border-gray-100">
                                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                                                                 <FileText className="w-3 h-3" /> {t('history.yourNote')}
                                                             </p>
@@ -416,7 +416,7 @@ const HistoryPage = () => {
                                 <button
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
-                                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
+                                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                     <span className="hidden sm:inline">{t('history.prev')}</span>
@@ -427,7 +427,7 @@ const HistoryPage = () => {
                                     <>
                                         <button
                                             onClick={() => handlePageChange(1)}
-                                            className="w-10 h-10 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                            className="w-10 h-10 rounded-lg text-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
                                         >
                                             1
                                         </button>
@@ -441,7 +441,7 @@ const HistoryPage = () => {
                                     <button
                                         key={page}
                                         onClick={() => handlePageChange(page)}
-                                        className={`w-10 h-10 rounded-xl text-sm font-semibold border transition-all ${page === currentPage
+                                        className={`w-10 h-10 rounded-lg text-sm font-semibold border transition-all ${page === currentPage
                                                 ? 'bg-primary text-white border-primary shadow-lg shadow-primary/25 scale-105'
                                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                                             }`}
@@ -457,7 +457,7 @@ const HistoryPage = () => {
                                         )}
                                         <button
                                             onClick={() => handlePageChange(totalPages)}
-                                            className="w-10 h-10 rounded-xl text-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+                                            className="w-10 h-10 rounded-lg text-sm font-semibold border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
                                         >
                                             {totalPages}
                                         </button>
@@ -468,7 +468,7 @@ const HistoryPage = () => {
                                 <button
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
-                                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
+                                    className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200"
                                 >
                                     <span className="hidden sm:inline">{t('history.next')}</span>
                                     <ChevronRight className="w-4 h-4" />

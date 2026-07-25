@@ -121,7 +121,7 @@ const NotificationBell = () => {
             </button>
 
             {!isMobile && isOpen && (
-                <div className="absolute left-1/2 mt-2 w-[min(calc(100vw-1.5rem),20rem)] -translate-x-1/2 bg-white rounded-xl shadow-lg border border-border z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute left-1/2 mt-2 w-[min(calc(100vw-1.5rem),20rem)] -translate-x-1/2 bg-white rounded-lg shadow-lg border border-border z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-3 py-2.5 border-b border-border flex items-center justify-between gap-3 bg-surface-alt/30">
                         <h3 className="text-sm font-semibold text-text">{t('notification.title')}</h3>
                         {unreadCount > 0 && (
