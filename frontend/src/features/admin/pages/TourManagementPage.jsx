@@ -4,12 +4,29 @@ import { adminService, categoryService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
+import DepartureCalendar from '@/components/ui/DepartureCalendar';
 import TranslationToolbar from '@/features/admin/components/TranslationToolbar';
 import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+
+const getTodayDateOnly = () => {
+    const now = new Date();
+    return [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+    ].join('-');
+};
+
+const normalizeDateOnly = (date) => date ? String(date).slice(0, 10) : '';
+
+const isDateBeforeToday = (date) => {
+    const dateOnly = normalizeDateOnly(date);
+    return !!dateOnly && dateOnly < getTodayDateOnly();
+};
 
 // ═══ TAB NAVIGATION ═══
 const TABS = [
@@ -509,7 +526,8 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                 </div>
             )}
 
-            {fields.map((field, index) => (
+            {fields.map((field, index) => {
+                return (
                 <div key={field.id} className="itinerary-day-card p-5 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative group">
                     <div className="flex items-center justify-between pb-3 border-b border-border/50">
                         <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5">
@@ -542,14 +560,16 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                         <input type="hidden" {...register(getFieldName(index, 'content'), { required: 'Nhập nội dung hoạt động' })} />
                     </div>
                 </div>
-            ))}
+                );
+            })}
         </div>
     );
 };
 
 // ═══ TAB: LỊCH KHỞI HÀNH ═══
-const DeparturesTab = ({ control, register, errors }) => {
-    const { fields, append, remove } = useFieldArray({ control, name: 'departures' });
+const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'departures', keyName: 'fieldId' });
+    const todayDateOnly = getTodayDateOnly();
 
     const statusOptions = [
         { label: 'Mở bán', value: 'open' },
@@ -577,22 +597,48 @@ const DeparturesTab = ({ control, register, errors }) => {
                 </div>
             )}
 
-            {fields.map((field, index) => (
-                <div key={field.id} className="p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative">
+            {fields.map((field, index) => {
+                const isDeparted = !!field.id && isDateBeforeToday(field.departure_date);
+
+                return (
+                <div key={field.fieldId} className="p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative">
                     <div className="flex items-center justify-between border-b border-border/50 pb-2">
                         <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">Khởi hành #{index + 1}</span>
-                        <button type="button" onClick={() => remove(index)}
+                        <button type="button" onClick={() => { if (!isDeparted) remove(index); }}
+                            disabled={isDeparted}
                             className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition" title="Xóa">
                             <Trash2 className="w-4 h-4" />
                         </button>
                     </div>
+                    {isDeparted && (
+                        <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                            Lịch này đã khởi hành nên không thể xóa.
+                        </p>
+                    )}
+                    <input type="hidden" {...register(`departures.${index}.id`)} />
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Ngày đi *</label>
+                            <DepartureCalendar
+                                value={watch(`departures.${index}.departure_date`)}
+                                onChange={(value) => setValue(`departures.${index}.departure_date`, value, {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                    shouldValidate: true,
+                                })}
+                                minDate={todayDateOnly}
+                                selectableDatesOnly={false}
+                                disabled={isDeparted}
+                                placeholder="Chọn ngày đi"
+                                className={`[&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
+                            />
                             <input
-                                type="date"
-                                {...register(`departures.${index}.departure_date`, { required: 'Bắt buộc chọn' })}
+                                type="hidden"
+                                {...register(`departures.${index}.departure_date`, {
+                                    required: 'Bắt buộc chọn',
+                                    validate: (value) => isDeparted || !isDateBeforeToday(value) || 'Ngày đi tối thiểu là hôm nay',
+                                })}
                                 className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.departure_date ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                             />
                             {errors.departures?.[index]?.departure_date && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].departure_date.message}</p>}
@@ -639,7 +685,8 @@ const DeparturesTab = ({ control, register, errors }) => {
                         </div>
                     </div>
                 </div>
-            ))}
+                );
+            })}
         </div>
     );
 };
@@ -913,6 +960,7 @@ const TourManagementPage = () => {
                     )
                 })),
                 departures: (detail.departures || []).map(d => ({
+                    id: d.id,
                     departure_date: d.departure_date,
                     price_adult: d.price_adult,
                     price_child: d.price_child || 0,
@@ -957,6 +1005,25 @@ const TourManagementPage = () => {
             toast.error('Bắt buộc phải có ít nhất 1 lịch khởi hành');
             return;
         }
+        const originalDeparturesById = new Map(
+            (modal.tour?.departures || []).map(item => [Number(item.id), item]),
+        );
+        const invalidDepartureIndex = data.departures.findIndex((departure) => {
+            const original = departure.id ? originalDeparturesById.get(Number(departure.id)) : null;
+            const originalDeparted = original && isDateBeforeToday(original.departure_date);
+
+            if (originalDeparted) {
+                return normalizeDateOnly(departure.departure_date) !== normalizeDateOnly(original.departure_date);
+            }
+
+            return isDateBeforeToday(departure.departure_date);
+        });
+        if (invalidDepartureIndex !== -1) {
+            setActiveTab('departures');
+            toast.error(`Ngày đi của khởi hành #${invalidDepartureIndex + 1} tối thiểu là hôm nay`);
+            return;
+        }
+
         if (data.pickup_locations.length === 0) {
             setActiveTab('pickups');
             toast.error('Bắt buộc phải cấu hình ít nhất 1 điểm đón');
@@ -1519,7 +1586,7 @@ const TourManagementPage = () => {
                                         <ItinerariesTab control={control} register={register} watch={watch} setValue={setValue} errors={errors} currentLang={currentLang} />
                                     )}
                                     {activeTab === 'departures' && (
-                                        <DeparturesTab control={control} register={register} errors={errors} />
+                                        <DeparturesTab control={control} register={register} watch={watch} setValue={setValue} errors={errors} />
                                     )}
                                     {activeTab === 'pickups' && (
                                         <PickupsTab control={control} register={register} errors={errors} />

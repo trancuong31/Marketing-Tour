@@ -80,6 +80,88 @@ const parseJsonField = (value) => {
     }
 };
 
+const getTodayDateOnly = () => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(new Date());
+
+    const byType = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${byType.year}-${byType.month}-${byType.day}`;
+};
+
+const normalizeDateOnlyValue = (value) => {
+    if (!value) return '';
+    return String(value).slice(0, 10);
+};
+
+const isDateOnlyBeforeToday = (value) => {
+    const dateOnly = normalizeDateOnlyValue(value);
+    return !!dateOnly && dateOnly < getTodayDateOnly();
+};
+
+const ensureValidDepartureDate = (departureDate, index) => {
+    const dateOnly = normalizeDateOnlyValue(departureDate);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+        throw new AppError(`Vui lòng chọn ngày đi cho lịch khởi hành #${index + 1}`, HTTP_CODES.BAD_REQUEST);
+    }
+
+    if (isDateOnlyBeforeToday(dateOnly)) {
+        throw new AppError(`Ngày đi của lịch khởi hành #${index + 1} tối thiểu là hôm nay`, HTTP_CODES.BAD_REQUEST);
+    }
+
+    return dateOnly;
+};
+
+const buildDeparturePayload = (item, index) => ({
+    departure_date: ensureValidDepartureDate(item.departure_date, index),
+    price_adult: item.price_adult,
+    price_child: item.price_child || 0,
+    price_infant: item.price_infant || 0,
+    available_seats: item.available_seats || 0,
+    status: item.status || 'open',
+});
+
+const validateCreateDepartures = (departures) => {
+    departures.forEach((item, index) => {
+        ensureValidDepartureDate(item.departure_date, index);
+    });
+};
+
+const validateUpdateDepartures = (submittedDepartures, existingDepartures) => {
+    const existingById = new Map(existingDepartures.map(item => [Number(item.id), item]));
+    const submittedIds = new Set();
+
+    submittedDepartures.forEach((item, index) => {
+        const existing = item.id ? existingById.get(Number(item.id)) : null;
+
+        if (item.id && !existing) {
+            throw new AppError(`Lịch khởi hành #${index + 1} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+        }
+
+        if (existing && isDateOnlyBeforeToday(existing.departure_date)) {
+            submittedIds.add(Number(item.id));
+            if (normalizeDateOnlyValue(item.departure_date) !== normalizeDateOnlyValue(existing.departure_date)) {
+                throw new AppError(`Không được thay đổi ngày đi của lịch khởi hành #${index + 1} đã khởi hành`, HTTP_CODES.BAD_REQUEST);
+            }
+            return;
+        }
+
+        ensureValidDepartureDate(item.departure_date, index);
+        if (item.id) submittedIds.add(Number(item.id));
+    });
+
+    const deletedDeparted = existingDepartures.find(
+        item => isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id)),
+    );
+
+    if (deletedDeparted) {
+        throw new AppError('Không được xóa lịch khởi hành đã qua ngày đi', HTTP_CODES.BAD_REQUEST);
+    }
+};
+
 const AUTO_TRANSLATION_LANGUAGES = ['en', 'zh'];
 const TOUR_TRANSLATABLE_FIELDS = [
     'title',
@@ -300,6 +382,8 @@ const createTour = catchAsync(async (req, res, next) => {
     const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
     const existingSlug = await Tour.findOne({ where: { slug } });
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+    const parsedDepartures = parseJsonField(departures);
+    validateCreateDepartures(parsedDepartures);
     const translatedTourContent = await ensureTourTranslations({
         translations,
         source: buildTourTranslationSource({
@@ -370,17 +454,11 @@ const createTour = catchAsync(async (req, res, next) => {
         }
 
         // 4. Lịch khởi hành
-        const parsedDepartures = parseJsonField(departures);
         if (parsedDepartures.length > 0) {
             await TourDeparture.bulkCreate(
-                parsedDepartures.map((item) => ({
+                parsedDepartures.map((item, index) => ({
                     tour_id: tour.id,
-                    departure_date: item.departure_date,
-                    price_adult: item.price_adult,
-                    price_child: item.price_child || 0,
-                    price_infant: item.price_infant || 0,
-                    available_seats: item.available_seats || 0,
-                    status: item.status || 'open',
+                    ...buildDeparturePayload(item, index),
                 })),
                 { transaction: t },
             );
@@ -485,6 +563,14 @@ const updateTour = catchAsync(async (req, res, next) => {
         if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
     }
 
+    const parsedDeparturesForUpdate = departures !== undefined ? parseJsonField(departures) : null;
+    const existingDeparturesForUpdate = departures !== undefined
+        ? await TourDeparture.findAll({ where: { tour_id: id } })
+        : [];
+    if (departures !== undefined) {
+        validateUpdateDepartures(parsedDeparturesForUpdate, existingDeparturesForUpdate);
+    }
+
     const translatedTourContent = await ensureTourTranslations({
         translations,
         source: buildTourTranslationSource({
@@ -565,21 +651,41 @@ const updateTour = catchAsync(async (req, res, next) => {
         }
 
         if (departures !== undefined) {
-            await TourDeparture.destroy({ where: { tour_id: id }, transaction: t });
-            const parsedDepartures = parseJsonField(departures);
-            if (parsedDepartures.length > 0) {
-                await TourDeparture.bulkCreate(
-                    parsedDepartures.map((item) => ({
-                        tour_id: id,
-                        departure_date: item.departure_date,
+            const existingById = new Map(existingDeparturesForUpdate.map(item => [Number(item.id), item]));
+            const submittedIds = new Set(
+                parsedDeparturesForUpdate
+                    .filter(item => item.id)
+                    .map(item => Number(item.id)),
+            );
+            const idsToDelete = existingDeparturesForUpdate
+                .filter(item => !isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id)))
+                .map(item => item.id);
+
+            if (idsToDelete.length > 0) {
+                await TourDeparture.destroy({ where: { tour_id: id, id: idsToDelete }, transaction: t });
+            }
+
+            for (const [index, item] of parsedDeparturesForUpdate.entries()) {
+                const existing = item.id ? existingById.get(Number(item.id)) : null;
+                const payload = existing && isDateOnlyBeforeToday(existing.departure_date)
+                    ? {
+                        departure_date: normalizeDateOnlyValue(existing.departure_date),
                         price_adult: item.price_adult,
                         price_child: item.price_child || 0,
                         price_infant: item.price_infant || 0,
                         available_seats: item.available_seats || 0,
                         status: item.status || 'open',
-                    })),
-                    { transaction: t },
-                );
+                    }
+                    : buildDeparturePayload(item, index);
+
+                if (existing) {
+                    await existing.update(payload, { transaction: t });
+                } else {
+                    await TourDeparture.create({
+                        tour_id: id,
+                        ...payload,
+                    }, { transaction: t });
+                }
             }
         }
 

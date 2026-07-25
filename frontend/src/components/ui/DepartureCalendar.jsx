@@ -9,12 +9,23 @@ const formatShortPrice = (price) => {
     return m.toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'tr';
 };
 
-const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMap = {}, className = '' }) => {
+const DepartureCalendar = ({
+    label,
+    labelIcon,
+    value,
+    onChange,
+    departurePriceMap = {},
+    className = '',
+    placeholder,
+    minDate,
+    selectableDatesOnly = true,
+    disabled = false,
+}) => {
     const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isDropdownAbove, setIsDropdownAbove] = useState(false);
     const [dropdownStyle, setDropdownStyle] = useState({});
-    const [displayMonth, setDisplayMonth] = useState(() => new Date());
+    const [displayMonth, setDisplayMonth] = useState(() => value ? new Date(value + 'T00:00:00') : new Date());
     const ref = useRef(null);
     const dropdownRef = useRef(null);
 
@@ -94,6 +105,8 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
 
     const today = new Date(); 
     today.setHours(0, 0, 0, 0);
+    const defaultMinDate = format(today, 'yyyy-MM-dd');
+    const effectiveMinDate = minDate === undefined ? defaultMinDate : minDate;
 
     const monthMinPrice = useMemo(() => {
         let min = Infinity;
@@ -106,8 +119,17 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
 
     const handleDayClick = (day) => {
         const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
+        if (effectiveMinDate && dateStr < effectiveMinDate) return;
         onChange(dateStr === value ? '' : dateStr);
         setIsOpen(false);
+    };
+
+    const handleToggle = () => {
+        if (disabled) return;
+        if (!isOpen && value) {
+            setDisplayMonth(new Date(value + 'T00:00:00'));
+        }
+        setIsOpen(!isOpen);
     };
 
     return (
@@ -123,22 +145,24 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
             {/* Input Trigger */}
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={handleToggle}
+                disabled={disabled}
                 className={`
                     w-full flex items-center justify-between gap-2 px-3 py-2 
                     bg-white border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20
                     ${isOpen ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 hover:border-gray-300'}
+                    ${disabled ? 'cursor-not-allowed opacity-70 hover:border-gray-200' : ''}
                 `}
             >
                 <div className="flex items-center gap-3 truncate">
                     <span className={`truncate text-sm text-left font-medium ${value ? 'text-text' : 'text-text-muted'}`}>
                         {value 
                             ? new Date(value + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) 
-                            : t('home.search.selectDeparture', 'Chọn ngày khởi hành...')}
+                            : placeholder || t('home.search.selectDeparture', 'Chọn ngày khởi hành...')}
                     </span>
                 </div>
                 
-                {value && (
+                {value && !disabled && (
                     <div 
                         role="button"
                         tabIndex={0}
@@ -183,25 +207,25 @@ const DepartureCalendar = ({ label, labelIcon, value, onChange, departurePriceMa
                                 if (!day) return <div key={di} className="h-11 sm:h-12" />;
                                 
                                 const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd');
-                                const dateObj = new Date(year, month, day);
-                                const isPast = dateObj < today;
+                                const isBeforeMinDate = !!effectiveMinDate && dateStr < effectiveMinDate;
                                 const isSelected = value === dateStr;
                                 const price = departurePriceMap[dateStr];
                                 const hasDep = !!price;
+                                const isSelectableDate = selectableDatesOnly ? hasDep : true;
                                 const isCheapest = hasDep && price === monthMinPrice;
 
                                 return (
                                     <button
                                         key={di}
                                         type="button"
-                                        disabled={isPast || !hasDep}
+                                        disabled={isBeforeMinDate || !isSelectableDate}
                                         onClick={() => handleDayClick(day)}
                                         className={`
                                             h-11 sm:h-12 flex flex-col items-center justify-center rounded-lg text-sm transition-all relative
                                             ${isSelected ? 'bg-primary text-white shadow-md' : ''}
-                                            ${isPast ? 'text-slate-200 cursor-not-allowed' : ''}
-                                            ${!hasDep && !isPast ? 'text-slate-300 cursor-default' : ''}
-                                            ${hasDep && !isSelected && !isPast ? 'text-slate-700 font-medium hover:bg-primary/10 hover:text-primary cursor-pointer' : ''}
+                                            ${isBeforeMinDate ? 'text-slate-200 cursor-not-allowed' : ''}
+                                            ${!isSelectableDate && !isBeforeMinDate ? 'text-slate-300 cursor-default' : ''}
+                                            ${isSelectableDate && !isSelected && !isBeforeMinDate ? 'text-slate-700 font-medium hover:bg-primary/10 hover:text-primary cursor-pointer' : ''}
                                         `}
                                     >
                                         <span className="leading-none">{day}</span>
