@@ -4,32 +4,98 @@ import { Bell, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { notificationService } from '@/services/tourService';
 import { useAuthStore } from '@/store';
+import { emitNotificationsRefresh, NOTIFICATIONS_REFRESH_EVENT } from '@/utils/notificationEvents';
 import NotificationItem from './notifications/NotificationItem';
 
-const POLLING_INTERVAL_MS = 5000;
 const MOBILE_QUERY = '(max-width: 767px)';
+const NOTIFICATION_CACHE_TTL_MS = 60000;
+
+let notificationCache = null;
+let notificationRequest = null;
+
+const buildNotificationSnapshot = (response) => ({
+    notifications: response.data.data || [],
+    unreadCount: response.data.unreadCount || 0,
+    fetchedAt: Date.now(),
+});
+
+const isCacheFresh = () => (
+    notificationCache && Date.now() - notificationCache.fetchedAt < NOTIFICATION_CACHE_TTL_MS
+);
 
 const NotificationBell = () => {
     const navigate = useNavigate();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const { isAuthenticated } = useAuthStore();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const dropdownRef = useRef(null);
+    const isMountedRef = useRef(false);
 
-    const fetchNotifications = useCallback(async () => {
+    const applySnapshot = useCallback((snapshot) => {
+        if (!snapshot || !isMountedRef.current) return;
+        setNotifications(snapshot.notifications);
+        setUnreadCount(snapshot.unreadCount);
+    }, []);
+
+    const fetchNotifications = useCallback(async ({ force = false } = {}) => {
         if (!isAuthenticated) return;
 
+        if (!force && isCacheFresh()) {
+            applySnapshot(notificationCache);
+            return;
+        }
+
         try {
-            const res = await notificationService.getAll({ limit: 20 });
-            setNotifications(res.data.data || []);
-            setUnreadCount(res.data.unreadCount || 0);
+            notificationRequest ||= notificationService.getAll({ limit: 20 })
+                .then((response) => {
+                    notificationCache = buildNotificationSnapshot(response);
+                    return notificationCache;
+                })
+                .finally(() => {
+                    notificationRequest = null;
+                });
+
+            const snapshot = await notificationRequest;
+            applySnapshot(snapshot);
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
         }
-    }, [isAuthenticated, i18n.language]);
+    }, [applySnapshot, isAuthenticated]);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
+
+        fetchNotifications();
+    }, [fetchNotifications, isAuthenticated]);
+
+    useEffect(() => {
+        const handleRefresh = (event) => {
+            if (event.detail?.snapshot) {
+                notificationCache = event.detail.snapshot;
+                applySnapshot(notificationCache);
+                return;
+            }
+
+            fetchNotifications({ force: true });
+        };
+
+        window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, handleRefresh);
+        return () => window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, handleRefresh);
+    }, [applySnapshot, fetchNotifications]);
 
     useEffect(() => {
         const mediaQuery = window.matchMedia(MOBILE_QUERY);
@@ -39,12 +105,6 @@ const NotificationBell = () => {
         mediaQuery.addEventListener('change', updateIsMobile);
         return () => mediaQuery.removeEventListener('change', updateIsMobile);
     }, []);
-
-    useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, POLLING_INTERVAL_MS);
-        return () => clearInterval(interval);
-    }, [fetchNotifications]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -63,16 +123,29 @@ const NotificationBell = () => {
             return;
         }
 
-        setIsOpen((prev) => !prev);
+        setIsOpen((prev) => {
+            const nextOpen = !prev;
+            if (nextOpen) {
+                fetchNotifications();
+            }
+            return nextOpen;
+        });
     };
 
     const handleMarkRead = async (id) => {
         try {
             await notificationService.markOneAsRead(id);
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-            setNotifications((prev) => prev.map((item) => (
+            const nextNotifications = notifications.map((item) => (
                 item.id === id ? { ...item, is_read: 1 } : item
-            )));
+            ));
+            const nextSnapshot = {
+                notifications: nextNotifications,
+                unreadCount: Math.max(0, unreadCount - 1),
+                fetchedAt: Date.now(),
+            };
+            notificationCache = nextSnapshot;
+            applySnapshot(nextSnapshot);
+            emitNotificationsRefresh({ snapshot: nextSnapshot });
         } catch (error) {
             console.error('Failed to mark notification as read:', error);
         }
@@ -90,8 +163,14 @@ const NotificationBell = () => {
     const handleMarkAllAsRead = async () => {
         try {
             await notificationService.markAsRead();
-            setUnreadCount(0);
-            setNotifications((prev) => prev.map((item) => ({ ...item, is_read: 1 })));
+            const nextSnapshot = {
+                notifications: notifications.map((item) => ({ ...item, is_read: 1 })),
+                unreadCount: 0,
+                fetchedAt: Date.now(),
+            };
+            notificationCache = nextSnapshot;
+            applySnapshot(nextSnapshot);
+            emitNotificationsRefresh({ snapshot: nextSnapshot });
         } catch (error) {
             console.error('Failed to mark notifications as read:', error);
         }

@@ -2,7 +2,6 @@ const { catchAsync } = require('../utils/catchAsync');
 const {
     getPublicTranslations,
     getAdminTranslations,
-    createTranslation,
     updateTranslation,
     deleteTranslation,
 } = require('../services/uiTranslationService');
@@ -15,11 +14,6 @@ const getTranslationsByLanguage = catchAsync(async (req, res) => {
 const listTranslations = catchAsync(async (req, res) => {
     const data = await getAdminTranslations(req.query);
     res.status(200).json({ status: 'success', data });
-});
-
-const createUiTranslation = catchAsync(async (req, res) => {
-    const data = await createTranslation(req.body);
-    res.status(201).json({ status: 'success', data });
 });
 
 const updateUiTranslation = catchAsync(async (req, res) => {
@@ -35,7 +29,6 @@ const deleteUiTranslation = catchAsync(async (req, res) => {
 module.exports = {
     getTranslationsByLanguage,
     listTranslations,
-    createUiTranslation,
     updateUiTranslation,
     deleteUiTranslation,
 };

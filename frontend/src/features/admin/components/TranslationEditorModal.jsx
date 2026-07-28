@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 const emptyForm = {
     translation_key: '',
-    description: '',
     vi: '',
     en: '',
     zh: '',
@@ -17,7 +16,6 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
     useEffect(() => {
         setForm(translation ? {
             translation_key: translation.translation_key || '',
-            description: translation.description || '',
             vi: translation.vi || '',
             en: translation.en || '',
             zh: translation.zh || '',
@@ -43,13 +41,8 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface px-5 py-4">
                     <div>
                         <h3 className="text-lg font-bold text-text">
-                            {translation
-                                ? t('admin.translations.editTitle', 'Edit translation')
-                                : t('admin.translations.createTitle', 'Create translation')}
+                            {t('admin.translations.editTitle', 'Edit translation')}
                         </h3>
-                        <p className="mt-1 text-xs text-text-muted">
-                            {t('admin.translations.editorHint', 'Values saved here override local JSON translations.')}
-                        </p>
                     </div>
                     <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-surface-hover">
                         <X className="h-5 w-5" />
@@ -57,31 +50,15 @@ const TranslationEditorModal = ({ translation, saving, onClose, onSubmit }) => {
                 </div>
 
                 <div className="space-y-4 p-5">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
                         <label className="block">
                             <span className="mb-1 block text-sm font-semibold text-text">
                                 {t('admin.translations.key', 'Key')} *
                             </span>
                             <input
                                 value={form.translation_key}
-                                onChange={event => updateField('translation_key', event.target.value)}
-                                placeholder="common.save"
-                                pattern="(?:[A-Za-z0-9_.]|-){2,160}"
-                                maxLength={160}
-                                required
-                                className="w-full rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            />
-                        </label>
-
-                        <label className="block">
-                            <span className="mb-1 block text-sm font-semibold text-text">
-                                {t('admin.translations.description', 'Description')}
-                            </span>
-                            <input
-                                value={form.description}
-                                onChange={event => updateField('description', event.target.value)}
-                                maxLength={255}
-                                className="w-full rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                readOnly
+                                className="w-full cursor-not-allowed rounded-lg border border-border bg-surface-alt px-3 py-2.5 text-sm text-text-muted outline-none"
                             />
                         </label>
                     </div>

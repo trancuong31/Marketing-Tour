@@ -17,6 +17,15 @@ const navLinks = [
     { path: '/guides', key: 'header.guides' },
 ];
 
+const FOOTER_GUIDE_LINKS = {
+    about: 've-chung-toi',
+    blog: 'blog-du-lich',
+    terms: 'dieu-khoan-su-dung',
+    faq: 'cau-hoi-thuong-gap',
+    policy: 'chinh-sach-bao-mat',
+    payment: 'huong-dan-thanh-toan',
+};
+
 const ClientLayout = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -27,6 +36,11 @@ const ClientLayout = ({ children }) => {
     const { isAuthenticated, user, logout } = useAuthStore();
     const { t } = useTranslation();
     const ignoreScrollRef = useRef(false);
+
+    const getFooterGuidePath = (key) => {
+        const targetSlug = FOOTER_GUIDE_LINKS[key];
+        return targetSlug ? `/guides/${targetSlug}` : '/guides';
+    };
 
     useEffect(() => {
         let lastScrollY = window.scrollY;
@@ -347,24 +361,24 @@ const ClientLayout = ({ children }) => {
                             <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.aboutUs')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
                                 <li>
-                                    <Link to="/" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('about')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.about')}
                                     </Link>
                                 </li>
                                 <li>
-                                    <Link to="/guides" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('blog')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.blog')}
                                     </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('terms')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.terms')}
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('faq')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.faq')}
-                                    </a>
+                                    </Link>
                                 </li>
                             </ul>
                         </div>
@@ -374,19 +388,19 @@ const ClientLayout = ({ children }) => {
                             <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.info')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
                                 <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('terms')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.terms')}
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('policy')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.policy')}
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
+                                    <Link to={getFooterGuidePath('payment')} className="hover:text-primary transition text-text-secondary">
                                         {t('footer.payment')}
-                                    </a>
+                                    </Link>
                                 </li>
                             </ul>
                         </div>

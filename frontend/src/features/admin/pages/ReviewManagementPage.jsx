@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { adminService } from '@/services/tourService';
-import { Loader2, Trash2, Calendar, Map, Star, MessageSquare, ChevronLeft, ChevronRight, Filter, Search, X, ImageIcon } from 'lucide-react';
+import { Loader2, Calendar, Map, Star, MessageSquare, Filter, X } from 'lucide-react';
+import SearchBar from '@/components/ui/SearchBar';
+import ReviewManagementTable from '../components/ReviewManagementTable';
 import { toast } from 'sonner';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { format } from 'date-fns';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
 import { useThemeStore } from '@/store';
-import { vi } from 'date-fns/locale';
-import { getImageUrl } from '@/utils/imageUrl';
 
 export default function ReviewManagementPage() {
     const [selectedTour, setSelectedTour] = useState('');
@@ -392,39 +391,17 @@ export default function ReviewManagementPage() {
                 <div className="flex-1 flex flex-wrap gap-4 max-w-3xl">
                     {/* Tour Filter — Autocomplete Search Input */}
                     <div ref={tourSearchRef} className="flex-1 min-w-[300px] relative">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                            <input
-                                type="text"
+                        <div>
+                            <SearchBar
+                                variant="admin"
                                 value={tourSearchTerm}
                                 onChange={(e) => handleTourInputChange(e.target.value)}
                                 onFocus={() => { setShowTourSuggestions(true); if (!tourSearchTerm) fetchToursDropdown(''); }}
                                 onKeyDown={handleTourKeyDown}
+                                onClear={handleClearTour}
                                 placeholder="Nhập tên tour để tìm kiếm..."
-                                className={`
-                                    w-full pl-9 pr-10 py-2 rounded-lg border text-sm
-                                    transition-all duration-200 ease-in-out bg-transparent text-text
-                                    border-border hover:border-primary/40
-                                    focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50
-                                    placeholder:text-text-muted
-                                    ${selectedTour ? 'border-primary/50 bg-primary/5' : ''}
-                                `}
+                                loading={toursLoading}
                             />
-                            {/* Loading or Clear button */}
-                            {toursLoading ? (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                                </div>
-                            ) : (tourSearchTerm || selectedTour) ? (
-                                <button
-                                    type="button"
-                                    onClick={handleClearTour}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-error/10 text-text-muted hover:text-error transition-colors"
-                                    title="Xóa bộ lọc tour"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            ) : null}
                         </div>
 
                         {/* Selected tour badge */}
@@ -482,7 +459,7 @@ export default function ReviewManagementPage() {
                                         })
                                     ) : tourSearchTerm.trim() ? (
                                         <div className="px-3 py-6 text-center text-sm text-text-muted">
-                                            Không tìm thấy tour nào cho "{tourSearchTerm}"
+                                            Không tìm thấy tour nào cho <span className="font-semibold">{tourSearchTerm}</span>
                                         </div>
                                     ) : (
                                         <div className="px-3 py-4 text-center text-sm text-text-muted">
@@ -613,7 +590,7 @@ export default function ReviewManagementPage() {
                                         <div className="pt-4 border-t border-border/50">
                                             <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
                                                 <p className="text-[11px] text-primary font-medium leading-relaxed italic">
-                                                    "Hầu hết khách hàng hài lòng với chất lượng dịch vụ và hướng dẫn viên nhiệt tình."
+                                                    Hầu hết khách hàng hài lòng với chất lượng dịch vụ và hướng dẫn viên nhiệt tình.
                                                 </p>
                                             </div>
                                         </div>
@@ -633,184 +610,22 @@ export default function ReviewManagementPage() {
                         </div>
                     </div>
 
-                    {/* Table */}
-                    <div className="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-[400px]">
-                        <div className="p-4 border-b border-border bg-surface-alt flex flex-wrap justify-between items-center gap-3">
-                            <h2 className="font-bold text-text flex items-center gap-2">
-                                Danh sách bình luận ({totalItems})
-                                {reviewsLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                            </h2>
-                            {/* Approval Tab Bar */}
-                            <div className="flex items-center gap-1 p-1 bg-surface rounded-lg">
-                                {[
-                                    { value: '', label: 'Tất cả' },
-                                    { value: '1', label: 'Đã duyệt' },
-                                    { value: '0', label: 'Đợi duyệt' },
-                                ].map(tab => (
-                                    <button
-                                        key={tab.value}
-                                        onClick={() => { setApprovalFilter(tab.value); setCurrentPage(1); }}
-                                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                                            approvalFilter === tab.value
-                                                ? 'bg-primary text-white shadow-sm'
-                                                : 'text-text-secondary hover:text-text hover:bg-surface-hover'
-                                        }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="overflow-x-auto flex-1">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-surface-alt border-b border-border">
-                                        <th className="p-4 text-xs font-semibold text-text-muted uppercase">Khách hàng</th>
-                                        <th className="p-4 text-xs font-semibold text-text-muted uppercase">Tour</th>
-                                        <th className="p-4 text-xs font-semibold text-text-muted uppercase">Rating & Comment</th>
-                                        <th className="p-4 text-xs font-semibold text-text-muted uppercase">Ngày đăng</th>
-                                        <th className="p-4 text-xs font-semibold text-text-muted uppercase flex justify-end">Hành động</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reviews.length > 0 ? (
-                                        reviews.map((v) => (
-                                            <tr key={v.id} className="border-b border-border hover:bg-surface-hover transition-colors">
-                                                <td className="p-4">
-                                                    <p className="font-semibold text-sm text-text">{v.customer_name}</p>
-                                                </td>
-                                                <td className="p-4">
-                                                    <p className="text-sm text-text max-w-[200px] truncate" title={v.Tour?.title}>
-                                                        {v.Tour?.title || 'Đã xóa'}
-                                                    </p>
-                                                </td>
-                                                <td className="p-4 max-w-sm">
-                                                    <div className="flex items-center gap-1 mb-1">
-                                                        {Array.from({ length: 5 }).map((_, i) => (
-                                                            <Star key={i} className={`w-3 h-3 ${i < v.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`} />
-                                                        ))}
-                                                    </div>
-                                                    <p className="text-sm text-text-muted italic line-clamp-2" title={v.comment}>
-                                                        {v.comment ? `"${v.comment}"` : '- Không có nhận xét -'}
-                                                    </p>
-                                                    {v.admin_reply && (
-                                                        <div className="mt-2 p-2 bg-primary/5 border-l-2 border-primary rounded text-xs">
-                                                            <p className="font-bold text-primary mb-1 flex items-center gap-1">
-                                                                <MessageSquare className="w-3 h-3" />
-                                                                Phản hồi của bạn:
-                                                            </p>
-                                                            <p className="text-text-secondary italic">"{v.admin_reply}"</p>
-                                                            {v.admin_reply_at && (
-                                                                <p className="text-[10px] text-text-muted mt-1 text-right">
-                                                                    {format(new Date(v.admin_reply_at), 'dd/MM/yyyy HH:mm', { locale: vi })}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {(() => {
-                                                        let imgs = [];
-                                                        if (v.images) {
-                                                            if (Array.isArray(v.images)) imgs = v.images;
-                                                            else try { imgs = JSON.parse(v.images); } catch(e) {}
-                                                        }
-                                                        if (imgs.length === 0) return null;
-                                                        return (
-                                                            <div className="flex gap-1.5 mt-2">
-                                                                {imgs.map((img, i) => (
-                                                                    <div key={i} className="w-10 h-10 rounded-lg overflow-hidden border border-border shrink-0 hover:scale-110 transition-transform cursor-pointer">
-                                                                        <img src={getImageUrl(img)} alt="Review" className="w-full h-full object-cover" />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                </td>
-                                                <td className="p-4">
-                                                    <span className="text-xs text-text-muted">
-                                                        {v.created_at ? format(new Date(v.created_at), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'N/A'}
-                                                    </span>
-                                                </td>
-                                                <td className="p-4 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <button
-                                                            onClick={() => handleReply(v)}
-                                                            className={`p-1.5 rounded-lg transition-colors ${v.admin_reply ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-text-muted hover:bg-surface-hover'}`}
-                                                            title="Trả lời đánh giá"
-                                                        >
-                                                            <MessageSquare className={`w-4 h-4 ${v.admin_reply ? 'fill-primary/20' : ''}`} />
-                                                        </button>
-                                                        <button
-                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                                                v.is_approved 
-                                                                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                                                                : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                                            }`}
-                                                            onClick={() => handleApprove(v.id, v.is_approved)}
-                                                        >
-                                                            {v.is_approved ? 'Đã duyệt' : 'Chờ duyệt'}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(v.id)}
-                                                            className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
-                                                            title="Xóa vĩnh viễn"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="5" className="p-8 text-center text-text-muted">
-                                                Không có bình luận nào phù hợp
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="p-4 border-t border-border flex items-center justify-between bg-surface">
-                                <span className="text-sm text-text-muted hidden sm:block">
-                                    Đang xem trang {currentPage} / {totalPages}
-                                </span>
-                                <div className="flex gap-2 mx-auto sm:mx-0">
-                                    <button
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(p => p - 1)}
-                                        className="p-2 border border-border rounded-lg text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <div className="flex items-center gap-1">
-                                        {[...Array(totalPages)].map((_, i) => (
-                                            <button
-                                                key={i + 1}
-                                                onClick={() => setCurrentPage(i + 1)}
-                                                className={`w-9 h-9 rounded-lg text-sm font-medium ${
-                                                    currentPage === i + 1 
-                                                    ? 'bg-primary text-white shadow-md' 
-                                                    : 'text-text hover:bg-surface-hover'
-                                                }`}
-                                            >
-                                                {i + 1}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(p => p + 1)}
-                                        className="p-2 border border-border rounded-lg text-text hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <ReviewManagementTable
+                        reviews={reviews}
+                        totalItems={totalItems}
+                        reviewsLoading={reviewsLoading}
+                        approvalFilter={approvalFilter}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onApprovalFilterChange={(value) => {
+                            setApprovalFilter(value);
+                            setCurrentPage(1);
+                        }}
+                        onPageChange={setCurrentPage}
+                        onReply={handleReply}
+                        onApprove={handleApprove}
+                        onDelete={handleDelete}
+                    />
                 </>
             )}
         </AdminLayout>

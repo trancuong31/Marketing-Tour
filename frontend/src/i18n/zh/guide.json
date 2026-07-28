@@ -4,6 +4,20 @@
     "updatedAt": "更新",
     "empty": "暂无指南文章",
     "backToList": "返回列表",
+    "features": {
+        "diverse": {
+            "title": "多样旅游",
+            "desc": "丰富的国内与国际旅游产品"
+        },
+        "trusted": {
+            "title": "可靠服务",
+            "desc": "品质承诺与贴心支持"
+        },
+        "support": {
+            "title": "24/7 支持",
+            "desc": "随时陪伴您的每一段旅程"
+        }
+    },
     "notFoundTitle": "未找到",
     "notFoundDesc": "该指南文章不存在或已被隐藏。",
     "back": "返回"

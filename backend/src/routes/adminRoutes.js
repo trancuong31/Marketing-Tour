@@ -2,10 +2,10 @@ const express = require('express');
 const { authenticate } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
 const uploadBanner = require('../middlewares/uploadBanner');
+const uploadGuide = require('../middlewares/uploadGuide');
 const { translateContent } = require('../controllers/translateController');
 const {
     listTranslations,
-    createUiTranslation,
     updateUiTranslation,
     deleteUiTranslation,
 } = require('../controllers/uiTranslationController');
@@ -24,6 +24,7 @@ const {
     getAllGuides,
     createGuide,
     updateGuide,
+    uploadGuideImage,
     deleteTourImage,
     getAllBanners,
     createBanner,
@@ -47,7 +48,6 @@ router.use(authenticate);
 // ── Translation ──
 router.post('/translate', translateContent);
 router.get('/translations', listTranslations);
-router.post('/translations', createUiTranslation);
 router.put('/translations/:id', updateUiTranslation);
 router.delete('/translations/:id', deleteUiTranslation);
 
@@ -75,6 +75,7 @@ router.post('/votes/:id/reply', replyToVote);
 
 // ── Guide ──
 router.get('/guides', getAllGuides);
+router.post('/guides/upload-image', uploadGuide.single('image'), uploadGuideImage);
 router.post('/guides', createGuide);
 router.put('/guides/:id', updateGuide);
 

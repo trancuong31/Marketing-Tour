@@ -87,6 +87,7 @@ export const adminService = {
     getGuides: () => api.get('/admin/guides'),
     createGuide: (data) => api.post('/admin/guides', data),
     updateGuide: (id, data) => api.put(`/admin/guides/${id}`, data),
+    uploadGuideImage: (formData) => api.post('/admin/guides/upload-image', formData),
 
     // Banners
     getBanners: () => api.get('/admin/banners'),

@@ -5,12 +5,12 @@ import { getImageUrl } from '@/utils/imageUrl';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
 import DepartureCalendar from '@/components/ui/DepartureCalendar';
+import SearchBar from '@/components/ui/SearchBar';
+import TourManagementTable from '@/features/admin/components/TourManagementTable';
 import TranslationToolbar from '@/features/admin/components/TranslationToolbar';
-import { Plus, Edit2, Trash2, Loader2, X, Image, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Plus, Trash2, Loader2, X, Upload, Calendar, Settings, List, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-
-const formatPrice = (price) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+import { useTranslation } from 'react-i18next';
 
 const getTodayDateOnly = () => {
     const now = new Date();
@@ -63,6 +63,50 @@ const TOUR_TRANSLATION_FIELD_LABELS = {
 const ITINERARY_TRANSLATION_FIELD_LABELS = {
     title: 'Tiêu đề ngày',
     content: 'Chi tiết hoạt động',
+};
+
+const REQUIRED_VI_TOUR_FIELDS = [
+    ['title', 'Ten tour khong duoc de trong'],
+    ['summary', 'Tom tat khong duoc de trong'],
+    ['highlights', 'Vui long nhap diem noi bat'],
+    ['price_includes', 'Vui long nhap thong tin gia bao gom'],
+    ['price_excludes', 'Vui long nhap thong tin gia khong bao gom'],
+    ['terms_and_notes', 'Vui long nhap dieu khoan'],
+    ['cancellation_policy', 'Vui long nhap chinh sach hoan huy'],
+];
+
+const REQUIRED_VI_ITINERARY_FIELDS = [
+    ['title', 'Nhap tieu de ngay'],
+    ['content', 'Nhap noi dung hoat dong'],
+];
+
+const isMeaningfulText = (value) => (
+    String(value || '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .trim()
+        .length > 0
+);
+
+const findMissingVietnameseContent = (data) => {
+    const missingTourField = REQUIRED_VI_TOUR_FIELDS.find(([field]) => !isMeaningfulText(data[field]));
+    if (missingTourField) {
+        return { tab: 'general', path: missingTourField[0], message: missingTourField[1] };
+    }
+
+    const itineraries = data.itineraries || [];
+    for (const [index, itinerary] of itineraries.entries()) {
+        const missingItineraryField = REQUIRED_VI_ITINERARY_FIELDS.find(([field]) => !isMeaningfulText(itinerary[field]));
+        if (missingItineraryField) {
+            return {
+                tab: 'itineraries',
+                path: `itineraries.${index}.${missingItineraryField[0]}`,
+                message: `Ngay ${index + 1}: ${missingItineraryField[1]}`,
+            };
+        }
+    }
+
+    return null;
 };
 
 const getTranslationFieldLabel = (fieldKey, targetLang) => {
@@ -236,6 +280,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
         if (currentLang === 'en') return errors?.translations?.[0]?.[name];
         return errors?.translations?.[1]?.[name];
     };
+    const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
     return (
         <div className="space-y-5">
@@ -281,7 +326,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
             <div>
                 <label className="text-sm font-medium text-text mb-1 block">Tên tour ({currentLang.toUpperCase()}) *</label>
                 <input
-                    {...register(getFieldName('title'), { required: 'Tên tour không được để trống' })}
+                    {...register(getFieldName('title'), getRequiredRule('Tên tour không được để trống'))}
                     className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                     placeholder="Nhập tên tour..."
                 />
@@ -292,7 +337,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
             <div>
                 <label className="text-sm font-medium text-text mb-1 block">Tóm tắt ({currentLang.toUpperCase()}) *</label>
                 <textarea
-                    {...register(getFieldName('summary'), { required: 'Tóm tắt không được để trống' })}
+                    {...register(getFieldName('summary'), getRequiredRule('Tóm tắt không được để trống'))}
                     rows={2}
                     className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('summary') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                     placeholder="Mô tả ngắn gọn về tour..."
@@ -346,7 +391,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         Điểm nổi bật ({currentLang.toUpperCase()}) *
                     </label>
                     <textarea
-                        {...register(getFieldName('highlights'), { required: 'Vui lòng nhập điểm nổi bật' })}
+                        {...register(getFieldName('highlights'), getRequiredRule('Vui lòng nhập điểm nổi bật'))}
                         rows={4}
                         className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('highlights') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
                         placeholder="Nhập các điểm nổi bật... (Lưu ý: Viết thành đoạn văn, mỗi điểm nổi bật kết thúc bằng 1 dấu chấm)"
@@ -362,7 +407,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         placeholder="Vé tham quan, khách sạn, xe đưa đón..."
                         error={getFieldError('price_includes')?.message}
                     />
-                    <input type="hidden" {...register(getFieldName('price_includes'), { required: 'Vui lòng nhập thông tin giá bao gồm' })} />
+                    <input type="hidden" {...register(getFieldName('price_includes'), getRequiredRule('Vui lòng nhập thông tin giá bao gồm'))} />
                 </div>
 
                 <div>
@@ -373,7 +418,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         placeholder="Chi phí cá nhân, tip HDV..."
                         error={getFieldError('price_excludes')?.message}
                     />
-                    <input type="hidden" {...register(getFieldName('price_excludes'), { required: 'Vui lòng nhập thông tin giá không bao gồm' })} />
+                    <input type="hidden" {...register(getFieldName('price_excludes'), getRequiredRule('Vui lòng nhập thông tin giá không bao gồm'))} />
                 </div>
 
                 <div>
@@ -384,7 +429,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         placeholder="Quy định, lưu ý quan trọng..."
                         error={getFieldError('terms_and_notes')?.message}
                     />
-                    <input type="hidden" {...register(getFieldName('terms_and_notes'), { required: 'Vui lòng nhập điều khoản' })} />
+                    <input type="hidden" {...register(getFieldName('terms_and_notes'), getRequiredRule('Vui lòng nhập điều khoản'))} />
                 </div>
 
                 <div>
@@ -395,7 +440,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                         placeholder="Chính sách hoàn hủy tour..."
                         error={getFieldError('cancellation_policy')?.message}
                     />
-                    <input type="hidden" {...register(getFieldName('cancellation_policy'), { required: 'Vui lòng nhập chính sách hoàn hủy' })} />
+                    <input type="hidden" {...register(getFieldName('cancellation_policy'), getRequiredRule('Vui lòng nhập chính sách hoàn hủy'))} />
                 </div>
             </div>
 
@@ -485,6 +530,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
         if (currentLang === 'en') return errors.itineraries?.[index]?.translations?.[0]?.[name];
         return errors.itineraries?.[index]?.translations?.[1]?.[name];
     };
+    const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
     return (
         <div className="space-y-4">
@@ -542,7 +588,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                     <div>
                         <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày ({currentLang.toUpperCase()}) *</label>
                         <input
-                            {...register(getFieldName(index, 'title'), { required: 'Nhập tiêu đề ngày' })}
+                            {...register(getFieldName(index, 'title'), getRequiredRule('Nhập tiêu đề ngày'))}
                             className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                             placeholder="VD: Đón khách - Tham quan phố cổ"
                         />
@@ -557,7 +603,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                             placeholder="Mô tả chi tiết các hoạt động trong ngày..."
                             error={getFieldError(index, 'content')?.message}
                         />
-                        <input type="hidden" {...register(getFieldName(index, 'content'), { required: 'Nhập nội dung hoạt động' })} />
+                        <input type="hidden" {...register(getFieldName(index, 'content'), getRequiredRule('Nhập nội dung hoạt động'))} />
                     </div>
                 </div>
                 );
@@ -837,6 +883,7 @@ const ITEMS_PER_PAGE = 10;
 
 // ═══ MAIN PAGE ═══
 const TourManagementPage = () => {
+    const { t } = useTranslation();
     const [tours, setTours] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -870,7 +917,7 @@ const TourManagementPage = () => {
         ]
     };
 
-    const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm({ defaultValues });
+    const { register, handleSubmit, control, watch, setValue, setError, reset, formState: { errors } } = useForm({ defaultValues });
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -994,6 +1041,18 @@ const TourManagementPage = () => {
     };
 
     const onSubmit = async (data) => {
+        const missingVietnameseContent = findMissingVietnameseContent(data);
+        if (missingVietnameseContent) {
+            setCurrentLang('vi');
+            setActiveTab(missingVietnameseContent.tab);
+            setError(missingVietnameseContent.path, {
+                type: 'required',
+                message: missingVietnameseContent.message,
+            });
+            toast.error(missingVietnameseContent.message);
+            return;
+        }
+
         // Tab routing for arrays if error/empty
         if (data.itineraries.length === 0) {
             setActiveTab('itineraries');
@@ -1187,6 +1246,20 @@ const TourManagementPage = () => {
     };
 
     const handleTranslate = async () => {
+        if (translating) return;
+
+        const missingVietnameseContent = findMissingVietnameseContent(watch());
+        if (missingVietnameseContent) {
+            setCurrentLang('vi');
+            setActiveTab(missingVietnameseContent.tab);
+            setError(missingVietnameseContent.path, {
+                type: 'required',
+                message: missingVietnameseContent.message,
+            });
+            toast.error(missingVietnameseContent.message);
+            return;
+        }
+
         const viData = getVietnameseContentForTranslation();
 
         if (Object.values(viData).every(v => !normalizeTranslationSource(v))) {
@@ -1304,12 +1377,6 @@ const TourManagementPage = () => {
         });
     };
 
-    const getMinPrice = (tour) => {
-        const departures = tour.departures || [];
-        if (departures.length === 0) return null;
-        return Math.min(...departures.map(d => parseFloat(d.price_adult)));
-    };
-
     // Check if a specific tab has validation errors
     const checkTabHasError = (tabKey) => {
         return Object.keys(errors).some(key => {
@@ -1352,48 +1419,25 @@ const TourManagementPage = () => {
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
                 <div className="flex-1">
                     <div className="w-full max-w-2xl">
-                        <div className="flex items-stretch gap-2">
-                            <div className="relative flex-1 group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="Tìm tên tour..."
-                                    className="w-full pl-12 pr-11 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold shadow-sm"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSearchTours();
-                                    }}
-                                />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        onClick={clearSearchTours}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-text"
-                                        aria-label="Xóa tìm kiếm"
-                                        title="Xóa tìm kiếm"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleSearchTours}
-                                className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition text-sm shadow-sm shrink-0"
-                            >
-                                <Search className="w-4 h-4" />
-                                <span className="hidden sm:inline">Tìm kiếm</span>
-                            </button>
-                        </div>
-                        <p className="mt-1.5 text-[11px] font-medium text-text-muted">Hiển thị {totalItems} tour</p>
+                        <SearchBar
+                            variant="admin"
+                            value={searchQuery}
+                            onChange={event => setSearchQuery(event.target.value)}
+                            onSearch={handleSearchTours}
+                            onClear={clearSearchTours}
+                            placeholder={t('admin.tours.searchPlaceholder', 'Search tours...')}
+                            showButton
+                        />
+                        <p className="mt-1.5 text-[11px] font-medium text-text-muted">
+                            {t('admin.tours.total', '{{count}} tours', { count: totalItems })}
+                        </p>
                     </div>
                 </div>
                 <button
                     onClick={openCreate}
                     className="min-h-[46px] px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2 text-sm shadow-md shrink-0 lg:self-start"
                 >
-                    <Plus className="w-4 h-4" /> Thêm Tour
+                    <Plus className="w-4 h-4" /> {t('admin.tours.add', 'Add tour')}
                 </button>
             </div>
 
@@ -1401,77 +1445,7 @@ const TourManagementPage = () => {
             {loading ? (
                 <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
             ) : (
-                <div className="bg-surface rounded-2xl border border-border overflow-x-auto shadow-sm">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="bg-surface-alt border-b border-border">
-                                <th className="px-4 py-3.5 text-left font-semibold text-text-secondary uppercase tracking-wider text-xs">Tour</th>
-                                <th className="px-4 py-3.5 text-left font-semibold text-text-secondary uppercase tracking-wider text-xs hidden md:table-cell">Danh mục</th>
-                                <th className="px-4 py-3.5 text-left font-semibold text-text-secondary uppercase tracking-wider text-xs">Giá từ</th>
-                                <th className="px-4 py-3.5 text-left font-semibold text-text-secondary uppercase tracking-wider text-xs hidden lg:table-cell">Thời gian</th>
-                                <th className="px-4 py-3.5 text-left font-semibold text-text-secondary uppercase tracking-wider text-xs hidden sm:table-cell">Trạng thái</th>
-                                <th className="px-4 py-3.5 text-right font-semibold text-text-secondary uppercase tracking-wider text-xs">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tours.map(tour => {
-                                const minPrice = getMinPrice(tour);
-                                return (
-                                    <tr key={tour.id} className="border-b border-border last:border-0 hover:bg-surface-alt/50 transition-colors">
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                {tour.thumbnail_url ? (
-                                                    <img src={getImageUrl(tour.thumbnail_url)} alt="" className="w-14 h-10 object-cover rounded-lg border border-border shadow-sm" />
-                                                ) : (
-                                                    <div className="w-14 h-10 bg-surface-alt rounded-lg border border-border flex items-center justify-center">
-                                                        <Image className="w-4 h-4 text-text-muted" />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <p className="font-semibold text-text line-clamp-1">{tour.title}</p>
-                                                    {tour.tour_badge === 'featured' && <span className="text-[10px] text-white bg-gradient-to-r from-orange-400 to-red-500 font-bold px-1.5 py-0.5 rounded shadow-sm">Nổi bật</span>}
-                                                    {tour.tour_badge === 'promotion' && <span className="text-[10px] text-white bg-gradient-to-r from-green-400 to-emerald-500 font-bold px-1.5 py-0.5 rounded shadow-sm">Khuyến mãi</span>}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 hidden md:table-cell text-text-secondary font-medium">{tour.Category?.name}</td>
-                                        <td className="px-4 py-3">
-                                            {minPrice ? (
-                                                <p className="font-bold text-primary">{formatPrice(minPrice)}</p>
-                                            ) : (
-                                                <p className="text-text-muted text-xs italic">Chưa có giá</p>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 hidden lg:table-cell text-text-secondary font-medium text-sm">
-                                            {tour.duration_days && tour.duration_nights
-                                                ? `${tour.duration_days}N${tour.duration_nights}Đ`
-                                                : tour.duration_days ? `${tour.duration_days} ngày` : '—'}
-                                        </td>
-                                        <td className="px-4 py-3 hidden sm:table-cell">
-                                            <span className={`px-2.5 py-1 text-[11px] uppercase tracking-wider font-bold rounded-md ${tour.status === 'active' ? 'bg-success/10 text-success' :
-                                                    tour.status === 'hidden' ? 'bg-warning/10 text-warning' :
-                                                        'bg-error/10 text-error'
-                                                }`}>
-                                                {tour.status === 'active' ? 'Hoạt động' : tour.status === 'hidden' ? 'Ẩn' : 'Hết chỗ'}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button onClick={() => openEdit(tour)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="Sửa">
-                                                    <Edit2 className="w-4 h-4 text-primary" />
-                                                </button>
-                                                <button onClick={() => handleDelete(tour.id)} className="p-2 rounded-lg hover:bg-error/10 transition-colors" title="Xóa">
-                                                    <Trash2 className="w-4 h-4 text-error" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                    {tours.length === 0 && <div className="text-center py-12 text-text-muted font-medium">Không dữ liệu</div>}
-                </div>
+                <TourManagementTable tours={tours} onEdit={openEdit} onDelete={handleDelete} />
             )}
 
             {/* Pagination Logic */}

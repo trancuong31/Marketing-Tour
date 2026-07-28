@@ -10,24 +10,101 @@
     },
     "translations": {
         "actions": "Actions",
-        "add": "Add key",
         "chinese": "Chinese",
         "confirmDelete": "Delete this translation?",
-        "createTitle": "Create translation",
         "deleteError": "Unable to delete translation",
         "deleteSuccess": "Translation deleted",
-        "description": "Description",
         "editTitle": "Edit translation",
-        "editorHint": "Values saved here override local JSON translations.",
         "empty": "No translations found",
         "english": "English",
+        "englishShort": "EN",
         "key": "Key",
         "loadError": "Unable to load translations",
         "saveError": "Unable to save translation",
         "saveSuccess": "Translation saved",
         "searchPlaceholder": "Search key or content...",
-        "subtitle": "Manage Translate VI,EN,ZH",
         "total": "{{count}} keys",
-        "vietnamese": "Vietnamese"
+        "vietnamese": "Vietnamese",
+        "vietnameseShort": "VI",
+        "chineseShort": "ZH"
+    },
+    "tours": {
+        "add": "添加行程",
+        "searchPlaceholder": "搜索行程...",
+        "total": "共 {{count}} 个行程",
+        "empty": "未找到行程",
+        "noPrice": "暂无价格",
+        "duration": "{{days}}天{{nights}}夜",
+        "columns": {
+            "tour": "行程",
+            "category": "分类",
+            "priceFrom": "起价",
+            "duration": "时长",
+            "status": "状态",
+            "actions": "操作"
+        },
+        "status": {
+            "active": "启用",
+            "hidden": "隐藏",
+            "soldOut": "售罄"
+        },
+        "badge": {
+            "featured": "精选",
+            "promotion": "促销"
+        }
+    },
+    "reviews": {
+        "title": "\u8bc4\u8bba\u5217\u8868",
+        "deletedTour": "\u5df2\u5220\u9664",
+        "noComment": "- \u6682\u65e0\u8bc4\u8bba -",
+        "yourReply": "\u60a8\u7684\u56de\u590d\uff1a",
+        "imageAlt": "\u8bc4\u4ef7\u56fe\u7247",
+        "empty": "\u6ca1\u6709\u5339\u914d\u7684\u8bc4\u8bba",
+        "pagination": "\u7b2c {{current}} / {{total}} \u9875",
+        "columns": {
+            "customer": "\u5ba2\u6237",
+            "tour": "\u884c\u7a0b",
+            "ratingComment": "\u8bc4\u5206\u4e0e\u8bc4\u8bba",
+            "createdAt": "\u53d1\u5e03\u65f6\u95f4",
+            "actions": "\u64cd\u4f5c"
+        },
+        "filters": {
+            "all": "\u5168\u90e8",
+            "approved": "\u5df2\u901a\u8fc7",
+            "pending": "\u5f85\u5ba1\u6838"
+        },
+        "actions": {
+            "reply": "\u56de\u590d\u8bc4\u4ef7",
+            "approve": "\u901a\u8fc7",
+            "unapprove": "\u53d6\u6d88\u901a\u8fc7",
+            "delete": "\u6c38\u4e45\u5220\u9664"
+        }
+    },
+    "votes": {
+        "searchPlaceholder": "Search by name, email or tour...",
+        "empty": "No reviews found",
+        "imageAlt": "Review image",
+        "total": "Showing {{filtered}} / {{total}} reviews",
+        "columns": {
+            "customer": "Customer",
+            "tour": "Tour",
+            "rating": "Rating",
+            "comment": "Comment",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "filters": {
+            "all": "All",
+            "pending": "Pending",
+            "approved": "Approved"
+        },
+        "status": {
+            "pending": "Pending",
+            "approved": "Approved"
+        },
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject"
+        }
     }
 }

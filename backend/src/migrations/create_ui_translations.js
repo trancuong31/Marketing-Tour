@@ -59,7 +59,6 @@ const buildSeedRows = () => {
 
     return Array.from(keys).sort().map((key) => ({
         translation_key: key,
-        description: key,
         vi: byLanguage.vi[key] || '',
         en: byLanguage.en[key] || '',
         zh: byLanguage.zh[key] || '',
@@ -73,7 +72,6 @@ const ensureTranslationsTable = async (queryInterface, existingTables) => {
         await queryInterface.createTable('translations', {
             id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
             translation_key: { type: DataTypes.STRING(160), allowNull: false, unique: true },
-            description: { type: DataTypes.STRING(255), allowNull: true },
             vi: { type: DataTypes.TEXT, allowNull: true },
             en: { type: DataTypes.TEXT, allowNull: true },
             zh: { type: DataTypes.TEXT, allowNull: true },
@@ -105,7 +103,7 @@ const run = async () => {
         const rows = buildSeedRows();
         if (rows.length > 0) {
             await queryInterface.bulkInsert('translations', rows, {
-                updateOnDuplicate: ['description', 'vi', 'en', 'zh', 'updated_at'],
+                updateOnDuplicate: ['vi', 'en', 'zh', 'updated_at'],
             });
         }
 

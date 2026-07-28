@@ -10,24 +10,101 @@
     },
     "translations": {
         "actions": "Actions",
-        "add": "Add key",
         "chinese": "Chinese",
         "confirmDelete": "Delete this translation?",
-        "createTitle": "Create translation",
         "deleteError": "Unable to delete translation",
         "deleteSuccess": "Translation deleted",
-        "description": "Description",
         "editTitle": "Edit translation",
-        "editorHint": "Values saved here override local JSON translations.",
         "empty": "No translations found",
         "english": "English",
+        "englishShort": "EN",
         "key": "Key",
         "loadError": "Unable to load translations",
         "saveError": "Unable to save translation",
         "saveSuccess": "Translation saved",
         "searchPlaceholder": "Search key or content...",
-        "subtitle": "Manage Translate VI,EN,ZH",
         "total": "{{count}} keys",
-        "vietnamese": "Vietnamese"
+        "vietnamese": "Vietnamese",
+        "vietnameseShort": "VI",
+        "chineseShort": "ZH"
+    },
+    "tours": {
+        "add": "Add tour",
+        "searchPlaceholder": "Search tours...",
+        "total": "{{count}} tours",
+        "empty": "No tours found",
+        "noPrice": "No price",
+        "duration": "{{days}}D{{nights}}N",
+        "columns": {
+            "tour": "Tour",
+            "category": "Category",
+            "priceFrom": "Price from",
+            "duration": "Duration",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "status": {
+            "active": "Active",
+            "hidden": "Hidden",
+            "soldOut": "Sold out"
+        },
+        "badge": {
+            "featured": "Featured",
+            "promotion": "Promotion"
+        }
+    },
+    "reviews": {
+        "title": "Review list",
+        "deletedTour": "Deleted",
+        "noComment": "- No comment -",
+        "yourReply": "Your reply:",
+        "imageAlt": "Review image",
+        "empty": "No matching reviews",
+        "pagination": "Page {{current}} / {{total}}",
+        "columns": {
+            "customer": "Customer",
+            "tour": "Tour",
+            "ratingComment": "Rating & Comment",
+            "createdAt": "Created at",
+            "actions": "Actions"
+        },
+        "filters": {
+            "all": "All",
+            "approved": "Approved",
+            "pending": "Pending"
+        },
+        "actions": {
+            "reply": "Reply to review",
+            "approve": "Approve",
+            "unapprove": "Unapprove",
+            "delete": "Delete permanently"
+        }
+    },
+    "votes": {
+        "searchPlaceholder": "Search by name, email or tour...",
+        "empty": "No reviews found",
+        "imageAlt": "Review image",
+        "total": "Showing {{filtered}} / {{total}} reviews",
+        "columns": {
+            "customer": "Customer",
+            "tour": "Tour",
+            "rating": "Rating",
+            "comment": "Comment",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "filters": {
+            "all": "All",
+            "pending": "Pending",
+            "approved": "Approved"
+        },
+        "status": {
+            "pending": "Pending",
+            "approved": "Approved"
+        },
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject"
+        }
     }
 }

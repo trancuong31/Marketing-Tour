@@ -6,12 +6,13 @@ import { toast } from 'sonner';
 import ClientLayout from '@/components/layout/ClientLayout';
 import NotificationItem from '@/components/notifications/NotificationItem';
 import { notificationService } from '@/services/tourService';
+import { emitNotificationsRefresh } from '@/utils/notificationEvents';
 
 const ITEMS_PER_PAGE = 12;
 
 const NotificationsPage = () => {
     const navigate = useNavigate();
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -38,7 +39,7 @@ const NotificationsPage = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [t, i18n.language]);
+    }, [t]);
 
     useEffect(() => {
         fetchNotifications(1);
@@ -59,6 +60,7 @@ const NotificationsPage = () => {
                 setNotifications((prev) => prev.map((item) => (
                     item.id === notification.id ? { ...item, is_read: 1 } : item
                 )));
+                emitNotificationsRefresh();
             }
 
             if (notification.related_slug) {
@@ -75,6 +77,7 @@ const NotificationsPage = () => {
             await notificationService.markAsRead();
             setUnreadCount(0);
             setNotifications((prev) => prev.map((item) => ({ ...item, is_read: 1 })));
+            emitNotificationsRefresh();
             toast.success(t('notification.markAllReadSuccess'));
         } catch (err) {
             console.error('Failed to mark notifications as read:', err);

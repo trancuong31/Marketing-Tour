@@ -3,26 +3,34 @@ import { lazy, Suspense } from 'react';
 import AdminRoute from './AdminRoute';
 import PrivateRoute from './PrivateRoute';
 
-// Client pages
-const HomePage = lazy(() => import('../features/home/pages/HomePage'));
-const TourListPage = lazy(() => import('../features/tour/pages/TourListPage'));
-const TourDetailPage = lazy(() => import('../features/tour/pages/TourDetailPage'));
-const HistoryPage = lazy(() => import('../features/history/pages/HistoryPage'));
-const NotificationsPage = lazy(() => import('../features/notification/pages/NotificationsPage'));
-const LookupBookingPage = lazy(() => import('../features/lookup/pages/LookupBookingPage'));
-const GuidePage = lazy(() => import('../features/guide/pages/GuidePage'));
-const NotFoundPage = lazy(() => import('../features/common/pages/NotFoundPage'));
+const lazyPage = (importer) => lazy(async () => {
+    const module = await importer();
+    if (!module?.default) {
+        throw new Error('Lazy page module must export a default React component.');
+    }
+    return { default: module.default };
+});
 
-const ProfilePage = lazy(() => import('../features/profile/pages/ProfilePage'));
+// Client pages
+const HomePage = lazyPage(() => import('../features/home/pages/HomePage'));
+const TourListPage = lazyPage(() => import('../features/tour/pages/TourListPage'));
+const TourDetailPage = lazyPage(() => import('../features/tour/pages/TourDetailPage'));
+const HistoryPage = lazyPage(() => import('../features/history/pages/HistoryPage'));
+const NotificationsPage = lazyPage(() => import('../features/notification/pages/NotificationsPage'));
+const LookupBookingPage = lazyPage(() => import('../features/lookup/pages/LookupBookingPage'));
+const GuidePage = lazyPage(() => import('../features/guide/pages/GuidePage'));
+const NotFoundPage = lazyPage(() => import('../features/common/pages/NotFoundPage'));
+
+const ProfilePage = lazyPage(() => import('../features/profile/pages/ProfilePage'));
 
 // Admin pages
-const AdminLoginPage = lazy(() => import('../features/admin/pages/AdminLoginPage'));
-const BookingManagementPage = lazy(() => import('../features/admin/pages/BookingManagementPage'));
-const TourManagementPage = lazy(() => import('../features/admin/pages/TourManagementPage'));
-const ContentManagementPage = lazy(() => import('../features/admin/pages/ContentManagementPage'));
-const BannerManagementPage = lazy(() => import('../features/admin/pages/BannerManagementPage'));
-const ReviewManagementPage = lazy(() => import('../features/admin/pages/ReviewManagementPage'));
-const TranslationManagementPage = lazy(() => import('../features/admin/pages/TranslationManagementPage'));
+const AdminLoginPage = lazyPage(() => import('../features/admin/pages/AdminLoginPage'));
+const BookingManagementPage = lazyPage(() => import('../features/admin/pages/BookingManagementPage'));
+const TourManagementPage = lazyPage(() => import('../features/admin/pages/TourManagementPage'));
+const ContentManagementPage = lazyPage(() => import('../features/admin/pages/ContentManagementPage'));
+const BannerManagementPage = lazyPage(() => import('../features/admin/pages/BannerManagementPage'));
+const ReviewManagementPage = lazyPage(() => import('../features/admin/pages/ReviewManagementPage'));
+const TranslationManagementPage = lazyPage(() => import('../features/admin/pages/TranslationManagementPage'));
 
 const Loading = () => (
     <div className="min-h-screen flex items-center justify-center bg-white">

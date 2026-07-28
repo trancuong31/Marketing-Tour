@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
+import SearchBar from '@/components/ui/SearchBar';
+import BookingManagementTable from '../components/BookingManagementTable';
 import TourOverviewGridItem from '../components/TourOverviewGridItem';
 import TourOverviewListItem from '../components/TourOverviewListItem';
 import {
-    Loader2, Phone, Mail, Calendar, X, CheckCircle2,
-    Eye, Filter, Users, ChevronLeft, ChevronRight,
-    Trash2, Search, ArrowLeft,
+    Loader2, Mail, Calendar, X, CheckCircle2,
+    Filter, Users,
+    ArrowLeft, Trash2,
     LayoutGrid, List, AlertCircle, Clock, XCircle, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -60,7 +62,7 @@ const BookingManagementPage = () => {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
-    const fetchOverview = async () => {
+    const fetchOverview = useCallback(async () => {
         setLoading(true);
         try {
             const res = await adminService.getBookingOverview();
@@ -71,9 +73,9 @@ const BookingManagementPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const fetchBookings = async () => {
+    const fetchBookings = useCallback(async () => {
         setLoading(true);
         try {
             const params = {
@@ -93,7 +95,7 @@ const BookingManagementPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, debouncedSearch, selectedTour, statusFilter]);
 
     useEffect(() => {
         if (view === 'overview') {
@@ -101,7 +103,7 @@ const BookingManagementPage = () => {
         } else {
             fetchBookings();
         }
-    }, [view, statusFilter, selectedTour, debouncedSearch, currentPage]);
+    }, [view, fetchOverview, fetchBookings]);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -206,40 +208,19 @@ const BookingManagementPage = () => {
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                     <div className="flex-1">
                         <div className="w-full max-w-2xl">
-                            <div className="flex items-stretch gap-2">
-                                <div className="relative flex-1 group">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted group-focus-within:text-primary transition-colors" />
-                                    <input
-                                        type="text"
-                                        placeholder={view === 'overview' ? "Tìm tên tour trong tổng quan..." : "Tìm mã đơn, khách hàng, SĐT..."}
-                                        className="w-full pl-12 pr-11 py-3 bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold shadow-sm"
-                                        value={view === 'overview' ? overviewSearchInput : bookingSearchInput}
-                                        onChange={(e) => view === 'overview' ? setOverviewSearchInput(e.target.value) : setBookingSearchInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') handleSearch();
-                                        }}
-                                    />
-                                    {(view === 'overview' ? overviewSearchInput : bookingSearchInput) && (
-                                        <button
-                                            type="button"
-                                            onClick={clearSearch}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-text"
-                                            aria-label="Xóa tìm kiếm"
-                                            title="Xóa tìm kiếm"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleSearch}
-                                    className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition text-sm shadow-sm shrink-0"
-                                >
-                                    <Search className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Tìm kiếm</span>
-                                </button>
-                            </div>
+                            <SearchBar
+                                variant="admin"
+                                value={view === 'overview' ? overviewSearchInput : bookingSearchInput}
+                                onChange={event => view === 'overview'
+                                    ? setOverviewSearchInput(event.target.value)
+                                    : setBookingSearchInput(event.target.value)}
+                                onSearch={handleSearch}
+                                onClear={clearSearch}
+                                placeholder={view === 'overview'
+                                    ? 'Tìm tên tour trong tổng quan...'
+                                    : 'Tìm mã đơn, khách hàng, SĐT...'}
+                                showButton
+                            />
                             <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-medium text-text-muted">
                                 <span>{view === 'overview' ? `Hiển thị ${filteredOverview.length} tour` : `Tổng cộng ${totalItems} đơn hàng`}</span>
                                 {selectedTour && view === 'list' && (
@@ -350,180 +331,24 @@ const BookingManagementPage = () => {
                     </div>
                 ) : (
                     /* ═══ LIST VIEW TABLE ═══ */
-                    <div className="space-y-4">
-                        <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-surface-alt border-b border-border">
-                                            <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px]">Mã đơn / Ngày</th>
-                                            <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px]">Khách hàng</th>
-                                            {!selectedTour && <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px] hidden md:table-cell">Tour</th>}
-                                            <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px] hidden sm:table-cell">Khách</th>
-                                            <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px] hidden lg:table-cell">Tổng tiền</th>
-                                            <th className="px-6 py-4 text-left font-bold text-text-secondary uppercase tracking-wider text-[11px]">Trạng thái</th>
-                                            <th className="px-6 py-4 text-right font-bold text-text-secondary uppercase tracking-wider text-[11px]">Hành động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border">
-                                        {bookings.map(booking => {
-                                            const status = statusConfig[booking.status] || statusConfig.pending;
-                                            const StatusIcon = status.icon;
-                                            const totalPeople = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
-                                            return (
-                                                <tr key={booking.id} className="hover:bg-surface-alt/60 transition-colors">
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-mono font-bold text-primary hover:text-primary-dark transition-colors cursor-pointer" onClick={() => setDetail(booking)}>
-                                                                {booking.booking_code}
-                                                            </span>
-                                                            <span className="text-[10px] text-text-muted mt-1 flex items-center gap-1">
-                                                                <Clock className="w-3 h-3" />
-                                                                {new Date(booking.created_at).toLocaleDateString('vi-VN')}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-semibold text-text">{booking.customer_name}</span>
-                                                            <span className="text-xs text-text-muted">{booking.customer_phone}</span>
-                                                        </div>
-                                                    </td>
-                                                    {!selectedTour && (
-                                                        <td className="px-6 py-4 hidden md:table-cell max-w-[200px]">
-                                                            <p className="text-text font-medium truncate">{booking.Tour?.title || booking.tour_title_snapshot || 'Tour chưa cập nhật tên'}</p>
-                                                            {(booking.departure || booking.departure_date_snapshot) && (
-                                                                <span className="text-[10px] text-primary bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10 mt-1 inline-block">
-                                                                    Khởi hành: {new Date(booking.departure?.departure_date || booking.departure_date_snapshot).toLocaleDateString('vi-VN')}
-                                                                </span>
-                                                            )}
-                                                        </td>
-                                                    )}
-                                                    <td className="px-6 py-4 hidden sm:table-cell">
-                                                        <div className="flex items-center gap-2 text-text-secondary">
-                                                            <Users className="w-4 h-4 text-primary/60" />
-                                                            <span className="font-medium">{totalPeople}</span>
-                                                        </div>
-                                                        <div className="text-[10px] text-text-muted flex gap-1 mt-1">
-                                                            <span>{booking.adult_qty}NL</span>
-                                                            {booking.child_qty > 0 && <span>• {booking.child_qty}TE</span>}
-                                                            {booking.infant_qty > 0 && <span>• {booking.infant_qty}EB</span>}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden lg:table-cell whitespace-nowrap">
-                                                        <span className="font-bold text-primary text-base">{formatPrice(booking.total_price)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border ${status.className}`}>
-                                                            <StatusIcon className="w-3.5 h-3.5" />
-                                                            <span className="text-[11px] font-bold uppercase tracking-tighter">{status.label}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                        <div className="flex h-9 items-center justify-end">
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    onClick={() => setDetail(booking)}
-                                                                    className="p-2 bg-white hover:bg-surface-alt border border-border rounded-lg transition-all shadow-sm"
-                                                                    title="Xem chi tiết"
-                                                                >
-                                                                    <Eye className="w-4.5 h-4.5 text-text-secondary" />
-                                                                </button>
-                                                                {booking.status === 'pending' && (
-                                                                    <button
-                                                                        onClick={() => handleUpdateStatus(booking.id, 'approved')}
-                                                                        disabled={updating === booking.id}
-                                                                        className="p-2 bg-success text-white hover:bg-success-dark border border-success/20 rounded-lg transition-all shadow-sm disabled:opacity-70"
-                                                                        title="Duyệt"
-                                                                    >
-                                                                        {updating === booking.id
-                                                                            ? <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                                                                            : <CheckCircle2 className="w-4.5 h-4.5" />
-                                                                        }
-                                                                    </button>
-                                                                )}
-                                                                {booking.status === 'cancelled' && (
-                                                                    <button
-                                                                        onClick={() => handleDeleteBooking(booking.id)}
-                                                                        className="p-2 bg-error text-white hover:bg-error-dark border border-error/20 rounded-lg transition-all shadow-sm"
-                                                                        title="Xóa"
-                                                                    >
-                                                                        <Trash2 className="w-4.5 h-4.5" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {bookings.length === 0 && (
-                                <div className="text-center py-20 flex flex-col items-center justify-center gap-3">
-                                    <div className="w-16 h-16 bg-surface-alt rounded-full flex items-center justify-center">
-                                        <Search className="w-8 h-8 text-text-muted" />
-                                    </div>
-                                    <p className="text-text-muted font-medium">Không tìm thấy đơn hàng nào phù hợp</p>
-                                    <button 
-                                        onClick={() => {
-                                            setStatusFilter('');
-                                            setBookingSearchInput('');
-                                            setDebouncedSearch('');
-                                        }}
-                                        className="text-primary hover:underline text-sm font-semibold"
-                                    >
-                                        Xóa tất cả bộ lọc
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-surface p-4 rounded-2xl border border-border">
-                                <p className="text-xs text-text-muted font-medium order-2 sm:order-1">
-                                    Hiển thị <span className="text-text font-bold">{bookings.length}</span> / <span className="text-text font-bold">{totalItems}</span> đơn hàng
-                                </p>
-                                
-                                <div className="flex items-center gap-1.5 order-1 sm:order-2">
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                        disabled={currentPage === 1}
-                                        className="p-2 rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover disabled:opacity-50 transition-all"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-
-                                    <div className="flex items-center gap-1">
-                                        {getPageNumbers().map(page => (
-                                            <button
-                                                key={page}
-                                                onClick={() => setCurrentPage(page)}
-                                                className={`min-w-[40px] h-10 rounded-lg text-sm font-bold border transition-all ${
-                                                    page === currentPage
-                                                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/25'
-                                                        : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
-                                                }`}
-                                            >
-                                                {page}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className="p-2 rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover disabled:opacity-50 transition-all"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <BookingManagementTable
+                        bookings={bookings}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        selectedTour={selectedTour}
+                        updating={updating}
+                        getPageNumbers={getPageNumbers}
+                        onPageChange={setCurrentPage}
+                        onShowDetail={setDetail}
+                        onApprove={id => handleUpdateStatus(id, 'approved')}
+                        onDelete={handleDeleteBooking}
+                        onClearFilters={() => {
+                            setStatusFilter('');
+                            setBookingSearchInput('');
+                            setDebouncedSearch('');
+                        }}
+                    />
                 )}
             </div>
 

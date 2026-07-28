@@ -11,7 +11,6 @@ const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
-const { translateTexts } = require('../services/translationService');
 const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
 const { getNotificationCopy } = require('../utils/notificationMessages');
 const { normalizeLanguage } = require('../utils/language');
@@ -163,17 +162,6 @@ const validateUpdateDepartures = (submittedDepartures, existingDepartures) => {
 };
 
 const AUTO_TRANSLATION_LANGUAGES = ['en', 'zh'];
-const TOUR_TRANSLATABLE_FIELDS = [
-    'title',
-    'summary',
-    'highlights',
-    'price_includes',
-    'price_excludes',
-    'terms_and_notes',
-    'cancellation_policy',
-];
-
-const hasText = (value) => typeof value === 'string' && value.trim().length > 0;
 
 const normalizeTranslationList = (translations) => {
     const parsedTranslations = Array.isArray(translations) ? translations : parseJsonField(translations);
@@ -183,84 +171,32 @@ const normalizeTranslationList = (translations) => {
         .filter(item => AUTO_TRANSLATION_LANGUAGES.includes(item.language));
 };
 
-const buildTourTranslationSource = ({
-    title,
-    summary,
-    highlights,
-    price_includes,
-    price_excludes,
-    terms_and_notes,
-    cancellation_policy,
-}) => ({
-    title,
-    summary,
-    highlights,
-    price_includes,
-    price_excludes,
-    terms_and_notes,
-    cancellation_policy,
-});
+const prepareTourTranslations = ({ translations, slug }) => (
+    normalizeTranslationList(translations).map(item => ({
+        language: item.language,
+        title: item.title || '',
+        slug: item.slug || slugify(item.title || '', { lower: true, strict: true }) || slug,
+        summary: item.summary || null,
+        highlights: item.highlights || null,
+        price_includes: item.price_includes || null,
+        price_excludes: item.price_excludes || null,
+        terms_and_notes: item.terms_and_notes || null,
+        cancellation_policy: item.cancellation_policy || null,
+    }))
+);
 
-const mergeTranslatedFields = (source, existingTranslation, translatedFields) => {
-    const merged = { ...existingTranslation };
-
-    Object.keys(source).forEach((field) => {
-        if (!hasText(merged[field])) {
-            merged[field] = translatedFields[field] || source[field] || '';
-        }
-    });
-
-    return merged;
-};
-
-const ensureTourTranslations = async ({ translations, source, slug }) => {
-    const existingTranslations = normalizeTranslationList(translations);
-
-    return Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
-        const existing = existingTranslations.find(item => item.language === language) || { language };
-        const missingFields = Object.fromEntries(
-            TOUR_TRANSLATABLE_FIELDS
-                .filter(field => hasText(source[field]) && !hasText(existing[field]))
-                .map(field => [field, source[field]]),
-        );
-
-        const translatedFields = Object.keys(missingFields).length > 0
-            ? await translateTexts({ texts: missingFields, targetLang: language })
-            : {};
-
-        return {
-            ...mergeTranslatedFields(source, existing, translatedFields),
-            language,
-            slug: existing.slug || slug,
-        };
-    }));
-};
-
-const ensureItineraryTranslations = async (itinerary) => {
+const prepareItineraryTranslations = (itinerary) => {
     const existingTranslations = normalizeTranslationList(itinerary.translations);
 
-    const translations = await Promise.all(AUTO_TRANSLATION_LANGUAGES.map(async (language) => {
+    const translations = AUTO_TRANSLATION_LANGUAGES.map((language) => {
         const existing = existingTranslations.find(item => item.language === language) || { language };
-        const missingFields = {};
-
-        if (hasText(itinerary.title) && !hasText(existing.title)) {
-            missingFields.title = itinerary.title;
-        }
-
-        if (hasText(itinerary.content) && !hasText(existing.content)) {
-            missingFields.content = itinerary.content;
-        }
-
-        const translatedFields = Object.keys(missingFields).length > 0
-            ? await translateTexts({ texts: missingFields, targetLang: language })
-            : {};
 
         return {
             language,
-            title: existing.title || translatedFields.title || itinerary.title || '',
-            content: existing.content || translatedFields.content || itinerary.content || '',
+            title: existing.title || '',
+            content: existing.content || '',
         };
-    }));
+    });
 
     return {
         ...itinerary,
@@ -268,8 +204,8 @@ const ensureItineraryTranslations = async (itinerary) => {
     };
 };
 
-const ensureTranslatedItineraries = (itineraries) => (
-    Promise.all(parseJsonField(itineraries).map(ensureItineraryTranslations))
+const prepareTranslatedItineraries = (itineraries) => (
+    parseJsonField(itineraries).map(prepareItineraryTranslations)
 );
 
 const getTranslatedTourTitle = async (tour, language) => {
@@ -384,20 +320,11 @@ const createTour = catchAsync(async (req, res, next) => {
     const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
     const parsedDepartures = parseJsonField(departures);
     validateCreateDepartures(parsedDepartures);
-    const translatedTourContent = await ensureTourTranslations({
+    const translatedTourContent = prepareTourTranslations({
         translations,
-        source: buildTourTranslationSource({
-            title,
-            summary,
-            highlights,
-            price_includes,
-            price_excludes,
-            terms_and_notes,
-            cancellation_policy,
-        }),
         slug: finalSlug,
     });
-    const translatedItineraries = await ensureTranslatedItineraries(itineraries);
+    const translatedItineraries = prepareTranslatedItineraries(itineraries);
 
     const result = await sequelize.transaction(async (t) => {
         // 1. Tạo tour chính
@@ -444,8 +371,8 @@ const createTour = catchAsync(async (req, res, next) => {
                         item.translations.map(tr => ({
                             itinerary_id: iti.id,
                             language: tr.language,
-                            title: tr.title || item.title,
-                            content: tr.content || item.content,
+                            title: tr.title || '',
+                            content: tr.content || '',
                         })),
                         { transaction: t }
                     );
@@ -498,7 +425,7 @@ const createTour = catchAsync(async (req, res, next) => {
                 translatedTourContent.map((item) => ({
                     tour_id: tour.id,
                     language: item.language,
-                    title: item.title || title,
+                    title: item.title || '',
                     slug: item.slug || finalSlug,
                     summary: item.summary || null,
                     highlights: item.highlights || null,
@@ -571,21 +498,14 @@ const updateTour = catchAsync(async (req, res, next) => {
         validateUpdateDepartures(parsedDeparturesForUpdate, existingDeparturesForUpdate);
     }
 
-    const translatedTourContent = await ensureTourTranslations({
-        translations,
-        source: buildTourTranslationSource({
-            title: title || tour.title,
-            summary: summary !== undefined ? summary : tour.summary,
-            highlights: highlights !== undefined ? highlights : tour.highlights,
-            price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
-            price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
-            terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
-            cancellation_policy: cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
-        }),
-        slug: newSlug,
-    });
+    const translatedTourContent = translations !== undefined
+        ? prepareTourTranslations({
+            translations,
+            slug: newSlug,
+        })
+        : null;
     const translatedItineraries = itineraries !== undefined
-        ? await ensureTranslatedItineraries(itineraries)
+        ? prepareTranslatedItineraries(itineraries)
         : null;
 
     await sequelize.transaction(async (t) => {
@@ -640,8 +560,8 @@ const updateTour = catchAsync(async (req, res, next) => {
                             item.translations.map(tr => ({
                                 itinerary_id: iti.id,
                                 language: tr.language,
-                                title: tr.title || item.title,
-                                content: tr.content || item.content,
+                                title: tr.title || '',
+                                content: tr.content || '',
                             })),
                             { transaction: t }
                         );
@@ -721,23 +641,25 @@ const updateTour = catchAsync(async (req, res, next) => {
             }
         }
 
-        await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
-        if (translatedTourContent.length > 0) {
-            await TourTranslation.bulkCreate(
-                translatedTourContent.map((item) => ({
-                    tour_id: id,
-                    language: item.language,
-                    title: item.title,
-                    slug: item.slug || newSlug,
-                    summary: item.summary || null,
-                    highlights: item.highlights || null,
-                    price_includes: item.price_includes || null,
-                    price_excludes: item.price_excludes || null,
-                    terms_and_notes: item.terms_and_notes || null,
-                    cancellation_policy: item.cancellation_policy || null,
-                })),
-                { transaction: t }
-            );
+        if (translations !== undefined) {
+            await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
+            if (translatedTourContent.length > 0) {
+                await TourTranslation.bulkCreate(
+                    translatedTourContent.map((item) => ({
+                        tour_id: id,
+                        language: item.language,
+                        title: item.title,
+                        slug: item.slug || newSlug,
+                        summary: item.summary || null,
+                        highlights: item.highlights || null,
+                        price_includes: item.price_includes || null,
+                        price_excludes: item.price_excludes || null,
+                        terms_and_notes: item.terms_and_notes || null,
+                        cancellation_policy: item.cancellation_policy || null,
+                    })),
+                    { transaction: t }
+                );
+            }
         }
     });
 
@@ -1274,8 +1196,6 @@ const getReviewStats = catchAsync(async (req, res) => {
 // GUIDE MANAGEMENT
 // ══════════════════════════════════════
 
-const GUIDE_TRANSLATION_LANGUAGES = ['en', 'zh'];
-
 const upsertGuideTranslation = async ({ guide, language, title, slug, content, transaction }) => {
     await GuideTranslation.upsert({
         guide_id: guide.id,
@@ -1286,7 +1206,18 @@ const upsertGuideTranslation = async ({ guide, language, title, slug, content, t
     }, { transaction });
 };
 
-const syncGuideTranslations = async ({ guide, title, slug, content, transaction }) => {
+const prepareGuideTranslations = ({ translations, baseSlug }) => (
+    normalizeTranslationList(translations).map(item => ({
+        language: item.language,
+        title: (item.title || '').trim(),
+        slug: item.slug || (item.title
+            ? slugify(item.title, { lower: true, strict: true })
+            : `${baseSlug}-${item.language}`),
+        content: item.content || '',
+    })).filter(item => item.title && item.content)
+);
+
+const syncGuideTranslations = async ({ guide, title, slug, content, translations = [], transaction }) => {
     await upsertGuideTranslation({
         guide,
         language: 'vi',
@@ -1296,29 +1227,39 @@ const syncGuideTranslations = async ({ guide, title, slug, content, transaction 
         transaction,
     });
 
-    await Promise.all(GUIDE_TRANSLATION_LANGUAGES.map(async (language) => {
-        const translated = await translateTexts({
-            targetLang: language,
-            texts: {
-                title,
-                content,
-            },
-        });
-        const translatedTitle = translated.title || title;
+    const translatedGuides = prepareGuideTranslations({ translations, baseSlug: slug });
 
-        await upsertGuideTranslation({
-            guide,
-            language,
-            title: translatedTitle,
-            slug: slugify(translatedTitle, { lower: true, strict: true }) || slug,
-            content: translated.content || content,
-            transaction,
-        });
-    }));
+    if (translatedGuides.length > 0) {
+        await GuideTranslation.bulkCreate(
+            translatedGuides.map(item => ({
+                guide_id: guide.id,
+                language: item.language,
+                title: item.title,
+                slug: item.slug,
+                content: item.content,
+            })),
+            {
+                transaction,
+                updateOnDuplicate: ['title', 'slug', 'content'],
+            },
+        );
+    }
 };
 
+const FOOTER_GUIDE_SLUGS = new Set([
+    've-chung-toi',
+    'blog-du-lich',
+    'dieu-khoan-su-dung',
+    'cau-hoi-thuong-gap',
+    'chinh-sach-bao-mat',
+    'huong-dan-thanh-toan',
+]);
+
 const getAllGuides = catchAsync(async (req, res) => {
-    const guides = await Guide.findAll({ order: [['updated_at', 'DESC']] });
+    const guides = await Guide.findAll({
+        include: [{ model: GuideTranslation, as: 'translations' }],
+        order: [['updated_at', 'DESC']],
+    });
 
     res.status(200).json({
         status: 'success',
@@ -1328,7 +1269,7 @@ const getAllGuides = catchAsync(async (req, res) => {
 });
 
 const createGuide = catchAsync(async (req, res) => {
-    const { title, content, is_active } = req.body;
+    const { title, content, is_active, translations } = req.body;
 
     const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
     const existingSlug = await Guide.findOne({ where: { slug } });
@@ -1347,6 +1288,7 @@ const createGuide = catchAsync(async (req, res) => {
             title,
             slug: finalSlug,
             content,
+            translations,
             transaction,
         });
 
@@ -1368,10 +1310,10 @@ const updateGuide = catchAsync(async (req, res, next) => {
         return next(new AppError('Không tìm thấy bài hướng dẫn', HTTP_CODES.NOT_FOUND));
     }
 
-    const { title, content, is_active } = req.body;
+    const { title, content, is_active, translations } = req.body;
 
     let newSlug = guide.slug;
-    if (title && title !== guide.title) {
+    if (title && title !== guide.title && !FOOTER_GUIDE_SLUGS.has(guide.slug)) {
         newSlug = slugify(title, { lower: true, strict: true, locale: 'vi' });
         const existingSlug = await Guide.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
         if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
@@ -1386,6 +1328,7 @@ const updateGuide = catchAsync(async (req, res, next) => {
             slug: newSlug,
             content: nextContent,
             is_active: is_active !== undefined ? is_active : guide.is_active,
+            updated_at: new Date(),
         }, { transaction });
 
         await syncGuideTranslations({
@@ -1393,6 +1336,7 @@ const updateGuide = catchAsync(async (req, res, next) => {
             title: nextTitle,
             slug: newSlug,
             content: nextContent,
+            translations,
             transaction,
         });
     });
@@ -1401,6 +1345,19 @@ const updateGuide = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Cập nhật bài hướng dẫn thành công',
         data: guide,
+    });
+});
+
+const uploadGuideImage = catchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return next(new AppError('Vui lòng chọn ảnh bài viết', HTTP_CODES.BAD_REQUEST));
+    }
+
+    res.status(201).json({
+        status: 'success',
+        data: {
+            image_url: normalizePublicUploadUrl(`/uploads/guides/${req.file.filename}`),
+        },
     });
 });
 
@@ -1566,6 +1523,7 @@ module.exports = {
     getAllGuides,
     createGuide,
     updateGuide,
+    uploadGuideImage,
     deleteTourImage,
     getAllBanners,
     createBanner,

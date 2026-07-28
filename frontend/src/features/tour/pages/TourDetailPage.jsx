@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -8,7 +8,9 @@ import ClientLayout from '@/components/layout/ClientLayout';
 import BookingForm from '@/features/tour/components/BookingForm';
 import VoteForm from '@/features/tour/components/VoteForm';
 import TourCard from '@/components/tour/TourCard';
+import CarouselSection from '@/components/ui/CarouselSection';
 import { getImageUrl, onImgError } from '@/utils/imageUrl';
+import { getCategoryDisplayName } from '@/utils/tourLabels';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
@@ -60,8 +62,8 @@ const normalizeSearchText = (text = '') => text
     .toString()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd')
+    .replace(/Ä‘/g, 'd')
+    .replace(/Ä/g, 'd')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
@@ -92,8 +94,6 @@ const getDestinationScore = (currentKeywords, candidateText) => currentKeywords.
     return score + (keyword.includes(' ') ? 90 : 45);
 }, 0);
 
-const hasOpenDepartures = (tour) => (tour?.departures || []).length > 0;
-
 const mergeUniqueTours = (groups) => {
     const seen = new Set();
 
@@ -110,37 +110,49 @@ const getRelatedTours = (currentTour, tours) => {
 
     const candidates = tours.filter((tour) => {
         if (!tour || tour.id === currentTour?.id) return false;
-        return tour.slug !== currentTour?.slug && hasOpenDepartures(tour);
+        return tour.slug !== currentTour?.slug && tour.status !== 'hidden' && tour.status !== 'sold_out';
     });
 
     const withDestinationScore = candidates.map((tour) => ({
         tour,
         destinationScore: getDestinationScore(currentKeywords, getTourSearchText(tour)),
+        hasOpenDepartures: (tour.departures || []).length > 0,
     }));
+
+    const byRelevance = (a, b) => (
+        Number(b.hasOpenDepartures) - Number(a.hasOpenDepartures)
+        || b.destinationScore - a.destinationScore
+        || b.tour.id - a.tour.id
+    );
 
     const promotionTours = withDestinationScore
         .filter(({ tour }) => tour.tour_badge === 'promotion')
-        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .sort(byRelevance)
         .map(({ tour }) => tour);
 
     const featuredTours = withDestinationScore
         .filter(({ tour }) => tour.tour_badge === 'featured')
-        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .sort(byRelevance)
         .map(({ tour }) => tour);
 
     const keywordTours = withDestinationScore
         .filter(({ destinationScore }) => destinationScore > 0)
-        .sort((a, b) => b.destinationScore - a.destinationScore || b.tour.id - a.tour.id)
+        .sort(byRelevance)
         .map(({ tour }) => tour);
 
-    const categoryTours = candidates
-        .filter((tour) => currentCategoryId && getTourCategoryId(tour) === currentCategoryId)
-        .sort((a, b) => b.id - a.id);
+    const categoryTours = withDestinationScore
+        .filter(({ tour }) => currentCategoryId && getTourCategoryId(tour) === currentCategoryId)
+        .sort(byRelevance)
+        .map(({ tour }) => tour);
 
-    return mergeUniqueTours([promotionTours, featuredTours, keywordTours, categoryTours]).slice(0, 10);
+    const fallbackTours = withDestinationScore
+        .sort(byRelevance)
+        .map(({ tour }) => tour);
+
+    return mergeUniqueTours([promotionTours, featuredTours, keywordTours, categoryTours, fallbackTours]).slice(0, 5);
 };
 
-/* ═══ MODERN REVIEWS LIST (Facebook/TikTok Style) ═══ */
+/* â•â•â• MODERN REVIEWS LIST (Facebook/TikTok Style) â•â•â• */
 const SubReviewItem = ({ reply, onReply, onDelete }) => {
     const { user } = useAuthStore();
     const [localLikes, setLocalLikes] = useState(reply.likes_count || 0);
@@ -153,18 +165,18 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
             setIsLiked(newIsLiked);
             setLocalLikes(likes_count);
         } catch (err) {
-            toast.error('Có lỗi xảy ra khi like');
+            toast.error('CÃ³ lá»—i xáº£y ra khi like');
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Bạn có chắc muốn xóa phản hồi này?')) return;
+        if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a pháº£n há»“i nÃ y?')) return;
         try {
             await tourService.deleteVote(reply.id);
-            toast.success('Đã xóa phản hồi');
+            toast.success('ÄÃ£ xÃ³a pháº£n há»“i');
             if (onDelete) onDelete();
         } catch (err) {
-            toast.error('Không thể xóa phản hồi');
+            toast.error('KhÃ´ng thá»ƒ xÃ³a pháº£n há»“i');
         }
     };
 
@@ -187,7 +199,7 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                                 <button 
                                     onClick={handleDelete}
                                     className="p-1 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/item:opacity-100"
-                                    title="Xóa phản hồi"
+                                    title="XÃ³a pháº£n há»“i"
                                 >
                                     <Trash2 className="w-3 h-3" />
                                 </button>
@@ -203,13 +215,13 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                         className={`hover:text-primary transition-colors flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                     >
                         <Heart className={`w-3 h-3 ${isLiked ? 'fill-primary' : ''}`} />
-                        Thích {localLikes > 0 && <span>({localLikes})</span>}
+                        ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
                     </button>
                     <button 
                         onClick={onReply}
                         className="hover:text-primary transition-colors"
                     >
-                        Phản hồi
+                        Pháº£n há»“i
                     </button>
                 </div>
             </div>
@@ -245,18 +257,18 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
             setIsLiked(newIsLiked);
             setLocalLikes(likes_count);
         } catch (err) {
-            toast.error('Có lỗi xảy ra khi like');
+            toast.error('CÃ³ lá»—i xáº£y ra khi like');
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Bạn có chắc muốn xóa đánh giá này và tất cả phản hồi liên quan?')) return;
+        if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a Ä‘Ã¡nh giÃ¡ nÃ y vÃ  táº¥t cáº£ pháº£n há»“i liÃªn quan?')) return;
         try {
             await tourService.deleteVote(vote.id);
-            toast.success('Đã xóa đánh giá');
+            toast.success('ÄÃ£ xÃ³a Ä‘Ã¡nh giÃ¡');
             if (onDeleteSuccess) onDeleteSuccess();
         } catch (err) {
-            toast.error('Không thể xóa đánh giá');
+            toast.error('KhÃ´ng thá»ƒ xÃ³a Ä‘Ã¡nh giÃ¡');
         }
     };
 
@@ -269,15 +281,15 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
             const formData = new FormData();
             formData.append('comment', replyContent);
             formData.append('parent_id', vote.id);
-            formData.append('rating', 0); // Phản hồi không cần rating
+            formData.append('rating', 0); // Pháº£n há»“i khÃ´ng cáº§n rating
 
             await tourService.createVote(tourId, formData);
-            toast.success('Gửi phản hồi thành công!');
+            toast.success('Gá»­i pháº£n há»“i thÃ nh cÃ´ng!');
             setReplyContent('');
             setShowReplyForm(false);
             if (onReplySuccess) onReplySuccess();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+            toast.error(error.response?.data?.message || 'CÃ³ lá»—i xáº£y ra');
         } finally {
             setIsSubmitting(false);
         }
@@ -310,7 +322,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <button 
                                         onClick={handleDelete}
                                         className="p-1.5 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/root:opacity-100"
-                                        title="Xóa đánh giá"
+                                        title="XÃ³a Ä‘Ã¡nh giÃ¡"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -327,7 +339,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                             ))}
                             {vote.rating >= 4 && (
                                 <span className="ml-2 text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase">
-                                    Hài lòng
+                                    HÃ i lÃ²ng
                                 </span>
                             )}
                         </div>
@@ -337,7 +349,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                 {vote.comment}
                             </p>
                         ) : (
-                            <p className="text-sm text-text-muted italic opacity-70">Khách hàng không để lại bình luận văn bản.</p>
+                            <p className="text-sm text-text-muted italic opacity-70">KhÃ¡ch hÃ ng khÃ´ng Ä‘á»ƒ láº¡i bÃ¬nh luáº­n vÄƒn báº£n.</p>
                         )}
 
                         {/* Images */}
@@ -366,8 +378,8 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                                         <span className="text-[10px] text-white font-bold">A</span>
                                     </div>
-                                    <span className="text-xs font-bold text-primary">Phản hồi của KyNghiTuyetVoi</span>
-                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase">Chính thức</span>
+                                    <span className="text-xs font-bold text-primary">Pháº£n há»“i cá»§a KyNghiTuyetVoi</span>
+                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase">ChÃ­nh thá»©c</span>
                                 </div>
                                 <p className="text-sm text-text-secondary italic pl-8">
                                     &quot;{vote.admin_reply}&quot;
@@ -383,16 +395,16 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                             className={`hover:text-primary transition-colors cursor-pointer flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                         >
                             <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-primary' : ''}`} />
-                            Thích {localLikes > 0 && <span>({localLikes})</span>}
+                            ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
                         </button>
                         <button 
                             className="hover:text-primary transition-colors cursor-pointer"
                             onClick={() => setShowReplyForm(!showReplyForm)}
                         >
-                            Phản hồi {vote.replies?.length > 0 && <span>({vote.replies.length})</span>}
+                            Pháº£n há»“i {vote.replies?.length > 0 && <span>({vote.replies.length})</span>}
                         </button>
-                        <span className="text-[10px] font-medium">•</span>
-                        <span className="text-[10px] font-medium opacity-60">KyNghiTuyetVoi đã ghi nhận</span>
+                        <span className="text-[10px] font-medium">â€¢</span>
+                        <span className="text-[10px] font-medium opacity-60">KyNghiTuyetVoi Ä‘Ã£ ghi nháº­n</span>
                     </div>
 
                     {/* Community Replies List */}
@@ -420,7 +432,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <textarea
                                         value={replyContent}
                                         onChange={(e) => setReplyContent(e.target.value)}
-                                        placeholder="Viết phản hồi của bạn..."
+                                        placeholder="Viáº¿t pháº£n há»“i cá»§a báº¡n..."
                                         className="w-full bg-surface-alt rounded-lg p-3 text-xs border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none h-20"
                                         autoFocus
                                     />
@@ -430,13 +442,13 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                             onClick={() => setShowReplyForm(false)}
                                             className="px-3 py-1.5 text-[10px] font-bold text-text-muted hover:text-text transition"
                                         >
-                                            Hủy
+                                            Há»§y
                                         </button>
                                         <button 
                                             disabled={isSubmitting || !replyContent.trim()}
                                             className="px-4 py-1.5 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
                                         >
-                                            {isSubmitting ? 'Đang gửi...' : 'Gửi'}
+                                            {isSubmitting ? 'Äang gá»­i...' : 'Gá»­i'}
                                         </button>
                                     </div>
                                 </div>
@@ -449,7 +461,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
     );
 };
 
-/* ═══ IMAGE GALLERY MODAL ═══ */
+/* â•â•â• IMAGE GALLERY MODAL â•â•â• */
 const GalleryModal = ({ images, startIndex, onClose }) => {
     const [current, setCurrent] = useState(startIndex || 0);
 
@@ -511,7 +523,7 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
     );
 };
 
-/* ═══ ITINERARY ACCORDION ═══ */
+/* â•â•â• ITINERARY ACCORDION â•â•â• */
 const ItineraryAccordion = ({ itineraries, t }) => {
     const [openDay, setOpenDay] = useState(null);
 
@@ -519,7 +531,7 @@ const ItineraryAccordion = ({ itineraries, t }) => {
 
     return (
         <div className="space-y-2">
-            <h2 className="text-xl font-bold text-text mb-4">{t('tour.detail.itinerary', 'Lịch trình chi tiết')}</h2>
+            <h2 className="text-xl font-bold text-text mb-4">{t('tour.detail.itinerary', 'Lá»‹ch trÃ¬nh chi tiáº¿t')}</h2>
             {itineraries.map((item, idx) => (
                 <div key={item.id || idx} className="rounded-lg border border-border overflow-hidden">
                     <button
@@ -551,186 +563,93 @@ const ItineraryAccordion = ({ itineraries, t }) => {
     );
 };
 
+/* â•â•â• FEATURED REVIEWS CAROUSEL (Global 5-star Reviews) â•â•â• */
+const FeaturedReviewCard = ({ vote, t }) => {
+    const tourSlug = vote.Tour?.slug;
+    const CardWrapper = tourSlug ? Link : 'div';
+    const wrapperProps = tourSlug ? { to: `/tours/${tourSlug}` } : {};
+
+    return (
+        <CardWrapper
+            {...wrapperProps}
+            className="block min-h-[250px] p-6 bg-white rounded-2xl border border-border/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group"
+        >
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
+                    <span className="text-sm font-bold text-primary">
+                        {vote.customer_name?.charAt(0)?.toUpperCase() || 'K'}
+                    </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-bold text-text truncate">{vote.customer_name || t('tour.detail.customer', 'Khách hàng')}</p>
+                        {vote.is_mock && (
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase transition-opacity group-hover:opacity-100">{t('tour.detail.suggested', 'Gợi ý')}</span>
+                        )}
+                    </div>
+                    <div className="flex gap-0.5 mt-0.5">
+                        {[...Array(5)].map((_, index) => (
+                            <Star key={index} className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="relative">
+                <span className="absolute -top-3 -left-2 text-4xl text-primary/10 font-serif leading-none">“</span>
+                <p className="text-sm text-text-secondary leading-relaxed italic line-clamp-3 relative z-10 px-1">
+                    {vote.comment || t('tour.detail.defaultReviewComment')}
+                </p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border/50">
+                <p className="text-[11px] text-primary font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                    <Tag className="w-3 h-3" />
+                    {vote.Tour?.title || t('tour.detail.defaultReviewTour')}
+                </p>
+            </div>
+        </CardWrapper>
+    );
+};
+
 /* ═══ FEATURED REVIEWS CAROUSEL (Global 5-star Reviews) ═══ */
 const FeaturedReviewsCarousel = ({ votes }) => {
     const { t } = useTranslation();
-    const scrollRef = useRef(null);
-    const animRef = useRef(null);
-
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (!el || votes.length === 0) return;
-        let pos = 0;
-        const speed = 0.6; // Slightly faster for global ones
-        const animate = () => {
-            pos += speed;
-            const totalW = votes.length * 340;
-            if (pos >= totalW) pos = 0;
-            el.style.transform = `translateX(-${pos}px)`;
-            animRef.current = requestAnimationFrame(animate);
-        };
-        animRef.current = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animRef.current);
-    }, [votes]);
-
-    if (votes.length === 0) return null;
-
-    const items = [...votes, ...votes, ...votes];
 
     return (
-        <div className="py-12 bg-surface-alt/40 border-y border-border overflow-hidden">
-            <div className="max-w-6xl mx-auto px-4 mb-8">
-                <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-6 bg-primary rounded-full" />
-                    <h2 className="text-lg font-bold text-text uppercase tracking-tight sm:text-2xl">
-                        {t('tour.detail.customerExperience', 'Trải nghiệm thực tế từ khách hàng')}
-                    </h2>
-                </div>
-                <p className="text-sm text-text-muted mt-1">{t('tour.detail.customerExperienceDesc', 'Những chia sẻ chân thực từ khách hàng trên toàn hệ thống')}</p>
-            </div>
-            
-            <div className="relative">
-                <div ref={scrollRef} className="flex gap-5 will-change-transform" style={{ width: 'max-content' }}>
-                    {items.map((vote, idx) => {
-                        const tourSlug = vote.Tour?.slug;
-                        const CardWrapper = tourSlug ? Link : 'div';
-                        const wrapperProps = tourSlug ? { to: `/tours/${tourSlug}` } : {};
-
-                        return (
-                        <CardWrapper
-                            key={`${vote.id}-${idx}`}
-                            {...wrapperProps}
-                            className="w-[320px] shrink-0 p-6 bg-white rounded-2xl border border-border/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all duration-300 group"
-                        >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
-                                    <span className="text-sm font-bold text-primary">
-                                        {vote.customer_name?.charAt(0)?.toUpperCase() || 'K'}
-                                    </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm font-bold text-text truncate">{vote.customer_name || t('tour.detail.customer', 'Khách hàng')}</p>
-                                        {vote.is_mock && (
-                                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase transition-opacity group-hover:opacity-100">{t('tour.detail.suggested', 'Gợi ý')}</span>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-0.5 mt-0.5">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="relative">
-                                <span className="absolute -top-3 -left-2 text-4xl text-primary/10 font-serif leading-none">“</span>
-                                <p className="text-sm text-text-secondary leading-relaxed italic line-clamp-3 relative z-10 px-1">
-                                    {vote.comment || t('tour.detail.defaultReviewComment')}
-                                </p>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-border/50">
-                                <p className="text-[11px] text-primary font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                                    <Tag className="w-3 h-3" />
-                                    {vote.Tour?.title || t('tour.detail.defaultReviewTour')}
-                                </p>
-                            </div>
-                        </CardWrapper>
-                        );
-                    })}
-                </div>
-            </div>
-        </div>
+        <CarouselSection
+            items={votes}
+            title={t('tour.detail.customerExperience', 'Trải nghiệm thực tế từ khách hàng')}
+            description={t('tour.detail.customerExperienceDesc', 'Những chia sẻ chân thực từ khách hàng trên toàn hệ thống')}
+            previousLabel={t('tour.detail.prevFeaturedReviews')}
+            nextLabel={t('tour.detail.nextFeaturedReviews')}
+            getDotLabel={(index) => t('tour.detail.goToFeaturedReview', { index: index + 1 })}
+            getItemKey={(vote) => vote.id}
+            sectionClassName="py-12 bg-surface-alt/40 border-y border-border"
+            titleClassName="text-lg sm:text-2xl"
+            renderItem={(vote) => <FeaturedReviewCard vote={vote} t={t} />}
+        />
     );
 };
 
 /* ═══ RELATED TOURS CAROUSEL ═══ */
 const RelatedToursCarousel = ({ tours }) => {
     const { t } = useTranslation();
-    const scrollRef = useRef(null);
-
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (!el || tours.length <= 1) return undefined;
-
-        const timer = setInterval(() => {
-            const nextLeft = el.scrollLeft + 320;
-            const reachedEnd = nextLeft + el.clientWidth >= el.scrollWidth - 8;
-
-            el.scrollTo({
-                left: reachedEnd ? 0 : nextLeft,
-                behavior: 'smooth',
-            });
-        }, 4500);
-
-        return () => clearInterval(timer);
-    }, [tours.length]);
-
-    const scrollBy = (direction) => {
-        scrollRef.current?.scrollBy({
-            left: direction * 320,
-            behavior: 'smooth',
-        });
-    };
-
-    if (tours.length === 0) return null;
 
     return (
-        <section className="py-12 bg-white border-t border-border">
-            <div className="max-w-6xl mx-auto px-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-7">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-6 bg-primary rounded-full" />
-                            <h2 className="text-xl font-bold text-text uppercase tracking-tight">
-                                {t('tour.detail.relatedTours')}
-                            </h2>
-                        </div>
-                        <p className="text-sm text-text-muted mt-1">
-                            {t('tour.detail.relatedToursDesc')}
-                        </p>
-                    </div>
-
-                    {tours.length > 1 && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => scrollBy(-1)}
-                                className="w-10 h-10 rounded-full border border-border bg-white text-text hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
-                                aria-label={t('tour.detail.prevRelatedTours')}
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => scrollBy(1)}
-                                className="w-10 h-10 rounded-full border border-border bg-white text-text hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
-                                aria-label={t('tour.detail.nextRelatedTours')}
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                <div
-                    ref={scrollRef}
-                    className="flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-3"
-                >
-                    {tours.map((tour) => (
-                        <div
-                            key={tour.id}
-                            className="w-[280px] sm:w-[310px] lg:w-[330px] shrink-0 snap-start"
-                        >
-                            <TourCard tour={tour} />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
+        <CarouselSection
+            items={tours}
+            title={t('tour.detail.relatedTours')}
+            description={t('tour.detail.relatedToursDesc')}
+            previousLabel={t('tour.detail.prevRelatedTours')}
+            nextLabel={t('tour.detail.nextRelatedTours')}
+            getDotLabel={(index) => t('tour.detail.goToRelatedTour', { index: index + 1 })}
+            getItemKey={(tour) => tour.id}
+            maxItems={8}
+            renderItem={(tour) => <TourCard tour={tour} compact />}
+        />
     );
 };
 
-/* ═══ MOCK DATA FOR THE CAROUSEL (Show when DB is empty) ═══ */
+/* â•â•â• MOCK DATA FOR THE CAROUSEL (Show when DB is empty) â•â•â• */
 const getMockReviews = (t) => ([
     {
         id: 'm1',
@@ -758,7 +677,7 @@ const getMockReviews = (t) => ([
     },
 ]);
 
-/* ═══ MAIN PAGE ═══ */
+/* â•â•â• MAIN PAGE â•â•â• */
 const TourDetailPage = () => {
     const { t, i18n } = useTranslation();
     const { slug } = useParams();
@@ -796,7 +715,7 @@ const TourDetailPage = () => {
                 const allTours = toursRes.data.data || [];
                 setRelatedTours(getRelatedTours(tourData, allTours));
             } catch (err) {
-                console.error('Lỗi tải dữ liệu:', err);
+                console.error('Lá»—i táº£i dá»¯ liá»‡u:', err);
                 setFeaturedVotes(getMockReviews(t));
                 setRelatedTours([]);
             } finally {
@@ -836,8 +755,8 @@ const TourDetailPage = () => {
         return (
             <ClientLayout>
                 <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-                    <h2 className="text-2xl font-bold text-text mb-2">{t('tour.list.noResults', 'Không tìm thấy tour')}</h2>
-                    <p className="text-text-muted">{t('tour.detail.notFoundDesc', 'Tour này có thể đã ngừng hoặc không tồn tại.')}</p>
+                    <h2 className="text-2xl font-bold text-text mb-2">{t('tour.list.noResults', 'KhÃ´ng tÃ¬m tháº¥y tour')}</h2>
+                    <p className="text-text-muted">{t('tour.detail.notFoundDesc', 'Tour nÃ y cÃ³ thá»ƒ Ä‘Ã£ ngá»«ng hoáº·c khÃ´ng tá»“n táº¡i.')}</p>
                 </div>
             </ClientLayout>
         );
@@ -847,13 +766,14 @@ const TourDetailPage = () => {
     const itineraries = tour.itineraries || [];
     const departures = tour.departures || [];
     const durationText = tour.duration_days && tour.duration_nights
-        ? t('tour.card.durationDaysNights', '{{days}} ngày {{nights}} đêm', { days: tour.duration_days, nights: tour.duration_nights })
-        : tour.duration_days ? t('tour.card.durationDays', '{{days}} ngày', { days: tour.duration_days }) : null;
+        ? t('tour.card.durationDaysNights', '{{days}} ngÃ y {{nights}} Ä‘Ãªm', { days: tour.duration_days, nights: tour.duration_nights })
+        : tour.duration_days ? t('tour.card.durationDays', '{{days}} ngÃ y', { days: tour.duration_days }) : null;
 
-    // Giá thấp nhất từ departures
+    // GiÃ¡ tháº¥p nháº¥t tá»« departures
     const minPrice = departures.length > 0
         ? Math.min(...departures.map(d => parseFloat(d.price_adult)))
         : null;
+    const categoryName = getCategoryDisplayName(tour.Category, t);
 
     return (
         <ClientLayout>
@@ -873,21 +793,21 @@ const TourDetailPage = () => {
                             {minPrice && (
                                 <span className="flex items-center gap-1.5 text-sm">
                                     <Tag className="w-4 h-4 text-primary" />
-                                    {t('tour.card.from', 'Giá từ')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/người')}
+                                    {t('tour.card.from', 'GiÃ¡ tá»«')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/ngÆ°á»i')}
                                 </span>
                             )}
-                            {tour.Category && (
+                            {categoryName && (
                             <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
                                 <Tag className="w-3.5 h-3.5" />
-                                {tour.Category.name}
+                                {categoryName}
                             </span>
                         )} 
                         </div>
-                {/* ═══ BỐ CỤC ẢNH GRID THÔNG MINH ═══ */}
+                {/* â•â•â• Bá» Cá»¤C áº¢NH GRID THÃ”NG MINH â•â•â• */}
                 {(images.length > 0 || tour.thumbnail_url) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px]">
                         
-                        {/* ẢNH CHÍNH (BÊN TRÁI) */}
+                        {/* áº¢NH CHÃNH (BÃŠN TRÃI) */}
                         <div 
                             className={`relative group cursor-pointer h-full ${images.length > 1 ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} rounded-2xl overflow-hidden shadow-sm`}
                             onClick={() => setGallery({ open: true, index: 0 })}
@@ -900,30 +820,30 @@ const TourDetailPage = () => {
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                             
-                            {/* Nhãn giảm giá / Badge (Nếu có) */}
+                            {/* NhÃ£n giáº£m giÃ¡ / Badge (Náº¿u cÃ³) */}
                             {tour.tour_badge === 'promotion' ? (
                                 <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
-                                    {t('tour.card.promotion', 'Tour Ưu Đãi')}
+                                    {t('tour.card.promotion', 'Tour Æ¯u ÄÃ£i')}
                                 </div>
                             ) : tour.tour_badge === 'featured' ? (
                                 <div className="absolute top-4 left-0 bg-primary text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
-                                    {t('tour.card.featured', 'Tour Nổi Bật')}
+                                    {t('tour.card.featured', 'Tour Ná»•i Báº­t')}
                                 </div>
                             ) : null}
 
-                            {/* Nút đếm ảnh nổi */}
+                            {/* NÃºt Ä‘áº¿m áº£nh ná»•i */}
                             {images.length > 0 && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setGallery({ open: true, index: 0 }); }}
                                     className="absolute bottom-4 right-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-sm font-medium rounded-lg flex items-center gap-1.5 hover:bg-black/80 transition"
                                 >
                                     <ZoomIn className="w-4 h-4" />
-                                    {images.length} {t('tour.detail.photos', 'ảnh')}
+                                    {images.length} {t('tour.detail.photos', 'áº£nh')}
                                 </button>
                             )}
                         </div>
 
-                        {/* GRID ẢNH PHỤ (BÊN PHẢI) - Chỉ hiện khi có >1 ảnh, trên Desktop */}
+                        {/* GRID áº¢NH PHá»¤ (BÃŠN PHáº¢I) - Chá»‰ hiá»‡n khi cÃ³ >1 áº£nh, trÃªn Desktop */}
                         {images.length > 1 && (
                             <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full ${
                                 images.length === 2 ? 'grid-cols-1 grid-rows-1' :
@@ -931,10 +851,10 @@ const TourDetailPage = () => {
                                 'grid-cols-2 grid-rows-2'
                             }`}>
                                 {images.slice(1, 5).map((img, i) => {
-                                    // Tính toán lưới khi có số lẻ ảnh phụ
+                                    // TÃ­nh toÃ¡n lÆ°á»›i khi cÃ³ sá»‘ láº» áº£nh phá»¥
                                     let itemClass = '';
                                     if (images.length === 4 && i === 2) {
-                                        // 4 ảnh tổng cộng: 1 chính + 3 phụ => Ảnh thứ 3 nằm full hàng dưới
+                                        // 4 áº£nh tá»•ng cá»™ng: 1 chÃ­nh + 3 phá»¥ => áº¢nh thá»© 3 náº±m full hÃ ng dÆ°á»›i
                                         itemClass = 'col-span-2';
                                     }
 
@@ -959,20 +879,20 @@ const TourDetailPage = () => {
                     </div>
                 )}
 
-                {/* ═══ THÔNG TIN TOUR ═══ */}
+                {/* â•â•â• THÃ”NG TIN TOUR â•â•â• */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Cột trái */}
+                    {/* Cá»™t trÃ¡i */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Điểm nổi bật */}
+                        {/* Äiá»ƒm ná»•i báº­t */}
                         {tour.highlights && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
-                                <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Điểm nổi bật')}</h3>
+                                <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Äiá»ƒm ná»•i báº­t')}</h3>
                                 <div className="space-y-3">
                                     {tour.highlights
                                         .replace(/<[^>]*>?/gm, '') 
                                         .replace(/&nbsp;/g, ' ') 
                                         .split(/\.\s+|\.\n|\.$/)
-                                        .map(item => item.trim().replace(/^[-*•]\s*/, '')) 
+                                        .map(item => item.trim().replace(/^[-*â€¢]\s*/, '')) 
                                         .filter(item => item.length > 0)
                                         .map((item, idx) => (
                                             <div key={idx} className="flex items-start gap-3">
@@ -984,17 +904,17 @@ const TourDetailPage = () => {
                             </div>
                         )}
 
-                        {/* Lịch trình chi tiết */}
+                        {/* Lá»‹ch trÃ¬nh chi tiáº¿t */}
                         {itineraries.length > 0 && <ItineraryAccordion itineraries={itineraries} t={t} />}
 
-                        {/* Giá bao gồm / không bao gồm */}
+                        {/* GiÃ¡ bao gá»“m / khÃ´ng bao gá»“m */}
                         {(tour.price_includes || tour.price_excludes) && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {tour.price_includes && (
                                     <div className="rounded-lg border border-success/20 bg-success/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <CheckCircle className="w-5 h-5 text-success" />
-                                            <h3 className="text-sm font-bold text-success">{t('tour.detail.priceIncludes', 'Giá bao gồm')}</h3>
+                                            <h3 className="text-sm font-bold text-success">{t('tour.detail.priceIncludes', 'GiÃ¡ bao gá»“m')}</h3>
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
@@ -1006,7 +926,7 @@ const TourDetailPage = () => {
                                     <div className="rounded-lg border border-error/20 bg-error/5 p-4 overflow-hidden">
                                         <div className="flex items-center gap-2 mb-3">
                                             <XCircle className="w-5 h-5 text-error" />
-                                            <h3 className="text-sm font-bold text-error">{t('tour.detail.priceExcludes', 'Giá không bao gồm')}</h3>
+                                            <h3 className="text-sm font-bold text-error">{t('tour.detail.priceExcludes', 'GiÃ¡ khÃ´ng bao gá»“m')}</h3>
                                         </div>
                                         <div
                                             className="prose-content break-words text-sm text-text-secondary"
@@ -1017,12 +937,12 @@ const TourDetailPage = () => {
                             </div>
                         )}
 
-                        {/* Điều khoản & lưu ý */}
+                        {/* Äiá»u khoáº£n & lÆ°u Ã½ */}
                         {tour.terms_and_notes && (
                             <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-3">
                                     <AlertTriangle className="w-5 h-5 text-warning" />
-                                    <h3 className="text-lg font-bold text-warning">{t('tour.detail.termsNotes', 'Điều khoản & Lưu ý')}</h3>
+                                    <h3 className="text-lg font-bold text-warning">{t('tour.detail.termsNotes', 'Äiá»u khoáº£n & LÆ°u Ã½')}</h3>
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"
@@ -1031,12 +951,12 @@ const TourDetailPage = () => {
                             </div>
                         )}
 
-                        {/* Quy định hoàn hủy */}
+                        {/* Quy Ä‘á»‹nh hoÃ n há»§y */}
                         {tour.cancellation_policy && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
                                 <div className="flex items-center gap-2 mb-3">
                                     <Ban className="w-5 h-5 text-primary" />
-                                    <h3 className="text-lg font-bold text-primary">{t('tour.detail.cancellationPolicy', 'Quy định hoàn hủy')}</h3>
+                                    <h3 className="text-lg font-bold text-primary">{t('tour.detail.cancellationPolicy', 'Quy Ä‘á»‹nh hoÃ n há»§y')}</h3>
                                 </div>
                                 <div
                                     className="prose-content break-words text-sm text-text-secondary"
@@ -1051,7 +971,7 @@ const TourDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* Cột phải: Form đặt tour */}
+                    {/* Cá»™t pháº£i: Form Ä‘áº·t tour */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-20">
                             <BookingForm tour={tour} />
@@ -1059,7 +979,9 @@ const TourDetailPage = () => {
                     </div>
                 </div>
 
-                {/* ═══ ĐÁNH GIÁ CỘNG ĐỒNG ═══ */}
+                <RelatedToursCarousel tours={relatedTours} />
+
+                {/* â•â•â• ÄÃNH GIÃ Cá»˜NG Äá»’NG â•â•â• */}
                 <div className="mt-16 pt-10 border-t border-border">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
@@ -1093,9 +1015,7 @@ const TourDetailPage = () => {
                 </div>
             </div>
 
-            <RelatedToursCarousel tours={relatedTours} />
-
-            {/* ═══ ĐÁNH GIÁ ĐẶC SẮC (GLOBAL 5-STAR) ═══ */}
+            {/* â•â•â• ÄÃNH GIÃ Äáº¶C Sáº®C (GLOBAL 5-STAR) â•â•â• */}
             <FeaturedReviewsCarousel votes={featuredVotes} />
 
             {/* Gallery Modal */}
@@ -1111,3 +1031,4 @@ const TourDetailPage = () => {
 };
 
 export default TourDetailPage;
+

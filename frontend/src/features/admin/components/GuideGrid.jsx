@@ -30,7 +30,7 @@ const GuideGrid = ({ guides = [], onEdit, onCreate }) => {
                         <BookOpen className="w-8 h-8 opacity-40" />
                     </div>
                     <p className="font-medium text-sm">Chưa có bài viết nào</p>
-                    <p className="text-xs mt-1">Bấm "Thêm bài viết" để tạo bài mới</p>
+                    <p className="text-xs mt-1">Bấm &quot;Thêm bài viết&quot; để tạo bài mới</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

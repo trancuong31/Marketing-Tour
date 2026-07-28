@@ -1,13 +1,88 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Wallet, CalendarDays } from 'lucide-react';
+import { Search, MapPin, Wallet, CalendarDays, X, Loader2 } from 'lucide-react';
 import CustomSelect from './CustomSelect/CustomSelect';
 import DepartureCalendar from './DepartureCalendar';
 import { useTranslation } from 'react-i18next';
 
-const SearchBar = ({ departurePriceMap = {} }) => {
+const AdminSearchBar = ({
+  t,
+  value,
+  onChange,
+  onSearch,
+  onClear,
+  placeholder,
+  showButton = false,
+  loading = false,
+  disabled = false,
+  className = '',
+  ...inputProps
+}) => {
+  const clearLabel = t('common.clearSearch', 'Clear search');
+
+  const handleKeyDown = (event) => {
+    inputProps.onKeyDown?.(event);
+    if (!event.defaultPrevented && event.key === 'Enter' && onSearch) {
+      event.preventDefault();
+      onSearch();
+    }
+  };
+
+  return (
+    <div className={`flex w-full items-stretch gap-2 ${className}`}>
+      <div className="group relative min-w-0 flex-1">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-primary" />
+        <input
+          {...inputProps}
+          type="search"
+          value={value}
+          onChange={onChange}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-10 text-sm font-medium text-text shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 [&::-webkit-search-cancel-button]:hidden"
+        />
+        {loading ? (
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary" />
+        ) : value && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="absolute right-2.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-text-muted transition hover:bg-surface-alt hover:text-text"
+            aria-label={clearLabel}
+            title={clearLabel}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {showButton && (
+        <button
+          type="button"
+          onClick={onSearch}
+          disabled={disabled}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark disabled:opacity-60"
+        >
+          <Search className="h-4 w-4" />
+          <span className="hidden sm:inline">{t('common.search', 'Search')}</span>
+        </button>
+      )}
+    </div>
+  );
+};
+
+const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useState({
+    keyword: '',
+    date: '',
+    budget: '',
+  });
+
+  if (variant === 'admin') {
+    return <AdminSearchBar t={t} {...props} />;
+  }
 
   const budgetOptions = [
     { label: t('home.search.allPrices', 'Tất cả mức giá'), value: '' },
@@ -16,12 +91,6 @@ const SearchBar = ({ departurePriceMap = {} }) => {
     { label: t('home.search.10to20M', 'Từ 10 - 20 triệu'), value: '10M_20M' },
     { label: t('home.search.over20M', 'Trên 20 triệu'), value: 'over_20M' },
   ];
-  const [searchParams, setSearchParams] = useState({
-    keyword: '',
-    date: '',
-    budget: '',
-  });
-
   const handleDateSelect = (dateStr) => {
     setSearchParams({ ...searchParams, date: dateStr });
   };

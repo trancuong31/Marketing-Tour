@@ -45,6 +45,8 @@ i18n
         resources,
         fallbackLng: 'vi',
         defaultNS: 'translation',
+        debug: false,
+        showSupportNotice: false,
         interpolation: {
             escapeValue: false,
         },

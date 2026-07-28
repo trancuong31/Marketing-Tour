@@ -4,6 +4,20 @@
     "updatedAt": "Cập nhật",
     "empty": "Chưa có bài hướng dẫn nào",
     "backToList": "Quay lại danh sách",
+    "features": {
+        "diverse": {
+            "title": "Tour đa dạng",
+            "desc": "Hàng ngàn tour hấp dẫn trong và ngoài nước"
+        },
+        "trusted": {
+            "title": "Dịch vụ uy tín",
+            "desc": "Cam kết chất lượng và hỗ trợ tận tâm"
+        },
+        "support": {
+            "title": "Hỗ trợ 24/7",
+            "desc": "Luôn sẵn sàng đồng hành cùng bạn trên mọi hành trình"
+        }
+    },
     "notFoundTitle": "Không tìm thấy",
     "notFoundDesc": "Bài hướng dẫn không tồn tại hoặc đã bị ẩn.",
     "back": "Quay lại"

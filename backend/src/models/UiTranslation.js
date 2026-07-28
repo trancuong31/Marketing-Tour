@@ -12,10 +12,6 @@ const UiTranslation = sequelize.define('UiTranslation', {
         allowNull: false,
         unique: true,
     },
-    description: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
     vi: {
         type: DataTypes.TEXT,
         allowNull: true,

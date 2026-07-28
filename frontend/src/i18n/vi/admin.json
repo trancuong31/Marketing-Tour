@@ -10,24 +10,101 @@
     },
     "translations": {
         "actions": "Hanh dong",
-        "add": "Them key",
         "chinese": "Tieng Trung",
         "confirmDelete": "Xoa ban dich nay?",
-        "createTitle": "Them ban dich",
         "deleteError": "Khong the xoa ban dich",
         "deleteSuccess": "Da xoa ban dich",
-        "description": "Mo ta",
         "editTitle": "Sua ban dich",
-        "editorHint": "Gia tri luu o day se uu tien hon JSON local.",
         "empty": "Khong tim thay ban dich",
         "english": "Tieng Anh",
+        "englishShort": "EN",
         "key": "Key",
         "loadError": "Khong the tai danh sach ngon ngu",
         "saveError": "Khong the luu ban dich",
         "saveSuccess": "Da luu ban dich",
         "searchPlaceholder": "Tim key hoac noi dung...",
-        "subtitle": "Quản lý Translate VI,EN,ZH",
         "total": "{{count}} key",
-        "vietnamese": "Tieng Viet"
+        "vietnamese": "Tieng Viet",
+        "vietnameseShort": "VI",
+        "chineseShort": "ZH"
+    },
+    "tours": {
+        "add": "Thêm tour",
+        "searchPlaceholder": "Tìm tên tour...",
+        "total": "Hiển thị {{count}} tour",
+        "empty": "Không tìm thấy tour",
+        "noPrice": "Chưa có giá",
+        "duration": "{{days}}N{{nights}}Đ",
+        "columns": {
+            "tour": "Tour",
+            "category": "Danh mục",
+            "priceFrom": "Giá từ",
+            "duration": "Thời gian",
+            "status": "Trạng thái",
+            "actions": "Hành động"
+        },
+        "status": {
+            "active": "Hoạt động",
+            "hidden": "Ẩn",
+            "soldOut": "Hết chỗ"
+        },
+        "badge": {
+            "featured": "Nổi bật",
+            "promotion": "Khuyến mãi"
+        }
+    },
+    "reviews": {
+        "title": "Danh s\u00e1ch b\u00ecnh lu\u1eadn",
+        "deletedTour": "\u0110\u00e3 x\u00f3a",
+        "noComment": "- Kh\u00f4ng c\u00f3 nh\u1eadn x\u00e9t -",
+        "yourReply": "Ph\u1ea3n h\u1ed3i c\u1ee7a b\u1ea1n:",
+        "imageAlt": "\u1ea2nh \u0111\u00e1nh gi\u00e1",
+        "empty": "Kh\u00f4ng c\u00f3 b\u00ecnh lu\u1eadn n\u00e0o ph\u00f9 h\u1ee3p",
+        "pagination": "\u0110ang xem trang {{current}} / {{total}}",
+        "columns": {
+            "customer": "Kh\u00e1ch h\u00e0ng",
+            "tour": "Tour",
+            "ratingComment": "\u0110\u00e1nh gi\u00e1 & b\u00ecnh lu\u1eadn",
+            "createdAt": "Ng\u00e0y \u0111\u0103ng",
+            "actions": "H\u00e0nh \u0111\u1ed9ng"
+        },
+        "filters": {
+            "all": "T\u1ea5t c\u1ea3",
+            "approved": "\u0110\u00e3 duy\u1ec7t",
+            "pending": "\u0110\u1ee3i duy\u1ec7t"
+        },
+        "actions": {
+            "reply": "Tr\u1ea3 l\u1eddi \u0111\u00e1nh gi\u00e1",
+            "approve": "Duy\u1ec7t",
+            "unapprove": "G\u1ee1 duy\u1ec7t",
+            "delete": "X\u00f3a v\u0129nh vi\u1ec5n"
+        }
+    },
+    "votes": {
+        "searchPlaceholder": "Tim theo ten, email hoac tour...",
+        "empty": "Khong tim thay danh gia",
+        "imageAlt": "Anh danh gia",
+        "total": "Hien thi {{filtered}} / {{total}} danh gia",
+        "columns": {
+            "customer": "Khach hang",
+            "tour": "Tour",
+            "rating": "Danh gia",
+            "comment": "Nhan xet",
+            "status": "Trang thai",
+            "actions": "Hanh dong"
+        },
+        "filters": {
+            "all": "Tat ca",
+            "pending": "Cho duyet",
+            "approved": "Da duyet"
+        },
+        "status": {
+            "pending": "Cho duyet",
+            "approved": "Da duyet"
+        },
+        "actions": {
+            "approve": "Duyet",
+            "reject": "Huy duyet"
+        }
     }
 }

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, Plus, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/layout/AdminLayout';
+import SearchBar from '@/components/ui/SearchBar';
 import TranslationEditorModal from '@/features/admin/components/TranslationEditorModal';
 import TranslationTable from '@/features/admin/components/TranslationTable';
 import { translationService } from '@/services/translationService';
@@ -56,11 +57,6 @@ const TranslationManagementPage = () => {
         return Array.from({ length: end - start + 1 }, (_, index) => start + index);
     }, [pagination]);
 
-    const openCreate = () => {
-        setEditingItem(null);
-        setIsEditorOpen(true);
-    };
-
     const openEdit = (item) => {
         setEditingItem(item);
         setIsEditorOpen(true);
@@ -74,11 +70,7 @@ const TranslationManagementPage = () => {
     const handleSubmit = async (form) => {
         setSaving(true);
         try {
-            if (editingItem) {
-                await translationService.update(editingItem.id, form);
-            } else {
-                await translationService.create(form);
-            }
+            await translationService.update(editingItem.id, form);
 
             await reloadDbTranslations();
             closeEditor();
@@ -116,33 +108,19 @@ const TranslationManagementPage = () => {
     return (
         <AdminLayout>
             <div className="space-y-5">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p className="text-sm text-text-muted">
-                            {t('admin.translations.subtitle', 'Quản lý Translate VI,EN,ZH')}
-                        </p>
-                        <p className="mt-1 text-xs text-text-muted">
-                            {t('admin.translations.total', '{{count}} keys', { count: pagination.totalItems || 0 })}
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={openCreate}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-md hover:bg-primary-dark"
-                    >
-                        <Plus className="h-4 w-4" />
-                        {t('admin.translations.add', 'Add key')}
-                    </button>
+                <div>
+                    <p className="text-xs text-text-muted">
+                        {t('admin.translations.total', '{{count}} keys', { count: pagination.totalItems || 0 })}
+                    </p>
                 </div>
 
-                <div className="relative max-w-xl">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-                    <input
+                <div className="max-w-xl">
+                    <SearchBar
+                        variant="admin"
                         value={search}
                         onChange={event => setSearch(event.target.value)}
+                        onClear={() => setSearch('')}
                         placeholder={t('admin.translations.searchPlaceholder', 'Search key or content...')}
-                        className="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
 

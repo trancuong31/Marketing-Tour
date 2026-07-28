@@ -4,6 +4,20 @@
     "updatedAt": "Updated",
     "empty": "No guide articles yet",
     "backToList": "Back to list",
+    "features": {
+        "diverse": {
+            "title": "Diverse tours",
+            "desc": "Thousands of inspiring domestic and international tours"
+        },
+        "trusted": {
+            "title": "Trusted service",
+            "desc": "Quality commitment with thoughtful support"
+        },
+        "support": {
+            "title": "24/7 support",
+            "desc": "Always ready to accompany you on every journey"
+        }
+    },
     "notFoundTitle": "Not found",
     "notFoundDesc": "This guide article does not exist or has been hidden.",
     "back": "Back"

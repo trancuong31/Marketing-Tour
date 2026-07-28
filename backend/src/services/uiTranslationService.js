@@ -4,9 +4,8 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const { normalizeLanguage } = require('../utils/language');
 
-const TRANSLATION_KEY_PATTERN = /^[a-zA-Z0-9_.-]{2,160}$/;
 const MAX_TEXT_LENGTH = 5000;
-const EDITABLE_FIELDS = ['translation_key', 'description', 'vi', 'en', 'zh'];
+const EDITABLE_FIELDS = ['vi', 'en', 'zh'];
 
 const normalizeText = (value) => {
     if (value === undefined || value === null) return null;
@@ -19,21 +18,12 @@ const normalizeText = (value) => {
     return value;
 };
 
-const validateTranslationKey = (key) => {
-    if (!key || typeof key !== 'string' || !TRANSLATION_KEY_PATTERN.test(key.trim())) {
-        throw new AppError('Translation key is invalid', HTTP_CODES.BAD_REQUEST);
-    }
-    return key.trim();
-};
-
 const pickTranslationPayload = (body) => {
     const payload = {};
 
     EDITABLE_FIELDS.forEach((field) => {
         if (Object.prototype.hasOwnProperty.call(body, field)) {
-            payload[field] = field === 'translation_key'
-                ? validateTranslationKey(body[field])
-                : normalizeText(body[field]);
+            payload[field] = normalizeText(body[field]);
         }
     });
 
@@ -88,7 +78,6 @@ const getAdminTranslations = async ({ page = 1, limit = 50, search = '' }) => {
         ? {
             [Op.or]: [
                 { translation_key: { [Op.like]: `%${keyword}%` } },
-                { description: { [Op.like]: `%${keyword}%` } },
                 { vi: { [Op.like]: `%${keyword}%` } },
                 { en: { [Op.like]: `%${keyword}%` } },
                 { zh: { [Op.like]: `%${keyword}%` } },
@@ -114,8 +103,6 @@ const getAdminTranslations = async ({ page = 1, limit = 50, search = '' }) => {
     };
 };
 
-const createTranslation = async (body) => UiTranslation.create(pickTranslationPayload(body));
-
 const updateTranslation = async (id, body) => {
     const translation = await UiTranslation.findByPk(id);
     if (!translation) {
@@ -136,7 +123,6 @@ const deleteTranslation = async (id) => {
 module.exports = {
     getPublicTranslations,
     getAdminTranslations,
-    createTranslation,
     updateTranslation,
     deleteTranslation,
 };

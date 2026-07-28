@@ -5,5 +5,6 @@
     "save": "Lưu",
     "cancel": "Hủy",
     "close": "Đóng",
-    "search": "Tìm kiếm"
+    "search": "Tìm kiếm",
+    "clearSearch": "Xóa tìm kiếm"
 }
