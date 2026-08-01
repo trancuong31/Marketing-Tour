@@ -2,6 +2,26 @@ import { create } from 'zustand';
 import authService from '../services/authService';
 import { setAccessToken, clearAccessToken, setAuthStateHandlers } from '../services/api';
 
+const AUTH_ERROR_MESSAGES = {
+    invalidCredentials: 'Email ho\u1eb7c m\u1eadt kh\u1ea9u kh\u00f4ng \u0111\u00fang',
+    inactiveAccount: 'T\u00e0i kho\u1ea3n ch\u01b0a x\u00e1c th\u1ef1c email',
+    loginFailed: '\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i',
+};
+
+const getLoginErrorMessage = (err) => {
+    if (err.response?.status === 401) return AUTH_ERROR_MESSAGES.invalidCredentials;
+    if (err.response?.status === 403) return AUTH_ERROR_MESSAGES.inactiveAccount;
+    return err.response?.data?.message || AUTH_ERROR_MESSAGES.loginFailed;
+};
+
+const AUTH_SESSION_MARKER = 'auth:has-session';
+
+const hasSessionMarker = () => localStorage.getItem(AUTH_SESSION_MARKER) === '1';
+const setSessionMarker = () => localStorage.setItem(AUTH_SESSION_MARKER, '1');
+const clearSessionMarker = () => localStorage.removeItem(AUTH_SESSION_MARKER);
+
+let initAuthPromise = null;
+
 const useAuthStore = create((set, get) => ({
     user: null,
     isAuthenticated: false,
@@ -16,6 +36,7 @@ const useAuthStore = create((set, get) => ({
     setAuth: (accessToken, user) => {
         if (accessToken) {
             setAccessToken(accessToken);
+            setSessionMarker();
         }
         set({
             user,
@@ -38,6 +59,7 @@ const useAuthStore = create((set, get) => ({
 
     clearSession: () => {
         clearAccessToken();
+        clearSessionMarker();
         set({
             user: null,
             isAuthenticated: false,
@@ -50,21 +72,9 @@ const useAuthStore = create((set, get) => ({
      * Gọi 1 lần khi App mount để khôi phục session
      */
     initAuth: async () => {
-        // Nếu đã init rồi thì bỏ qua
         if (get().isInitialized) return;
-
-        try {
-            const { data } = await authService.refresh();
-            const { user, accessToken } = data.data;
-            setAccessToken(accessToken);
-            set({
-                user,
-                isAuthenticated: true,
-                isInitialized: true,
-                error: null,
-            });
-        } catch {
-            // Không có refresh token hoặc hết hạn → chưa login
+        if (initAuthPromise) return initAuthPromise;
+        if (!hasSessionMarker()) {
             clearAccessToken();
             set({
                 user: null,
@@ -72,9 +82,37 @@ const useAuthStore = create((set, get) => ({
                 isInitialized: true,
                 error: null,
             });
+            return;
         }
-    },
 
+        initAuthPromise = (async () => {
+            try {
+                const { data } = await authService.refresh();
+                const { user, accessToken } = data.data;
+                setAccessToken(accessToken);
+                setSessionMarker();
+                set({
+                    user,
+                    isAuthenticated: true,
+                    isInitialized: true,
+                    error: null,
+                });
+            } catch {
+                clearAccessToken();
+                clearSessionMarker();
+                set({
+                    user: null,
+                    isAuthenticated: false,
+                    isInitialized: true,
+                    error: null,
+                });
+            } finally {
+                initAuthPromise = null;
+            }
+        })();
+
+        return initAuthPromise;
+    },
     /**
      * Register a new user
      */
@@ -103,6 +141,7 @@ const useAuthStore = create((set, get) => ({
             });
             const { user, accessToken } = data.data;
             setAccessToken(accessToken);
+            setSessionMarker();
             set({
                 user,
                 isAuthenticated: true,
@@ -120,11 +159,16 @@ const useAuthStore = create((set, get) => ({
      * Login user
      */
     login: async (email, password) => {
+        if (get().isLoading) {
+            return { success: false, message: null };
+        }
+
         set({ isLoading: true, error: null });
         try {
             const { data } = await authService.login({ email, password });
             const { user, accessToken } = data.data;
             setAccessToken(accessToken);
+            setSessionMarker();
             set({
                 user,
                 isAuthenticated: true,
@@ -132,7 +176,7 @@ const useAuthStore = create((set, get) => ({
             });
             return { success: true, data: data.data };
         } catch (err) {
-            const message = err.response?.data?.message || 'Đăng nhập thất bại';
+            const message = getLoginErrorMessage(err);
             set({ isLoading: false, error: message });
             return { success: false, message };
         }
@@ -219,6 +263,7 @@ const useAuthStore = create((set, get) => ({
             // Ignore — server may be unreachable
         }
         clearAccessToken();
+        clearSessionMarker();
         set({
             user: null,
             isAuthenticated: false,

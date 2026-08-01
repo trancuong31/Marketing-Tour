@@ -2,18 +2,35 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../store';
 import { Button } from '../../../components/ui';
-import { X, Mail, Lock, User, Phone, ArrowLeft, Shield, KeyRound } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, ArrowLeft, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 const inputCls = 'w-full pl-11 pr-4 py-3 bg-surface-alt border border-border rounded-lg text-text text-base transition-all duration-200 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-text-muted/60';
 
-const InputField = ({ icon, ...props }) => (
+const InputField = ({ icon, rightElement, className = '', ...props }) => (
     <div className="relative">
         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">{icon}</span>
-        <input {...props} className={inputCls} />
+        <input {...props} className={`${inputCls} ${rightElement ? 'pr-12' : ''} ${className}`} />
+        {rightElement}
     </div>
 );
+
+const PasswordVisibilityButton = ({ visible, onToggle, label }) => {
+    const Icon = visible ? EyeOff : Eye;
+
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
+            aria-label={label}
+            title={label}
+        >
+            <Icon size={18} />
+        </button>
+    );
+};
 
 /**
  * Views: login | register | otp_verify | forgot_password | forgot_otp | reset_password
@@ -36,6 +53,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const [otpEmail, setOtpEmail] = useState('');
     const [otpType, setOtpType] = useState('register');
     const [resetToken, setResetToken] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const loginSubmitLockRef = useRef(false);
     const otpRefs = useRef([]);
 
     // Reset on open/close
@@ -45,6 +65,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             setOtpDigits(['', '', '', '', '', '']);
             setCountdown(0);
             setResetToken('');
+            setShowPassword(false);
+            setShowConfirmPassword(false);
             clearError();
         }
     }, [isOpen, clearError]);
@@ -111,6 +133,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     const switchView = useCallback((newView) => {
         setView(newView);
         setOtpDigits(['', '', '', '', '', '']);
+        setShowPassword(false);
+        setShowConfirmPassword(false);
         clearError();
     }, [clearError]);
 
@@ -118,15 +142,23 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const result = await login(formData.email, formData.password);
-        if (result.success) {
-            onClose();
-            toast.success(t('auth.loginSuccess'));
+        if (loginSubmitLockRef.current || isLoading) return;
 
-            // Redirect admin to /admin after successful login
-            if (result.data?.user?.role_id === 1) {
-                navigate('/admin');
+        loginSubmitLockRef.current = true;
+
+        try {
+            const result = await login(formData.email, formData.password);
+            if (result.success) {
+                onClose();
+                toast.success(t('auth.loginSuccess'));
+
+                // Redirect admin to /admin after successful login
+                if (result.data?.user?.role_id === 1) {
+                    navigate('/admin');
+                }
             }
+        } finally {
+            loginSubmitLockRef.current = false;
         }
     };
 
@@ -232,8 +264,23 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             {renderError()}
             <InputField icon={<Mail size={18} />} type="email" name="email" value={formData.email}
                 onChange={handleChange} placeholder={t('auth.emailPlaceholder')} required />
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.passwordPlaceholder')} required />
+            <InputField
+                icon={<Lock size={18} />}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder={t('auth.passwordPlaceholder')}
+                autoComplete="current-password"
+                rightElement={(
+                    <PasswordVisibilityButton
+                        visible={showPassword}
+                        onToggle={() => setShowPassword(prev => !prev)}
+                        label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
+                    />
+                )}
+                required
+            />
 
             <div className="flex justify-end">
                 <button type="button" onClick={() => switchView('forgot_password')}
@@ -263,10 +310,42 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 onChange={handleChange} placeholder={t('auth.emailPlaceholder')} required />
             <InputField icon={<Phone size={18} />} type="tel" name="phone_number" value={formData.phone_number}
                 onChange={handleChange} placeholder={t('auth.phonePlaceholder')} />
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.createPasswordPlaceholder')} required minLength={8} />
-            <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder={t('auth.confirmPasswordPlaceholder')} required minLength={8} />
+            <InputField
+                icon={<Lock size={18} />}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder={t('auth.createPasswordPlaceholder')}
+                autoComplete="new-password"
+                rightElement={(
+                    <PasswordVisibilityButton
+                        visible={showPassword}
+                        onToggle={() => setShowPassword(prev => !prev)}
+                        label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
+                    />
+                )}
+                required
+                minLength={8}
+            />
+            <InputField
+                icon={<Lock size={18} />}
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder={t('auth.confirmPasswordPlaceholder')}
+                autoComplete="new-password"
+                rightElement={(
+                    <PasswordVisibilityButton
+                        visible={showConfirmPassword}
+                        onToggle={() => setShowConfirmPassword(prev => !prev)}
+                        label={showConfirmPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
+                    />
+                )}
+                required
+                minLength={8}
+            />
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full mt-1">
                 {t('auth.registerTitle')}
@@ -380,10 +459,42 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 <p className="text-text-muted text-sm text-center max-w-[320px]">{t('auth.resetPasswordDesc')}</p>
             </div>
 
-            <InputField icon={<Lock size={18} />} type="password" name="password" value={formData.password}
-                onChange={handleChange} placeholder={t('auth.newPasswordPlaceholder')} required minLength={8} />
-            <InputField icon={<Lock size={18} />} type="password" name="confirmPassword" value={formData.confirmPassword}
-                onChange={handleChange} placeholder={t('auth.confirmNewPasswordPlaceholder')} required minLength={8} />
+            <InputField
+                icon={<Lock size={18} />}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder={t('auth.newPasswordPlaceholder')}
+                autoComplete="new-password"
+                rightElement={(
+                    <PasswordVisibilityButton
+                        visible={showPassword}
+                        onToggle={() => setShowPassword(prev => !prev)}
+                        label={showPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
+                    />
+                )}
+                required
+                minLength={8}
+            />
+            <InputField
+                icon={<Lock size={18} />}
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder={t('auth.confirmNewPasswordPlaceholder')}
+                autoComplete="new-password"
+                rightElement={(
+                    <PasswordVisibilityButton
+                        visible={showConfirmPassword}
+                        onToggle={() => setShowConfirmPassword(prev => !prev)}
+                        label={showConfirmPassword ? t('auth.hidePassword', 'Ẩn mật khẩu') : t('auth.showPassword', 'Hiện mật khẩu')}
+                    />
+                )}
+                required
+                minLength={8}
+            />
 
             <Button type="submit" variant="primary" size="large" loading={isLoading} className="w-full">
                 {t('auth.resetPasswordBtn')}

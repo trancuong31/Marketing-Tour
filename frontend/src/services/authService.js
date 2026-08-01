@@ -1,5 +1,11 @@
 import api from './api';
 
+const pendingLoginRequests = new Map();
+
+const getLoginRequestKey = ({ email = '', password = '' }) => (
+    `${email.trim().toLowerCase()}:${password}`
+);
+
 /**
  * Authentication API Service
  */
@@ -17,7 +23,23 @@ const authService = {
     /**
      * Login user
      */
-    login: (data) => api.post('/auth/login', data),
+    login: (data) => {
+        const requestKey = getLoginRequestKey(data);
+        const pendingRequest = pendingLoginRequests.get(requestKey);
+        if (pendingRequest) return pendingRequest;
+
+        const request = api.post('/auth/login', {
+            ...data,
+            email: data.email?.trim(),
+        })
+            .finally(() => {
+                pendingLoginRequests.delete(requestKey);
+            });
+
+        pendingLoginRequests.set(requestKey, request);
+
+        return request;
+    },
 
     /**
      * Refresh access token (uses HttpOnly cookie)
