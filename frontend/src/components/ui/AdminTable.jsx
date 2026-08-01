@@ -1,4 +1,4 @@
-import { Inbox } from 'lucide-react';
+import { Inbox, Loader2 } from 'lucide-react';
 
 const alignClasses = {
     left: 'text-left',
@@ -17,12 +17,21 @@ const AdminTable = ({
     minWidth = '760px',
     className = '',
     rowClassName = '',
+    scrollable = false,
+    loading = false,
 }) => {
     const hasRows = rows.length > 0;
+    const shellClassName = [
+        'relative overflow-hidden rounded-lg border border-border bg-surface shadow-sm',
+        scrollable && 'flex min-h-0 flex-col',
+        className,
+    ].filter(Boolean).join(' ');
+    const tableWrapClassName = scrollable && hasRows ? 'min-h-0 flex-1 overflow-auto' : 'overflow-x-auto';
+    const headerCellClassName = scrollable ? 'sticky top-0 z-10 bg-surface-alt shadow-[0_1px_0_var(--color-border)]' : '';
 
     return (
-        <div className={`overflow-hidden rounded-2xl border border-border bg-surface shadow-sm ${className}`}>
-            <div className="overflow-x-auto">
+        <div className={shellClassName} aria-busy={loading}>
+            <div className={[tableWrapClassName, 'relative'].filter(Boolean).join(' ')}>
                 <table className="w-full text-sm" style={{ minWidth }}>
                     <thead className="border-b border-border bg-surface-alt">
                         <tr>
@@ -33,6 +42,7 @@ const AdminTable = ({
                                     className={[
                                         'px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-text-secondary',
                                         alignClasses[column.align || 'left'],
+                                        headerCellClassName,
                                         column.headerClassName,
                                     ].filter(Boolean).join(' ')}
                                 >
@@ -41,7 +51,7 @@ const AdminTable = ({
                             ))}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className={loading && hasRows ? 'opacity-60' : ''}>
                         {rows.map((row, index) => (
                             <tr
                                 key={getRowKey(row, index)}
@@ -66,9 +76,18 @@ const AdminTable = ({
                         ))}
                     </tbody>
                 </table>
+
+                {loading && (
+                    <div className="absolute inset-x-0 bottom-0 top-[45px] z-20 flex items-center justify-center bg-surface/65 backdrop-blur-[1px]">
+                        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary shadow-sm">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Đang tải...
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {!hasRows && (
+            {!hasRows && !loading && (
                 <div className="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center text-sm font-medium text-text-muted">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-alt">
                         <EmptyIcon className="h-6 w-6 opacity-60" />
@@ -83,6 +102,7 @@ const AdminTable = ({
                     {footer}
                 </div>
             )}
+
         </div>
     );
 };

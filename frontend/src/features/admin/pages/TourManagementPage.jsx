@@ -1415,9 +1415,10 @@ const TourManagementPage = () => {
 
     return (
         <AdminLayout>
+            <div className="flex h-[calc(100dvh-6rem)] flex-col gap-6 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
             {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
-                <div className="flex-1">
+            <div className="flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
                     <div className="w-full max-w-2xl">
                         <SearchBar
                             variant="admin"
@@ -1442,19 +1443,15 @@ const TourManagementPage = () => {
             </div>
 
             {/* Table */}
-            {loading ? (
-                <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-primary animate-spin" /></div>
-            ) : (
-                <TourManagementTable tours={tours} onEdit={openEdit} onDelete={handleDelete} />
-            )}
+            <TourManagementTable tours={tours} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
 
             {/* Pagination Logic */}
-            {!loading && totalPages > 1 && (
-                <div className="mt-8 flex flex-col items-center">
+            {totalPages > 1 && (
+                <div className="flex shrink-0 flex-col items-center">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
+                            disabled={loading || currentPage === 1}
                             className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
@@ -1464,6 +1461,7 @@ const TourManagementPage = () => {
                             <button
                                 key={page}
                                 onClick={() => handlePageChange(page)}
+                                disabled={loading || page === currentPage}
                                 className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${page === currentPage
                                         ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
                                         : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
@@ -1475,7 +1473,7 @@ const TourManagementPage = () => {
 
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
+                            disabled={loading || currentPage === totalPages}
                             className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
@@ -1486,6 +1484,8 @@ const TourManagementPage = () => {
                     </p>
                 </div>
             )}
+
+            </div>
 
             {/* ═══ MULTI-TAB MODAL FORM ═══ */}
             {modal.open && (

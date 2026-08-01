@@ -4,7 +4,7 @@ import AdminTable from '@/components/ui/AdminTable';
 
 const clip = (value) => value || '-';
 
-const TranslationTable = ({ items, onEdit, onDelete }) => {
+const TranslationTable = ({ items, onEdit, onDelete, loading = false }) => {
     const { t } = useTranslation();
 
     const columns = [
@@ -50,6 +50,9 @@ const TranslationTable = ({ items, onEdit, onDelete }) => {
             rows={items}
             getRowKey={item => item.id}
             emptyMessage={t('admin.translations.empty', 'No translations found')}
+            className="min-h-0 flex-1"
+            scrollable
+            loading={loading}
         />
     );
 };

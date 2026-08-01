@@ -203,10 +203,10 @@ const BookingManagementPage = () => {
 
     return (
         <AdminLayout>
-            <div className="flex flex-col gap-6">
+            <div className="flex h-[calc(100dvh-6rem)] flex-col gap-6 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
                 {/* Header Section */}
-                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div className="flex-1">
+                <div className="flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div className="min-w-0 flex-1">
                         <div className="w-full max-w-2xl">
                             <SearchBar
                                 variant="admin"
@@ -252,7 +252,7 @@ const BookingManagementPage = () => {
                 </div>
 
                 {/* Options Bar */}
-                <div className="hidden lg:flex lg:flex-row gap-4 items-center justify-between bg-surface p-4 rounded-xl border border-border">
+                <div className="hidden shrink-0 items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 lg:flex lg:flex-row">
                     {view === 'list' ? (
                         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                             {selectedTour && (
@@ -306,14 +306,15 @@ const BookingManagementPage = () => {
                 </div>
 
                 {/* Content Area */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-24 gap-4">
+                {view === 'overview' ? (
+                    loading ? (
+                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
                         <Loader2 className="w-12 h-12 text-primary animate-spin" />
                         <p className="text-text-muted font-medium animate-pulse">Đang tải dữ liệu...</p>
                     </div>
-                ) : view === 'overview' ? (
+                    ) : (
                     /* ═══ OVERVIEW DASHBOARD ═══ */
-                    <div className="space-y-6">
+                    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
                         <div className={effectiveOverviewLayout === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
                             {filteredOverview.length > 0 ? filteredOverview.map(tour => (
                                 effectiveOverviewLayout === 'grid' ? (
@@ -329,7 +330,7 @@ const BookingManagementPage = () => {
                         )}
                     </div>
                     </div>
-                ) : (
+                )) : (
                     /* ═══ LIST VIEW TABLE ═══ */
                     <BookingManagementTable
                         bookings={bookings}
@@ -337,6 +338,7 @@ const BookingManagementPage = () => {
                         totalPages={totalPages}
                         totalItems={totalItems}
                         selectedTour={selectedTour}
+                        loading={loading}
                         updating={updating}
                         getPageNumbers={getPageNumbers}
                         onPageChange={setCurrentPage}

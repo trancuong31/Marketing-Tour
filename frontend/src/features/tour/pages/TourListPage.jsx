@@ -284,7 +284,7 @@ const TourListPage = () => {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-6">
                             <p className="text-text-muted text-sm">
-                                {loading ? t('common.loading', 'Đang tải...') : t('tour.list.showingResults', 'Hiển thị {{count}} / {{total}} tour', { count: filteredTours.length, total: tours.length })}
+                                { t('tour.list.showingResults', 'Hiển thị {{count}} / {{total}} tour', { count: filteredTours.length, total: tours.length })}
                             </p>
                             {hasActiveFilter && (
                                 <div className="hidden sm:flex items-center gap-2 flex-wrap">

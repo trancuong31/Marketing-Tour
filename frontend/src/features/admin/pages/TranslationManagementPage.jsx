@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -107,14 +107,8 @@ const TranslationManagementPage = () => {
 
     return (
         <AdminLayout>
-            <div className="space-y-5">
-                <div>
-                    <p className="text-xs text-text-muted">
-                        {t('admin.translations.total', '{{count}} keys', { count: pagination.totalItems || 0 })}
-                    </p>
-                </div>
-
-                <div className="max-w-xl">
+            <div className="flex h-[calc(100dvh-6rem)] flex-col gap-5 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
+                <div className="max-w-xl shrink-0">
                     <SearchBar
                         variant="admin"
                         value={search}
@@ -122,22 +116,21 @@ const TranslationManagementPage = () => {
                         onClear={() => setSearch('')}
                         placeholder={t('admin.translations.searchPlaceholder', 'Search key or content...')}
                     />
+                    <div>
+                        <p className="text-xs text-text-muted">
+                            {t('admin.translations.total', '{{count}} keys', { count: pagination.totalItems || 0 })}
+                        </p>
+                    </div>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center py-16">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <TranslationTable items={items} onEdit={openEdit} onDelete={handleDelete} />
-                )}
+                <TranslationTable items={items} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
 
-                {!loading && pagination.totalPages > 1 && (
-                    <div className="flex flex-wrap items-center justify-center gap-2">
+                {pagination.totalPages > 1 && (
+                    <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
                         <button
                             type="button"
                             onClick={() => fetchTranslations(pagination.page - 1)}
-                            disabled={pagination.page <= 1}
+                            disabled={loading || pagination.page <= 1}
                             className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
                             aria-label={t('common.previous', 'Previous')}
                         >
@@ -149,6 +142,7 @@ const TranslationManagementPage = () => {
                                 key={page}
                                 type="button"
                                 onClick={() => fetchTranslations(page)}
+                                disabled={loading || page === pagination.page}
                                 className={`h-10 w-10 rounded-lg border text-sm font-bold ${
                                     page === pagination.page
                                         ? 'border-primary bg-primary text-white'
@@ -162,7 +156,7 @@ const TranslationManagementPage = () => {
                         <button
                             type="button"
                             onClick={() => fetchTranslations(pagination.page + 1)}
-                            disabled={pagination.page >= pagination.totalPages}
+                            disabled={loading || pagination.page >= pagination.totalPages}
                             className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
                             aria-label={t('common.next', 'Next')}
                         >

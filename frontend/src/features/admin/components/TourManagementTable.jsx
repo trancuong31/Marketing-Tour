@@ -13,7 +13,7 @@ const getMinPrice = (tour) => {
     return prices.length ? Math.min(...prices) : null;
 };
 
-const TourManagementTable = ({ tours, onEdit, onDelete }) => {
+const TourManagementTable = ({ tours, onEdit, onDelete, loading = false }) => {
     const { t, i18n } = useTranslation();
 
     const statusLabels = {
@@ -108,6 +108,9 @@ const TourManagementTable = ({ tours, onEdit, onDelete }) => {
             rows={tours}
             getRowKey={tour => tour.id}
             emptyMessage={t('admin.tours.empty', 'No tours found')}
+            className="min-h-0 flex-1"
+            scrollable
+            loading={loading}
         />
     );
 };

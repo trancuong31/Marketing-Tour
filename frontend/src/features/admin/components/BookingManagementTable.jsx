@@ -2,9 +2,9 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Eye, Loader2, Search, T
 import AdminTable from '@/components/ui/AdminTable';
 
 const statusConfig = {
-    pending: { label: 'Dang cho', className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
-    approved: { label: 'Da duyet', className: 'bg-success/10 text-success border-success/20', icon: CheckCircle2 },
-    cancelled: { label: 'Da huy', className: 'bg-error/10 text-error border-error/20', icon: XCircle },
+    pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
+    approved: { label: 'Đã duyệt', className: 'bg-success/10 text-success border-success/20', icon: CheckCircle2 },
+    cancelled: { label: 'Đã hủy', className: 'bg-error/10 text-error border-error/20', icon: XCircle },
 };
 
 const formatPrice = (price) =>
@@ -19,6 +19,7 @@ const BookingManagementTable = ({
     totalPages,
     totalItems,
     selectedTour,
+    loading = false,
     updating,
     getPageNumbers,
     onPageChange,
@@ -144,7 +145,7 @@ const BookingManagementTable = ({
     ].filter(Boolean);
 
     return (
-        <div className="space-y-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
             <AdminTable
                 columns={columns}
                 rows={bookings}
@@ -157,19 +158,19 @@ const BookingManagementTable = ({
                     </button>
                 )}
                 minWidth="920px"
+                className="min-h-0 flex-1"
+                scrollable
+                loading={loading}
             />
 
             {totalPages > 1 && (
-                <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-4 sm:flex-row">
-                    <p className="order-2 text-xs font-medium text-text-muted sm:order-1">
-                        Hien thi <span className="font-bold text-text">{bookings.length}</span> / <span className="font-bold text-text">{totalItems}</span> don hang
-                    </p>
+                <div className="flex shrink-0 flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface p-4 sm:flex-row">
 
                     <div className="order-1 flex items-center gap-1.5 sm:order-2">
                         <button
                             type="button"
                             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                            disabled={currentPage === 1}
+                            disabled={loading || currentPage === 1}
                             className="rounded-lg border border-border bg-surface p-2 text-text-secondary transition-all hover:bg-surface-hover disabled:opacity-50"
                         >
                             <ChevronLeft className="h-5 w-5" />
@@ -181,6 +182,7 @@ const BookingManagementTable = ({
                                     key={page}
                                     type="button"
                                     onClick={() => onPageChange(page)}
+                                    disabled={loading || page === currentPage}
                                     className={`h-10 min-w-[40px] rounded-lg border text-sm font-bold transition-all ${
                                         page === currentPage
                                             ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25'
@@ -195,7 +197,7 @@ const BookingManagementTable = ({
                         <button
                             type="button"
                             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                            disabled={currentPage === totalPages}
+                            disabled={loading || currentPage === totalPages}
                             className="rounded-lg border border-border bg-surface p-2 text-text-secondary transition-all hover:bg-surface-hover disabled:opacity-50"
                         >
                             <ChevronRight className="h-5 w-5" />

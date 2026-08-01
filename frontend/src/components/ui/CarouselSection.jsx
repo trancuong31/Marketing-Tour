@@ -171,7 +171,7 @@ const CarouselSection = ({
                     )}
                 </div>
 
-                <div className="overflow-hidden touch-pan-y select-none" {...swipeHandlers}>
+                <div className="overflow-hidden touch-pan-y select-none p-3" {...swipeHandlers}>
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                         {visibleItems.map((item, index) => (
                             <div
