@@ -43,10 +43,15 @@ const envVars = {
 
     translation: {
         concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 1,
-        requestDelayMs: parseInt(process.env.TRANSLATION_REQUEST_DELAY_MS, 10) || 1200,
-        timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 15000,
-        retryAttempts: parseInt(process.env.TRANSLATION_RETRY_ATTEMPTS, 10) || 3,
-        retryBaseDelayMs: parseInt(process.env.TRANSLATION_RETRY_BASE_DELAY_MS, 10) || 1500,
+        requestDelayMs: parseInt(process.env.TRANSLATION_REQUEST_DELAY_MS, 10) || 2200,
+        timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 45000,
+        retryAttempts: parseInt(process.env.TRANSLATION_RETRY_ATTEMPTS, 10) || 4,
+        retryBaseDelayMs: parseInt(process.env.TRANSLATION_RETRY_BASE_DELAY_MS, 10) || 2500,
+        rateLimitCooldownMs: parseInt(process.env.TRANSLATION_RATE_LIMIT_COOLDOWN_MS, 10) || 120000,
+        hosts: (process.env.TRANSLATION_HOSTS || 'translate.google.com,translate.google.com.vn,translate.google.co.jp,translate.google.co.kr')
+            .split(',')
+            .map(host => host.trim())
+            .filter(Boolean),
         batchMaxLength: parseInt(process.env.TRANSLATION_BATCH_MAX_LENGTH, 10) || 4500,
         cacheTtlMs: parseInt(process.env.TRANSLATION_CACHE_TTL_MS, 10) || 7 * 24 * 60 * 60 * 1000,
         cacheMaxItems: parseInt(process.env.TRANSLATION_CACHE_MAX_ITEMS, 10) || 1000,

@@ -6,22 +6,28 @@ const logger = require('../config/logger');
 const env = require('../config/env');
 
 const MAX_FIELDS = 80;
-const MAX_FIELD_LENGTH = 12000;
+const MAX_FIELD_LENGTH = 100000;
 const TRANSLATION_CONCURRENCY = Math.max(1, env.translation.concurrency);
 const TRANSLATION_REQUEST_DELAY_MS = Math.max(0, env.translation.requestDelayMs);
 const TRANSLATION_TIMEOUT_MS = Math.max(1000, env.translation.timeoutMs);
 const TRANSLATION_RETRY_ATTEMPTS = Math.max(1, env.translation.retryAttempts);
 const TRANSLATION_RETRY_BASE_DELAY_MS = Math.max(0, env.translation.retryBaseDelayMs);
+const TRANSLATION_RATE_LIMIT_COOLDOWN_MS = Math.max(0, env.translation.rateLimitCooldownMs);
 const TRANSLATION_BATCH_MAX_LENGTH = Math.max(500, env.translation.batchMaxLength);
 const TRANSLATION_CACHE_TTL_MS = Math.max(0, env.translation.cacheTtlMs);
 const TRANSLATION_CACHE_MAX_ITEMS = Math.max(0, env.translation.cacheMaxItems);
+const TRANSLATION_HOSTS = Array.isArray(env.translation.hosts) && env.translation.hosts.length > 0
+    ? env.translation.hosts
+    : ['translate.google.com'];
 const FIELD_NAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 const BATCH_MARKER_PREFIX = 'MT_TRANSLATE_FIELD';
+const LONG_TEXT_CHUNK_MAX_LENGTH = Math.max(500, Math.min(TRANSLATION_BATCH_MAX_LENGTH, 2500));
 
 const translationCache = new Map();
 const pendingTranslationRequests = [];
 let activeTranslationRequests = 0;
 let nextAllowedRequestAt = 0;
+const translationHostCooldowns = new Map();
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -90,11 +96,17 @@ const withTimeout = (promise, timeoutMs, message) => {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 };
 
-const enqueueTranslationRequest = async (task) => {
+const getTranslationHostCooldownUntil = (host) => translationHostCooldowns.get(host) || 0;
+
+const enqueueTranslationRequest = async (task, host) => {
     await acquireTranslationSlot();
 
     try {
-        const delayMs = Math.max(0, nextAllowedRequestAt - Date.now());
+        const delayMs = Math.max(
+            0,
+            nextAllowedRequestAt - Date.now(),
+            host ? getTranslationHostCooldownUntil(host) - Date.now() : 0,
+        );
         if (delayMs) {
             await wait(delayMs);
         }
@@ -133,28 +145,163 @@ const isTransientTranslationError = (error) => {
         [408, 425, 500, 502, 503, 504].includes(statusCode);
 };
 
-const getRetryDelay = (attempt) => {
+const applyTranslationRateLimitCooldown = (host) => {
+    if (!TRANSLATION_RATE_LIMIT_COOLDOWN_MS) return;
+    const cooldownUntil = Date.now() + TRANSLATION_RATE_LIMIT_COOLDOWN_MS;
+
+    if (host) {
+        translationHostCooldowns.set(host, Math.max(getTranslationHostCooldownUntil(host), cooldownUntil));
+    }
+};
+
+const getRetryDelay = (attempt, error) => {
+    if (isRateLimitError(error) && TRANSLATION_RATE_LIMIT_COOLDOWN_MS) {
+        return TRANSLATION_RATE_LIMIT_COOLDOWN_MS + Math.floor(Math.random() * 1000);
+    }
+
     const backoff = TRANSLATION_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1));
     const jitter = Math.floor(Math.random() * 300);
     return backoff + jitter;
 };
 
+const getTranslationHostsByAvailability = () => (
+    [...TRANSLATION_HOSTS].sort((firstHost, secondHost) => (
+        getTranslationHostCooldownUntil(firstHost) - getTranslationHostCooldownUntil(secondHost)
+    ))
+);
+
 const translateWithRetry = async (value, targetLanguage) => {
     let lastError;
 
     for (let attempt = 1; attempt <= TRANSLATION_RETRY_ATTEMPTS; attempt += 1) {
-        try {
-            return await enqueueTranslationRequest(() => translate(value, { from: 'vi', to: targetLanguage }));
-        } catch (error) {
-            lastError = error;
-            if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(error)) {
-                throw error;
+        const hosts = getTranslationHostsByAvailability();
+
+        for (const host of hosts) {
+            try {
+                return await enqueueTranslationRequest(
+                    () => translate(value, { from: 'vi', to: targetLanguage, host }),
+                    host,
+                );
+            } catch (error) {
+                lastError = error;
+                if (isRateLimitError(error)) {
+                    applyTranslationRateLimitCooldown(host);
+                    logger.warn(`Translate host "${host}" is rate limited. Trying another host when available.`);
+                    continue;
+                }
+                break;
             }
-            await wait(getRetryDelay(attempt));
         }
+
+        if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(lastError)) {
+            throw lastError;
+        }
+
+        await wait(getRetryDelay(attempt, lastError));
     }
 
     throw lastError;
+};
+
+const splitOversizedSegment = (segment, maxLength) => {
+    const chunks = [];
+    let remaining = segment;
+
+    while (remaining.length > maxLength) {
+        const searchWindow = remaining.slice(0, maxLength);
+        const softBreaks = [
+            searchWindow.lastIndexOf('</p>') + 4,
+            searchWindow.lastIndexOf('</li>') + 5,
+            searchWindow.lastIndexOf('</div>') + 6,
+            searchWindow.lastIndexOf('<br>') + 4,
+            searchWindow.lastIndexOf('<br/>') + 5,
+            searchWindow.lastIndexOf('<br />') + 6,
+            searchWindow.lastIndexOf('\n\n') + 2,
+            searchWindow.lastIndexOf('\n') + 1,
+            searchWindow.lastIndexOf('. ') + 2,
+            searchWindow.lastIndexOf('。') + 1,
+            searchWindow.lastIndexOf(' ') + 1,
+        ].filter(index => index > Math.floor(maxLength * 0.45));
+
+        const cutAt = softBreaks.length > 0 ? Math.max(...softBreaks) : maxLength;
+        chunks.push(remaining.slice(0, cutAt));
+        remaining = remaining.slice(cutAt);
+    }
+
+    if (remaining) chunks.push(remaining);
+    return chunks;
+};
+
+const splitLongText = (value, maxLength = LONG_TEXT_CHUNK_MAX_LENGTH) => {
+    if (value.length <= maxLength) return [value];
+
+    const segments = [];
+    const boundaryPattern = /<\/p>|<\/li>|<\/div>|<br\s*\/?>|\r?\n\r?\n|\r?\n/gi;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = boundaryPattern.exec(value)) !== null) {
+        const endIndex = match.index + match[0].length;
+        segments.push(value.slice(lastIndex, endIndex));
+        lastIndex = endIndex;
+    }
+
+    if (lastIndex < value.length) {
+        segments.push(value.slice(lastIndex));
+    }
+
+    const chunks = [];
+    let currentChunk = '';
+
+    const pushCurrentChunk = () => {
+        if (!currentChunk) return;
+        chunks.push(currentChunk);
+        currentChunk = '';
+    };
+
+    segments.forEach((segment) => {
+        if (!segment) return;
+
+        if (segment.length > maxLength) {
+            pushCurrentChunk();
+            chunks.push(...splitOversizedSegment(segment, maxLength));
+            return;
+        }
+
+        if (currentChunk && currentChunk.length + segment.length > maxLength) {
+            pushCurrentChunk();
+        }
+
+        currentChunk += segment;
+    });
+
+    pushCurrentChunk();
+    return chunks.filter(Boolean);
+};
+
+const translateTextValue = async (value, targetLanguage) => {
+    if (value.length <= LONG_TEXT_CHUNK_MAX_LENGTH) {
+        const result = await translateWithRetry(value, targetLanguage);
+        return result.text;
+    }
+
+    const chunks = splitLongText(value);
+    logger.info(`Translating long text in ${chunks.length} chunks (${value.length} chars).`);
+
+    const translatedChunks = [];
+    for (const chunk of chunks) {
+        const cachedChunk = getCachedTranslation(targetLanguage, chunk);
+        if (cachedChunk) {
+            translatedChunks.push(cachedChunk);
+            continue;
+        }
+
+        const result = await translateWithRetry(chunk, targetLanguage);
+        setCachedTranslation(targetLanguage, chunk, result.text);
+        translatedChunks.push(result.text);
+    }
+
+    return translatedChunks.join('');
 };
 
 const createBatchText = (entries) => entries
@@ -249,13 +396,12 @@ const validateTexts = (texts) => {
 
         const text = typeof value === 'string' ? value.trim() : '';
         if (text.length > MAX_FIELD_LENGTH) {
-            throw new AppError(`Nội dung trường "${key}" vượt quá giới hạn`, HTTP_CODES.BAD_REQUEST);
+            throw new AppError(`Nội dung trường "${key}" vượt quá giới hạn ${MAX_FIELD_LENGTH} ký tự`, HTTP_CODES.BAD_REQUEST);
         }
 
         return [key, text];
     });
 };
-
 const translateTextEntry = async ([key, value], targetLanguage, { strict = false } = {}) => {
     if (!value) return [key, ''];
 
@@ -263,9 +409,9 @@ const translateTextEntry = async ([key, value], targetLanguage, { strict = false
     if (cachedText) return [key, cachedText];
 
     try {
-        const result = await translateWithRetry(value, targetLanguage);
-        setCachedTranslation(targetLanguage, value, result.text);
-        return [key, result.text];
+        const translatedText = await translateTextValue(value, targetLanguage);
+        setCachedTranslation(targetLanguage, value, translatedText);
+        return [key, translatedText];
     } catch (error) {
         logger.warn(`Translate failed for field "${key}": ${error.message}`);
         if (strict) {

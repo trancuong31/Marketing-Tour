@@ -1,5 +1,7 @@
 import api from './api';
 
+const TRANSLATE_TIMEOUT_MS = 10 * 60 * 1000;
+
 // ══════════════════════════════════════
 // CATEGORIES
 // ══════════════════════════════════════
@@ -96,5 +98,5 @@ export const adminService = {
     deleteBanner: (id) => api.delete(`/admin/banners/${id}`),
 
     // Translate
-    translateContent: (data) => api.post('/admin/translate', data),
+    translateContent: (data) => api.post('/admin/translate', data, { timeout: TRANSLATE_TIMEOUT_MS }),
 };
