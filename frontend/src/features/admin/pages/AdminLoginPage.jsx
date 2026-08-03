@@ -116,7 +116,7 @@ const AdminLoginPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(prev => !prev)}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition hover:text-text focus:outline-none"
                                 aria-label={showPassword ? ADMIN_LOGIN_TEXT.hidePassword : ADMIN_LOGIN_TEXT.showPassword}
                                 title={showPassword ? ADMIN_LOGIN_TEXT.hidePassword : ADMIN_LOGIN_TEXT.showPassword}
                             >

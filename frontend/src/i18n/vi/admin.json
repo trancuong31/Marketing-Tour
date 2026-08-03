@@ -1,56 +1,56 @@
 {
     "menu": {
-        "bookings": "Quan ly don",
-        "tours": "Quan ly tour",
-        "banners": "Quan ly banner",
-        "content": "Bai viet",
-        "reviews": "Quan ly danh gia",
-        "translations": "Quản lý Ngôn ngữ",
-        "dashboard": "Bang dieu khien"
+        "bookings": "Qu\u1ea3n l\u00fd \u0111\u01a1n",
+        "tours": "Qu\u1ea3n l\u00fd tour",
+        "banners": "Qu\u1ea3n l\u00fd banner",
+        "content": "B\u00e0i vi\u1ebft",
+        "reviews": "Qu\u1ea3n l\u00fd \u0111\u00e1nh gi\u00e1",
+        "translations": "Qu\u1ea3n l\u00fd Ng\u00f4n ng\u1eef",
+        "dashboard": "B\u1ea3ng \u0111i\u1ec1u khi\u1ec3n"
     },
     "translations": {
-        "actions": "Hanh dong",
-        "chinese": "Tieng Trung",
-        "confirmDelete": "Xoa ban dich nay?",
-        "deleteError": "Khong the xoa ban dich",
-        "deleteSuccess": "Da xoa ban dich",
-        "editTitle": "Sua ban dich",
-        "empty": "Khong tim thay ban dich",
-        "english": "Tieng Anh",
+        "actions": "H\u00e0nh \u0111\u1ed9ng",
+        "chinese": "Ti\u1ebfng Trung",
+        "confirmDelete": "X\u00f3a b\u1ea3n d\u1ecbch n\u00e0y?",
+        "deleteError": "Kh\u00f4ng th\u1ec3 x\u00f3a b\u1ea3n d\u1ecbch",
+        "deleteSuccess": "\u0110\u00e3 x\u00f3a b\u1ea3n d\u1ecbch",
+        "editTitle": "S\u1eeda b\u1ea3n d\u1ecbch",
+        "empty": "Kh\u00f4ng t\u00ecm th\u1ea5y b\u1ea3n d\u1ecbch",
+        "english": "Ti\u1ebfng Anh",
         "englishShort": "EN",
         "key": "Key",
-        "loadError": "Khong the tai danh sach ngon ngu",
-        "saveError": "Khong the luu ban dich",
-        "saveSuccess": "Da luu ban dich",
-        "searchPlaceholder": "Tim key hoac noi dung...",
+        "loadError": "Kh\u00f4ng th\u1ec3 t\u1ea3i danh s\u00e1ch ng\u00f4n ng\u1eef",
+        "saveError": "Kh\u00f4ng th\u1ec3 l\u01b0u b\u1ea3n d\u1ecbch",
+        "saveSuccess": "\u0110\u00e3 l\u01b0u b\u1ea3n d\u1ecbch",
+        "searchPlaceholder": "T\u00ecm key ho\u1eb7c n\u1ed9i dung...",
         "total": "{{count}} key",
-        "vietnamese": "Tieng Viet",
+        "vietnamese": "Ti\u1ebfng Vi\u1ec7t",
         "vietnameseShort": "VI",
         "chineseShort": "ZH"
     },
     "tours": {
-        "add": "Thêm tour",
-        "searchPlaceholder": "Tìm tên tour...",
-        "total": "Hiển thị {{count}} tour",
-        "empty": "Không tìm thấy tour",
-        "noPrice": "Chưa có giá",
-        "duration": "{{days}}N{{nights}}Đ",
+        "add": "Th\u00eam tour",
+        "searchPlaceholder": "T\u00ecm t\u00ean tour...",
+        "total": "Hi\u1ec3n th\u1ecb {{count}} tour",
+        "empty": "Kh\u00f4ng t\u00ecm th\u1ea5y tour",
+        "noPrice": "Ch\u01b0a c\u00f3 gi\u00e1",
+        "duration": "{{days}}N{{nights}}\u0110",
         "columns": {
             "tour": "Tour",
-            "category": "Danh mục",
-            "priceFrom": "Giá từ",
-            "duration": "Thời gian",
-            "status": "Trạng thái",
-            "actions": "Hành động"
+            "category": "Danh m\u1ee5c",
+            "priceFrom": "Gi\u00e1 t\u1eeb",
+            "duration": "Th\u1eddi gian",
+            "status": "Tr\u1ea1ng th\u00e1i",
+            "actions": "H\u00e0nh \u0111\u1ed9ng"
         },
         "status": {
-            "active": "Hoạt động",
-            "hidden": "Ẩn",
-            "soldOut": "Hết chỗ"
+            "active": "Ho\u1ea1t \u0111\u1ed9ng",
+            "hidden": "\u1ea8n",
+            "soldOut": "H\u1ebft ch\u1ed7"
         },
         "badge": {
-            "featured": "Nổi bật",
-            "promotion": "Khuyến mãi"
+            "featured": "N\u1ed5i b\u1eadt",
+            "promotion": "Khuy\u1ebfn m\u00e3i"
         }
     },
     "reviews": {
@@ -81,30 +81,30 @@
         }
     },
     "votes": {
-        "searchPlaceholder": "Tim theo ten, email hoac tour...",
-        "empty": "Khong tim thay danh gia",
-        "imageAlt": "Anh danh gia",
-        "total": "Hien thi {{filtered}} / {{total}} danh gia",
+        "searchPlaceholder": "T\u00ecm theo t\u00ean, email ho\u1eb7c tour...",
+        "empty": "Kh\u00f4ng t\u00ecm th\u1ea5y \u0111\u00e1nh gi\u00e1",
+        "imageAlt": "\u1ea2nh \u0111\u00e1nh gi\u00e1",
+        "total": "Hi\u1ec3n th\u1ecb {{filtered}} / {{total}} \u0111\u00e1nh gi\u00e1",
         "columns": {
-            "customer": "Khach hang",
+            "customer": "Kh\u00e1ch h\u00e0ng",
             "tour": "Tour",
-            "rating": "Danh gia",
-            "comment": "Nhan xet",
-            "status": "Trang thai",
-            "actions": "Hanh dong"
+            "rating": "\u0110\u00e1nh gi\u00e1",
+            "comment": "Nh\u1eadn x\u00e9t",
+            "status": "Tr\u1ea1ng th\u00e1i",
+            "actions": "H\u00e0nh \u0111\u1ed9ng"
         },
         "filters": {
-            "all": "Tat ca",
-            "pending": "Cho duyet",
-            "approved": "Da duyet"
+            "all": "T\u1ea5t c\u1ea3",
+            "pending": "Ch\u1edd duy\u1ec7t",
+            "approved": "\u0110\u00e3 duy\u1ec7t"
         },
         "status": {
-            "pending": "Cho duyet",
-            "approved": "Da duyet"
+            "pending": "Ch\u1edd duy\u1ec7t",
+            "approved": "\u0110\u00e3 duy\u1ec7t"
         },
         "actions": {
-            "approve": "Duyet",
-            "reject": "Huy duyet"
+            "approve": "Duy\u1ec7t",
+            "reject": "H\u1ee7y duy\u1ec7t"
         }
     }
 }

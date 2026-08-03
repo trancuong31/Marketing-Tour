@@ -23,7 +23,7 @@ const PasswordVisibilityButton = ({ visible, onToggle, label }) => {
         <button
             type="button"
             onClick={onToggle}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition hover:text-text focus:outline-none"
             aria-label={label}
             title={label}
         >
