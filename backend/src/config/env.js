@@ -41,6 +41,17 @@ const envVars = {
         limit: parseInt(process.env.REVIEW_REMINDER_LIMIT, 10) || 50,
     },
 
+    translation: {
+        concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 1,
+        requestDelayMs: parseInt(process.env.TRANSLATION_REQUEST_DELAY_MS, 10) || 1200,
+        timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 15000,
+        retryAttempts: parseInt(process.env.TRANSLATION_RETRY_ATTEMPTS, 10) || 3,
+        retryBaseDelayMs: parseInt(process.env.TRANSLATION_RETRY_BASE_DELAY_MS, 10) || 1500,
+        batchMaxLength: parseInt(process.env.TRANSLATION_BATCH_MAX_LENGTH, 10) || 4500,
+        cacheTtlMs: parseInt(process.env.TRANSLATION_CACHE_TTL_MS, 10) || 7 * 24 * 60 * 60 * 1000,
+        cacheMaxItems: parseInt(process.env.TRANSLATION_CACHE_MAX_ITEMS, 10) || 1000,
+    },
+
     // Rate Limiting
     rateLimit: {
         windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
