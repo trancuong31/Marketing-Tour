@@ -149,10 +149,17 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
                 attributes: ['id', 'name', 'slug', 'is_international'],
                 include: [{ model: CategoryTranslation, as: 'translations', where: { language: lang }, required: false }]
             },
-            { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], order: [['sort_order', 'ASC']] },
+            {
+                model: TourImage,
+                as: 'images',
+                attributes: ['id', 'image_url', 'sort_order'],
+                separate: true,
+                order: [['sort_order', 'ASC']],
+            },
             { 
                 model: TourItinerary, 
                 as: 'itineraries', 
+                separate: true,
                 order: [['day_number', 'ASC']],
                 include: [{ model: TourItineraryTranslation, as: 'translations', where: { language: lang }, required: false }]
             },
@@ -161,10 +168,11 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
                 as: 'departures',
                 where: { status: 'open', departure_date: { [Op.gte]: new Date() } },
                 required: false,
+                separate: true,
                 order: [['departure_date', 'ASC']],
             },
-            { model: TourPickupLocation, as: 'pickupLocations' },
-            { model: TourOption, as: 'options' },
+            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+            { model: TourOption, as: 'options', separate: true },
         ],
     });
 

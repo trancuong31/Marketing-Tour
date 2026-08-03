@@ -272,16 +272,23 @@ const getTourById = catchAsync(async (req, res, next) => {
     const tour = await Tour.findByPk(id, {
         include: [
             { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'], order: [['sort_order', 'ASC']] },
+            {
+                model: TourImage,
+                as: 'images',
+                attributes: ['id', 'image_url', 'sort_order'],
+                separate: true,
+                order: [['sort_order', 'ASC']],
+            },
             {
                 model: TourItinerary,
                 as: 'itineraries',
+                separate: true,
                 order: [['day_number', 'ASC']],
                 include: [{ model: TourItineraryTranslation, as: 'translations' }],
             },
-            { model: TourDeparture, as: 'departures', order: [['departure_date', 'ASC']] },
-            { model: TourPickupLocation, as: 'pickupLocations' },
-            { model: TourOption, as: 'options' },
+            { model: TourDeparture, as: 'departures', separate: true, order: [['departure_date', 'ASC']] },
+            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+            { model: TourOption, as: 'options', separate: true },
             { model: TourTranslation, as: 'translations' },
         ],
     });
@@ -445,11 +452,11 @@ const createTour = catchAsync(async (req, res, next) => {
     const createdTour = await Tour.findByPk(result.id, {
         include: [
             { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images' },
-            { model: TourItinerary, as: 'itineraries' },
-            { model: TourDeparture, as: 'departures' },
-            { model: TourPickupLocation, as: 'pickupLocations' },
-            { model: TourOption, as: 'options' },
+            { model: TourImage, as: 'images', separate: true },
+            { model: TourItinerary, as: 'itineraries', separate: true },
+            { model: TourDeparture, as: 'departures', separate: true },
+            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+            { model: TourOption, as: 'options', separate: true },
         ],
     });
 
@@ -666,11 +673,11 @@ const updateTour = catchAsync(async (req, res, next) => {
     const updatedTour = await Tour.findByPk(id, {
         include: [
             { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images' },
-            { model: TourItinerary, as: 'itineraries' },
-            { model: TourDeparture, as: 'departures' },
-            { model: TourPickupLocation, as: 'pickupLocations' },
-            { model: TourOption, as: 'options' },
+            { model: TourImage, as: 'images', separate: true },
+            { model: TourItinerary, as: 'itineraries', separate: true },
+            { model: TourDeparture, as: 'departures', separate: true },
+            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+            { model: TourOption, as: 'options', separate: true },
         ],
     });
 
