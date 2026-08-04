@@ -5,8 +5,42 @@ import CustomSelect from './CustomSelect/CustomSelect';
 import DepartureCalendar from './DepartureCalendar';
 import { useTranslation } from 'react-i18next';
 
+const FALLBACK_LABELS = {
+  vi: {
+    search: 'Tìm kiếm',
+    clearSearch: 'Xóa tìm kiếm',
+    homeSearch: 'Tìm kiếm',
+  },
+  en: {
+    search: 'Search',
+    clearSearch: 'Clear search',
+    homeSearch: 'Search',
+  },
+  zh: {
+    search: '搜索',
+    clearSearch: '清除搜索',
+    homeSearch: '搜索',
+  },
+};
+
+const getLanguageCode = (language) => language?.split('-')[0] || 'vi';
+
+const hasBrokenEncoding = (value) => (
+  typeof value === 'string'
+  && (value.includes('�') || /[A-Za-zÀ-ỹ]\?[A-Za-zÀ-ỹ]/.test(value))
+);
+
+const getSafeLabel = ({ t, language, key, fallbackKey }) => {
+  const languageCode = getLanguageCode(language);
+  const fallback = FALLBACK_LABELS[languageCode]?.[fallbackKey] || FALLBACK_LABELS.en[fallbackKey];
+  const label = t(key, fallback);
+
+  return hasBrokenEncoding(label) ? fallback : label;
+};
+
 const AdminSearchBar = ({
   t,
+  language,
   value,
   onChange,
   onSearch,
@@ -18,7 +52,18 @@ const AdminSearchBar = ({
   className = '',
   ...inputProps
 }) => {
-  const clearLabel = t('common.clearSearch', 'Clear search');
+  const clearLabel = getSafeLabel({
+    t,
+    language,
+    key: 'common.clearSearch',
+    fallbackKey: 'clearSearch',
+  });
+  const searchLabel = getSafeLabel({
+    t,
+    language,
+    key: 'common.search',
+    fallbackKey: 'search',
+  });
 
   const handleKeyDown = (event) => {
     inputProps.onKeyDown?.(event);
@@ -64,7 +109,7 @@ const AdminSearchBar = ({
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark disabled:opacity-60"
         >
           <Search className="h-4 w-4" />
-          <span className="hidden sm:inline">{t('common.search', 'Search')}</span>
+          <span className="hidden sm:inline">{searchLabel}</span>
         </button>
       )}
     </div>
@@ -72,7 +117,8 @@ const AdminSearchBar = ({
 };
 
 const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage || i18n.language;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useState({
     keyword: '',
@@ -81,7 +127,7 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
   });
 
   if (variant === 'admin') {
-    return <AdminSearchBar t={t} {...props} />;
+    return <AdminSearchBar t={t} language={language} {...props} />;
   }
 
   const budgetOptions = [
@@ -162,7 +208,14 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
           className="w-full lg:w-auto flex items-center justify-center gap-2 px-8 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold text-sm sm:text-base rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0"
         >
           <Search className="w-5 h-5" />
-          <span>{t('home.search.button', 'Tìm Kiếm')}</span>
+          <span>
+            {getSafeLabel({
+              t,
+              language,
+              key: 'home.search.button',
+              fallbackKey: 'homeSearch',
+            })}
+          </span>
         </button>
       </div>
     </form>

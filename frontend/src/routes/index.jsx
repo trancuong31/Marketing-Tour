@@ -31,6 +31,7 @@ const ContentManagementPage = lazyPage(() => import('../features/admin/pages/Con
 const BannerManagementPage = lazyPage(() => import('../features/admin/pages/BannerManagementPage'));
 const ReviewManagementPage = lazyPage(() => import('../features/admin/pages/ReviewManagementPage'));
 const TranslationManagementPage = lazyPage(() => import('../features/admin/pages/TranslationManagementPage'));
+const UserManagementPage = lazyPage(() => import('../features/admin/pages/UserManagementPage'));
 
 const Loading = () => (
     <div className="min-h-screen flex items-center justify-center bg-white">
@@ -65,6 +66,9 @@ const AppRoutes = () => {
                 <Route path="/admin/banners" element={<AdminRoute><BannerManagementPage /></AdminRoute>} />
                 <Route path="/admin/content" element={<AdminRoute><ContentManagementPage /></AdminRoute>} />
                 <Route path="/admin/reviews" element={<AdminRoute><ReviewManagementPage /></AdminRoute>} />
+                <Route path="/admin/users" element={<AdminRoute><UserManagementPage /></AdminRoute>} />
+                <Route path="/admin/user" element={<Navigate to="/admin/users" replace />} />
+                <Route path="/admin/users-management" element={<Navigate to="/admin/users" replace />} />
                 <Route path="/admin/translations" element={<AdminRoute><TranslationManagementPage /></AdminRoute>} />
                 <Route path="/admin" element={<Navigate to="/admin/bookings" replace />} />
 

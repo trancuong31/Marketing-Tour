@@ -96,6 +96,50 @@ const normalizeDateOnlyValue = (value) => {
     return String(value).slice(0, 10);
 };
 
+const normalizeMoneyValue = (value, fieldLabel, { min = 0 } = {}) => {
+    if (value === null || value === undefined || value === '') {
+        if (min > 0) {
+            throw new AppError(`${fieldLabel} phải lớn hơn 0`, HTTP_CODES.BAD_REQUEST);
+        }
+        return 0;
+    }
+
+    const normalized = typeof value === 'number'
+        ? value
+        : Number(String(value).replace(/[^\d.-]/g, ''));
+
+    if (!Number.isFinite(normalized) || normalized < min) {
+        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+    }
+
+    return normalized;
+};
+
+const normalizePositiveInteger = (value, fieldLabel, { min = 0 } = {}) => {
+    const normalized = Number.parseInt(String(value ?? '').replace(/[^\d]/g, ''), 10);
+    if (!Number.isFinite(normalized) || normalized < min) {
+        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+    }
+
+    return normalized;
+};
+
+const normalizeTimeValue = (value, fieldLabel, { required = false } = {}) => {
+    if (!value) {
+        if (required) {
+            throw new AppError(`${fieldLabel} không được để trống`, HTTP_CODES.BAD_REQUEST);
+        }
+        return null;
+    }
+
+    const match = String(value).match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+    if (!match) {
+        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+    }
+
+    return `${match[1]}:${match[2]}:00`;
+};
+
 const isDateOnlyBeforeToday = (value) => {
     const dateOnly = normalizeDateOnlyValue(value);
     return !!dateOnly && dateOnly < getTodayDateOnly();
@@ -116,10 +160,10 @@ const ensureValidDepartureDate = (departureDate, index) => {
 
 const buildDeparturePayload = (item, index) => ({
     departure_date: ensureValidDepartureDate(item.departure_date, index),
-    price_adult: item.price_adult,
-    price_child: item.price_child || 0,
-    price_infant: item.price_infant || 0,
-    available_seats: item.available_seats || 0,
+    price_adult: normalizeMoneyValue(item.price_adult, `Giá người lớn của lịch khởi hành #${index + 1}`, { min: 1 }),
+    price_child: normalizeMoneyValue(item.price_child, `Giá trẻ em của lịch khởi hành #${index + 1}`, { min: 0 }),
+    price_infant: normalizeMoneyValue(item.price_infant, `Giá em bé của lịch khởi hành #${index + 1}`, { min: 0 }),
+    available_seats: normalizePositiveInteger(item.available_seats, `Số chỗ của lịch khởi hành #${index + 1}`, { min: 1 }),
     status: item.status || 'open',
 });
 
@@ -402,11 +446,11 @@ const createTour = catchAsync(async (req, res, next) => {
         const parsedPickups = parseJsonField(pickup_locations);
         if (parsedPickups.length > 0) {
             await TourPickupLocation.bulkCreate(
-                parsedPickups.map((item) => ({
+                parsedPickups.map((item, index) => ({
                     tour_id: tour.id,
                     location_name: item.location_name,
-                    pickup_time: item.pickup_time || null,
-                    surcharge_amount: item.surcharge_amount || 0,
+                    pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, { required: true }),
+                    surcharge_amount: normalizeMoneyValue(item.surcharge_amount, `Phụ thu điểm đón #${index + 1}`, { min: 0 }),
                 })),
                 { transaction: t },
             );
@@ -416,10 +460,10 @@ const createTour = catchAsync(async (req, res, next) => {
         const parsedOptions = parseJsonField(options);
         if (parsedOptions.length > 0) {
             await TourOption.bulkCreate(
-                parsedOptions.map((item) => ({
+                parsedOptions.map((item, index) => ({
                     tour_id: tour.id,
                     option_name: item.option_name,
-                    price: item.price || 0,
+                    price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
                     charge_type: item.charge_type || 'quantity',
                 })),
                 { transaction: t },
@@ -597,10 +641,10 @@ const updateTour = catchAsync(async (req, res, next) => {
                 const payload = existing && isDateOnlyBeforeToday(existing.departure_date)
                     ? {
                         departure_date: normalizeDateOnlyValue(existing.departure_date),
-                        price_adult: item.price_adult,
-                        price_child: item.price_child || 0,
-                        price_infant: item.price_infant || 0,
-                        available_seats: item.available_seats || 0,
+                        price_adult: normalizeMoneyValue(item.price_adult, `Giá người lớn của lịch khởi hành #${index + 1}`, { min: 1 }),
+                        price_child: normalizeMoneyValue(item.price_child, `Giá trẻ em của lịch khởi hành #${index + 1}`, { min: 0 }),
+                        price_infant: normalizeMoneyValue(item.price_infant, `Giá em bé của lịch khởi hành #${index + 1}`, { min: 0 }),
+                        available_seats: normalizePositiveInteger(item.available_seats, `Số chỗ của lịch khởi hành #${index + 1}`, { min: 1 }),
                         status: item.status || 'open',
                     }
                     : buildDeparturePayload(item, index);
@@ -621,11 +665,11 @@ const updateTour = catchAsync(async (req, res, next) => {
             const parsedPickups = parseJsonField(pickup_locations);
             if (parsedPickups.length > 0) {
                 await TourPickupLocation.bulkCreate(
-                    parsedPickups.map((item) => ({
+                    parsedPickups.map((item, index) => ({
                         tour_id: id,
                         location_name: item.location_name,
-                        pickup_time: item.pickup_time || null,
-                        surcharge_amount: item.surcharge_amount || 0,
+                        pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, { required: true }),
+                        surcharge_amount: normalizeMoneyValue(item.surcharge_amount, `Phụ thu điểm đón #${index + 1}`, { min: 0 }),
                     })),
                     { transaction: t },
                 );
@@ -637,10 +681,10 @@ const updateTour = catchAsync(async (req, res, next) => {
             const parsedOptions = parseJsonField(options);
             if (parsedOptions.length > 0) {
                 await TourOption.bulkCreate(
-                    parsedOptions.map((item) => ({
+                    parsedOptions.map((item, index) => ({
                         tour_id: id,
                         option_name: item.option_name,
-                        price: item.price || 0,
+                        price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
                         charge_type: item.charge_type || 'quantity',
                     })),
                     { transaction: t },

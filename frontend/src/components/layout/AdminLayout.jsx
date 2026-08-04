@@ -14,6 +14,7 @@ const menuItems = [
     { path: '/admin/banners', label: 'Quản lý Banner', icon: Image },
     { path: '/admin/content', label: 'Bài viết', icon: FileText },
     { path: '/admin/reviews', label: 'Quản lý Đánh giá', icon: Star },
+    { path: '/admin/users', label: 'Quản lý Người dùng', icon: User },
     { path: '/admin/translations', labelKey: 'admin.menu.translations', fallback: 'Translations', icon: Languages },
 ];
 

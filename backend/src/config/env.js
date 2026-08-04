@@ -42,6 +42,7 @@ const envVars = {
     },
 
     translation: {
+        provider: (process.env.TRANSLATION_PROVIDER || (process.env.AZURE_TRANSLATOR_KEY ? 'azure' : 'google')).toLowerCase(),
         concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 1,
         requestDelayMs: parseInt(process.env.TRANSLATION_REQUEST_DELAY_MS, 10) || 2200,
         timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 45000,
@@ -52,6 +53,11 @@ const envVars = {
             .split(',')
             .map(host => host.trim())
             .filter(Boolean),
+        azure: {
+            key: process.env.AZURE_TRANSLATOR_KEY || '',
+            region: process.env.AZURE_TRANSLATOR_REGION || '',
+            endpoint: process.env.AZURE_TRANSLATOR_ENDPOINT || 'https://api.cognitive.microsofttranslator.com',
+        },
         batchMaxLength: parseInt(process.env.TRANSLATION_BATCH_MAX_LENGTH, 10) || 4500,
         cacheTtlMs: parseInt(process.env.TRANSLATION_CACHE_TTL_MS, 10) || 7 * 24 * 60 * 60 * 1000,
         cacheMaxItems: parseInt(process.env.TRANSLATION_CACHE_MAX_ITEMS, 10) || 1000,

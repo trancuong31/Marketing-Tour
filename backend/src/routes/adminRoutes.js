@@ -4,6 +4,7 @@ const upload = require('../middlewares/upload');
 const uploadBanner = require('../middlewares/uploadBanner');
 const uploadGuide = require('../middlewares/uploadGuide');
 const { translateContent } = require('../controllers/translateController');
+const adminUserController = require('../controllers/adminUserController');
 const {
     listTranslations,
     updateUiTranslation,
@@ -50,6 +51,14 @@ router.post('/translate', translateContent);
 router.get('/translations', listTranslations);
 router.put('/translations/:id', updateUiTranslation);
 router.delete('/translations/:id', deleteUiTranslation);
+
+// ── Users ──
+router.get('/users/roles', adminUserController.listRoles);
+router.get('/users', adminUserController.listUsers);
+router.get('/users/:id', adminUserController.getUserDetail);
+router.patch('/users/:id/status', adminUserController.updateUserStatus);
+router.patch('/users/:id/role', adminUserController.updateUserRole);
+router.post('/users/:id/reset-password', adminUserController.sendResetPassword);
 
 // ── Tour CRUD ──
 router.get('/tours', getAllTours);

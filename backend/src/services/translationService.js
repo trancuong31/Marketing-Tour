@@ -4,9 +4,11 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const logger = require('../config/logger');
 const env = require('../config/env');
+const TranslationCache = require('../models/TranslationCache');
 
 const MAX_FIELDS = 80;
 const MAX_FIELD_LENGTH = 100000;
+const TRANSLATION_PROVIDER = env.translation.provider;
 const TRANSLATION_CONCURRENCY = Math.max(1, env.translation.concurrency);
 const TRANSLATION_REQUEST_DELAY_MS = Math.max(0, env.translation.requestDelayMs);
 const TRANSLATION_TIMEOUT_MS = Math.max(1000, env.translation.timeoutMs);
@@ -19,6 +21,9 @@ const TRANSLATION_CACHE_MAX_ITEMS = Math.max(0, env.translation.cacheMaxItems);
 const TRANSLATION_HOSTS = Array.isArray(env.translation.hosts) && env.translation.hosts.length > 0
     ? env.translation.hosts
     : ['translate.google.com'];
+const AZURE_TRANSLATOR_ENDPOINT = String(env.translation.azure?.endpoint || 'https://api.cognitive.microsofttranslator.com').replace(/\/+$/, '');
+const AZURE_TRANSLATOR_KEY = env.translation.azure?.key || '';
+const AZURE_TRANSLATOR_REGION = env.translation.azure?.region || '';
 const FIELD_NAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 const BATCH_MARKER_PREFIX = 'MT_TRANSLATE_FIELD';
 const LONG_TEXT_CHUNK_MAX_LENGTH = Math.max(500, Math.min(TRANSLATION_BATCH_MAX_LENGTH, 2500));
@@ -38,7 +43,7 @@ const hashText = (value) => crypto
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const getCacheKey = (targetLanguage, value) => `${targetLanguage}:${hashText(value)}`;
+const getCacheKey = (targetLanguage, value) => `${TRANSLATION_PROVIDER}:${targetLanguage}:${hashText(value)}`;
 
 const getCachedTranslation = (targetLanguage, value) => {
     if (!TRANSLATION_CACHE_TTL_MS || !TRANSLATION_CACHE_MAX_ITEMS) return null;
@@ -65,6 +70,47 @@ const setCachedTranslation = (targetLanguage, value, text) => {
         text,
         createdAt: Date.now(),
     });
+};
+
+const getPersistentCachedTranslation = async (targetLanguage, value) => {
+    const cachedText = getCachedTranslation(targetLanguage, value);
+    if (cachedText) return cachedText;
+
+    try {
+        const cached = await TranslationCache.findOne({
+            where: {
+                source_hash: hashText(value),
+                source_language: 'vi',
+                target_language: normalizeTargetLanguage(targetLanguage) || targetLanguage,
+                provider: TRANSLATION_PROVIDER,
+            },
+            attributes: ['translated_text'],
+        });
+
+        if (!cached?.translated_text) return null;
+        setCachedTranslation(targetLanguage, value, cached.translated_text);
+        return cached.translated_text;
+    } catch (error) {
+        logger.warn(`Translation cache lookup failed: ${error.message}`);
+        return null;
+    }
+};
+
+const setPersistentCachedTranslation = async (targetLanguage, value, translatedText) => {
+    setCachedTranslation(targetLanguage, value, translatedText);
+
+    try {
+        await TranslationCache.upsert({
+            source_hash: hashText(value),
+            source_language: 'vi',
+            target_language: normalizeTargetLanguage(targetLanguage) || targetLanguage,
+            provider: TRANSLATION_PROVIDER,
+            source_text: value,
+            translated_text: translatedText,
+        });
+    } catch (error) {
+        logger.warn(`Translation cache save failed: ${error.message}`);
+    }
 };
 
 const acquireTranslationSlot = () => new Promise((resolve) => {
@@ -145,6 +191,79 @@ const isTransientTranslationError = (error) => {
         [408, 425, 500, 502, 503, 504].includes(statusCode);
 };
 
+const getAzureTargetLanguage = (targetLanguage) => (
+    targetLanguage === 'zh-CN' ? 'zh-Hans' : targetLanguage
+);
+
+const hasHtmlMarkup = (value) => /<\/?[a-z][\s\S]*>/i.test(value);
+
+const buildTranslationHttpError = async (response, providerName) => {
+    let details = '';
+
+    try {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            const data = await response.json();
+            details = data?.error?.message || data?.message || JSON.stringify(data);
+        } else {
+            details = await response.text();
+        }
+    } catch (_) {
+        details = response.statusText;
+    }
+
+    const error = new Error(`${providerName} translate failed: ${details || response.statusText}`);
+    error.statusCode = response.status;
+    return error;
+};
+
+const translateWithAzure = async (value, targetLanguage) => {
+    if (!AZURE_TRANSLATOR_KEY) {
+        throw new AppError(
+            'Chưa cấu hình Azure Translator. Vui lòng thêm AZURE_TRANSLATOR_KEY vào backend/.env.',
+            HTTP_CODES.BAD_REQUEST,
+        );
+    }
+
+    const params = new URLSearchParams({
+        'api-version': '3.0',
+        from: 'vi',
+        to: getAzureTargetLanguage(targetLanguage),
+    });
+
+    if (hasHtmlMarkup(value)) {
+        params.set('textType', 'html');
+    }
+
+    const headers = {
+        'Ocp-Apim-Subscription-Key': AZURE_TRANSLATOR_KEY,
+        'Content-Type': 'application/json',
+        'X-ClientTraceId': crypto.randomUUID(),
+    };
+
+    if (AZURE_TRANSLATOR_REGION) {
+        headers['Ocp-Apim-Subscription-Region'] = AZURE_TRANSLATOR_REGION;
+    }
+
+    const response = await fetch(`${AZURE_TRANSLATOR_ENDPOINT}/translate?${params.toString()}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify([{ Text: value }]),
+    });
+
+    if (!response.ok) {
+        throw await buildTranslationHttpError(response, 'Azure');
+    }
+
+    const data = await response.json();
+    const translatedText = data?.[0]?.translations?.[0]?.text;
+    if (typeof translatedText !== 'string') {
+        throw new Error('Azure translate response is missing translated text.');
+    }
+
+    return { text: translatedText };
+};
+
 const applyTranslationRateLimitCooldown = (host) => {
     if (!TRANSLATION_RATE_LIMIT_COOLDOWN_MS) return;
     const cooldownUntil = Date.now() + TRANSLATION_RATE_LIMIT_COOLDOWN_MS;
@@ -170,7 +289,7 @@ const getTranslationHostsByAvailability = () => (
     ))
 );
 
-const translateWithRetry = async (value, targetLanguage) => {
+const translateWithGoogleHosts = async (value, targetLanguage) => {
     let lastError;
 
     for (let attempt = 1; attempt <= TRANSLATION_RETRY_ATTEMPTS; attempt += 1) {
@@ -201,6 +320,40 @@ const translateWithRetry = async (value, targetLanguage) => {
     }
 
     throw lastError;
+};
+
+const translateWithAzureRetry = async (value, targetLanguage) => {
+    let lastError;
+
+    for (let attempt = 1; attempt <= TRANSLATION_RETRY_ATTEMPTS; attempt += 1) {
+        try {
+            return await enqueueTranslationRequest(
+                () => translateWithAzure(value, targetLanguage),
+                'azure',
+            );
+        } catch (error) {
+            lastError = error;
+            if (isRateLimitError(error)) {
+                applyTranslationRateLimitCooldown('azure');
+            }
+
+            if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(error)) {
+                throw error;
+            }
+
+            await wait(getRetryDelay(attempt, error));
+        }
+    }
+
+    throw lastError;
+};
+
+const translateWithRetry = async (value, targetLanguage) => {
+    if (TRANSLATION_PROVIDER === 'azure') {
+        return translateWithAzureRetry(value, targetLanguage);
+    }
+
+    return translateWithGoogleHosts(value, targetLanguage);
 };
 
 const splitOversizedSegment = (segment, maxLength) => {
@@ -279,9 +432,57 @@ const splitLongText = (value, maxLength = LONG_TEXT_CHUNK_MAX_LENGTH) => {
     return chunks.filter(Boolean);
 };
 
-const translateTextValue = async (value, targetLanguage) => {
+const getTextBoundary = (value, boundary) => value.match(boundary)?.[0] || '';
+
+const restoreTextBoundary = (sourceText, translatedText) => {
+    const leading = getTextBoundary(sourceText, /^\s+/);
+    const trailing = getTextBoundary(sourceText, /\s+$/);
+    return `${leading}${String(translatedText || '').trim()}${trailing}`;
+};
+
+const normalizeVisibleTextNode = (value) => String(value || '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const isProbablyNonTranslatableText = (value) => {
+    const text = normalizeVisibleTextNode(value);
+    if (!text) return true;
+    if (/^(https?:\/\/|www\.)\S+$/i.test(text)) return true;
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return true;
+    if (/^[\d\s.,:/+\-–—()%₫$€¥]+$/.test(text)) return true;
+    return !/\p{L}/u.test(text);
+};
+
+const splitHtmlTokens = (value) => {
+    const tokens = [];
+    const tagPattern = /<[^>]*>/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = tagPattern.exec(value)) !== null) {
+        if (match.index > lastIndex) {
+            tokens.push({ type: 'text', value: value.slice(lastIndex, match.index) });
+        }
+
+        tokens.push({ type: 'tag', value: match[0] });
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < value.length) {
+        tokens.push({ type: 'text', value: value.slice(lastIndex) });
+    }
+
+    return tokens;
+};
+
+const translatePlainTextValue = async (value, targetLanguage) => {
+    const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
+    if (cachedText) return cachedText;
+
     if (value.length <= LONG_TEXT_CHUNK_MAX_LENGTH) {
         const result = await translateWithRetry(value, targetLanguage);
+        await setPersistentCachedTranslation(targetLanguage, value, result.text);
         return result.text;
     }
 
@@ -290,18 +491,53 @@ const translateTextValue = async (value, targetLanguage) => {
 
     const translatedChunks = [];
     for (const chunk of chunks) {
-        const cachedChunk = getCachedTranslation(targetLanguage, chunk);
+        const cachedChunk = await getPersistentCachedTranslation(targetLanguage, chunk);
         if (cachedChunk) {
             translatedChunks.push(cachedChunk);
             continue;
         }
 
         const result = await translateWithRetry(chunk, targetLanguage);
-        setCachedTranslation(targetLanguage, chunk, result.text);
+        await setPersistentCachedTranslation(targetLanguage, chunk, result.text);
         translatedChunks.push(result.text);
     }
 
-    return translatedChunks.join('');
+    const translatedText = translatedChunks.join('');
+    await setPersistentCachedTranslation(targetLanguage, value, translatedText);
+    return translatedText;
+};
+
+const translateHtmlTextNodes = async (value, targetLanguage) => {
+    const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
+    if (cachedText) return cachedText;
+
+    const tokens = splitHtmlTokens(value);
+    let translatedTextNodeCount = 0;
+
+    const translatedTokens = [];
+    for (const token of tokens) {
+        if (token.type !== 'text' || isProbablyNonTranslatableText(token.value)) {
+            translatedTokens.push(token.value);
+            continue;
+        }
+
+        const translatedText = await translatePlainTextValue(token.value, targetLanguage);
+        translatedTokens.push(restoreTextBoundary(token.value, translatedText));
+        translatedTextNodeCount += 1;
+    }
+
+    const translatedHtml = translatedTokens.join('');
+    await setPersistentCachedTranslation(targetLanguage, value, translatedHtml);
+    logger.info(`Translated ${translatedTextNodeCount} HTML text nodes; skipped HTML tags/attributes.`);
+    return translatedHtml;
+};
+
+const translateTextValue = async (value, targetLanguage) => {
+    if (hasHtmlMarkup(value)) {
+        return translateHtmlTextNodes(value, targetLanguage);
+    }
+
+    return translatePlainTextValue(value, targetLanguage);
 };
 
 const createBatchText = (entries) => entries
@@ -405,12 +641,12 @@ const validateTexts = (texts) => {
 const translateTextEntry = async ([key, value], targetLanguage, { strict = false } = {}) => {
     if (!value) return [key, ''];
 
-    const cachedText = getCachedTranslation(targetLanguage, value);
+    const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
     if (cachedText) return [key, cachedText];
 
     try {
         const translatedText = await translateTextValue(value, targetLanguage);
-        setCachedTranslation(targetLanguage, value, translatedText);
+        await setPersistentCachedTranslation(targetLanguage, value, translatedText);
         return [key, translatedText];
     } catch (error) {
         logger.warn(`Translate failed for field "${key}": ${error.message}`);
@@ -429,22 +665,24 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
     const translatedMap = new Map();
     const uncachedEntries = [];
 
-    entries.forEach(([key, value]) => {
+    for (const [key, value] of entries) {
         if (!value) {
             translatedMap.set(key, '');
-            return;
+            continue;
         }
 
-        const cachedText = getCachedTranslation(targetLanguage, value);
+        const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
         if (cachedText) {
             translatedMap.set(key, cachedText);
-            return;
+            continue;
         }
 
         uncachedEntries.push([key, value]);
-    });
+    }
 
-    const batches = splitEntriesIntoBatches(uncachedEntries);
+    const batches = TRANSLATION_PROVIDER === 'azure'
+        ? uncachedEntries.map(entry => [entry])
+        : splitEntriesIntoBatches(uncachedEntries);
     for (let index = 0; index < batches.length; index += TRANSLATION_CONCURRENCY) {
         const chunk = batches.slice(index, index + TRANSLATION_CONCURRENCY);
         const translatedChunks = await Promise.all(chunk.map(async (batch) => {

@@ -99,4 +99,12 @@ export const adminService = {
 
     // Translate
     translateContent: (data) => api.post('/admin/translate', data, { timeout: TRANSLATE_TIMEOUT_MS }),
+
+    // Users
+    getUsers: (params) => api.get('/admin/users', { params }),
+    getUserRoles: () => api.get('/admin/users/roles'),
+    getUserDetail: (id) => api.get(`/admin/users/${id}`),
+    updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data),
+    updateUserRole: (id, data) => api.patch(`/admin/users/${id}/role`, data),
+    sendUserResetPassword: (id) => api.post(`/admin/users/${id}/reset-password`),
 };

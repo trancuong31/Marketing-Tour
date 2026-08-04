@@ -107,13 +107,13 @@ const AdminTable = ({
     );
 };
 
-const AdminTableAction = ({ icon: Icon, label, tone = 'default', className = '', ...props }) => {
+const AdminTableAction = ({ icon: Icon, label, tone = 'default', className = '', compact = false, ...props }) => {
     const toneClassName = {
-        default: 'text-text-secondary hover:bg-surface-alt',
-        primary: 'text-primary hover:bg-primary/10',
-        success: 'text-success hover:bg-success/10',
-        warning: 'text-warning hover:bg-warning/10',
-        danger: 'text-error hover:bg-error/10',
+        default: 'text-text-secondary hover:text-text',
+        primary: 'text-primary hover:text-primary-dark',
+        success: 'text-success hover:text-success/80',
+        warning: 'text-warning hover:text-warning/80',
+        danger: 'text-error hover:text-error/80',
     }[tone] || 'text-text-secondary hover:bg-surface-alt';
 
     return (
@@ -121,7 +121,14 @@ const AdminTableAction = ({ icon: Icon, label, tone = 'default', className = '',
             type="button"
             aria-label={label}
             title={label}
-            className={`rounded-lg p-2 transition disabled:cursor-not-allowed disabled:opacity-60 ${toneClassName} ${className}`}
+            className={[
+                'inline-flex items-center justify-center rounded-full transition',
+                compact ? 'p-1' : 'p-1.5',
+                'hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20',
+                'disabled:cursor-not-allowed disabled:opacity-60',
+                toneClassName,
+                className,
+            ].filter(Boolean).join(' ')}
             {...props}
         >
             <Icon className="h-4 w-4" />

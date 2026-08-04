@@ -14,12 +14,19 @@ const getTours = catchAsync(async (req, res) => {
     const { type, q, date, budget } = req.query;
 
     const lang = req.language || 'vi';
+    const shouldUseTranslation = lang !== 'vi';
     const whereClause = { status: 'active' };
 
     if (q) {
-        whereClause['$translations.title$'] = {
-            [Op.like]: `%${q}%`
-        };
+        if (shouldUseTranslation) {
+            whereClause['$translations.title$'] = {
+                [Op.like]: `%${q}%`
+            };
+        } else {
+            whereClause.title = {
+                [Op.like]: `%${q}%`
+            };
+        }
     }
     if (type === 'domestic' || type === 'international') {
         const isInternational = type === 'international' ? 1 : 0;
@@ -74,7 +81,7 @@ const getTours = catchAsync(async (req, res) => {
                 model: TourTranslation, 
                 as: 'translations', 
                 where: { language: lang }, 
-                required: !!q 
+                required: shouldUseTranslation && !!q 
             },
             { 
                 model: Category, 
@@ -105,7 +112,7 @@ const getTours = catchAsync(async (req, res) => {
 
     const resultData = tours.map(t => {
         const data = t.toJSON();
-        if (data.translations && data.translations.length > 0) {
+        if (shouldUseTranslation && data.translations && data.translations.length > 0) {
             const tr = data.translations[0];
             data.title = tr.title || data.title;
             data.slug = tr.slug || data.slug;
@@ -113,12 +120,12 @@ const getTours = catchAsync(async (req, res) => {
         }
         delete data.translations;
 
-        if (data.Category && data.Category.translations && data.Category.translations.length > 0) {
+        if (shouldUseTranslation && data.Category && data.Category.translations && data.Category.translations.length > 0) {
             const ctr = data.Category.translations[0];
             data.Category.name = ctr.name || data.Category.name;
             data.Category.slug = ctr.slug || data.Category.slug;
-            delete data.Category.translations;
         }
+        if (data.Category) delete data.Category.translations;
         return data;
     });
 
@@ -132,18 +139,24 @@ const getTours = catchAsync(async (req, res) => {
 const getTourBySlug = catchAsync(async (req, res, next) => {
     const { slug } = req.params;
     const lang = req.language || 'vi';
+    const shouldUseTranslation = lang !== 'vi';
 
     const tour = await Tour.findOne({
         where: { 
             status: 'active',
             [Op.or]: [
-                { slug: slug },
-                { '$translations.slug$': slug }
-            ]
+                { slug },
+                { '$translations.slug$': slug },
+            ],
         },
         subQuery: false,
         include: [
-            { model: TourTranslation, as: 'translations', where: { language: lang }, required: false },
+            {
+                model: TourTranslation,
+                as: 'translations',
+                where: shouldUseTranslation ? { language: lang } : undefined,
+                required: false,
+            },
             { 
                 model: Category, 
                 attributes: ['id', 'name', 'slug', 'is_international'],
@@ -181,7 +194,7 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     }
 
     const data = tour.toJSON();
-    if (data.translations && data.translations.length > 0) {
+    if (shouldUseTranslation && data.translations && data.translations.length > 0) {
         const tr = data.translations[0];
         data.title = tr.title || data.title;
         data.slug = tr.slug || data.slug;
@@ -194,16 +207,16 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     }
     delete data.translations;
 
-    if (data.Category && data.Category.translations && data.Category.translations.length > 0) {
+    if (shouldUseTranslation && data.Category && data.Category.translations && data.Category.translations.length > 0) {
         const ctr = data.Category.translations[0];
         data.Category.name = ctr.name || data.Category.name;
         data.Category.slug = ctr.slug || data.Category.slug;
-        delete data.Category.translations;
     }
+    if (data.Category) delete data.Category.translations;
 
     if (data.itineraries) {
         data.itineraries = data.itineraries.map(iti => {
-            if (iti.translations && iti.translations.length > 0) {
+            if (shouldUseTranslation && iti.translations && iti.translations.length > 0) {
                 const itr = iti.translations[0];
                 iti.title = itr.title || iti.title;
                 iti.content = itr.content || iti.content;

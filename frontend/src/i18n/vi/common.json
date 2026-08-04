@@ -1,10 +1,11 @@
 {
-    "login": "Đăng nhập",
-    "loading": "Đang tải...",
-    "register": "Đăng ký",
-    "save": "Lưu",
-    "cancel": "Hủy",
-    "close": "Đóng",
-    "search": "Tìm kiếm",
-    "clearSearch": "Xóa tìm kiếm"
+  "login": "Đăng nhập",
+  "loading": "Đang tải...",
+  "register": "Đăng ký",
+  "save": "Lưu",
+  "cancel": "Hủy",
+  "close": "Đóng",
+  "search": "Tìm kiếm",
+  "clearSearch": "Xóa tìm kiếm",
+  "goHome": "Về trang chủ"
 }

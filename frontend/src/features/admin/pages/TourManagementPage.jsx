@@ -23,6 +23,23 @@ const getTodayDateOnly = () => {
 
 const normalizeDateOnly = (date) => date ? String(date).slice(0, 10) : '';
 
+const normalizeTimeValue = (value) => {
+    const match = String(value || '').match(/^(\d{2}):(\d{2})/);
+    return match ? `${match[1]}:${match[2]}` : '';
+};
+
+const normalizeMoneyValue = (value) => {
+    if (value === null || value === undefined || value === '') return 0;
+
+    const digits = String(value).replace(/[^\d]/g, '');
+    return digits ? Number(digits) : 0;
+};
+
+const normalizeIntegerValue = (value) => {
+    const digits = String(value ?? '').replace(/[^\d]/g, '');
+    return digits ? Number(digits) : 0;
+};
+
 const isDateBeforeToday = (date) => {
     const dateOnly = normalizeDateOnly(date);
     return !!dateOnly && dateOnly < getTodayDateOnly();
@@ -44,7 +61,21 @@ const normalizeAdminTranslationLanguage = (language) => {
     return normalized;
 };
 
-const getTranslationLangIndex = (language) => (normalizeAdminTranslationLanguage(language) === 'en' ? 0 : 1);
+const DEFAULT_TRANSLATION_LANGUAGES = ['en', 'zh'];
+
+const getTranslationLangIndex = (language, translations = []) => {
+    const normalizedLanguage = normalizeAdminTranslationLanguage(language);
+    const existingIndex = translations.findIndex(
+        item => normalizeAdminTranslationLanguage(item?.language) === normalizedLanguage,
+    );
+
+    if (existingIndex >= 0) return existingIndex;
+    return Math.max(0, DEFAULT_TRANSLATION_LANGUAGES.indexOf(normalizedLanguage));
+};
+
+const getItineraryTranslationLangIndex = (itinerary, language) => (
+    getTranslationLangIndex(language, itinerary?.translations || [])
+);
 
 const getTranslationDisplayName = (language) => (
     normalizeAdminTranslationLanguage(language) === 'zh' ? 'Tiếng Trung' : 'English'
@@ -179,6 +210,36 @@ const mergeTranslationsByLanguage = (defaults, translations = []) => (
     })
 );
 
+const normalizeTourDeparturesPayload = (departures = []) => (
+    departures.map(item => ({
+        ...item,
+        departure_date: normalizeDateOnly(item.departure_date),
+        price_adult: normalizeMoneyValue(item.price_adult),
+        price_child: normalizeMoneyValue(item.price_child),
+        price_infant: normalizeMoneyValue(item.price_infant),
+        available_seats: normalizeIntegerValue(item.available_seats),
+        status: item.status || 'open',
+    }))
+);
+
+const normalizePickupLocationsPayload = (pickupLocations = []) => (
+    pickupLocations.map(item => ({
+        ...item,
+        location_name: String(item.location_name || '').trim(),
+        pickup_time: normalizeTimeValue(item.pickup_time),
+        surcharge_amount: normalizeMoneyValue(item.surcharge_amount),
+    }))
+);
+
+const normalizeTourOptionsPayload = (options = []) => (
+    options.map(item => ({
+        ...item,
+        option_name: String(item.option_name || '').trim(),
+        price: normalizeMoneyValue(item.price),
+        charge_type: item.charge_type || 'quantity',
+    }))
+);
+
 // ═══ RICH TEXT EDITOR WRAPPER ═══
 const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     const [ReactQuill, setReactQuill] = useState(null);
@@ -244,19 +305,20 @@ const PriceInput = ({ control, name, rules, error, placeholder }) => (
         control={control}
         rules={rules}
         render={({ field }) => {
-            const displayValue = field.value !== undefined && field.value !== '' && field.value !== null 
-                ? Number(field.value).toLocaleString('vi-VN') 
+            const numericValue = normalizeMoneyValue(field.value);
+            const displayValue = field.value !== undefined && field.value !== '' && field.value !== null
+                ? numericValue.toLocaleString('vi-VN')
                 : '';
             return (
                 <input
                     type="text"
+                    inputMode="numeric"
                     value={displayValue}
                     onChange={(e) => {
-                        const val = e.target.value.replace(/\./g, '');
-                        if (val === '' || !isNaN(val)) {
-                            field.onChange(val === '' ? '' : Number(val));
-                        }
+                        const digits = e.target.value.replace(/[^\d]/g, '');
+                        field.onChange(digits === '' ? '' : Number(digits));
                     }}
+                    onBlur={field.onBlur}
                     className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                     placeholder={placeholder}
                 />
@@ -290,14 +352,14 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
 
     const getFieldName = (name) => {
         if (currentLang === 'vi') return name;
-        if (currentLang === 'en') return `translations.0.${name}`;
-        return `translations.1.${name}`;
+        const langIndex = getTranslationLangIndex(currentLang, watch('translations') || []);
+        return `translations.${langIndex}.${name}`;
     };
 
     const getFieldError = (name) => {
         if (currentLang === 'vi') return errors[name];
-        if (currentLang === 'en') return errors?.translations?.[0]?.[name];
-        return errors?.translations?.[1]?.[name];
+        const langIndex = getTranslationLangIndex(currentLang, watch('translations') || []);
+        return errors?.translations?.[langIndex]?.[name];
     };
     const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
@@ -540,14 +602,16 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
 
     const getFieldName = (index, name) => {
         if (currentLang === 'vi') return `itineraries.${index}.${name}`;
-        if (currentLang === 'en') return `itineraries.${index}.translations.0.${name}`;
-        return `itineraries.${index}.translations.1.${name}`;
+        const itinerary = watch(`itineraries.${index}`);
+        const langIndex = getItineraryTranslationLangIndex(itinerary, currentLang);
+        return `itineraries.${index}.translations.${langIndex}.${name}`;
     };
 
     const getFieldError = (index, name) => {
         if (currentLang === 'vi') return errors.itineraries?.[index]?.[name];
-        if (currentLang === 'en') return errors.itineraries?.[index]?.translations?.[0]?.[name];
-        return errors.itineraries?.[index]?.translations?.[1]?.[name];
+        const itinerary = watch(`itineraries.${index}`);
+        const langIndex = getItineraryTranslationLangIndex(itinerary, currentLang);
+        return errors.itineraries?.[index]?.translations?.[langIndex]?.[name];
     };
     const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
@@ -1100,21 +1164,21 @@ const TourManagementPage = () => {
                 })),
                 departures: (detail.departures || []).map(d => ({
                     id: d.id,
-                    departure_date: d.departure_date,
-                    price_adult: d.price_adult,
-                    price_child: d.price_child || 0,
-                    price_infant: d.price_infant || 0,
-                    available_seats: d.available_seats,
+                    departure_date: normalizeDateOnly(d.departure_date),
+                    price_adult: normalizeMoneyValue(d.price_adult),
+                    price_child: normalizeMoneyValue(d.price_child),
+                    price_infant: normalizeMoneyValue(d.price_infant),
+                    available_seats: normalizeIntegerValue(d.available_seats),
                     status: d.status,
                 })),
                 pickup_locations: (detail.pickupLocations || []).map(p => ({
                     location_name: p.location_name,
-                    pickup_time: p.pickup_time || '',
-                    surcharge_amount: p.surcharge_amount || 0,
+                    pickup_time: normalizeTimeValue(p.pickup_time),
+                    surcharge_amount: normalizeMoneyValue(p.surcharge_amount),
                 })),
                 options: (detail.options || []).map(o => ({
                     option_name: o.option_name,
-                    price: o.price || 0,
+                    price: normalizeMoneyValue(o.price),
                     charge_type: o.charge_type || 'quantity',
                 })),
                 translations: mergeTranslationsByLanguage(
@@ -1180,6 +1244,12 @@ const TourManagementPage = () => {
             toast.error('Bắt buộc phải cấu hình ít nhất 1 điểm đón');
             return;
         }
+        const invalidPickupTimeIndex = data.pickup_locations.findIndex((pickup) => !normalizeTimeValue(pickup.pickup_time));
+        if (invalidPickupTimeIndex !== -1) {
+            setActiveTab('pickups');
+            toast.error(`Giờ đón của điểm đón #${invalidPickupTimeIndex + 1} không hợp lệ`);
+            return;
+        }
 
         if (!modal.tour && files.length === 0) {
             setActiveTab('general');
@@ -1190,6 +1260,9 @@ const TourManagementPage = () => {
         setSubmitting(true);
         try {
             const fd = new FormData();
+            const normalizedDepartures = normalizeTourDeparturesPayload(data.departures || []);
+            const normalizedPickupLocations = normalizePickupLocationsPayload(data.pickup_locations || []);
+            const normalizedOptions = normalizeTourOptionsPayload(data.options || []);
 
             // Thông tin chung
             const generalFields = [
@@ -1207,9 +1280,9 @@ const TourManagementPage = () => {
 
             // Satellite data → JSON strings
             fd.append('itineraries', JSON.stringify(data.itineraries || []));
-            fd.append('departures', JSON.stringify(data.departures || []));
-            fd.append('pickup_locations', JSON.stringify(data.pickup_locations || []));
-            fd.append('options', JSON.stringify(data.options || []));
+            fd.append('departures', JSON.stringify(normalizedDepartures));
+            fd.append('pickup_locations', JSON.stringify(normalizedPickupLocations));
+            fd.append('options', JSON.stringify(normalizedOptions));
             fd.append('translations', JSON.stringify(data.translations || []));
 
             // Images
@@ -1234,7 +1307,8 @@ const TourManagementPage = () => {
     };
 
     const applyTranslatedContent = (translated, targetLang) => {
-        const langIndex = getTranslationLangIndex(targetLang);
+        const translations = watch('translations') || [];
+        const langIndex = getTranslationLangIndex(targetLang, translations);
         const setTranslatedValue = (fieldName, value) => {
             setValue(fieldName, value, {
                 shouldDirty: true,
@@ -1254,7 +1328,9 @@ const TourManagementPage = () => {
             if (parts.length === 3) {
                 const index = parts[1];
                 const field = parts[2];
-                setTranslatedValue(`itineraries.${index}.translations.${langIndex}.${field}`, translated[key]);
+                const itinerary = watch(`itineraries.${index}`);
+                const itineraryLangIndex = getItineraryTranslationLangIndex(itinerary, targetLang);
+                setTranslatedValue(`itineraries.${index}.translations.${itineraryLangIndex}.${field}`, translated[key]);
             }
         });
     };
@@ -1282,7 +1358,8 @@ const TourManagementPage = () => {
     const normalizeTranslationSource = (value) => String(value || '').trim();
 
     const getTargetTranslationValue = (key, targetLang) => {
-        const langIndex = getTranslationLangIndex(targetLang);
+        const translations = watch('translations') || [];
+        const langIndex = getTranslationLangIndex(targetLang, translations);
 
         if (key.startsWith('tour_')) {
             const field = key.replace(/^tour_/, '');
@@ -1293,7 +1370,9 @@ const TourManagementPage = () => {
         if (parts.length === 3) {
             const index = parts[1];
             const field = parts[2];
-            return watch(`itineraries.${index}.translations.${langIndex}.${field}`);
+            const itinerary = watch(`itineraries.${index}`);
+            const itineraryLangIndex = getItineraryTranslationLangIndex(itinerary, targetLang);
+            return watch(`itineraries.${index}.translations.${itineraryLangIndex}.${field}`);
         }
 
         return '';
