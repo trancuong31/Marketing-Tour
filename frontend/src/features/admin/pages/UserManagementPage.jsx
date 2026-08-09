@@ -154,7 +154,7 @@ const UserDetailModal = ({ detail, roles, loading, onClose, onToggleStatus, onCh
                             <Stat label="Tổng chi tiêu" value={formatCurrency(stats.total_spent)} wide />
                         </section>
 
-                        <section className="mt-5 rounded-2xl border border-border bg-white">
+                        <section className="mt-5 rounded-2xl border border-border bg-white overflow-hidden">
                             <div className="border-b border-border px-5 py-4">
                                 <h4 className="font-black text-text">Lịch sử đặt tour</h4>
                             </div>
@@ -162,16 +162,22 @@ const UserDetailModal = ({ detail, roles, loading, onClose, onToggleStatus, onCh
                                 {bookings.length === 0 ? (
                                     <div className="p-6 text-center text-sm text-text-muted">Người dùng chưa có booking.</div>
                                 ) : bookings.map(booking => (
-                                    <div key={booking.id} className="grid gap-3 p-4 md:grid-cols-[120px_1fr_120px_140px] md:items-center">
-                                        <div className="font-black text-primary">{booking.booking_code}</div>
-                                        <div>
-                                            <p className="font-bold text-text">{booking.tour_title_snapshot || 'Tour'}</p>
-                                            <p className="text-xs text-text-muted">
-                                                {formatDate(booking.departure_date_snapshot)} · {booking.adult_qty} NL · {booking.child_qty} TE · {booking.infant_qty} EB
-                                            </p>
+                                    <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-surface-alt/50 transition-colors">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0 flex-1">
+                                            <div className="font-mono font-black text-primary text-sm shrink-0 sm:w-44 truncate">
+                                                {booking.booking_code}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-bold text-text truncate">{booking.tour_title_snapshot || 'Tour'}</p>
+                                                <p className="text-xs text-text-muted mt-0.5">
+                                                    {formatDate(booking.departure_date_snapshot)} · {booking.adult_qty} NL · {booking.child_qty} TE · {booking.infant_qty} EB
+                                                </p>
+                                            </div>
                                         </div>
-                                        <BookingStatusBadge status={booking.status} />
-                                        <div className="text-right font-black text-text">{formatCurrency(booking.total_price)}</div>
+                                        <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-border/50">
+                                            <BookingStatusBadge status={booking.status} />
+                                            <div className="text-right font-black text-text text-sm sm:w-32">{formatCurrency(booking.total_price)}</div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

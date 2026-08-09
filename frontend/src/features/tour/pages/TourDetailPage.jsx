@@ -196,7 +196,7 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                                 {new Date(reply.created_at).toLocaleDateString('vi-VN')}
                             </span>
                             {user?.id === reply.user_id && (
-                                <button 
+                                <button
                                     onClick={handleDelete}
                                     className="p-1 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/item:opacity-100"
                                     title="XÃ³a pháº£n há»“i"
@@ -208,16 +208,16 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                     </div>
                     <p className="text-xs text-text-secondary leading-relaxed">{reply.comment}</p>
                 </div>
-                
+
                 <div className="flex items-center gap-3 mt-1.5 ml-2 text-[10px] font-bold text-text-muted">
-                    <button 
+                    <button
                         onClick={handleLike}
                         className={`hover:text-primary transition-colors flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                     >
                         <Heart className={`w-3 h-3 ${isLiked ? 'fill-primary' : ''}`} />
                         ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
                     </button>
-                    <button 
+                    <button
                         onClick={onReply}
                         className="hover:text-primary transition-colors"
                     >
@@ -275,7 +275,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
     const handleReplySubmit = async (e) => {
         e.preventDefault();
         if (!replyContent.trim()) return;
-        
+
         setIsSubmitting(true);
         try {
             const formData = new FormData();
@@ -319,7 +319,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     {new Date(vote.created_at).toLocaleDateString('vi-VN')}
                                 </span>
                                 {user?.id === vote.user_id && (
-                                    <button 
+                                    <button
                                         onClick={handleDelete}
                                         className="p-1.5 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/root:opacity-100"
                                         title="XÃ³a Ä‘Ã¡nh giÃ¡"
@@ -356,14 +356,14 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                         {images.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
                                 {images.map((img, i) => (
-                                    <div 
-                                        key={i} 
+                                    <div
+                                        key={i}
                                         className="w-20 h-20 rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:opacity-90 transition shadow-sm"
                                     >
-                                        <img 
-                                            src={getImageUrl(img)} 
-                                            alt="Review" 
-                                            className="w-full h-full object-cover" 
+                                        <img
+                                            src={getImageUrl(img)}
+                                            alt="Review"
+                                            className="w-full h-full object-cover"
                                             loading="lazy"
                                         />
                                     </div>
@@ -387,17 +387,17 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                             </div>
                         )}
                     </div>
-                    
+
                     {/* Interaction Bar */}
                     <div className="flex items-center gap-4 mt-2 ml-2 text-xs font-bold text-text-muted">
-                        <button 
+                        <button
                             onClick={handleLike}
                             className={`hover:text-primary transition-colors cursor-pointer flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                         >
                             <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-primary' : ''}`} />
                             ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
                         </button>
-                        <button 
+                        <button
                             className="hover:text-primary transition-colors cursor-pointer"
                             onClick={() => setShowReplyForm(!showReplyForm)}
                         >
@@ -411,9 +411,9 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                     {vote.replies && vote.replies.length > 0 && (
                         <div className="mt-4 space-y-4 ml-6 border-l-2 border-border/50 pl-4">
                             {vote.replies.map((reply) => (
-                                <SubReviewItem 
-                                    key={reply.id} 
-                                    reply={reply} 
+                                <SubReviewItem
+                                    key={reply.id}
+                                    reply={reply}
                                     onDelete={onReplySuccess}
                                     onReply={() => {
                                         setShowReplyForm(true);
@@ -437,14 +437,14 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                         autoFocus
                                     />
                                     <div className="absolute bottom-2 right-2 flex gap-2">
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick={() => setShowReplyForm(false)}
                                             className="px-3 py-1.5 text-[10px] font-bold text-text-muted hover:text-text transition"
                                         >
                                             Há»§y
                                         </button>
-                                        <button 
+                                        <button
                                             disabled={isSubmitting || !replyContent.trim()}
                                             className="px-4 py-1.5 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
                                         >
@@ -510,9 +510,8 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
                         <button
                             key={img.id}
                             onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-                            className={`w-16 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition ${
-                                i === current ? 'border-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
-                            }`}
+                            className={`w-16 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition ${i === current ? 'border-primary opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                                }`}
                         >
                             <img src={getImageUrl(img.image_url)} alt="" className="w-full h-full object-cover" onError={onImgError('tour')} />
                         </button>
@@ -694,7 +693,7 @@ const TourDetailPage = () => {
                 const res = await tourService.getBySlug(slug);
                 const tourData = res.data.data;
                 setTour(tourData);
-                
+
                 const fetchPromises = [];
                 if (tourData?.id) {
                     fetchPromises.push(tourService.getVotes(tourData.id));
@@ -703,12 +702,12 @@ const TourDetailPage = () => {
                 }
                 fetchPromises.push(tourService.getFeaturedVotes());
                 fetchPromises.push(tourService.getAll());
-                
+
                 const [votesRes, featuredRes, toursRes] = await Promise.all(fetchPromises);
-                
+
                 const fetchedVotes = votesRes.data.data || [];
                 setVotes(fetchedVotes);
-                
+
                 const realFeatured = featuredRes.data.data || [];
                 setFeaturedVotes(realFeatured.length > 0 ? realFeatured : getMockReviews(t));
 
@@ -779,47 +778,47 @@ const TourDetailPage = () => {
         <ClientLayout>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-text leading-tight">
-                            {tour.title}
-                        </h1>
+                    {tour.title}
+                </h1>
 
-                        {/* Meta */}
-                        <div className="flex flex-wrap gap-4 pb-2 text-text-secondary">
-                            {durationText && (
-                                <span className="flex items-center gap-1.5 text-sm">
-                                    <Clock className="w-4 h-4 text-primary" />
-                                    {durationText}
-                                </span>
-                            )}
-                            {minPrice && (
-                                <span className="flex items-center gap-1.5 text-sm">
-                                    <Tag className="w-4 h-4 text-primary" />
-                                    {t('tour.card.from', 'GiÃ¡ tá»«')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/ngÆ°á»i')}
-                                </span>
-                            )}
-                            {categoryName && (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
-                                <Tag className="w-3.5 h-3.5" />
-                                {categoryName}
-                            </span>
-                        )} 
-                        </div>
+                {/* Meta */}
+                <div className="flex flex-wrap gap-4 pb-2 text-text-secondary">
+                    {durationText && (
+                        <span className="flex items-center gap-1.5 text-sm">
+                            <Clock className="w-4 h-4 text-primary" />
+                            {durationText}
+                        </span>
+                    )}
+                    {minPrice && (
+                        <span className="flex items-center gap-1.5 text-sm">
+                            <Tag className="w-4 h-4 text-primary" />
+                            {t('tour.card.from', 'GiÃ¡ tá»«')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/ngÆ°á»i')}
+                        </span>
+                    )}
+                    {categoryName && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
+                            <Tag className="w-3.5 h-3.5" />
+                            {categoryName}
+                        </span>
+                    )}
+                </div>
                 {/* â•â•â• Bá» Cá»¤C áº¢NH GRID THÃ”NG MINH â•â•â• */}
                 {(images.length > 0 || tour.thumbnail_url) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px]">
-                        
+
                         {/* áº¢NH CHÃNH (BÃŠN TRÃI) */}
-                        <div 
+                        <div
                             className={`relative group cursor-pointer h-full ${images.length > 1 ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} rounded-2xl overflow-hidden shadow-sm`}
                             onClick={() => setGallery({ open: true, index: 0 })}
                         >
-                            <img 
-                                src={getImageUrl(images.length > 0 ? images[0].image_url : tour.thumbnail_url)} 
-                                alt={tour.title} 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" 
+                            <img
+                                src={getImageUrl(images.length > 0 ? images[0].image_url : tour.thumbnail_url)}
+                                alt={tour.title}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                                 onError={onImgError('tour')}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-                            
+
                             {/* NhÃ£n giáº£m giÃ¡ / Badge (Náº¿u cÃ³) */}
                             {tour.tour_badge === 'promotion' ? (
                                 <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
@@ -845,11 +844,10 @@ const TourDetailPage = () => {
 
                         {/* GRID áº¢NH PHá»¤ (BÃŠN PHáº¢I) - Chá»‰ hiá»‡n khi cÃ³ >1 áº£nh, trÃªn Desktop */}
                         {images.length > 1 && (
-                            <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full ${
-                                images.length === 2 ? 'grid-cols-1 grid-rows-1' :
-                                images.length === 3 ? 'grid-cols-1 grid-rows-2' :
-                                'grid-cols-2 grid-rows-2'
-                            }`}>
+                            <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full ${images.length === 2 ? 'grid-cols-1 grid-rows-1' :
+                                    images.length === 3 ? 'grid-cols-1 grid-rows-2' :
+                                        'grid-cols-2 grid-rows-2'
+                                }`}>
                                 {images.slice(1, 5).map((img, i) => {
                                     // TÃ­nh toÃ¡n lÆ°á»›i khi cÃ³ sá»‘ láº» áº£nh phá»¥
                                     let itemClass = '';
@@ -859,15 +857,15 @@ const TourDetailPage = () => {
                                     }
 
                                     return (
-                                        <div 
+                                        <div
                                             key={img.id || i}
                                             className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-sm ${itemClass}`}
                                             onClick={() => setGallery({ open: true, index: i + 1 })}
                                         >
-                                            <img 
-                                                src={getImageUrl(img.image_url)} 
-                                                alt={`${tour.title} - ${i+1}`} 
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                            <img
+                                                src={getImageUrl(img.image_url)}
+                                                alt={`${tour.title} - ${i + 1}`}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                 onError={onImgError('tour')}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />
@@ -887,12 +885,13 @@ const TourDetailPage = () => {
                         {tour.highlights && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
                                 <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Äiá»ƒm ná»•i báº­t')}</h3>
+                                <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Điểm nổi bật')}</h3>
                                 <div className="space-y-3">
                                     {tour.highlights
-                                        .replace(/<[^>]*>?/gm, '') 
-                                        .replace(/&nbsp;/g, ' ') 
+                                        .replace(/<[^>]*>?/gm, '')
+                                        .replace(/&nbsp;/g, ' ')
                                         .split(/\.\s+|\.\n|\.$/)
-                                        .map(item => item.trim().replace(/^[-*â€¢]\s*/, '')) 
+                                        .map(item => item.trim().replace(/^[-*•○■❖➢✓]\s*/, ''))
                                         .filter(item => item.length > 0)
                                         .map((item, idx) => (
                                             <div key={idx} className="flex items-start gap-3">
@@ -994,15 +993,15 @@ const TourDetailPage = () => {
                             {t('tour.detail.sortLabel')}: <span className="text-primary cursor-pointer">{t('tour.detail.sortNewest')}</span>
                         </div>
                     </div>
-                    
+
                     <div className="space-y-8 max-w-3xl">
                         {votes.length > 0 ? (
                             votes.map((vote) => (
-                                <ReviewItem 
-                                    key={vote.id} 
-                                    vote={vote} 
-                                    tourId={tour.id} 
-                                    onReplySuccess={refreshVotes} 
+                                <ReviewItem
+                                    key={vote.id}
+                                    vote={vote}
+                                    tourId={tour.id}
+                                    onReplySuccess={refreshVotes}
                                     onDeleteSuccess={refreshVotes}
                                 />
                             ))

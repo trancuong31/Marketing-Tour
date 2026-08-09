@@ -43,8 +43,11 @@ const envVars = {
 
     translation: {
         provider: (process.env.TRANSLATION_PROVIDER || (process.env.AZURE_TRANSLATOR_KEY ? 'azure' : 'google')).toLowerCase(),
-        concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 1,
-        requestDelayMs: parseInt(process.env.TRANSLATION_REQUEST_DELAY_MS, 10) || 2200,
+        concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 8,
+        requestDelayMs: parseInt(
+            process.env.TRANSLATION_REQUEST_DELAY_MS,
+            10,
+        ) || (['rapidapi', 'azure'].includes((process.env.TRANSLATION_PROVIDER || '').toLowerCase()) ? 50 : 2200),
         timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS, 10) || 45000,
         retryAttempts: parseInt(process.env.TRANSLATION_RETRY_ATTEMPTS, 10) || 4,
         retryBaseDelayMs: parseInt(process.env.TRANSLATION_RETRY_BASE_DELAY_MS, 10) || 2500,
@@ -58,9 +61,15 @@ const envVars = {
             region: process.env.AZURE_TRANSLATOR_REGION || '',
             endpoint: process.env.AZURE_TRANSLATOR_ENDPOINT || 'https://api.cognitive.microsofttranslator.com',
         },
-        batchMaxLength: parseInt(process.env.TRANSLATION_BATCH_MAX_LENGTH, 10) || 4500,
-        cacheTtlMs: parseInt(process.env.TRANSLATION_CACHE_TTL_MS, 10) || 7 * 24 * 60 * 60 * 1000,
-        cacheMaxItems: parseInt(process.env.TRANSLATION_CACHE_MAX_ITEMS, 10) || 1000,
+        rapidapi: {
+            key: process.env.RAPIDAPI_TRANSLATOR_KEY || process.env.RAPIDAPI_KEY || '',
+            host: process.env.RAPIDAPI_TRANSLATOR_HOST || 'free-google-translator.p.rapidapi.com',
+            endpoint: process.env.RAPIDAPI_TRANSLATOR_ENDPOINT || 'https://free-google-translator.p.rapidapi.com/external-api/free-google-translator',
+            method: (process.env.RAPIDAPI_TRANSLATOR_METHOD || 'GET').toUpperCase(),
+        },
+        batchMaxLength: parseInt(process.env.TRANSLATION_BATCH_MAX_LENGTH, 10) || 5000,
+        cacheTtlMs: parseInt(process.env.TRANSLATION_CACHE_TTL_MS, 10) || 30 * 24 * 60 * 60 * 1000,
+        cacheMaxItems: parseInt(process.env.TRANSLATION_CACHE_MAX_ITEMS, 10) || 5000,
     },
 
     // Rate Limiting

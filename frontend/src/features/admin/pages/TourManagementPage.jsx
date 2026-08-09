@@ -40,6 +40,56 @@ const normalizeIntegerValue = (value) => {
     return digits ? Number(digits) : 0;
 };
 
+const formatMoneyDisplayValue = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+
+    const numericValue = normalizeMoneyValue(value);
+    return numericValue ? numericValue.toLocaleString('vi-VN') : '0';
+};
+
+const sanitizeMoneyDisplayInput = (value) => String(value || '').replace(/[^\d.]/g, '');
+
+const TIME_DISPLAY_OPTIONS = Array.from({ length: 24 * 4 }, (_, index) => {
+    const totalMinutes = index * 15;
+    const hour24 = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    const hour12 = hour24 % 12 || 12;
+
+    return `${String(hour12).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${period}`;
+});
+
+const formatTimeDisplayValue = (value) => {
+    const normalizedTime = normalizeTimeValue(value);
+    if (!normalizedTime) return '';
+
+    const [hour, minute] = normalizedTime.split(':');
+    const hourNumber = Number(hour);
+    const period = hourNumber >= 12 ? 'PM' : 'AM';
+    const hour12 = hourNumber % 12 || 12;
+
+    return `${String(hour12).padStart(2, '0')}:${minute} ${period}`;
+};
+
+const parseTimeDisplayValue = (value) => {
+    const match = String(value || '')
+        .trim()
+        .toUpperCase()
+        .match(/^(\d{1,2})(?::?(\d{2}))?\s*(AM|PM)$/);
+
+    if (!match) return '';
+
+    const hour12 = Number(match[1]);
+    const minute = Number(match[2] || '00');
+    if (hour12 < 1 || hour12 > 12 || minute < 0 || minute > 59) return '';
+
+    const hour24 = match[3] === 'PM'
+        ? (hour12 % 12) + 12
+        : hour12 % 12;
+
+    return `${String(hour24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+};
+
 const isDateBeforeToday = (date) => {
     const dateOnly = normalizeDateOnly(date);
     return !!dateOnly && dateOnly < getTodayDateOnly();
@@ -240,50 +290,196 @@ const normalizeTourOptionsPayload = (options = []) => (
     }))
 );
 
+const BULLET_LIBRARY = [
+    { label: 'None', symbol: '', title: 'Bỏ bullet' },
+    { label: '–', symbol: '– ', title: 'Dấu gạch ngang' },
+    { label: '•', symbol: '• ', title: 'Dấu chấm tròn' },
+    { label: '○', symbol: '○ ', title: 'Dấu tròn rỗng' },
+    { label: '■', symbol: '■ ', title: 'Dấu hình vuông' },
+    { label: '❖', symbol: '❖ ', title: 'Dấu kim cương' },
+    { label: '➢', symbol: '➢ ', title: 'Dấu mũi tên' },
+    { label: '✓', symbol: '✓ ', title: 'Dấu tích' },
+];
+
 // ═══ RICH TEXT EDITOR WRAPPER ═══
 const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     const [ReactQuill, setReactQuill] = useState(null);
+    const quillRef = useRef(null);
 
     useEffect(() => {
         import('react-quill-new').then(mod => setReactQuill(() => mod.default));
         import('react-quill-new/dist/quill.snow.css');
     }, []);
 
+    const insertBulletSymbol = useCallback((symbol) => {
+        const editor = quillRef.current?.getEditor();
+        if (!editor) return;
+
+        const range = editor.getSelection(true) || { index: 0, length: 0 };
+        if (symbol === '') {
+            const [line] = editor.getLine(range.index);
+            if (line) {
+                const lineText = line.domNode?.textContent || '';
+                const cleanedText = lineText.replace(/^[-*•○■❖➢✓]\s*/, '');
+                const lineIndex = editor.getIndex(line);
+                editor.deleteText(lineIndex, lineText.length);
+                editor.insertText(lineIndex, cleanedText);
+            }
+            return;
+        }
+
+        editor.insertText(range.index, symbol, 'user');
+        editor.setSelection(range.index + symbol.length);
+    }, []);
+
+    const handleImageUpload = useCallback(() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const res = await adminService.uploadGuideImage(formData);
+                const imageUrl = getImageUrl(res.data?.data?.image_url);
+                const editor = quillRef.current?.getEditor();
+                const range = editor?.getSelection(true);
+
+                if (editor && range) {
+                    editor.insertEmbed(range.index, 'image', imageUrl, 'user');
+                    editor.setSelection(range.index + 1);
+                }
+            } catch {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const editor = quillRef.current?.getEditor();
+                    const range = editor?.getSelection(true);
+                    if (editor && range && e.target?.result) {
+                        editor.insertEmbed(range.index, 'image', e.target.result, 'user');
+                        editor.setSelection(range.index + 1);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        input.click();
+    }, []);
+
     const formats = [
         'header', 'bold', 'italic', 'underline', 'strike', 'blockquote',
-        'list', 'indent', 'link', 'align'
+        'list', 'indent', 'link', 'image', 'color', 'background', 'align'
     ];
 
-    const modules = {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-            [{ 'align': [] }],
-            ['clean']
-        ],
+    const modules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                [{ 'align': [] }],
+                ['link', 'image'],
+                ['clean']
+            ],
+            handlers: {
+                image: handleImageUpload,
+            }
+        },
         clipboard: {
             matchVisual: false
         }
-    };
+    }), [handleImageUpload]);
+
+    const handlePaste = useCallback((e) => {
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        const items = clipboardData.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (!file) continue;
+
+                e.preventDefault();
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                adminService.uploadGuideImage(formData)
+                    .then(res => {
+                        const imageUrl = getImageUrl(res.data?.data?.image_url);
+                        const editor = quillRef.current?.getEditor();
+                        const range = editor?.getSelection(true) || { index: editor?.getLength() || 0 };
+                        if (editor && imageUrl) {
+                            editor.insertEmbed(range.index, 'image', imageUrl, 'user');
+                            editor.setSelection(range.index + 1);
+                        }
+                    })
+                    .catch(() => {
+                        const reader = new FileReader();
+                        reader.onload = (evt) => {
+                            const editor = quillRef.current?.getEditor();
+                            const range = editor?.getSelection(true) || { index: editor?.getLength() || 0 };
+                            if (editor && evt.target?.result) {
+                                editor.insertEmbed(range.index, 'image', evt.target.result, 'user');
+                                editor.setSelection(range.index + 1);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                break;
+            }
+        }
+    }, []);
 
     return (
         <div>
-            {label && (
-                <label className="text-sm font-medium text-text mb-1 block">
-                    {label} {error && <span className="text-error text-xs font-normal ml-1">({error})</span>}
-                </label>
-            )}
-            <div className={`rounded-lg border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}>
+            <div className="flex items-center justify-between mb-1">
+                {label && (
+                    <label className="text-sm font-medium text-text block">
+                        {label} {error && <span className="text-error text-xs font-normal ml-1">({error})</span>}
+                    </label>
+                )}
+            </div>
+
+            {/* ═══ BULLET LIBRARY BAR ═══ */}
+            <div className="flex flex-wrap items-center gap-1.5 mb-2 bg-surface-alt/70 p-1.5 rounded-lg border border-border/60">
+                <span className="text-[11px] font-bold text-text-muted px-1 uppercase tracking-wider">Bullet Library:</span>
+                {BULLET_LIBRARY.map((item) => (
+                    <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => insertBulletSymbol(item.symbol)}
+                        title={item.title}
+                        className="h-7 px-2 flex items-center justify-center bg-surface border border-border/80 hover:border-primary hover:bg-primary/10 hover:text-primary text-xs font-bold rounded-md shadow-2xs transition-all cursor-pointer"
+                    >
+                        {item.label}
+                    </button>
+                ))}
+            </div>
+
+            <div
+                className={`rounded-lg border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}
+                onPaste={handlePaste}
+            >
                 {ReactQuill ? (
                     <ReactQuill
+                        ref={quillRef}
                         theme="snow"
                         value={value || ''}
                         onChange={onChange}
                         placeholder={placeholder}
                         formats={formats}
                         modules={modules}
-                        className="bg-transparent rounded-lg [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[120px]"
+                        className="bg-transparent rounded-lg [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[140px]"
                     />
                 ) : (
                     <textarea
@@ -299,31 +495,105 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     );
 };
 
+const PriceInputField = ({ field, error, placeholder }) => {
+    const [displayValue, setDisplayValue] = useState(formatMoneyDisplayValue(field.value));
+    const isFocusedRef = useRef(false);
+
+    useEffect(() => {
+        if (!isFocusedRef.current) {
+            setDisplayValue(formatMoneyDisplayValue(field.value));
+        }
+    }, [field.value]);
+
+    return (
+        <input
+            type="text"
+            inputMode="numeric"
+            value={displayValue}
+            onFocus={() => {
+                isFocusedRef.current = true;
+            }}
+            onChange={(e) => {
+                const sanitizedValue = sanitizeMoneyDisplayInput(e.target.value);
+                const digits = sanitizedValue.replace(/[^\d]/g, '');
+
+                setDisplayValue(sanitizedValue);
+                field.onChange(digits === '' ? '' : Number(digits));
+            }}
+            onBlur={(e) => {
+                isFocusedRef.current = false;
+                field.onBlur(e);
+                setDisplayValue(formatMoneyDisplayValue(e.target.value));
+            }}
+            className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+            placeholder={placeholder}
+        />
+    );
+};
+
 const PriceInput = ({ control, name, rules, error, placeholder }) => (
     <Controller
         name={name}
         control={control}
         rules={rules}
-        render={({ field }) => {
-            const numericValue = normalizeMoneyValue(field.value);
-            const displayValue = field.value !== undefined && field.value !== '' && field.value !== null
-                ? numericValue.toLocaleString('vi-VN')
-                : '';
-            return (
-                <input
-                    type="text"
-                    inputMode="numeric"
-                    value={displayValue}
-                    onChange={(e) => {
-                        const digits = e.target.value.replace(/[^\d]/g, '');
-                        field.onChange(digits === '' ? '' : Number(digits));
-                    }}
-                    onBlur={field.onBlur}
-                    className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
-                    placeholder={placeholder}
-                />
-            );
-        }}
+        render={({ field }) => (
+            <PriceInputField field={field} error={error} placeholder={placeholder} />
+        )}
+    />
+);
+
+const TimeInputField = ({ field, error, name }) => {
+    const [displayValue, setDisplayValue] = useState(formatTimeDisplayValue(field.value));
+    const datalistId = `${name.replace(/[^a-zA-Z0-9_-]/g, '-')}-options`;
+    const inputClassName = `w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm font-medium focus:outline-none focus:ring-2 transition-all`;
+
+    useEffect(() => {
+        setDisplayValue(formatTimeDisplayValue(field.value));
+    }, [field.value]);
+
+    const commitDisplayValue = (value) => {
+        const normalizedTime = parseTimeDisplayValue(value);
+        field.onChange(normalizedTime);
+        setDisplayValue(normalizedTime ? formatTimeDisplayValue(normalizedTime) : value);
+    };
+
+    return (
+        <>
+            <input
+                type="text"
+                list={datalistId}
+                value={displayValue}
+                onChange={(event) => {
+                    setDisplayValue(event.target.value);
+                    const normalizedTime = parseTimeDisplayValue(event.target.value);
+                    if (normalizedTime) {
+                        field.onChange(normalizedTime);
+                    }
+                }}
+                onBlur={(event) => {
+                    field.onBlur(event);
+                    commitDisplayValue(event.target.value);
+                }}
+                className={inputClassName}
+                placeholder="04:00 AM"
+            />
+            <datalist id={datalistId}>
+                {TIME_DISPLAY_OPTIONS.map(option => (
+                    <option key={option} value={option} />
+                ))}
+            </datalist>
+        </>
+    );
+};
+
+const TimeInput = ({ control, name, rules, error }) => (
+    <Controller
+        name={name}
+        control={control}
+        rules={rules}
+        render={({ field }) => (
+            <TimeInputField field={field} error={error} name={name} />
+        )}
     />
 );
 
@@ -530,13 +800,12 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                 <label className="text-sm font-medium text-text block">
                     Album ảnh tour {!modal.tour && files.length === 0 && <span className="text-error font-normal">(Bắt buộc ít nhất 1 ảnh)</span>}
                 </label>
-                
-                <div 
-                    className={`p-4 border-2 border-dashed rounded-2xl transition-all ${
-                        !modal.tour && files.length === 0 && Object.keys(errors).length > 0 
-                        ? 'border-error bg-error/5' 
+
+                <div
+                    className={`p-4 border-2 border-dashed rounded-2xl transition-all ${!modal.tour && files.length === 0 && Object.keys(errors).length > 0
+                        ? 'border-error bg-error/5'
                         : 'border-border hover:border-primary/50 bg-surface-alt/50'
-                    }`}
+                        }`}
                     onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5'); }}
                     onDragLeave={(e) => { e.preventDefault(); e.currentTarget.classList.remove('border-primary', 'bg-primary/5'); }}
                     onDrop={(e) => {
@@ -584,7 +853,7 @@ const GeneralTab = ({ register, watch, setValue, categories, modal, files, setFi
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                         </label>
                     </div>
-                    
+
                     {(files.length === 0 && (!modal.tour?.images || modal.tour.images.length === 0)) && (
                         <div className="text-center py-4 text-text-muted">
                             <p className="text-xs font-medium">Kéo thả ảnh vào đây hoặc nhấp &quot;Thêm ảnh&quot;</p>
@@ -622,8 +891,8 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                 <button
                     type="button"
                     onClick={() => {
-                        append({ 
-                            day_number: fields.length + 1, 
+                        append({
+                            day_number: fields.length + 1,
                             title: '',
                             content: '',
                             translations: [
@@ -657,38 +926,38 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
 
             {fields.map((field, index) => {
                 return (
-                <div key={field.id} className="itinerary-day-card p-5 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative group">
-                    <div className="flex items-center justify-between pb-3 border-b border-border/50">
-                        <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5" /> Ngày {index + 1}
-                        </span>
-                        <button type="button" onClick={() => remove(index)}
-                            className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition" title="Xóa ngày">
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                    <div key={field.id} className="itinerary-day-card p-5 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative group">
+                        <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                            <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5" /> Ngày {index + 1}
+                            </span>
+                            <button type="button" onClick={() => remove(index)}
+                                className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition" title="Xóa ngày">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <input type="hidden" {...register(`itineraries.${index}.day_number`)} value={index + 1} />
+                        <div>
+                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày ({currentLang.toUpperCase()}) *</label>
+                            <input
+                                {...register(getFieldName(index, 'title'), getRequiredRule('Nhập tiêu đề ngày'))}
+                                className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+                                placeholder="VD: Đón khách - Tham quan phố cổ"
+                            />
+                            {getFieldError(index, 'title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError(index, 'title').message}</p>}
+                        </div>
+
+                        <div>
+                            <RichTextEditor
+                                value={watch(getFieldName(index, 'content'))}
+                                onChange={val => setValue(getFieldName(index, 'content'), val, { shouldValidate: true })}
+                                label={`Chi tiết hoạt động (${currentLang.toUpperCase()}) *`}
+                                placeholder="Mô tả chi tiết các hoạt động trong ngày..."
+                                error={getFieldError(index, 'content')?.message}
+                            />
+                            <input type="hidden" {...register(getFieldName(index, 'content'), getRequiredRule('Nhập nội dung hoạt động'))} />
+                        </div>
                     </div>
-                    <input type="hidden" {...register(`itineraries.${index}.day_number`)} value={index + 1} />
-                    <div>
-                        <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Tiêu đề ngày ({currentLang.toUpperCase()}) *</label>
-                        <input
-                            {...register(getFieldName(index, 'title'), getRequiredRule('Nhập tiêu đề ngày'))}
-                            className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
-                            placeholder="VD: Đón khách - Tham quan phố cổ"
-                        />
-                        {getFieldError(index, 'title') && <p className="text-error text-xs mt-1 font-medium">{getFieldError(index, 'title').message}</p>}
-                    </div>
-                    
-                    <div>
-                        <RichTextEditor
-                            value={watch(getFieldName(index, 'content'))}
-                            onChange={val => setValue(getFieldName(index, 'content'), val, { shouldValidate: true })}
-                            label={`Chi tiết hoạt động (${currentLang.toUpperCase()}) *`}
-                            placeholder="Mô tả chi tiết các hoạt động trong ngày..."
-                            error={getFieldError(index, 'content')?.message}
-                        />
-                        <input type="hidden" {...register(getFieldName(index, 'content'), getRequiredRule('Nhập nội dung hoạt động'))} />
-                    </div>
-                </div>
                 );
             })}
         </div>
@@ -730,90 +999,90 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                 const isDeparted = !!field.id && isDateBeforeToday(field.departure_date);
 
                 return (
-                <div key={field.fieldId} className="p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative">
-                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                        <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">Khởi hành #{index + 1}</span>
-                        <button type="button" onClick={() => { if (!isDeparted) remove(index); }}
-                            disabled={isDeparted}
-                            className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition" title="Xóa">
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                    {isDeparted && (
-                        <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                            Lịch này đã khởi hành nên không thể xóa.
-                        </p>
-                    )}
-                    <input type="hidden" {...register(`departures.${index}.id`)} />
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Ngày đi *</label>
-                            <DepartureCalendar
-                                value={watch(`departures.${index}.departure_date`)}
-                                onChange={(value) => setValue(`departures.${index}.departure_date`, value, {
-                                    shouldDirty: true,
-                                    shouldTouch: true,
-                                    shouldValidate: true,
-                                })}
-                                minDate={todayDateOnly}
-                                selectableDatesOnly={false}
+                    <div key={field.fieldId} className="p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative">
+                        <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                            <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">Khởi hành #{index + 1}</span>
+                            <button type="button" onClick={() => { if (!isDeparted) remove(index); }}
                                 disabled={isDeparted}
-                                placeholder="Chọn ngày đi"
-                                className={`[&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
-                            />
-                            <input
-                                type="hidden"
-                                {...register(`departures.${index}.departure_date`, {
-                                    required: 'Bắt buộc chọn',
-                                    validate: (value) => isDeparted || !isDateBeforeToday(value) || 'Ngày đi tối thiểu là hôm nay',
-                                })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.departure_date ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
-                            />
-                            {errors.departures?.[index]?.departure_date && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].departure_date.message}</p>}
+                                className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition" title="Xóa">
+                                <Trash2 className="w-4 h-4" />
+                            </button>
                         </div>
-                        <div>
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá NL (VNĐ) *</label>
-                            <PriceInput control={control} name={`departures.${index}.price_adult`} rules={{ required: 'Bắt buộc', min: { value: 1, message: '>0' } }} error={errors.departures?.[index]?.price_adult} placeholder="3.500.000" />
-                            {errors.departures?.[index]?.price_adult && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_adult.message}</p>}
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá trẻ em (VNĐ) *</label>
-                            <PriceInput control={control} name={`departures.${index}.price_child`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_child} placeholder="0" />
-                            {errors.departures?.[index]?.price_child && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_child.message}</p>}
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá em bé (VNĐ) *</label>
-                            <PriceInput control={control} name={`departures.${index}.price_infant`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_infant} placeholder="0" />
-                            {errors.departures?.[index]?.price_infant && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_infant.message}</p>}
-                        </div>
-                        <div>
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Số chỗ *</label>
-                            <input
-                                type="number"
-                                {...register(`departures.${index}.available_seats`, { required: 'Bắt buộc', min: { value: 1, message: '>0' } })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.available_seats ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
-                                placeholder="20"
-                            />
-                            {errors.departures?.[index]?.available_seats && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].available_seats.message}</p>}
-                        </div>
-                        <div className="[&>div>button]:py-2 [&>div>button]:bg-surface">
-                            <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Trạng thái *</label>
-                            <Controller
-                                name={`departures.${index}.status`}
-                                control={control}
-                                render={({ field }) => (
-                                    <CustomSelect
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        options={statusOptions}
-                                        placeholder="Chọn"
-                                    />
-                                )}
-                            />
+                        {isDeparted && (
+                            <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                Lịch này đã khởi hành nên không thể xóa.
+                            </p>
+                        )}
+                        <input type="hidden" {...register(`departures.${index}.id`)} />
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Ngày đi *</label>
+                                <DepartureCalendar
+                                    value={watch(`departures.${index}.departure_date`)}
+                                    onChange={(value) => setValue(`departures.${index}.departure_date`, value, {
+                                        shouldDirty: true,
+                                        shouldTouch: true,
+                                        shouldValidate: true,
+                                    })}
+                                    minDate={todayDateOnly}
+                                    selectableDatesOnly={false}
+                                    disabled={isDeparted}
+                                    placeholder="Chọn ngày đi"
+                                    className={`[&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
+                                />
+                                <input
+                                    type="hidden"
+                                    {...register(`departures.${index}.departure_date`, {
+                                        required: 'Bắt buộc chọn',
+                                        validate: (value) => isDeparted || !isDateBeforeToday(value) || 'Ngày đi tối thiểu là hôm nay',
+                                    })}
+                                    className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.departure_date ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+                                />
+                                {errors.departures?.[index]?.departure_date && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].departure_date.message}</p>}
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá NL (VNĐ) *</label>
+                                <PriceInput control={control} name={`departures.${index}.price_adult`} rules={{ required: 'Bắt buộc', min: { value: 1, message: '>0' } }} error={errors.departures?.[index]?.price_adult} placeholder="3.500.000" />
+                                {errors.departures?.[index]?.price_adult && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_adult.message}</p>}
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá trẻ em (VNĐ) *</label>
+                                <PriceInput control={control} name={`departures.${index}.price_child`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_child} placeholder="0" />
+                                {errors.departures?.[index]?.price_child && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_child.message}</p>}
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giá em bé (VNĐ) *</label>
+                                <PriceInput control={control} name={`departures.${index}.price_infant`} rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }} error={errors.departures?.[index]?.price_infant} placeholder="0" />
+                                {errors.departures?.[index]?.price_infant && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].price_infant.message}</p>}
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Số chỗ *</label>
+                                <input
+                                    type="number"
+                                    {...register(`departures.${index}.available_seats`, { required: 'Bắt buộc', min: { value: 1, message: '>0' } })}
+                                    className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.available_seats ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+                                    placeholder="20"
+                                />
+                                {errors.departures?.[index]?.available_seats && <p className="text-error text-[10px] mt-1 font-medium">{errors.departures[index].available_seats.message}</p>}
+                            </div>
+                            <div className="[&>div>button]:py-2 [&>div>button]:bg-surface">
+                                <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Trạng thái *</label>
+                                <Controller
+                                    name={`departures.${index}.status`}
+                                    control={control}
+                                    render={({ field }) => (
+                                        <CustomSelect
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            options={statusOptions}
+                                            placeholder="Chọn"
+                                        />
+                                    )}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
                 );
             })}
         </div>
@@ -866,10 +1135,11 @@ const PickupsTab = ({ control, register, errors }) => {
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">Giờ đón *</label>
-                            <input
-                                type="time"
-                                {...register(`pickup_locations.${index}.pickup_time`, { required: 'Nhập giờ đón' })}
-                                className={`w-full px-3 py-2 bg-surface border ${errors.pickup_locations?.[index]?.pickup_time ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+                            <TimeInput
+                                control={control}
+                                name={`pickup_locations.${index}.pickup_time`}
+                                rules={{ required: 'Nhập giờ đón' }}
+                                error={errors.pickup_locations?.[index]?.pickup_time}
                             />
                             {errors.pickup_locations?.[index]?.pickup_time && <p className="text-error text-[10px] mt-1 font-medium">{errors.pickup_locations[index].pickup_time.message}</p>}
                         </div>
@@ -1603,74 +1873,74 @@ const TourManagementPage = () => {
     return (
         <AdminLayout>
             <div className="flex h-[calc(100dvh-6rem)] flex-col gap-6 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
-            {/* Header */}
-            <div className="flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-start">
-                <div className="min-w-0 flex-1">
-                    <div className="w-full max-w-2xl">
-                        <SearchBar
-                            variant="admin"
-                            value={searchQuery}
-                            onChange={event => setSearchQuery(event.target.value)}
-                            onSearch={handleSearchTours}
-                            onClear={clearSearchTours}
-                            placeholder={t('admin.tours.searchPlaceholder', 'Search tours...')}
-                            showButton
-                        />
-                        <p className="mt-1.5 text-[11px] font-medium text-text-muted">
-                            {t('admin.tours.total', '{{count}} tours', { count: totalItems })}
-                        </p>
+                {/* Header */}
+                <div className="flex shrink-0 flex-col justify-between gap-4 lg:flex-row lg:items-start">
+                    <div className="min-w-0 flex-1">
+                        <div className="w-full max-w-2xl">
+                            <SearchBar
+                                variant="admin"
+                                value={searchQuery}
+                                onChange={event => setSearchQuery(event.target.value)}
+                                onSearch={handleSearchTours}
+                                onClear={clearSearchTours}
+                                placeholder={t('admin.tours.searchPlaceholder', 'Search tours...')}
+                                showButton
+                            />
+                            <p className="mt-1.5 text-[11px] font-medium text-text-muted">
+                                {t('admin.tours.total', '{{count}} tours', { count: totalItems })}
+                            </p>
+                        </div>
                     </div>
+                    <button
+                        onClick={openCreate}
+                        className="min-h-[46px] px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2 text-sm shadow-md shrink-0 lg:self-start"
+                    >
+                        <Plus className="w-4 h-4" /> {t('admin.tours.add', 'Add tour')}
+                    </button>
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="min-h-[46px] px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-lg hover:opacity-90 transition flex items-center justify-center gap-2 text-sm shadow-md shrink-0 lg:self-start"
-                >
-                    <Plus className="w-4 h-4" /> {t('admin.tours.add', 'Add tour')}
-                </button>
-            </div>
 
-            {/* Table */}
-            <TourManagementTable tours={tours} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
+                {/* Table */}
+                <TourManagementTable tours={tours} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
 
-            {/* Pagination Logic */}
-            {totalPages > 1 && (
-                <div className="flex shrink-0 flex-col items-center">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={loading || currentPage === 1}
-                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-
-                        {getPageNumbers().map(page => (
+                {/* Pagination Logic */}
+                {totalPages > 1 && (
+                    <div className="flex shrink-0 flex-col items-center">
+                        <div className="flex items-center gap-2">
                             <button
-                                key={page}
-                                onClick={() => handlePageChange(page)}
-                                disabled={loading || page === currentPage}
-                                className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${page === currentPage
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={loading || currentPage === 1}
+                                className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+
+                            {getPageNumbers().map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => handlePageChange(page)}
+                                    disabled={loading || page === currentPage}
+                                    className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${page === currentPage
                                         ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
                                         : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
-                                    }`}
-                            >
-                                {page}
-                            </button>
-                        ))}
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
 
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={loading || currentPage === totalPages}
-                            className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
+                            <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={loading || currentPage === totalPages}
+                                className="inline-flex items-center gap-1 px-3 py-3 text-sm font-medium rounded-lg border border-border bg-surface text-text-secondary hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <p className="mt-3 text-xs text-text-muted font-medium">
+                            Trang {currentPage} / {totalPages} • Tổng {totalItems} tour
+                        </p>
                     </div>
-                    <p className="mt-3 text-xs text-text-muted font-medium">
-                        Trang {currentPage} / {totalPages} • Tổng {totalItems} tour
-                    </p>
-                </div>
-            )}
+                )}
 
             </div>
 
@@ -1699,8 +1969,8 @@ const TourManagementPage = () => {
                                         type="button"
                                         onClick={() => setActiveTab(tab.key)}
                                         className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200 whitespace-nowrap relative ${activeTab === tab.key
-                                                ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
-                                                : 'text-text-muted hover:text-text hover:bg-surface-alt'
+                                            ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
+                                            : 'text-text-muted hover:text-text hover:bg-surface-alt'
                                             }`}
                                     >
                                         <Icon className={`w-4 h-4 ${activeTab === tab.key ? 'text-primary' : ''}`} />
@@ -1724,8 +1994,8 @@ const TourManagementPage = () => {
                         {/* Tab Content */}
                         <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 overflow-hidden relative">
                             <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-surface-alt/30">
-                                <div 
-                                    key={activeTab} 
+                                <div
+                                    key={activeTab}
                                     className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500 ease-out fill-mode-both"
                                 >
                                     {activeTab === 'general' && (

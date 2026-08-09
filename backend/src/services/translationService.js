@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 const { translate } = require('@vitalets/google-translate-api');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
@@ -24,6 +26,9 @@ const TRANSLATION_HOSTS = Array.isArray(env.translation.hosts) && env.translatio
 const AZURE_TRANSLATOR_ENDPOINT = String(env.translation.azure?.endpoint || 'https://api.cognitive.microsofttranslator.com').replace(/\/+$/, '');
 const AZURE_TRANSLATOR_KEY = env.translation.azure?.key || '';
 const AZURE_TRANSLATOR_REGION = env.translation.azure?.region || '';
+const RAPIDAPI_TRANSLATOR_KEY = env.translation.rapidapi?.key || '';
+const RAPIDAPI_TRANSLATOR_HOST = env.translation.rapidapi?.host || 'free-google-translator.p.rapidapi.com';
+const RAPIDAPI_TRANSLATOR_ENDPOINT = String(env.translation.rapidapi?.endpoint || 'https://free-google-translator.p.rapidapi.com/external-api/free-google-translator').replace(/\/+$/, '');
 const FIELD_NAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 const BATCH_MARKER_PREFIX = 'MT_TRANSLATE_FIELD';
 const LONG_TEXT_CHUNK_MAX_LENGTH = Math.max(500, Math.min(TRANSLATION_BATCH_MAX_LENGTH, 2500));
@@ -77,14 +82,18 @@ const getPersistentCachedTranslation = async (targetLanguage, value) => {
     if (cachedText) return cachedText;
 
     try {
+        const normLang = normalizeTargetLanguage(targetLanguage) || targetLanguage;
         const cached = await TranslationCache.findOne({
             where: {
                 source_hash: hashText(value),
                 source_language: 'vi',
-                target_language: normalizeTargetLanguage(targetLanguage) || targetLanguage,
-                provider: TRANSLATION_PROVIDER,
+                target_language: normLang,
             },
             attributes: ['translated_text'],
+            order: [
+                [sequelize.literal(`CASE WHEN provider = ${sequelize.escape(TRANSLATION_PROVIDER)} THEN 0 ELSE 1 END`), 'ASC'],
+                ['id', 'DESC'],
+            ],
         });
 
         if (!cached?.translated_text) return null;
@@ -94,6 +103,54 @@ const getPersistentCachedTranslation = async (targetLanguage, value) => {
         logger.warn(`Translation cache lookup failed: ${error.message}`);
         return null;
     }
+};
+
+const getPersistentCachedTranslationsBulk = async (targetLanguage, values) => {
+    const results = new Map();
+    if (!Array.isArray(values) || values.length === 0) return results;
+
+    const normLang = normalizeTargetLanguage(targetLanguage) || targetLanguage;
+    const missingValuesMap = new Map();
+
+    for (const val of values) {
+        if (!val) continue;
+        const inMem = getCachedTranslation(targetLanguage, val);
+        if (inMem) {
+            results.set(val, inMem);
+        } else {
+            missingValuesMap.set(hashText(val), val);
+        }
+    }
+
+    if (missingValuesMap.size === 0) return results;
+
+    try {
+        const hashes = Array.from(missingValuesMap.keys());
+        const cachedRows = await TranslationCache.findAll({
+            where: {
+                source_hash: { [Op.in]: hashes },
+                source_language: 'vi',
+                target_language: normLang,
+            },
+            attributes: ['source_hash', 'translated_text', 'provider'],
+            order: [
+                [sequelize.literal(`CASE WHEN provider = ${sequelize.escape(TRANSLATION_PROVIDER)} THEN 0 ELSE 1 END`), 'ASC'],
+                ['id', 'DESC'],
+            ],
+        });
+
+        for (const row of cachedRows) {
+            const originalVal = missingValuesMap.get(row.source_hash);
+            if (originalVal && !results.has(originalVal) && row.translated_text) {
+                results.set(originalVal, row.translated_text);
+                setCachedTranslation(targetLanguage, originalVal, row.translated_text);
+            }
+        }
+    } catch (error) {
+        logger.warn(`Bulk translation cache lookup failed: ${error.message}`);
+    }
+
+    return results;
 };
 
 const setPersistentCachedTranslation = async (targetLanguage, value, translatedText) => {
@@ -191,6 +248,11 @@ const isTransientTranslationError = (error) => {
         [408, 425, 500, 502, 503, 504].includes(statusCode);
 };
 
+const isClientTranslationError = (error) => {
+    const statusCode = getErrorStatusCode(error);
+    return statusCode >= 400 && statusCode < 500 && statusCode !== HTTP_CODES.TOO_MANY_REQUESTS;
+};
+
 const getAzureTargetLanguage = (targetLanguage) => (
     targetLanguage === 'zh-CN' ? 'zh-Hans' : targetLanguage
 );
@@ -264,6 +326,41 @@ const translateWithAzure = async (value, targetLanguage) => {
     return { text: translatedText };
 };
 
+const translateWithRapidAPI = async (value, targetLanguage) => {
+    if (!RAPIDAPI_TRANSLATOR_KEY) {
+        throw new AppError(
+            'Chưa cấu hình RapidAPI Translator. Vui lòng thêm RAPIDAPI_TRANSLATOR_KEY vào backend/.env.',
+            HTTP_CODES.BAD_REQUEST,
+        );
+    }
+
+    const response = await fetch(RAPIDAPI_TRANSLATOR_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-rapidapi-key': RAPIDAPI_TRANSLATOR_KEY,
+            'x-rapidapi-host': RAPIDAPI_TRANSLATOR_HOST,
+        },
+        body: JSON.stringify({
+            from: 'vi',
+            to: targetLanguage,
+            query: value,
+        }),
+    });
+
+    if (!response.ok) {
+        throw await buildTranslationHttpError(response, 'RapidAPI');
+    }
+
+    const data = await response.json();
+    const translatedText = data?.translation;
+    if (typeof translatedText !== 'string') {
+        throw new Error('RapidAPI translate response is missing translated text.');
+    }
+
+    return { text: translatedText };
+};
+
 const applyTranslationRateLimitCooldown = (host) => {
     if (!TRANSLATION_RATE_LIMIT_COOLDOWN_MS) return;
     const cooldownUntil = Date.now() + TRANSLATION_RATE_LIMIT_COOLDOWN_MS;
@@ -289,6 +386,10 @@ const getTranslationHostsByAvailability = () => (
     ))
 );
 
+const shouldTryNextGoogleHost = (error) => (
+    isRateLimitError(error) || isTransientTranslationError(error)
+);
+
 const translateWithGoogleHosts = async (value, targetLanguage) => {
     let lastError;
 
@@ -308,6 +409,12 @@ const translateWithGoogleHosts = async (value, targetLanguage) => {
                     logger.warn(`Translate host "${host}" is rate limited. Trying another host when available.`);
                     continue;
                 }
+
+                if (shouldTryNextGoogleHost(error)) {
+                    logger.warn(`Translate host "${host}" failed transiently: ${error.message}. Trying another host when available.`);
+                    continue;
+                }
+
                 break;
             }
         }
@@ -348,12 +455,71 @@ const translateWithAzureRetry = async (value, targetLanguage) => {
     throw lastError;
 };
 
+const translateWithRapidAPIRetry = async (value, targetLanguage) => {
+    let lastError;
+
+    for (let attempt = 1; attempt <= TRANSLATION_RETRY_ATTEMPTS; attempt += 1) {
+        try {
+            return await enqueueTranslationRequest(
+                () => translateWithRapidAPI(value, targetLanguage),
+                'rapidapi',
+            );
+        } catch (error) {
+            lastError = error;
+            if (isRateLimitError(error)) {
+                applyTranslationRateLimitCooldown('rapidapi');
+            }
+
+            if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(error)) {
+                throw error;
+            }
+
+            await wait(getRetryDelay(attempt, error));
+        }
+    }
+
+    throw lastError;
+};
+
 const translateWithRetry = async (value, targetLanguage) => {
     if (TRANSLATION_PROVIDER === 'azure') {
         return translateWithAzureRetry(value, targetLanguage);
     }
 
+    if (TRANSLATION_PROVIDER === 'rapidapi') {
+        return translateWithRapidAPIRetry(value, targetLanguage);
+    }
+
     return translateWithGoogleHosts(value, targetLanguage);
+};
+
+const buildStrictTranslationError = (error, fieldKey) => {
+    if (error instanceof AppError) return error;
+
+    if (isRateLimitError(error)) {
+        return new AppError(
+            `Dịch vụ dịch đang bị giới hạn. Vui lòng đợi vài phút rồi thử lại trường "${fieldKey}".`,
+            HTTP_CODES.TOO_MANY_REQUESTS,
+        );
+    }
+
+    if ((TRANSLATION_PROVIDER === 'azure' || TRANSLATION_PROVIDER === 'rapidapi') && isClientTranslationError(error)) {
+        const statusCode = getErrorStatusCode(error);
+        const providerName = TRANSLATION_PROVIDER === 'azure' ? 'Azure Translator' : 'RapidAPI Translator';
+        const keyHint = TRANSLATION_PROVIDER === 'azure'
+            ? 'AZURE_TRANSLATOR_KEY và AZURE_TRANSLATOR_REGION'
+            : 'RAPIDAPI_TRANSLATOR_KEY';
+        const message = [HTTP_CODES.UNAUTHORIZED, HTTP_CODES.FORBIDDEN].includes(statusCode)
+            ? `${providerName} từ chối xác thực. Vui lòng kiểm tra ${keyHint} trong backend/.env.`
+            : `${providerName} không chấp nhận nội dung trường "${fieldKey}". Vui lòng kiểm tra lại nội dung hoặc cấu hình.`;
+
+        return new AppError(message, statusCode);
+    }
+
+    return new AppError(
+        `Không dịch được trường "${fieldKey}". Vui lòng thử lại.`,
+        HTTP_CODES.BAD_GATEWAY,
+    );
 };
 
 const splitOversizedSegment = (segment, maxLength) => {
@@ -450,7 +616,7 @@ const isProbablyNonTranslatableText = (value) => {
     if (!text) return true;
     if (/^(https?:\/\/|www\.)\S+$/i.test(text)) return true;
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return true;
-    if (/^[\d\s.,:/+\-–—()%₫$€¥]+$/.test(text)) return true;
+    if (/^[\d\s.,:/+\-–—_~*#@!&|\\/<>?[\]{}()"'•·▪►%₫$€¥]+$/.test(text)) return true;
     return !/\p{L}/u.test(text);
 };
 
@@ -651,11 +817,7 @@ const translateTextEntry = async ([key, value], targetLanguage, { strict = false
     } catch (error) {
         logger.warn(`Translate failed for field "${key}": ${error.message}`);
         if (strict) {
-            const statusCode = isRateLimitError(error) ? HTTP_CODES.TOO_MANY_REQUESTS : HTTP_CODES.BAD_GATEWAY;
-            const message = isRateLimitError(error)
-                ? `Dịch vụ dịch đang bị giới hạn. Vui lòng đợi vài phút rồi thử lại trường "${key}".`
-                : `Không dịch được trường "${key}". Vui lòng thử lại.`;
-            throw new AppError(message, statusCode);
+            throw buildStrictTranslationError(error, key);
         }
         return [key, value];
     }
@@ -665,13 +827,19 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
     const translatedMap = new Map();
     const uncachedEntries = [];
 
+    const nonNullValues = entries
+        .map(([, val]) => val)
+        .filter(Boolean);
+
+    const bulkCacheHits = await getPersistentCachedTranslationsBulk(targetLanguage, nonNullValues);
+
     for (const [key, value] of entries) {
         if (!value) {
             translatedMap.set(key, '');
             continue;
         }
 
-        const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
+        const cachedText = bulkCacheHits.get(value);
         if (cachedText) {
             translatedMap.set(key, cachedText);
             continue;
@@ -680,9 +848,11 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
         uncachedEntries.push([key, value]);
     }
 
-    const batches = TRANSLATION_PROVIDER === 'azure'
-        ? uncachedEntries.map(entry => [entry])
-        : splitEntriesIntoBatches(uncachedEntries);
+    if (uncachedEntries.length === 0) {
+        return entries.map(([key]) => [key, translatedMap.get(key) || '']);
+    }
+
+    const batches = splitEntriesIntoBatches(uncachedEntries);
     for (let index = 0; index < batches.length; index += TRANSLATION_CONCURRENCY) {
         const chunk = batches.slice(index, index + TRANSLATION_CONCURRENCY);
         const translatedChunks = await Promise.all(chunk.map(async (batch) => {
@@ -694,11 +864,7 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
                 const failedKey = batch[0]?.[0] || '';
                 logger.warn(`Translate failed for batch starting at field "${failedKey}": ${error.message}`);
                 if (options.strict) {
-                    const statusCode = isRateLimitError(error) ? HTTP_CODES.TOO_MANY_REQUESTS : HTTP_CODES.BAD_GATEWAY;
-                    const message = isRateLimitError(error)
-                        ? `Dịch vụ dịch đang bị giới hạn. Vui lòng đợi vài phút rồi thử lại trường "${failedKey}".`
-                        : `Không dịch được trường "${failedKey}". Vui lòng thử lại.`;
-                    throw new AppError(message, statusCode);
+                    throw buildStrictTranslationError(error, failedKey);
                 }
                 return batch;
             }
