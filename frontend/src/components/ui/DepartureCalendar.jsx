@@ -148,21 +148,21 @@ const DepartureCalendar = ({
                 onClick={handleToggle}
                 disabled={disabled}
                 className={`
-                    w-full flex items-center justify-between gap-2 px-3 py-2 
-                    bg-white border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20
-                    ${isOpen ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200 hover:border-gray-300'}
-                    ${disabled ? 'cursor-not-allowed opacity-70 hover:border-gray-200' : ''}
+                    w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-sm
+                    transition-all duration-200 ease-in-out bg-transparent text-text
+                    border-border hover:border-primary/40
+                    focus:outline-none 
+                    ${isOpen ? 'ring-2 ring-primary/30 border-primary/50' : ''}
+                    ${disabled ? 'cursor-not-allowed opacity-60 hover:border-border' : ''}
                 `}
             >
-                <div className="flex items-center gap-3 truncate">
-                    <span className={`truncate text-sm text-left font-medium ${value ? 'text-text' : 'text-text-muted'}`}>
-                        {value 
-                            ? new Date(value + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) 
-                            : placeholder || t('home.search.selectDeparture', 'Chọn ngày khởi hành...')}
-                    </span>
-                </div>
+                <span className={`flex items-center gap-2 truncate font-medium ${!value ? 'text-text-muted' : 'text-text'}`}>
+                    {value 
+                        ? new Date(value + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) 
+                        : placeholder || t('home.search.selectDeparture', 'Chọn ngày khởi hành...')}
+                </span>
                 
-                {value && !disabled && (
+                {value && !disabled ? (
                     <div 
                         role="button"
                         tabIndex={0}
@@ -170,10 +170,21 @@ const DepartureCalendar = ({
                             e.stopPropagation(); 
                             onChange(''); 
                         }} 
-                        className="p-1 rounded-md hover:bg-slate-100 transition-colors group flex-shrink-0"
+                        className="p-1 rounded-md hover:bg-surface-alt transition-colors group flex-shrink-0"
                     >
-                        <X className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                        <X className="w-4 h-4 text-text-muted group-hover:text-text" />
                     </div>
+                ) : (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`w-4 h-4 shrink-0 text-text-muted transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                 )}
             </button>
 
@@ -181,23 +192,23 @@ const DepartureCalendar = ({
             {isOpen && typeof document !== 'undefined' && createPortal(
                 <div
                     ref={dropdownRef}
-                    className="fixed z-[10000] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-gray-100 bg-white p-3 shadow-xl shadow-black/10 sm:rounded-2xl sm:p-4"
+                    className="fixed z-[10000] max-h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-border bg-surface p-3 shadow-lg transition-all duration-200 ease-in-out sm:p-4"
                     style={dropdownStyle}
                     data-placement={isDropdownAbove ? 'top' : 'bottom'}
                 >
                     <div className="flex items-center justify-between mb-4">
-                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month - 1, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
+                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month - 1, 1))} className="p-1.5 rounded-lg hover:bg-surface-alt transition text-text-muted hover:text-text">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="font-bold text-base text-slate-800 capitalize">{monthNames[month]} {year}</span>
-                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month + 1, 1))} className="p-1.5 rounded-lg hover:bg-slate-100 transition text-slate-500 hover:text-slate-800">
+                        <span className="font-bold text-base text-text capitalize">{monthNames[month]} {year}</span>
+                        <button type="button" onClick={() => setDisplayMonth(new Date(year, month + 1, 1))} className="p-1.5 rounded-lg hover:bg-surface-alt transition text-text-muted hover:text-text">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
 
                     <div className="grid grid-cols-7 mb-2">
                         {dayHeaders.map(d => (
-                            <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1 capitalize">{d}</div>
+                            <div key={d} className="text-center text-xs font-semibold text-text-muted py-1 capitalize">{d}</div>
                         ))}
                     </div>
 
@@ -222,15 +233,15 @@ const DepartureCalendar = ({
                                         onClick={() => handleDayClick(day)}
                                         className={`
                                             h-11 sm:h-12 flex flex-col items-center justify-center rounded-lg text-sm transition-all relative
-                                            ${isSelected ? 'bg-primary text-white shadow-md' : ''}
-                                            ${isBeforeMinDate ? 'text-slate-200 cursor-not-allowed' : ''}
-                                            ${!isSelectableDate && !isBeforeMinDate ? 'text-slate-300 cursor-default' : ''}
-                                            ${isSelectableDate && !isSelected && !isBeforeMinDate ? 'text-slate-700 font-medium hover:bg-primary/10 hover:text-primary cursor-pointer' : ''}
+                                            ${isSelected ? 'bg-primary text-white shadow-sm font-medium' : ''}
+                                            ${isBeforeMinDate ? 'text-text-muted/40 cursor-not-allowed' : ''}
+                                            ${!isSelectableDate && !isBeforeMinDate ? 'text-text-muted/50 cursor-default' : ''}
+                                            ${isSelectableDate && !isSelected && !isBeforeMinDate ? 'text-text font-medium hover:bg-surface-alt cursor-pointer' : ''}
                                         `}
                                     >
                                         <span className="leading-none">{day}</span>
                                         {hasDep && (
-                                            <span className={`text-[10px] leading-tight mt-1 tracking-tight ${isSelected ? 'text-white/90' : isCheapest ? 'text-emerald-500 font-bold' : 'text-slate-400'}`}>
+                                            <span className={`text-[10px] leading-tight mt-1 tracking-tight ${isSelected ? 'text-white/90' : isCheapest ? 'text-emerald-500 font-bold' : 'text-text-muted'}`}>
                                                 {formatShortPrice(price)}
                                             </span>
                                         )}

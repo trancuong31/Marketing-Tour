@@ -7,6 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/components/layout/AdminLayout';
 import SearchBar from '@/components/ui/SearchBar';
+import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
 import { adminService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import UserManagementTable from '@/features/admin/components/UserManagementTable';
@@ -120,15 +121,12 @@ const UserDetailModal = ({ detail, roles, loading, onClose, onToggleStatus, onCh
                             <div className="rounded-2xl border border-border bg-primary/5 p-5">
                                 <h4 className="mb-4 text-sm font-black uppercase tracking-wider text-primary">Thao tác nhanh</h4>
                                 <div className="space-y-3">
-                                    <select
-                                        value={user.role_id}
-                                        onChange={(event) => onChangeRole(user.id, Number(event.target.value))}
-                                        className="w-full rounded-xl border border-border bg-white px-3 py-2 text-sm font-bold outline-none focus:border-primary"
-                                    >
-                                        {roles.map(role => (
-                                            <option key={role.id} value={role.id}>{role.role_name}</option>
-                                        ))}
-                                    </select>
+                                    <CustomSelect
+                                        value={String(user.role_id)}
+                                        onChange={(val) => onChangeRole(user.id, Number(val))}
+                                        options={roles.map(role => ({ label: role.role_name, value: String(role.id) }))}
+                                        placeholder="Chọn vai trò"
+                                    />
                                     <button
                                         onClick={() => onToggleStatus(user)}
                                         className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black text-white ${user.is_active ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
@@ -305,51 +303,75 @@ const UserManagementPage = () => {
         }
     };
 
-    const clearSearch = () => {
-        setSearch('');
-        setPage(1);
-    };
+    const roleOptions = useMemo(() => [
+        { label: 'Tất cả vai trò', value: '' },
+        ...roles.map(role => ({ label: role.role_name, value: String(role.id) })),
+    ], [roles]);
+
+    const statusOptions = useMemo(() => [
+        { label: 'Tất cả trạng thái', value: '' },
+        { label: 'Hoạt động', value: 'active' },
+        { label: 'Đã khóa', value: 'locked' },
+    ], []);
+
+    const sortOptions = useMemo(() => [
+        { label: 'Mới nhất', value: 'newest' },
+        { label: 'Cũ nhất', value: 'oldest' },
+        { label: 'Tên A-Z', value: 'name' },
+    ], []);
+
+    const pageNumbers = useMemo(() => {
+        const total = pagination.totalPages || 1;
+        const current = page || 1;
+        const start = Math.max(1, current - 2);
+        const end = Math.min(total, start + 4);
+
+        return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    }, [page, pagination.totalPages]);
 
     return (
         <AdminLayout>
-            <div className="space-y-5">
-                <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-                    <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
-                        <SearchBar
-                            variant="admin"
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            onSearch={() => setPage(1)}
-                            onClear={clearSearch}
-                            showButton
-                            placeholder={t('admin.users.searchPlaceholder', 'Tìm theo tên, email hoặc số điện thoại')}
-                        />
-                        <select
-                            value={filters.role_id}
-                            onChange={(event) => { setFilters(prev => ({ ...prev, role_id: event.target.value })); setPage(1); }}
-                            className="rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
-                        >
-                            <option value="">Tất cả vai trò</option>
-                            {roles.map(role => <option key={role.id} value={role.id}>{role.role_name}</option>)}
-                        </select>
-                        <select
-                            value={filters.status}
-                            onChange={(event) => { setFilters(prev => ({ ...prev, status: event.target.value })); setPage(1); }}
-                            className="rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
-                        >
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="active">Hoạt động</option>
-                            <option value="locked">Đã khóa</option>
-                        </select>
-                        <select
-                            value={filters.sort}
-                            onChange={(event) => { setFilters(prev => ({ ...prev, sort: event.target.value })); setPage(1); }}
-                            className="rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
-                        >
-                            <option value="newest">Mới nhất</option>
-                            <option value="oldest">Cũ nhất</option>
-                            <option value="name">Tên A-Z</option>
-                        </select>
+            <div className="flex h-[calc(100dvh-6.5rem)] flex-col gap-4 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
+                <div className="shrink-0">
+                    <p className="text-sm text-text-muted">
+                        {t('admin.users.pageDescription', 'Quản lý danh sách người dùng, phân quyền vai trò và trạng thái tài khoản.')}
+                    </p>
+                </div>
+
+                <div className="shrink-0 rounded-lg border border-border bg-surface p-4 shadow-sm">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        {/* Bộ lọc bên trái với CustomSelect */}
+                        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[540px]">
+                            <CustomSelect
+                                value={String(filters.role_id)}
+                                onChange={(val) => { setFilters(prev => ({ ...prev, role_id: val })); setPage(1); }}
+                                options={roleOptions}
+                                placeholder="Tất cả vai trò"
+                            />
+                            <CustomSelect
+                                value={filters.status}
+                                onChange={(val) => { setFilters(prev => ({ ...prev, status: val })); setPage(1); }}
+                                options={statusOptions}
+                                placeholder="Tất cả trạng thái"
+                            />
+                            <CustomSelect
+                                value={filters.sort}
+                                onChange={(val) => { setFilters(prev => ({ ...prev, sort: val })); setPage(1); }}
+                                options={sortOptions}
+                                placeholder="Sắp xếp"
+                            />
+                        </div>
+
+                        {/* Ô tìm kiếm ở góc phải (không dùng btn search) */}
+                        <div className="w-full shrink-0 lg:w-96">
+                            <SearchBar
+                                variant="admin"
+                                value={search}
+                                onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+                                onClear={() => { setSearch(''); setPage(1); }}
+                                placeholder={t('admin.users.searchPlaceholder', 'Tìm theo tên, email hoặc SĐT...')}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -358,29 +380,49 @@ const UserManagementPage = () => {
                     loading={loading}
                     onView={openDetail}
                     onToggleStatus={handleToggleStatus}
+                    page={page}
+                    pageSize={PAGE_SIZE}
                 />
 
-                <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-medium text-text-muted">
-                        Hiển thị {users.length} / {pagination.totalItems} người dùng · Trang {page}/{pagination.totalPages}
-                    </p>
-                    <div className="flex gap-2">
+                {pagination.totalPages > 1 && (
+                    <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
                         <button
+                            type="button"
                             onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                            disabled={page <= 1}
-                            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-bold disabled:opacity-50"
+                            disabled={loading || page <= 1}
+                            className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+                            aria-label={t('common.previous', 'Previous')}
                         >
-                            <ChevronLeft className="h-4 w-4" /> Trước
+                            <ChevronLeft className="h-4 w-4" />
                         </button>
+
+                        {pageNumbers.map(p => (
+                            <button
+                                key={p}
+                                type="button"
+                                onClick={() => setPage(p)}
+                                disabled={loading || p === page}
+                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${
+                                    p === page
+                                        ? 'border-primary bg-primary text-white'
+                                        : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
+                                }`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+
                         <button
+                            type="button"
                             onClick={() => setPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                            disabled={page >= pagination.totalPages}
-                            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-bold disabled:opacity-50"
+                            disabled={loading || page >= pagination.totalPages}
+                            className="rounded-lg border border-border bg-surface p-2.5 text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+                            aria-label={t('common.next', 'Next')}
                         >
-                            Sau <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
-                </div>
+                )}
             </div>
 
             {(detail || detailLoading) && (

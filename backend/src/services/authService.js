@@ -77,13 +77,21 @@ const register = async (userData, language = 'vi') => {
         throw new AppError('Email đã được sử dụng', HTTP_CODES.CONFLICT);
     }
 
+    const cleanPhone = phone_number ? String(phone_number).trim() : null;
+    if (cleanPhone) {
+        const existingPhone = await User.findOne({ where: { phone_number: cleanPhone } });
+        if (existingPhone) {
+            throw new AppError('Số điện thoại đã được sử dụng cho tài khoản khác', HTTP_CODES.CONFLICT);
+        }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
         full_name,
         email,
         password: hashedPassword,
-        phone_number: phone_number || null,
+        phone_number: cleanPhone || null,
         role_id: 2,
         is_active: 0,
         language: preferredLanguage,

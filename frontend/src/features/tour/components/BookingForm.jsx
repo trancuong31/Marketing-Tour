@@ -8,13 +8,15 @@ import { useNavigate } from 'react-router-dom';
 import { CustomSelect } from '@/components/ui';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { parseLocalDate } from '@/utils/dateUtils';
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
 // ─── Helper: tách thông tin departure ───────────────────────────────────────
 const parseDeparture = (d, t) => {
-    const date = new Date(d.departure_date);
+    const date = parseLocalDate(d.departure_date);
+    if (!date) return null;
     const day = date.getDate();
     const month = date.getMonth() + 1;
     const year = date.getFullYear();

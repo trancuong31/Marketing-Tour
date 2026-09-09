@@ -2,12 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { createBooking, getMyBookings, cancelBooking, deleteMyBooking, lookupBooking } = require('../controllers/bookingController');
 const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
+const { validate } = require('../middlewares/validate');
+const { lookupLimiter } = require('../middlewares/rateLimiter');
+const { createBookingSchema } = require('../validations/bookingValidation');
 
 // Tạo booking
-router.post('/', optionalAuthenticate, createBooking);
+router.post('/', optionalAuthenticate, validate(createBookingSchema), createBooking);
 
 // Tra cứu booking
-router.get('/lookup', lookupBooking);
+router.get('/lookup', lookupLimiter, lookupBooking);
 
 // Lấy booking của user login + chi tiết tour
 router.get('/my', authenticate, getMyBookings);

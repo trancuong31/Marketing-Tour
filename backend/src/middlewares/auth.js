@@ -29,10 +29,13 @@ const authenticate = catchAsync(async (req, res, next) => {
     try {
         decoded = jwt.verify(token, env.jwt.secret);
     } catch (err) {
-        return next(new AppError('Token không hợp lệ hoặc đã hết hạn', HTTP_CODES.UNAUTHORIZED));
+        if (err.name === 'TokenExpiredError') {
+            return next(new AppError('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại', HTTP_CODES.UNAUTHORIZED));
+        }
+        return next(new AppError('Token không hợp lệ', HTTP_CODES.UNAUTHORIZED));
     }
 
-    // 4. Kiểm tra user
+    // 4. Kiểm tra user & trạng thái hoạt động
     const user = await User.findOne({
         where: { id: decoded.id, is_active: 1 },
         include: [{ model: Role, attributes: ['role_name'] }],

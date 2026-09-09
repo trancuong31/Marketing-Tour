@@ -760,12 +760,12 @@ const splitEntriesIntoBatches = (entries) => {
 //         return Promise.all(entries.map(entry => translateTextEntry(entry, targetLanguage, options)));
 //     }
 
-//     // parsedEntries.forEach(([key, translatedText]) => {
-//     //     const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
-//     //     if (sourceText) {
-//     //         setCachedTranslation(targetLanguage, sourceText, translatedText);
-//     //     }
-//     // });
+//     parsedEntries.forEach(([key, translatedText]) => {
+//         const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
+//         if (sourceText) {
+//             setCachedTranslation(targetLanguage, sourceText, translatedText);
+//         }
+//     });
 //     // toi uu call batch
 // await Promise.all(
 //     parsedEntries.map(async ([key, translatedText]) => {
@@ -785,95 +785,59 @@ const splitEntriesIntoBatches = (entries) => {
 //     return parsedEntries;
 // };
 
-// const normalizeTargetLanguage = (language) => {
-//     if (!language || typeof language !== 'string') return null;
+const normalizeTargetLanguage = (language) => {
+    if (!language || typeof language !== 'string') return null;
 
-//     const normalized = language.trim().toLowerCase();
-//     if (normalized.startsWith('vi')) return 'vi';
-//     if (normalized.startsWith('en')) return 'en';
-//     if (normalized.startsWith('zh')) return 'zh-CN';
+    const normalized = language.trim().toLowerCase();
+    if (normalized.startsWith('vi')) return 'vi';
+    if (normalized.startsWith('en')) return 'en';
+    if (normalized.startsWith('zh')) return 'zh-CN';
 
-//     return null;
-// };
+    return null;
+};
 
-// const validateTexts = (texts) => {
-//     if (!texts || Array.isArray(texts) || typeof texts !== 'object') {
-//         throw new AppError('Dữ liệu văn bản không hợp lệ', HTTP_CODES.BAD_REQUEST);
-//     }
-
-//     const entries = Object.entries(texts);
-//     if (entries.length === 0 || entries.length > MAX_FIELDS) {
-//         throw new AppError(`Chỉ được dịch từ 1 đến ${MAX_FIELDS} trường mỗi lần`, HTTP_CODES.BAD_REQUEST);
-//     }
-
-//     return entries.map(([key, value]) => {
-//         if (!FIELD_NAME_PATTERN.test(key)) {
-//             throw new AppError('Tên trường dịch không hợp lệ', HTTP_CODES.BAD_REQUEST);
-//         }
-
-//         const text = typeof value === 'string' ? value.trim() : '';
-//         if (text.length > MAX_FIELD_LENGTH) {
-//             throw new AppError(`Nội dung trường "${key}" vượt quá giới hạn ${MAX_FIELD_LENGTH} ký tự`, HTTP_CODES.BAD_REQUEST);
-//         }
-
-//         return [key, text];
-//     });
-// };
-// const translateTextEntry = async ([key, value], targetLanguage, { strict = false } = {}) => {
-//     if (!value) return [key, ''];
-
-//     const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
-//     if (cachedText) return [key, cachedText];
-
-//     try {
-//         const translatedText = await translateTextValue(value, targetLanguage);
-//         await setPersistentCachedTranslation(targetLanguage, value, translatedText);
-//         return [key, translatedText];
-//     } catch (error) {
-//         logger.warn(`Translate failed for field "${key}": ${error.message}`);
-//         if (strict) {
-//             throw buildStrictTranslationError(error, key);
-//         }
-//         return [key, value];
-//     }
-// };
-const translateBatch = async (entries, targetLanguage, options = {}) => {
-    const batchText = createBatchText(entries);
-
-    const result = await translateWithRetry(batchText, targetLanguage);
-
-    const parsedEntries = parseBatchTranslation(result.text, entries);
-
-    if (!parsedEntries) {
-        logger.warn(
-            'Batch translate markers were not preserved; falling back to field-by-field translation.'
-        );
-
-        return Promise.all(
-            entries.map(entry =>
-                translateTextEntry(entry, targetLanguage, options)
-            )
-        );
+const validateTexts = (texts) => {
+    if (!texts || Array.isArray(texts) || typeof texts !== 'object') {
+        throw new AppError('Dữ liệu văn bản không hợp lệ', HTTP_CODES.BAD_REQUEST);
     }
 
-    await Promise.all(
-        parsedEntries.map(async ([key, translatedText]) => {
-            const sourceText = entries.find(
-                ([entryKey]) => entryKey === key
-            )?.[1];
+    const entries = Object.entries(texts);
+    if (entries.length === 0 || entries.length > MAX_FIELDS) {
+        throw new AppError(`Chỉ được dịch từ 1 đến ${MAX_FIELDS} trường mỗi lần`, HTTP_CODES.BAD_REQUEST);
+    }
 
-            if (sourceText) {
-                await setPersistentCachedTranslation(
-                    targetLanguage,
-                    sourceText,
-                    translatedText
-                );
-            }
-        })
-    );
+    return entries.map(([key, value]) => {
+        if (!FIELD_NAME_PATTERN.test(key)) {
+            throw new AppError('Tên trường dịch không hợp lệ', HTTP_CODES.BAD_REQUEST);
+        }
 
-    return parsedEntries;
+        const text = typeof value === 'string' ? value.trim() : '';
+        // if (text.length > MAX_FIELD_LENGTH) {
+        //     throw new AppError(`Nội dung trường "${key}" vượt quá giới hạn ${MAX_FIELD_LENGTH} ký tự`, HTTP_CODES.BAD_REQUEST);
+        // }
+
+        return [key, text];
+    });
 };
+const translateTextEntry = async ([key, value], targetLanguage, { strict = false } = {}) => {
+    if (!value) return [key, ''];
+
+    const cachedText = await getPersistentCachedTranslation(targetLanguage, value);
+    if (cachedText) return [key, cachedText];
+
+    try {
+        const translatedText = await translateTextValue(value, targetLanguage);
+        await setPersistentCachedTranslation(targetLanguage, value, translatedText);
+        return [key, translatedText];
+    } catch (error) {
+        logger.warn(`Translate failed for field "${key}": ${error.message}`);
+        if (strict) {
+            throw buildStrictTranslationError(error, key);
+        }
+        return [key, value];
+    }
+};
+
 const translateEntries = async (entries, targetLanguage, options = {}) => {
     const translatedMap = new Map();
     const uncachedEntries = [];

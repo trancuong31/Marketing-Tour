@@ -3,9 +3,24 @@ const { Op } = require('sequelize');
 const slugify = require('slugify');
 const { sequelize } = require('../config/database');
 const {
-    User, Role, Tour, TourImage, TourItinerary, TourDeparture,
-    TourPickupLocation, TourOption, Booking, BookingOption, Vote, Guide, Category, Banner, Notification,
-    TourTranslation, TourItineraryTranslation, GuideTranslation,
+  User,
+  Role,
+  Tour,
+  TourImage,
+  TourItinerary,
+  TourDeparture,
+  TourPickupLocation,
+  TourOption,
+  Booking,
+  BookingOption,
+  Vote,
+  Guide,
+  Category,
+  Banner,
+  Notification,
+  TourTranslation,
+  TourItineraryTranslation,
+  GuideTranslation,
 } = require('../models');
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
@@ -24,45 +39,45 @@ const { normalizeLanguage } = require('../utils/language');
  * POST /api/admin/login
  */
 const login = catchAsync(async (req, res, next) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-        return next(new AppError('Vui lòng nhập email và mật khẩu', HTTP_CODES.BAD_REQUEST));
-    }
+  if (!email || !password) {
+    return next(new AppError('Vui lòng nhập email và mật khẩu', HTTP_CODES.BAD_REQUEST));
+  }
 
-    const user = await User.findOne({
-        where: { email, is_active: 1 },
-        include: [{ model: Role, attributes: ['role_name'] }],
-    });
+  const user = await User.findOne({
+    where: { email, is_active: 1 },
+    include: [{ model: Role, attributes: ['role_name'] }],
+  });
 
-    if (!user) {
-        return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
-    }
+  if (!user) {
+    return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
+  }
 
-    const isPasswordValid = password === user.password;
-    if (!isPasswordValid) {
-        return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
-    }
+  const isPasswordValid = password === user.password;
+  if (!isPasswordValid) {
+    return next(new AppError('Email hoặc mật khẩu không đúng', HTTP_CODES.UNAUTHORIZED));
+  }
 
-    await user.update({ last_login: new Date() });
+  await user.update({ last_login: new Date() });
 
-    const token = jwt.sign({ id: user.id, role: user.Role?.role_name }, env.jwt.secret, {
-        expiresIn: env.jwt.expiresIn,
-    });
+  const token = jwt.sign({ id: user.id, role: user.Role?.role_name }, env.jwt.secret, {
+    expiresIn: env.jwt.expiresIn,
+  });
 
-    res.status(200).json({
-        status: 'success',
-        data: {
-            token,
-            user: {
-                id: user.id,
-                full_name: user.full_name,
-                email: user.email,
-                role: user.Role?.role_name,
-                avatar_url: user.avatar_url,
-            },
-        },
-    });
+  res.status(200).json({
+    status: 'success',
+    data: {
+      token,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.Role?.role_name,
+        avatar_url: user.avatar_url,
+      },
+    },
+  });
 });
 
 // ══════════════════════════════════════
@@ -70,197 +85,237 @@ const login = catchAsync(async (req, res, next) => {
 // ══════════════════════════════════════
 
 const parseJsonField = (value) => {
-    if (!value) return [];
-    if (Array.isArray(value)) return value;
-    try {
-        return JSON.parse(value);
-    } catch {
-        return [];
-    }
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return [];
+  }
 };
 
 const getTodayDateOnly = () => {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-    }).formatToParts(new Date());
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
 
-    const byType = Object.fromEntries(parts.map(part => [part.type, part.value]));
-    return `${byType.year}-${byType.month}-${byType.day}`;
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
 };
 
 const normalizeDateOnlyValue = (value) => {
-    if (!value) return '';
-    return String(value).slice(0, 10);
+  if (!value) return '';
+  return String(value).slice(0, 10);
 };
 
 const normalizeMoneyValue = (value, fieldLabel, { min = 0 } = {}) => {
-    if (value === null || value === undefined || value === '') {
-        if (min > 0) {
-            throw new AppError(`${fieldLabel} phải lớn hơn 0`, HTTP_CODES.BAD_REQUEST);
-        }
-        return 0;
+  if (value === null || value === undefined || value === '') {
+    if (min > 0) {
+      throw new AppError(`${fieldLabel} phải lớn hơn 0`, HTTP_CODES.BAD_REQUEST);
     }
+    return 0;
+  }
 
-    const normalized = typeof value === 'number'
-        ? value
-        : Number(String(value).replace(/[^\d.-]/g, ''));
+  const normalized =
+    typeof value === 'number' ? value : Number(String(value).replace(/[^\d.-]/g, ''));
 
-    if (!Number.isFinite(normalized) || normalized < min) {
-        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
-    }
+  if (!Number.isFinite(normalized) || normalized < min) {
+    throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+  }
 
-    return normalized;
+  return normalized;
 };
 
 const normalizePositiveInteger = (value, fieldLabel, { min = 0 } = {}) => {
-    const normalized = Number.parseInt(String(value ?? '').replace(/[^\d]/g, ''), 10);
-    if (!Number.isFinite(normalized) || normalized < min) {
-        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
-    }
+  const normalized = Number.parseInt(String(value ?? '').replace(/[^\d]/g, ''), 10);
+  if (!Number.isFinite(normalized) || normalized < min) {
+    throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+  }
 
-    return normalized;
+  return normalized;
 };
 
 const normalizeTimeValue = (value, fieldLabel, { required = false } = {}) => {
-    if (!value) {
-        if (required) {
-            throw new AppError(`${fieldLabel} không được để trống`, HTTP_CODES.BAD_REQUEST);
-        }
-        return null;
+  if (!value) {
+    if (required) {
+      throw new AppError(`${fieldLabel} không được để trống`, HTTP_CODES.BAD_REQUEST);
     }
+    return null;
+  }
 
-    const match = String(value).match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
-    if (!match) {
-        throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
-    }
+  const match = String(value).match(/^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+  if (!match) {
+    throw new AppError(`${fieldLabel} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
+  }
 
-    return `${match[1]}:${match[2]}:00`;
+  return `${match[1]}:${match[2]}:00`;
 };
 
 const isDateOnlyBeforeToday = (value) => {
-    const dateOnly = normalizeDateOnlyValue(value);
-    return !!dateOnly && dateOnly < getTodayDateOnly();
+  const dateOnly = normalizeDateOnlyValue(value);
+  return !!dateOnly && dateOnly < getTodayDateOnly();
 };
 
 const ensureValidDepartureDate = (departureDate, index) => {
-    const dateOnly = normalizeDateOnlyValue(departureDate);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
-        throw new AppError(`Vui lòng chọn ngày đi cho lịch khởi hành #${index + 1}`, HTTP_CODES.BAD_REQUEST);
-    }
+  const dateOnly = normalizeDateOnlyValue(departureDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    throw new AppError(
+      `Vui lòng chọn ngày đi cho lịch khởi hành #${index + 1}`,
+      HTTP_CODES.BAD_REQUEST
+    );
+  }
 
-    if (isDateOnlyBeforeToday(dateOnly)) {
-        throw new AppError(`Ngày đi của lịch khởi hành #${index + 1} tối thiểu là hôm nay`, HTTP_CODES.BAD_REQUEST);
-    }
+  if (isDateOnlyBeforeToday(dateOnly)) {
+    throw new AppError(
+      `Ngày đi của lịch khởi hành #${index + 1} tối thiểu là hôm nay`,
+      HTTP_CODES.BAD_REQUEST
+    );
+  }
 
-    return dateOnly;
+  return dateOnly;
 };
 
-const buildDeparturePayload = (item, index) => ({
+const getDepartureCapacity = (item, index) =>
+  normalizePositiveInteger(
+    item.capacity ?? item.available_seats,
+    `Sức chứa của lịch khởi hành #${index + 1}`,
+    { min: 1 }
+  );
+
+const getBookingPassengerCount = (booking) =>
+  Number(booking.adult_qty || 0) + Number(booking.child_qty || 0) + Number(booking.infant_qty || 0);
+
+const buildDeparturePayload = (item, index) => {
+  const capacity = getDepartureCapacity(item, index);
+
+  return {
     departure_date: ensureValidDepartureDate(item.departure_date, index),
-    price_adult: normalizeMoneyValue(item.price_adult, `Giá người lớn của lịch khởi hành #${index + 1}`, { min: 1 }),
-    price_child: normalizeMoneyValue(item.price_child, `Giá trẻ em của lịch khởi hành #${index + 1}`, { min: 0 }),
-    price_infant: normalizeMoneyValue(item.price_infant, `Giá em bé của lịch khởi hành #${index + 1}`, { min: 0 }),
-    available_seats: normalizePositiveInteger(item.available_seats, `Số chỗ của lịch khởi hành #${index + 1}`, { min: 1 }),
-    status: item.status || 'open',
-});
+    price_adult: normalizeMoneyValue(
+      item.price_adult,
+      `Giá người lớn của lịch khởi hành #${index + 1}`,
+      { min: 1 }
+    ),
+    price_child: normalizeMoneyValue(
+      item.price_child,
+      `Giá trẻ em của lịch khởi hành #${index + 1}`,
+      { min: 0 }
+    ),
+    price_infant: normalizeMoneyValue(
+      item.price_infant,
+      `Giá em bé của lịch khởi hành #${index + 1}`,
+      { min: 0 }
+    ),
+    capacity,
+    available_seats: capacity,
+    status: item.status === 'cancelled' ? 'cancelled' : 'open',
+  };
+};
 
 const validateCreateDepartures = (departures) => {
-    departures.forEach((item, index) => {
-        ensureValidDepartureDate(item.departure_date, index);
-    });
+  departures.forEach((item, index) => {
+    ensureValidDepartureDate(item.departure_date, index);
+  });
 };
 
 const validateUpdateDepartures = (submittedDepartures, existingDepartures) => {
-    const existingById = new Map(existingDepartures.map(item => [Number(item.id), item]));
-    const submittedIds = new Set();
+  const existingById = new Map(existingDepartures.map((item) => [Number(item.id), item]));
+  const submittedIds = new Set();
 
-    submittedDepartures.forEach((item, index) => {
-        const existing = item.id ? existingById.get(Number(item.id)) : null;
+  submittedDepartures.forEach((item, index) => {
+    const existing = item.id ? existingById.get(Number(item.id)) : null;
 
-        if (item.id && !existing) {
-            throw new AppError(`Lịch khởi hành #${index + 1} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
-        }
-
-        if (existing && isDateOnlyBeforeToday(existing.departure_date)) {
-            submittedIds.add(Number(item.id));
-            if (normalizeDateOnlyValue(item.departure_date) !== normalizeDateOnlyValue(existing.departure_date)) {
-                throw new AppError(`Không được thay đổi ngày đi của lịch khởi hành #${index + 1} đã khởi hành`, HTTP_CODES.BAD_REQUEST);
-            }
-            return;
-        }
-
-        ensureValidDepartureDate(item.departure_date, index);
-        if (item.id) submittedIds.add(Number(item.id));
-    });
-
-    const deletedDeparted = existingDepartures.find(
-        item => isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id)),
-    );
-
-    if (deletedDeparted) {
-        throw new AppError('Không được xóa lịch khởi hành đã qua ngày đi', HTTP_CODES.BAD_REQUEST);
+    if (item.id && !existing) {
+      throw new AppError(`Lịch khởi hành #${index + 1} không hợp lệ`, HTTP_CODES.BAD_REQUEST);
     }
+
+    if (existing && isDateOnlyBeforeToday(existing.departure_date)) {
+      submittedIds.add(Number(item.id));
+      if (
+        normalizeDateOnlyValue(item.departure_date) !==
+        normalizeDateOnlyValue(existing.departure_date)
+      ) {
+        throw new AppError(
+          `Không được thay đổi ngày đi của lịch khởi hành #${index + 1} đã khởi hành`,
+          HTTP_CODES.BAD_REQUEST
+        );
+      }
+      return;
+    }
+
+    ensureValidDepartureDate(item.departure_date, index);
+    if (item.id) submittedIds.add(Number(item.id));
+  });
+
+  const deletedDeparted = existingDepartures.find(
+    (item) => isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id))
+  );
+
+  if (deletedDeparted) {
+    throw new AppError('Không được xóa lịch khởi hành đã qua ngày đi', HTTP_CODES.BAD_REQUEST);
+  }
 };
 
 const AUTO_TRANSLATION_LANGUAGES = ['en', 'zh'];
 
 const normalizeTranslationList = (translations) => {
-    const parsedTranslations = Array.isArray(translations) ? translations : parseJsonField(translations);
+  const parsedTranslations = Array.isArray(translations)
+    ? translations
+    : parseJsonField(translations);
 
-    return parsedTranslations
-        .map(item => ({ ...item, language: normalizeLanguage(item.language) }))
-        .filter(item => AUTO_TRANSLATION_LANGUAGES.includes(item.language));
+  return parsedTranslations
+    .map((item) => ({ ...item, language: normalizeLanguage(item.language) }))
+    .filter((item) => AUTO_TRANSLATION_LANGUAGES.includes(item.language));
 };
 
-const prepareTourTranslations = ({ translations, slug }) => (
-    normalizeTranslationList(translations).map(item => ({
-        language: item.language,
-        title: item.title || '',
-        slug: item.slug || slugify(item.title || '', { lower: true, strict: true }) || slug,
-        summary: item.summary || null,
-        highlights: item.highlights || null,
-        price_includes: item.price_includes || null,
-        price_excludes: item.price_excludes || null,
-        terms_and_notes: item.terms_and_notes || null,
-        cancellation_policy: item.cancellation_policy || null,
-    }))
-);
+const prepareTourTranslations = ({ translations, slug }) =>
+  normalizeTranslationList(translations).map((item) => ({
+    language: item.language,
+    title: item.title || '',
+    slug: item.slug || slugify(item.title || '', { lower: true, strict: true }) || slug,
+    summary: item.summary || null,
+    highlights: item.highlights || null,
+    price_includes: item.price_includes || null,
+    price_excludes: item.price_excludes || null,
+    terms_and_notes: item.terms_and_notes || null,
+    cancellation_policy: item.cancellation_policy || null,
+  }));
 
 const prepareItineraryTranslations = (itinerary) => {
-    const existingTranslations = normalizeTranslationList(itinerary.translations);
+  const existingTranslations = normalizeTranslationList(itinerary.translations);
 
-    const translations = AUTO_TRANSLATION_LANGUAGES.map((language) => {
-        const existing = existingTranslations.find(item => item.language === language) || { language };
-
-        return {
-            language,
-            title: existing.title || '',
-            content: existing.content || '',
-        };
-    });
+  const translations = AUTO_TRANSLATION_LANGUAGES.map((language) => {
+    const existing = existingTranslations.find((item) => item.language === language) || {
+      language,
+    };
 
     return {
-        ...itinerary,
-        translations,
+      language,
+      title: existing.title || '',
+      content: existing.content || '',
     };
+  });
+
+  return {
+    ...itinerary,
+    translations,
+  };
 };
 
-const prepareTranslatedItineraries = (itineraries) => (
-    parseJsonField(itineraries).map(prepareItineraryTranslations)
-);
+const prepareTranslatedItineraries = (itineraries) =>
+  parseJsonField(itineraries).map(prepareItineraryTranslations);
 
 const getTranslatedTourTitle = async (tour, language) => {
-    if (!tour || language === 'vi') return tour?.title || '';
+  if (!tour || language === 'vi') return tour?.title || '';
 
-    const translation = await TourTranslation.findOne({
-        where: { tour_id: tour.id, language },
-        attributes: ['title'],
-    });
+  const translation = await TourTranslation.findOne({
+    where: { tour_id: tour.id, language },
+    attributes: ['title'],
+  });
 
-    return translation?.title || tour.title;
+  return translation?.title || tour.title;
 };
 
 // ══════════════════════════════════════
@@ -272,38 +327,49 @@ const getTranslatedTourTitle = async (tour, language) => {
  * GET /api/admin/tours
  */
 const getAllTours = catchAsync(async (req, res) => {
-    const { page = 1, limit = 10, search } = req.query;
+  const { page = 1, limit = 10, search } = req.query;
 
-    const limitNum = parseInt(limit, 10);
-    const pageNum = parseInt(page, 10);
-    const offset = (pageNum - 1) * limitNum;
+  const limitNum = parseInt(limit, 10);
+  const pageNum = parseInt(page, 10);
+  const offset = (pageNum - 1) * limitNum;
 
-    const whereClause = {};
-    if (search && search.trim()) {
-        whereClause.title = { [Op.like]: `%${search.trim()}%` };
-    }
+  const whereClause = {};
+  if (search && search.trim()) {
+    whereClause.title = { [Op.like]: `%${search.trim()}%` };
+  }
 
-    const { count, rows } = await Tour.findAndCountAll({
-        where: whereClause,
-        include: [
-            { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'] },
-            { model: TourDeparture, as: 'departures', attributes: ['id', 'departure_date', 'price_adult', 'available_seats', 'status'] },
+  const { count, rows } = await Tour.findAndCountAll({
+    where: whereClause,
+    include: [
+      { model: Category, attributes: ['id', 'name'] },
+      { model: TourImage, as: 'images', attributes: ['id', 'image_url', 'sort_order'] },
+      {
+        model: TourDeparture,
+        as: 'departures',
+        attributes: [
+          'id',
+          'departure_date',
+          'price_adult',
+          'capacity',
+          'available_seats',
+          'status',
         ],
-        order: [['id', 'DESC']],
-        limit: limitNum,
-        offset: offset,
-        distinct: true,
-    });
+      },
+    ],
+    order: [['id', 'DESC']],
+    limit: limitNum,
+    offset: offset,
+    distinct: true,
+  });
 
-    res.status(200).json({
-        status: 'success',
-        results: rows.length,
-        totalItems: count,
-        totalPages: Math.ceil(count / limitNum),
-        currentPage: pageNum,
-        data: rows,
-    });
+  res.status(200).json({
+    status: 'success',
+    results: rows.length,
+    totalItems: count,
+    totalPages: Math.ceil(count / limitNum),
+    currentPage: pageNum,
+    data: rows,
+  });
 });
 
 /**
@@ -311,40 +377,45 @@ const getAllTours = catchAsync(async (req, res) => {
  * GET /api/admin/tours/:id
  */
 const getTourById = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const tour = await Tour.findByPk(id, {
-        include: [
-            { model: Category, attributes: ['id', 'name'] },
-            {
-                model: TourImage,
-                as: 'images',
-                attributes: ['id', 'image_url', 'sort_order'],
-                separate: true,
-                order: [['sort_order', 'ASC']],
-            },
-            {
-                model: TourItinerary,
-                as: 'itineraries',
-                separate: true,
-                order: [['day_number', 'ASC']],
-                include: [{ model: TourItineraryTranslation, as: 'translations' }],
-            },
-            { model: TourDeparture, as: 'departures', separate: true, order: [['departure_date', 'ASC']] },
-            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
-            { model: TourOption, as: 'options', separate: true },
-            { model: TourTranslation, as: 'translations' },
-        ],
-    });
+  const tour = await Tour.findByPk(id, {
+    include: [
+      { model: Category, attributes: ['id', 'name'] },
+      {
+        model: TourImage,
+        as: 'images',
+        attributes: ['id', 'image_url', 'sort_order'],
+        separate: true,
+        order: [['sort_order', 'ASC']],
+      },
+      {
+        model: TourItinerary,
+        as: 'itineraries',
+        separate: true,
+        order: [['day_number', 'ASC']],
+        include: [{ model: TourItineraryTranslation, as: 'translations' }],
+      },
+      {
+        model: TourDeparture,
+        as: 'departures',
+        separate: true,
+        order: [['departure_date', 'ASC']],
+      },
+      { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+      { model: TourOption, as: 'options', separate: true },
+      { model: TourTranslation, as: 'translations' },
+    ],
+  });
 
-    if (!tour) {
-        return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
-    }
+  if (!tour) {
+    return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
+  }
 
-    res.status(200).json({
-        status: 'success',
-        data: tour,
-    });
+  res.status(200).json({
+    status: 'success',
+    data: tour,
+  });
 });
 
 /**
@@ -352,163 +423,185 @@ const getTourById = catchAsync(async (req, res, next) => {
  * POST /api/admin/tours
  */
 const createTour = catchAsync(async (req, res, next) => {
-    const {
-        category_id, title, summary,
-        highlights, price_includes, price_excludes,
-        terms_and_notes, cancellation_policy,
-        duration_days, duration_nights,
-        tour_badge, status,
-        itineraries, departures, pickup_locations, options,
-        translations, // Array of translations for the tour (en, zh)
-    } = req.body;
+  const {
+    category_id,
+    title,
+    summary,
+    highlights,
+    price_includes,
+    price_excludes,
+    terms_and_notes,
+    cancellation_policy,
+    duration_days,
+    duration_nights,
+    tour_badge,
+    status,
+    itineraries,
+    departures,
+    pickup_locations,
+    options,
+    translations, // Array of translations for the tour (en, zh)
+  } = req.body;
 
-    if (!title || !category_id) {
-        return next(new AppError('Tiêu đề và danh mục là bắt buộc', HTTP_CODES.BAD_REQUEST));
+  if (!title || !category_id) {
+    return next(new AppError('Tiêu đề và danh mục là bắt buộc', HTTP_CODES.BAD_REQUEST));
+  }
+
+  const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
+  const existingSlug = await Tour.findOne({ where: { slug } });
+  const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+  const parsedDepartures = parseJsonField(departures);
+  validateCreateDepartures(parsedDepartures);
+  const translatedTourContent = prepareTourTranslations({
+    translations,
+    slug: finalSlug,
+  });
+  const translatedItineraries = prepareTranslatedItineraries(itineraries);
+
+  const result = await sequelize.transaction(async (t) => {
+    // 1. Tạo tour chính
+    const tour = await Tour.create(
+      {
+        category_id,
+        title,
+        slug: finalSlug,
+        summary: summary || null,
+        highlights: highlights || null,
+        price_includes: price_includes || null,
+        price_excludes: price_excludes || null,
+        terms_and_notes: terms_and_notes || null,
+        cancellation_policy: cancellation_policy || null,
+        duration_days: duration_days || null,
+        duration_nights: duration_nights || null,
+        thumbnail_url: null,
+        tour_badge: tour_badge || 'none',
+        status: status || 'active',
+      },
+      { transaction: t }
+    );
+
+    // 2. Ảnh upload
+    if (req.files && req.files.length > 0) {
+      const imageRecords = req.files.map((file, index) => ({
+        tour_id: tour.id,
+        image_url: `/uploads/tours/${file.filename}`,
+        sort_order: index,
+      }));
+      await TourImage.bulkCreate(imageRecords, { transaction: t });
+      await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
     }
 
-    const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
-    const existingSlug = await Tour.findOne({ where: { slug } });
-    const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
-    const parsedDepartures = parseJsonField(departures);
-    validateCreateDepartures(parsedDepartures);
-    const translatedTourContent = prepareTourTranslations({
-        translations,
-        slug: finalSlug,
-    });
-    const translatedItineraries = prepareTranslatedItineraries(itineraries);
+    // 3. Lịch trình
+    if (translatedItineraries.length > 0) {
+      for (const item of translatedItineraries) {
+        const iti = await TourItinerary.create(
+          {
+            tour_id: tour.id,
+            day_number: item.day_number,
+            title: item.title,
+            content: item.content,
+          },
+          { transaction: t }
+        );
 
-    const result = await sequelize.transaction(async (t) => {
-        // 1. Tạo tour chính
-        const tour = await Tour.create({
-            category_id,
-            title,
-            slug: finalSlug,
-            summary: summary || null,
-            highlights: highlights || null,
-            price_includes: price_includes || null,
-            price_excludes: price_excludes || null,
-            terms_and_notes: terms_and_notes || null,
-            cancellation_policy: cancellation_policy || null,
-            duration_days: duration_days || null,
-            duration_nights: duration_nights || null,
-            thumbnail_url: null,
-            tour_badge: tour_badge || 'none',
-            status: status || 'active',
-        }, { transaction: t });
-
-        // 2. Ảnh upload
-        if (req.files && req.files.length > 0) {
-            const imageRecords = req.files.map((file, index) => ({
-                tour_id: tour.id,
-                image_url: `/uploads/tours/${file.filename}`,
-                sort_order: index,
-            }));
-            await TourImage.bulkCreate(imageRecords, { transaction: t });
-            await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
+        if (item.translations && item.translations.length > 0) {
+          await TourItineraryTranslation.bulkCreate(
+            item.translations.map((tr) => ({
+              itinerary_id: iti.id,
+              language: tr.language,
+              title: tr.title || '',
+              content: tr.content || '',
+            })),
+            { transaction: t }
+          );
         }
+      }
+    }
 
-        // 3. Lịch trình
-        if (translatedItineraries.length > 0) {
-            for (const item of translatedItineraries) {
-                const iti = await TourItinerary.create({
-                    tour_id: tour.id,
-                    day_number: item.day_number,
-                    title: item.title,
-                    content: item.content,
-                }, { transaction: t });
+    // 4. Lịch khởi hành
+    if (parsedDepartures.length > 0) {
+      await TourDeparture.bulkCreate(
+        parsedDepartures.map((item, index) => ({
+          tour_id: tour.id,
+          ...buildDeparturePayload(item, index),
+        })),
+        { transaction: t }
+      );
+    }
 
-                if (item.translations && item.translations.length > 0) {
-                    await TourItineraryTranslation.bulkCreate(
-                        item.translations.map(tr => ({
-                            itinerary_id: iti.id,
-                            language: tr.language,
-                            title: tr.title || '',
-                            content: tr.content || '',
-                        })),
-                        { transaction: t }
-                    );
-                }
-            }
-        }
+    // 5. Điểm đón
+    const parsedPickups = parseJsonField(pickup_locations);
+    if (parsedPickups.length > 0) {
+      await TourPickupLocation.bulkCreate(
+        parsedPickups.map((item, index) => ({
+          tour_id: tour.id,
+          location_name: item.location_name,
+          pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, {
+            required: true,
+          }),
+          surcharge_amount: normalizeMoneyValue(
+            item.surcharge_amount,
+            `Phụ thu điểm đón #${index + 1}`,
+            { min: 0 }
+          ),
+        })),
+        { transaction: t }
+      );
+    }
 
-        // 4. Lịch khởi hành
-        if (parsedDepartures.length > 0) {
-            await TourDeparture.bulkCreate(
-                parsedDepartures.map((item, index) => ({
-                    tour_id: tour.id,
-                    ...buildDeparturePayload(item, index),
-                })),
-                { transaction: t },
-            );
-        }
+    // 6. Tùy chọn
+    const parsedOptions = parseJsonField(options);
+    if (parsedOptions.length > 0) {
+      await TourOption.bulkCreate(
+        parsedOptions.map((item, index) => ({
+          tour_id: tour.id,
+          option_name: item.option_name,
+          price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
+          charge_type: item.charge_type || 'quantity',
+        })),
+        { transaction: t }
+      );
+    }
 
-        // 5. Điểm đón
-        const parsedPickups = parseJsonField(pickup_locations);
-        if (parsedPickups.length > 0) {
-            await TourPickupLocation.bulkCreate(
-                parsedPickups.map((item, index) => ({
-                    tour_id: tour.id,
-                    location_name: item.location_name,
-                    pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, { required: true }),
-                    surcharge_amount: normalizeMoneyValue(item.surcharge_amount, `Phụ thu điểm đón #${index + 1}`, { min: 0 }),
-                })),
-                { transaction: t },
-            );
-        }
+    // 7. Tour Translations
+    if (translatedTourContent.length > 0) {
+      await TourTranslation.bulkCreate(
+        translatedTourContent.map((item) => ({
+          tour_id: tour.id,
+          language: item.language,
+          title: item.title || '',
+          slug: item.slug || finalSlug,
+          summary: item.summary || null,
+          highlights: item.highlights || null,
+          price_includes: item.price_includes || null,
+          price_excludes: item.price_excludes || null,
+          terms_and_notes: item.terms_and_notes || null,
+          cancellation_policy: item.cancellation_policy || null,
+        })),
+        { transaction: t }
+      );
+    }
 
-        // 6. Tùy chọn
-        const parsedOptions = parseJsonField(options);
-        if (parsedOptions.length > 0) {
-            await TourOption.bulkCreate(
-                parsedOptions.map((item, index) => ({
-                    tour_id: tour.id,
-                    option_name: item.option_name,
-                    price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
-                    charge_type: item.charge_type || 'quantity',
-                })),
-                { transaction: t },
-            );
-        }
+    return tour;
+  });
 
-        // 7. Tour Translations
-        if (translatedTourContent.length > 0) {
-            await TourTranslation.bulkCreate(
-                translatedTourContent.map((item) => ({
-                    tour_id: tour.id,
-                    language: item.language,
-                    title: item.title || '',
-                    slug: item.slug || finalSlug,
-                    summary: item.summary || null,
-                    highlights: item.highlights || null,
-                    price_includes: item.price_includes || null,
-                    price_excludes: item.price_excludes || null,
-                    terms_and_notes: item.terms_and_notes || null,
-                    cancellation_policy: item.cancellation_policy || null,
-                })),
-                { transaction: t }
-            );
-        }
+  // Reload tour đầy đủ
+  const createdTour = await Tour.findByPk(result.id, {
+    include: [
+      { model: Category, attributes: ['id', 'name'] },
+      { model: TourImage, as: 'images', separate: true },
+      { model: TourItinerary, as: 'itineraries', separate: true },
+      { model: TourDeparture, as: 'departures', separate: true },
+      { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+      { model: TourOption, as: 'options', separate: true },
+    ],
+  });
 
-        return tour;
-    });
-
-    // Reload tour đầy đủ
-    const createdTour = await Tour.findByPk(result.id, {
-        include: [
-            { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images', separate: true },
-            { model: TourItinerary, as: 'itineraries', separate: true },
-            { model: TourDeparture, as: 'departures', separate: true },
-            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
-            { model: TourOption, as: 'options', separate: true },
-        ],
-    });
-
-    res.status(201).json({
-        status: 'success',
-        message: 'Tạo tour thành công',
-        data: createdTour,
-    });
+  res.status(201).json({
+    status: 'success',
+    message: 'Tạo tour thành công',
+    data: createdTour,
+  });
 });
 
 /**
@@ -516,220 +609,276 @@ const createTour = catchAsync(async (req, res, next) => {
  * PUT /api/admin/tours/:id
  */
 const updateTour = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const tour = await Tour.findByPk(id);
+  const { id } = req.params;
+  const tour = await Tour.findByPk(id);
 
-    if (!tour) {
-        return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
-    }
+  if (!tour) {
+    return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
+  }
 
-    const {
-        category_id, title, summary,
-        highlights, price_includes, price_excludes,
-        terms_and_notes, cancellation_policy,
-        duration_days, duration_nights,
-        tour_badge, status,
-        itineraries, departures, pickup_locations, options,
-        translations,
-    } = req.body;
+  const {
+    category_id,
+    title,
+    summary,
+    highlights,
+    price_includes,
+    price_excludes,
+    terms_and_notes,
+    cancellation_policy,
+    duration_days,
+    duration_nights,
+    tour_badge,
+    status,
+    itineraries,
+    departures,
+    pickup_locations,
+    options,
+    translations,
+  } = req.body;
 
-    // Nếu đổi title → tạo slug mới
-    let newSlug = tour.slug;
-    if (title && title !== tour.title) {
-        newSlug = slugify(title, { lower: true, strict: true, locale: 'vi' });
-        const existingSlug = await Tour.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
-        if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
-    }
+  // Nếu đổi title → tạo slug mới
+  let newSlug = tour.slug;
+  if (title && title !== tour.title) {
+    newSlug = slugify(title, { lower: true, strict: true, locale: 'vi' });
+    const existingSlug = await Tour.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
+    if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
+  }
 
-    const parsedDeparturesForUpdate = departures !== undefined ? parseJsonField(departures) : null;
-    const existingDeparturesForUpdate = departures !== undefined
-        ? await TourDeparture.findAll({ where: { tour_id: id } })
-        : [];
-    if (departures !== undefined) {
-        validateUpdateDepartures(parsedDeparturesForUpdate, existingDeparturesForUpdate);
-    }
+  const parsedDeparturesForUpdate = departures !== undefined ? parseJsonField(departures) : null;
 
-    const translatedTourContent = translations !== undefined
-        ? prepareTourTranslations({
-            translations,
-            slug: newSlug,
+  const translatedTourContent =
+    translations !== undefined
+      ? prepareTourTranslations({
+          translations,
+          slug: newSlug,
         })
-        : null;
-    const translatedItineraries = itineraries !== undefined
-        ? prepareTranslatedItineraries(itineraries)
-        : null;
+      : null;
+  const translatedItineraries =
+    itineraries !== undefined ? prepareTranslatedItineraries(itineraries) : null;
 
-    await sequelize.transaction(async (t) => {
-        // 1. Update tour chính
-        await tour.update({
-            category_id: category_id || tour.category_id,
-            title: title || tour.title,
-            slug: newSlug,
-            summary: summary !== undefined ? summary : tour.summary,
-            highlights: highlights !== undefined ? highlights : tour.highlights,
-            price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
-            price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
-            terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
-            cancellation_policy: cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
-            duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
-            duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
-            tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
-            status: status || tour.status,
-        }, { transaction: t });
+  await sequelize.transaction(async (t) => {
+    // 1. Update tour chính
+    await tour.update(
+      {
+        category_id: category_id || tour.category_id,
+        title: title || tour.title,
+        slug: newSlug,
+        summary: summary !== undefined ? summary : tour.summary,
+        highlights: highlights !== undefined ? highlights : tour.highlights,
+        price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
+        price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
+        terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
+        cancellation_policy:
+          cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
+        duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
+        duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
+        tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
+        status: status || tour.status,
+      },
+      { transaction: t }
+    );
 
-        // 2. Ảnh upload mới
-        if (req.files && req.files.length > 0) {
-            const currentImages = await TourImage.findAll({ where: { tour_id: id } });
-            const nextOrder = currentImages.length;
+    // 2. Ảnh upload mới
+    if (req.files && req.files.length > 0) {
+      const currentImages = await TourImage.findAll({ where: { tour_id: id } });
+      const nextOrder = currentImages.length;
 
-            const imageRecords = req.files.map((file, index) => ({
-                tour_id: tour.id,
-                image_url: `/uploads/tours/${file.filename}`,
-                sort_order: nextOrder + index,
-            }));
-            await TourImage.bulkCreate(imageRecords, { transaction: t });
+      const imageRecords = req.files.map((file, index) => ({
+        tour_id: tour.id,
+        image_url: `/uploads/tours/${file.filename}`,
+        sort_order: nextOrder + index,
+      }));
+      await TourImage.bulkCreate(imageRecords, { transaction: t });
 
-            if (!tour.thumbnail_url) {
-                await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
-            }
-        }
+      if (!tour.thumbnail_url) {
+        await tour.update({ thumbnail_url: imageRecords[0].image_url }, { transaction: t });
+      }
+    }
 
-        // 3. Replace-all satellite data (chỉ khi client gửi dữ liệu)
-        if (itineraries !== undefined) {
-            await TourItinerary.destroy({ where: { tour_id: id }, transaction: t });
-            if (translatedItineraries.length > 0) {
-                for (const item of translatedItineraries) {
-                    const iti = await TourItinerary.create({
-                        tour_id: id,
-                        day_number: item.day_number,
-                        title: item.title,
-                        content: item.content,
-                    }, { transaction: t });
+    // 3. Replace-all satellite data (chỉ khi client gửi dữ liệu)
+    if (itineraries !== undefined) {
+      await TourItinerary.destroy({ where: { tour_id: id }, transaction: t });
+      if (translatedItineraries.length > 0) {
+        for (const item of translatedItineraries) {
+          const iti = await TourItinerary.create(
+            {
+              tour_id: id,
+              day_number: item.day_number,
+              title: item.title,
+              content: item.content,
+            },
+            { transaction: t }
+          );
 
-                    if (item.translations && item.translations.length > 0) {
-                        await TourItineraryTranslation.bulkCreate(
-                            item.translations.map(tr => ({
-                                itinerary_id: iti.id,
-                                language: tr.language,
-                                title: tr.title || '',
-                                content: tr.content || '',
-                            })),
-                            { transaction: t }
-                        );
-                    }
-                }
-            }
-        }
-
-        if (departures !== undefined) {
-            const existingById = new Map(existingDeparturesForUpdate.map(item => [Number(item.id), item]));
-            const submittedIds = new Set(
-                parsedDeparturesForUpdate
-                    .filter(item => item.id)
-                    .map(item => Number(item.id)),
+          if (item.translations && item.translations.length > 0) {
+            await TourItineraryTranslation.bulkCreate(
+              item.translations.map((tr) => ({
+                itinerary_id: iti.id,
+                language: tr.language,
+                title: tr.title || '',
+                content: tr.content || '',
+              })),
+              { transaction: t }
             );
-            const idsToDelete = existingDeparturesForUpdate
-                .filter(item => !isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id)))
-                .map(item => item.id);
-
-            if (idsToDelete.length > 0) {
-                await TourDeparture.destroy({ where: { tour_id: id, id: idsToDelete }, transaction: t });
-            }
-
-            for (const [index, item] of parsedDeparturesForUpdate.entries()) {
-                const existing = item.id ? existingById.get(Number(item.id)) : null;
-                const payload = existing && isDateOnlyBeforeToday(existing.departure_date)
-                    ? {
-                        departure_date: normalizeDateOnlyValue(existing.departure_date),
-                        price_adult: normalizeMoneyValue(item.price_adult, `Giá người lớn của lịch khởi hành #${index + 1}`, { min: 1 }),
-                        price_child: normalizeMoneyValue(item.price_child, `Giá trẻ em của lịch khởi hành #${index + 1}`, { min: 0 }),
-                        price_infant: normalizeMoneyValue(item.price_infant, `Giá em bé của lịch khởi hành #${index + 1}`, { min: 0 }),
-                        available_seats: normalizePositiveInteger(item.available_seats, `Số chỗ của lịch khởi hành #${index + 1}`, { min: 1 }),
-                        status: item.status || 'open',
-                    }
-                    : buildDeparturePayload(item, index);
-
-                if (existing) {
-                    await existing.update(payload, { transaction: t });
-                } else {
-                    await TourDeparture.create({
-                        tour_id: id,
-                        ...payload,
-                    }, { transaction: t });
-                }
-            }
+          }
         }
+      }
+    }
 
-        if (pickup_locations !== undefined) {
-            await TourPickupLocation.destroy({ where: { tour_id: id }, transaction: t });
-            const parsedPickups = parseJsonField(pickup_locations);
-            if (parsedPickups.length > 0) {
-                await TourPickupLocation.bulkCreate(
-                    parsedPickups.map((item, index) => ({
-                        tour_id: id,
-                        location_name: item.location_name,
-                        pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, { required: true }),
-                        surcharge_amount: normalizeMoneyValue(item.surcharge_amount, `Phụ thu điểm đón #${index + 1}`, { min: 0 }),
-                    })),
-                    { transaction: t },
-                );
-            }
+    if (departures !== undefined) {
+      const existingDeparturesForUpdate = await TourDeparture.findAll({
+        where: { tour_id: id },
+        lock: t.LOCK.UPDATE,
+        transaction: t,
+      });
+      validateUpdateDepartures(parsedDeparturesForUpdate, existingDeparturesForUpdate);
+
+      const existingById = new Map(
+        existingDeparturesForUpdate.map((item) => [Number(item.id), item])
+      );
+      const submittedIds = new Set(
+        parsedDeparturesForUpdate.filter((item) => item.id).map((item) => Number(item.id))
+      );
+      const idsToDelete = existingDeparturesForUpdate
+        .filter(
+          (item) =>
+            !isDateOnlyBeforeToday(item.departure_date) && !submittedIds.has(Number(item.id))
+        )
+        .map((item) => item.id);
+
+      if (idsToDelete.length > 0) {
+        await TourDeparture.destroy({ where: { tour_id: id, id: idsToDelete }, transaction: t });
+      }
+
+      for (const [index, item] of parsedDeparturesForUpdate.entries()) {
+        const existing = item.id ? existingById.get(Number(item.id)) : null;
+
+        if (existing) {
+          const nextCapacity = getDepartureCapacity(item, index);
+          const currentCapacity = Number(existing.capacity);
+          const reservedSeats = currentCapacity - Number(existing.available_seats);
+          if (nextCapacity < reservedSeats) {
+            throw new AppError(
+              `Sức chứa của lịch khởi hành #${index + 1} không thể thấp hơn ${reservedSeats} chỗ đã giữ`,
+              HTTP_CODES.BAD_REQUEST
+            );
+          }
+
+          const availableSeats = nextCapacity - reservedSeats;
+          const payload = {
+            departure_date: isDateOnlyBeforeToday(existing.departure_date)
+              ? normalizeDateOnlyValue(existing.departure_date)
+              : ensureValidDepartureDate(item.departure_date, index),
+            price_adult: normalizeMoneyValue(
+              item.price_adult,
+              `Giá người lớn của lịch khởi hành #${index + 1}`,
+              { min: 1 }
+            ),
+            price_child: normalizeMoneyValue(
+              item.price_child,
+              `Giá trẻ em của lịch khởi hành #${index + 1}`,
+              { min: 0 }
+            ),
+            price_infant: normalizeMoneyValue(
+              item.price_infant,
+              `Giá em bé của lịch khởi hành #${index + 1}`,
+              { min: 0 }
+            ),
+            capacity: nextCapacity,
+            available_seats: availableSeats,
+            status:
+              item.status === 'cancelled' ? 'cancelled' : availableSeats === 0 ? 'full' : 'open',
+          };
+          await existing.update(payload, { transaction: t });
+        } else {
+          const payload = buildDeparturePayload(item, index);
+          await TourDeparture.create(
+            {
+              tour_id: id,
+              ...payload,
+            },
+            { transaction: t }
+          );
         }
+      }
+    }
 
-        if (options !== undefined) {
-            await TourOption.destroy({ where: { tour_id: id }, transaction: t });
-            const parsedOptions = parseJsonField(options);
-            if (parsedOptions.length > 0) {
-                await TourOption.bulkCreate(
-                    parsedOptions.map((item, index) => ({
-                        tour_id: id,
-                        option_name: item.option_name,
-                        price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
-                        charge_type: item.charge_type || 'quantity',
-                    })),
-                    { transaction: t },
-                );
-            }
-        }
+    if (pickup_locations !== undefined) {
+      await TourPickupLocation.destroy({ where: { tour_id: id }, transaction: t });
+      const parsedPickups = parseJsonField(pickup_locations);
+      if (parsedPickups.length > 0) {
+        await TourPickupLocation.bulkCreate(
+          parsedPickups.map((item, index) => ({
+            tour_id: id,
+            location_name: item.location_name,
+            pickup_time: normalizeTimeValue(item.pickup_time, `Giờ đón #${index + 1}`, {
+              required: true,
+            }),
+            surcharge_amount: normalizeMoneyValue(
+              item.surcharge_amount,
+              `Phụ thu điểm đón #${index + 1}`,
+              { min: 0 }
+            ),
+          })),
+          { transaction: t }
+        );
+      }
+    }
 
-        if (translations !== undefined) {
-            await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
-            if (translatedTourContent.length > 0) {
-                await TourTranslation.bulkCreate(
-                    translatedTourContent.map((item) => ({
-                        tour_id: id,
-                        language: item.language,
-                        title: item.title,
-                        slug: item.slug || newSlug,
-                        summary: item.summary || null,
-                        highlights: item.highlights || null,
-                        price_includes: item.price_includes || null,
-                        price_excludes: item.price_excludes || null,
-                        terms_and_notes: item.terms_and_notes || null,
-                        cancellation_policy: item.cancellation_policy || null,
-                    })),
-                    { transaction: t }
-                );
-            }
-        }
-    });
+    if (options !== undefined) {
+      await TourOption.destroy({ where: { tour_id: id }, transaction: t });
+      const parsedOptions = parseJsonField(options);
+      if (parsedOptions.length > 0) {
+        await TourOption.bulkCreate(
+          parsedOptions.map((item, index) => ({
+            tour_id: id,
+            option_name: item.option_name,
+            price: normalizeMoneyValue(item.price, `Giá tùy chọn #${index + 1}`, { min: 0 }),
+            charge_type: item.charge_type || 'quantity',
+          })),
+          { transaction: t }
+        );
+      }
+    }
 
-    const updatedTour = await Tour.findByPk(id, {
-        include: [
-            { model: Category, attributes: ['id', 'name'] },
-            { model: TourImage, as: 'images', separate: true },
-            { model: TourItinerary, as: 'itineraries', separate: true },
-            { model: TourDeparture, as: 'departures', separate: true },
-            { model: TourPickupLocation, as: 'pickupLocations', separate: true },
-            { model: TourOption, as: 'options', separate: true },
-        ],
-    });
+    if (translations !== undefined) {
+      await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
+      if (translatedTourContent.length > 0) {
+        await TourTranslation.bulkCreate(
+          translatedTourContent.map((item) => ({
+            tour_id: id,
+            language: item.language,
+            title: item.title,
+            slug: item.slug || newSlug,
+            summary: item.summary || null,
+            highlights: item.highlights || null,
+            price_includes: item.price_includes || null,
+            price_excludes: item.price_excludes || null,
+            terms_and_notes: item.terms_and_notes || null,
+            cancellation_policy: item.cancellation_policy || null,
+          })),
+          { transaction: t }
+        );
+      }
+    }
+  });
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Cập nhật tour thành công',
-        data: updatedTour,
-    });
+  const updatedTour = await Tour.findByPk(id, {
+    include: [
+      { model: Category, attributes: ['id', 'name'] },
+      { model: TourImage, as: 'images', separate: true },
+      { model: TourItinerary, as: 'itineraries', separate: true },
+      { model: TourDeparture, as: 'departures', separate: true },
+      { model: TourPickupLocation, as: 'pickupLocations', separate: true },
+      { model: TourOption, as: 'options', separate: true },
+    ],
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Cập nhật tour thành công',
+    data: updatedTour,
+  });
 });
 
 /**
@@ -737,19 +886,19 @@ const updateTour = catchAsync(async (req, res, next) => {
  * DELETE /api/admin/tours/:id
  */
 const deleteTour = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const tour = await Tour.findByPk(id);
+  const { id } = req.params;
+  const tour = await Tour.findByPk(id);
 
-    if (!tour) {
-        return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
-    }
+  if (!tour) {
+    return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
+  }
 
-    await tour.destroy();
+  await tour.destroy();
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Xóa tour thành công',
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Xóa tour thành công',
+  });
 });
 
 // ══════════════════════════════════════
@@ -761,37 +910,42 @@ const deleteTour = catchAsync(async (req, res, next) => {
  * GET /api/admin/bookings/overview
  */
 const getBookingOverview = catchAsync(async (req, res) => {
-    const tours = await Tour.findAll({
-        attributes: ['id', 'title', 'slug', 'thumbnail_url'],
-        include: [{
-            model: Booking,
-            as: 'bookings',
-            attributes: ['id', 'status'],
-        }],
-        order: [
-            [{ model: Booking, as: 'bookings' }, 'status', 'ASC'],
-            ['id', 'DESC'],
-        ]
-    });
+  const tours = await Tour.findAll({
+    attributes: ['id', 'title', 'slug', 'thumbnail_url'],
+    include: [
+      {
+        model: Booking,
+        as: 'bookings',
+        attributes: ['id', 'status'],
+      },
+    ],
+    order: [
+      [{ model: Booking, as: 'bookings' }, 'status', 'ASC'],
+      ['id', 'DESC'],
+    ],
+  });
 
-    const data = tours
-        .map(tour => {
-            const bookings = tour.bookings || [];
-            const total = bookings.length;
-            const pending = bookings.filter(b => b.status === 'pending').length;
-            const approved = bookings.filter(b => b.status === 'approved').length;
-            const cancelled = bookings.filter(b => b.status === 'cancelled').length;
-            return {
-                id: tour.id,
-                title: tour.title,
-                slug: tour.slug,
-                thumbnail_url: tour.thumbnail_url,
-                total, pending, approved, cancelled,
-            };
-        })
-        .filter(t => t.total > 0 || t.pending > 0);
+  const data = tours
+    .map((tour) => {
+      const bookings = tour.bookings || [];
+      const total = bookings.length;
+      const pending = bookings.filter((b) => b.status === 'pending').length;
+      const approved = bookings.filter((b) => b.status === 'approved').length;
+      const cancelled = bookings.filter((b) => b.status === 'cancelled').length;
+      return {
+        id: tour.id,
+        title: tour.title,
+        slug: tour.slug,
+        thumbnail_url: tour.thumbnail_url,
+        total,
+        pending,
+        approved,
+        cancelled,
+      };
+    })
+    .filter((t) => t.total > 0 || t.pending > 0);
 
-    res.status(200).json({ status: 'success', data });
+  res.status(200).json({ status: 'success', data });
 });
 
 /**
@@ -799,93 +953,107 @@ const getBookingOverview = catchAsync(async (req, res) => {
  * GET /api/admin/bookings?status=...&tour_id=...&search=...&page=1&limit=10
  */
 const getBookings = catchAsync(async (req, res) => {
-    const { status, tour_id, search, page = 1, limit = 10 } = req.query;
-    const whereClause = {};
-    if (status) whereClause.status = status;
-    if (tour_id) whereClause.tour_id = tour_id;
+  const { status, tour_id, search, page = 1, limit = 10 } = req.query;
+  const whereClause = {};
+  if (status) whereClause.status = status;
+  if (tour_id) whereClause.tour_id = tour_id;
 
-    if (search) {
-        whereClause[Op.or] = [
-            { customer_name: { [Op.like]: `%${search}%` } },
-            { customer_phone: { [Op.like]: `%${search}%` } },
-            { booking_code: { [Op.like]: `%${search}%` } },
-        ];
-    }
+  if (search) {
+    whereClause[Op.or] = [
+      { customer_name: { [Op.like]: `%${search}%` } },
+      { customer_phone: { [Op.like]: `%${search}%` } },
+      { booking_code: { [Op.like]: `%${search}%` } },
+    ];
+  }
 
-    const limitNum = parseInt(limit, 10) || 10;
-    const pageNum = parseInt(page, 10) || 1;
-    const offset = (pageNum - 1) * limitNum;
+  const limitNum = parseInt(limit, 10) || 10;
+  const pageNum = parseInt(page, 10) || 1;
+  const offset = (pageNum - 1) * limitNum;
 
-    const { count, rows } = await Booking.findAndCountAll({
-        where: whereClause,
-        include: [
-            { model: Tour, attributes: ['id', 'title', 'slug'] },
-            { model: TourDeparture, as: 'departure', attributes: ['id', 'departure_date', 'price_adult'] },
-            { model: TourPickupLocation, as: 'pickupLocation', attributes: ['id', 'location_name', 'surcharge_amount'] },
-            { model: BookingOption, as: 'bookingOptions' },
-        ],
-        order: [['created_at', 'DESC']],
-        limit: limitNum,
-        offset: offset,
-        distinct: true,
-    });
+  const { count, rows } = await Booking.findAndCountAll({
+    where: whereClause,
+    include: [
+      { model: Tour, attributes: ['id', 'title', 'slug'] },
+      {
+        model: TourDeparture,
+        as: 'departure',
+        attributes: ['id', 'departure_date', 'price_adult'],
+      },
+      {
+        model: TourPickupLocation,
+        as: 'pickupLocation',
+        attributes: ['id', 'location_name', 'surcharge_amount'],
+      },
+      { model: BookingOption, as: 'bookingOptions' },
+    ],
+    order: [['created_at', 'DESC']],
+    limit: limitNum,
+    offset: offset,
+    distinct: true,
+  });
 
-    const data = rows.map(b => ({
-        id: b.id,
-        booking_code: b.booking_code,
-        customer_name: b.customer_name,
-        customer_phone: b.customer_phone,
-        customer_email: b.customer_email,
-        adult_qty: b.adult_qty,
-        child_qty: b.child_qty,
-        infant_qty: b.infant_qty,
-        total_price: b.total_price,
-        customer_note: b.customer_note,
-        language: b.language,
-        review_email_sent_at: b.review_email_sent_at,
-        status: b.status,
-        admin_note: b.admin_note,
-        created_at: b.created_at,
-        updated_at: b.updated_at,
-        tour_id: b.tour_id,
-        departure_id: b.departure_id,
-        user_id: b.user_id,
+  const data = rows.map((b) => ({
+    id: b.id,
+    booking_code: b.booking_code,
+    customer_name: b.customer_name,
+    customer_phone: b.customer_phone,
+    customer_email: b.customer_email,
+    adult_qty: b.adult_qty,
+    child_qty: b.child_qty,
+    infant_qty: b.infant_qty,
+    total_price: b.total_price,
+    customer_note: b.customer_note,
+    language: b.language,
+    review_email_sent_at: b.review_email_sent_at,
+    status: b.status,
+    admin_note: b.admin_note,
+    created_at: b.created_at,
+    updated_at: b.updated_at,
+    tour_id: b.tour_id,
+    departure_id: b.departure_id,
+    user_id: b.user_id,
 
-        // Snapshot fields
-        tour_title_snapshot: b.tour_title_snapshot,
-        departure_date_snapshot: b.departure_date_snapshot,
-        adult_price_snapshot: b.adult_price_snapshot,
-        child_price_snapshot: b.child_price_snapshot,
-        infant_price_snapshot: b.infant_price_snapshot,
-        pickup_location_snapshot: b.pickup_location_snapshot,
-        pickup_price_snapshot: b.pickup_price_snapshot,
+    // Snapshot fields
+    tour_title_snapshot: b.tour_title_snapshot,
+    departure_date_snapshot: b.departure_date_snapshot,
+    adult_price_snapshot: b.adult_price_snapshot,
+    child_price_snapshot: b.child_price_snapshot,
+    infant_price_snapshot: b.infant_price_snapshot,
+    pickup_location_snapshot: b.pickup_location_snapshot,
+    pickup_price_snapshot: b.pickup_price_snapshot,
 
-        Tour: b.Tour ? {
-            id: b.Tour.id,
-            title: b.Tour.title,
-            slug: b.Tour.slug,
-        } : null,
-        departure: b.departure ? {
-            id: b.departure.id,
-            departure_date: b.departure.departure_date,
-            price_adult: b.departure.price_adult,
-        } : null,
-        pickupLocation: b.pickupLocation ? {
-            id: b.pickupLocation.id,
-            location_name: b.pickupLocation.location_name,
-            surcharge_amount: b.pickupLocation.surcharge_amount,
-        } : null,
-        bookingOptions: b.bookingOptions || [],
-    }));
+    Tour: b.Tour
+      ? {
+          id: b.Tour.id,
+          title: b.Tour.title,
+          slug: b.Tour.slug,
+        }
+      : null,
+    departure: b.departure
+      ? {
+          id: b.departure.id,
+          departure_date: b.departure.departure_date,
+          price_adult: b.departure.price_adult,
+        }
+      : null,
+    pickupLocation: b.pickupLocation
+      ? {
+          id: b.pickupLocation.id,
+          location_name: b.pickupLocation.location_name,
+          surcharge_amount: b.pickupLocation.surcharge_amount,
+        }
+      : null,
+    bookingOptions: b.bookingOptions || [],
+  }));
 
-    res.status(200).json({
-        status: 'success',
-        results: data.length,
-        totalItems: count,
-        totalPages: Math.ceil(count / limitNum),
-        currentPage: pageNum,
-        data,
-    });
+  res.status(200).json({
+    status: 'success',
+    results: data.length,
+    totalItems: count,
+    totalPages: Math.ceil(count / limitNum),
+    currentPage: pageNum,
+    data,
+  });
 });
 
 /**
@@ -893,83 +1061,98 @@ const getBookings = catchAsync(async (req, res) => {
  * PUT /api/admin/bookings/:id/status
  */
 const updateBookingStatus = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const { status, admin_note } = req.body;
+  const { id } = req.params;
+  const { status, admin_note } = req.body;
 
-    const validStatuses = ['pending', 'approved', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-        return next(new AppError('Trạng thái không hợp lệ', HTTP_CODES.BAD_REQUEST));
-    }
+  const validStatuses = ['pending', 'approved', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    return next(new AppError('Trạng thái không hợp lệ', HTTP_CODES.BAD_REQUEST));
+  }
 
-    const booking = await Booking.findByPk(id, {
-        include: [{ model: Tour, attributes: ['title', 'slug'] }]
+  const { booking, oldStatus } = await sequelize.transaction(async (t) => {
+    const lockedBooking = await Booking.findByPk(id, {
+      lock: t.LOCK.UPDATE,
+      transaction: t,
     });
-    
-    if (!booking) {
-        return next(new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND));
-    }
+    if (!lockedBooking) throw new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND);
 
-    const oldStatus = booking.status;
-    await sequelize.transaction(async (t) => {
-        await booking.update({
-            status,
-            admin_note: admin_note !== undefined ? admin_note : booking.admin_note,
-        }, { transaction: t });
+    const previousStatus = lockedBooking.status;
+    const changesInventory =
+      previousStatus !== status && (previousStatus === 'cancelled' || status === 'cancelled');
 
-        // Logic cập nhật số chỗ trống
-        const totalPassengers = (booking.adult_qty || 0) + (booking.child_qty || 0) + (booking.infant_qty || 0);
+    if (changesInventory) {
+      const departure = await TourDeparture.findByPk(lockedBooking.departure_id, {
+        lock: t.LOCK.UPDATE,
+        transaction: t,
+      });
+      if (!departure) {
+        throw new AppError('Không tìm thấy lịch khởi hành của booking', HTTP_CODES.BAD_REQUEST);
+      }
 
-        // 1. Admin hủy đơn (pending/approved -> cancelled) => Khôi phục chỗ trống
-        if (status === 'cancelled' && oldStatus !== 'cancelled') {
-            const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
-            if (departure) {
-                const isLimited = departure.available_seats > 0 || departure.status === 'full';
-                if (isLimited) {
-                    const newSeats = departure.available_seats + totalPassengers;
-                    await departure.update({
-                        available_seats: newSeats,
-                        status: 'open'
-                    }, { transaction: t });
-                }
-            }
+      const passengerCount = getBookingPassengerCount(lockedBooking);
+      if (status === 'cancelled') {
+        const restoredSeats = Math.min(
+          Number(departure.capacity),
+          Number(departure.available_seats) + passengerCount
+        );
+        await departure.update(
+          {
+            available_seats: restoredSeats,
+            status: restoredSeats === 0 ? 'full' : 'open',
+          },
+          { transaction: t }
+        );
+      } else {
+        if (Number(departure.available_seats) < passengerCount) {
+          throw new AppError(
+            `Không đủ chỗ trống để khôi phục đơn (còn ${departure.available_seats} chỗ).`,
+            HTTP_CODES.BAD_REQUEST
+          );
         }
 
-        // 2. Admin khôi phục đơn đã hủy (cancelled -> pending/approved) => Giảm chỗ trống
-        if (oldStatus === 'cancelled' && status !== 'cancelled') {
-            const departure = await TourDeparture.findByPk(booking.departure_id, { transaction: t });
-            if (departure && departure.available_seats > 0) { // Nếu tour có giới hạn chỗ
-                if (departure.available_seats < totalPassengers) {
-                    throw new AppError(`Không đủ chỗ trống để khôi phục đơn (còn ${departure.available_seats} chỗ).`, HTTP_CODES.BAD_REQUEST);
-                }
-                const newSeats = departure.available_seats - totalPassengers;
-                await departure.update({
-                    available_seats: newSeats,
-                    status: newSeats === 0 ? 'full' : 'open'
-                }, { transaction: t });
-            }
-        }
-    });
-
-    // Nếu trạng thái chuyển thành 'approved', tạo thông báo cho user
-    if (status === 'approved' && oldStatus !== 'approved' && booking.user_id) {
-        const notificationCopy = getNotificationCopy(booking.language);
-        const notificationTourTitle = await getTranslatedTourTitle(booking.Tour, booking.language);
-
-        await Notification.create({
-            user_id: booking.user_id,
-            type: 'booking',
-            sender_name: notificationCopy.system,
-            message: notificationCopy.bookingApproved(notificationTourTitle),
-            related_id: booking.id,
-            related_slug: booking.Tour.slug
-        });
+        const remainingSeats = Number(departure.available_seats) - passengerCount;
+        await departure.update(
+          {
+            available_seats: remainingSeats,
+            status: remainingSeats === 0 ? 'full' : 'open',
+          },
+          { transaction: t }
+        );
+      }
     }
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Cập nhật trạng thái thành công',
-        data: booking,
+    await lockedBooking.update(
+      {
+        status,
+        admin_note: admin_note !== undefined ? admin_note : lockedBooking.admin_note,
+      },
+      { transaction: t }
+    );
+
+    return { booking: lockedBooking, oldStatus: previousStatus };
+  });
+
+  // Nếu trạng thái chuyển thành 'approved', tạo thông báo cho user
+  if (status === 'approved' && oldStatus !== 'approved' && booking.user_id) {
+    const notificationCopy = getNotificationCopy(booking.language);
+    const tour = await Tour.findByPk(booking.tour_id, { attributes: ['id', 'title', 'slug'] });
+    const notificationTourTitle = await getTranslatedTourTitle(tour, booking.language);
+
+    await Notification.create({
+      user_id: booking.user_id,
+      type: 'booking',
+      sender_name: notificationCopy.system,
+      message: notificationCopy.bookingApproved(notificationTourTitle),
+      related_id: booking.id,
+      related_slug: tour?.slug || null,
     });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Cập nhật trạng thái thành công',
+    data: booking,
+  });
 });
 
 /**
@@ -977,23 +1160,23 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
  * DELETE /api/admin/bookings/:id
  */
 const deleteBooking = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    const booking = await Booking.findByPk(id);
-    if (!booking) {
-        return next(new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND));
-    }
+  const booking = await Booking.findByPk(id);
+  if (!booking) {
+    return next(new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND));
+  }
 
-    if (booking.status !== 'cancelled') {
-        return next(new AppError('Chỉ có thể xóa các đơn đặt đã bị hủy', HTTP_CODES.BAD_REQUEST));
-    }
+  if (booking.status !== 'cancelled') {
+    return next(new AppError('Chỉ có thể xóa các đơn đặt đã bị hủy', HTTP_CODES.BAD_REQUEST));
+  }
 
-    await booking.destroy();
+  await booking.destroy();
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Xóa đơn đặt thành công',
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Xóa đơn đặt thành công',
+  });
 });
 
 // ══════════════════════════════════════
@@ -1001,246 +1184,243 @@ const deleteBooking = catchAsync(async (req, res, next) => {
 // ══════════════════════════════════════
 
 const getTimeFilter = (time) => {
-    if (!time) return null;
+  if (!time) return null;
 
-    if (time === '7days') {
-        const d = new Date();
-        d.setDate(d.getDate() - 7);
-        return { [Op.gte]: d };
-    }
-    if (time === 'month') {
-        const d = new Date();
-        d.setDate(1);
-        d.setHours(0, 0, 0, 0);
-        return { [Op.gte]: d };
-    }
-    if (time === 'quarter') {
-        const d = new Date();
-        const currentMonth = d.getMonth();
-        const startOfQuarter = currentMonth - (currentMonth % 3);
-        d.setMonth(startOfQuarter, 1);
-        d.setHours(0, 0, 0, 0);
-        return { [Op.gte]: d };
-    }
-    if (time === 'year') {
-        const d = new Date();
-        d.setMonth(0, 1);
-        d.setHours(0, 0, 0, 0);
-        return { [Op.gte]: d };
-    }
+  if (time === '7days') {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return { [Op.gte]: d };
+  }
+  if (time === 'month') {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return { [Op.gte]: d };
+  }
+  if (time === 'quarter') {
+    const d = new Date();
+    const currentMonth = d.getMonth();
+    const startOfQuarter = currentMonth - (currentMonth % 3);
+    d.setMonth(startOfQuarter, 1);
+    d.setHours(0, 0, 0, 0);
+    return { [Op.gte]: d };
+  }
+  if (time === 'year') {
+    const d = new Date();
+    d.setMonth(0, 1);
+    d.setHours(0, 0, 0, 0);
+    return { [Op.gte]: d };
+  }
 
-    // Dynamic exact year (e.g. year_2024)
-    if (time.startsWith('year_')) {
-        const year = parseInt(time.split('_')[1], 10);
-        if (!isNaN(year)) {
-            const start = new Date(year, 0, 1);
-            const end = new Date(year + 1, 0, 1);
-            return {
-                [Op.gte]: start,
-                [Op.lt]: end
-            }; 
-        }
+  // Dynamic exact year (e.g. year_2024)
+  if (time.startsWith('year_')) {
+    const year = parseInt(time.split('_')[1], 10);
+    if (!isNaN(year)) {
+      const start = new Date(year, 0, 1);
+      const end = new Date(year + 1, 0, 1);
+      return {
+        [Op.gte]: start,
+        [Op.lt]: end,
+      };
     }
+  }
 
-    // Dynamic exact quarter (e.g. q1_2024)
-    if (time.startsWith('q')) {
-        const parts = time.split('_');
-        const q = parseInt(parts[0].replace('q', ''), 10);
-        const year = parseInt(parts[1], 10);
+  // Dynamic exact quarter (e.g. q1_2024)
+  if (time.startsWith('q')) {
+    const parts = time.split('_');
+    const q = parseInt(parts[0].replace('q', ''), 10);
+    const year = parseInt(parts[1], 10);
 
-        if (!isNaN(q) && !isNaN(year) && q >= 1 && q <= 4) {
-            const startMonth = (q - 1) * 3;
-            // new Date correctly rolls over if endMonth is 12 -> Jan next year
-            const start = new Date(year, startMonth, 1);
-            const end = new Date(year, startMonth + 3, 1); 
-            return {
-                [Op.gte]: start,
-                [Op.lt]: end
-            };
-        }
+    if (!isNaN(q) && !isNaN(year) && q >= 1 && q <= 4) {
+      const startMonth = (q - 1) * 3;
+      // new Date correctly rolls over if endMonth is 12 -> Jan next year
+      const start = new Date(year, startMonth, 1);
+      const end = new Date(year, startMonth + 3, 1);
+      return {
+        [Op.gte]: start,
+        [Op.lt]: end,
+      };
     }
+  }
 
-    return null;
+  return null;
 };
 
 const getVotes = catchAsync(async (req, res) => {
-    const { approved, tour_id, time, page = 1, limit = 10 } = req.query;
-    const whereClause = {};
-    
-    if (approved !== undefined) whereClause.is_approved = parseInt(approved);
-    if (tour_id) whereClause.tour_id = tour_id;
-    
-    const timeFilter = getTimeFilter(time);
-    if (timeFilter) whereClause.created_at = timeFilter;
+  const { approved, tour_id, time, page = 1, limit = 10 } = req.query;
+  const whereClause = {};
 
-    const limitNum = parseInt(limit, 10);
-    const pageNum = parseInt(page, 10);
-    const offset = (pageNum - 1) * limitNum;
+  if (approved !== undefined) whereClause.is_approved = parseInt(approved);
+  if (tour_id) whereClause.tour_id = tour_id;
 
-    const { count, rows } = await Vote.findAndCountAll({
-        where: whereClause,
-        include: [{ model: Tour, attributes: ['id', 'title', 'slug'] }],
-        order: [['created_at', 'DESC']],
-        limit: limitNum,
-        offset: offset,
-    });
+  const timeFilter = getTimeFilter(time);
+  if (timeFilter) whereClause.created_at = timeFilter;
 
-    res.status(200).json({
-        status: 'success',
-        results: rows.length,
-        totalItems: count,
-        totalPages: Math.ceil(count / limitNum),
-        currentPage: pageNum,
-        data: rows,
-    });
+  const limitNum = parseInt(limit, 10);
+  const pageNum = parseInt(page, 10);
+  const offset = (pageNum - 1) * limitNum;
+
+  const { count, rows } = await Vote.findAndCountAll({
+    where: whereClause,
+    include: [{ model: Tour, attributes: ['id', 'title', 'slug'] }],
+    order: [['created_at', 'DESC']],
+    limit: limitNum,
+    offset: offset,
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: rows.length,
+    totalItems: count,
+    totalPages: Math.ceil(count / limitNum),
+    currentPage: pageNum,
+    data: rows,
+  });
 });
 
 const updateVoteStatus = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const { is_approved } = req.body;
+  const { id } = req.params;
+  const { is_approved } = req.body;
 
-    const vote = await Vote.findByPk(id);
-    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
+  const vote = await Vote.findByPk(id);
+  if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
 
-    await vote.update({ is_approved: is_approved ? 1 : 0 });
+  await vote.update({ is_approved: is_approved ? 1 : 0 });
 
-    res.status(200).json({
-        status: 'success',
-        message: is_approved ? 'Đã duyệt đánh giá' : 'Đã từ chối đánh giá',
-        data: vote,
-    });
+  res.status(200).json({
+    status: 'success',
+    message: is_approved ? 'Đã duyệt đánh giá' : 'Đã từ chối đánh giá',
+    data: vote,
+  });
 });
 
 const replyToVote = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const { reply } = req.body;
+  const { id } = req.params;
+  const { reply } = req.body;
 
-    const vote = await Vote.findByPk(id);
-    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
+  const vote = await Vote.findByPk(id);
+  if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
 
-    await vote.update({
-        admin_reply: reply,
-        admin_reply_at: new Date(),
-    });
+  await vote.update({
+    admin_reply: reply,
+    admin_reply_at: new Date(),
+  });
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Đã trả lời đánh giá thành công',
-        data: vote,
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Đã trả lời đánh giá thành công',
+    data: vote,
+  });
 });
 
 const deleteVote = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const vote = await Vote.findByPk(id);
-    
-    if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
+  const { id } = req.params;
+  const vote = await Vote.findByPk(id);
 
-    await vote.destroy();
+  if (!vote) return next(new AppError('Không tìm thấy đánh giá', HTTP_CODES.NOT_FOUND));
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Đã xóa đánh giá thành công',
-    });
+  await vote.destroy();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Đã xóa đánh giá thành công',
+  });
 });
 
 const REVIEW_RANKING_LIMIT = 5;
 
 const getTopRatedTours = catchAsync(async (req, res) => {
-    const { time, mode = 'top' } = req.query;
-    const whereClause = {};
+  const { time, mode = 'top' } = req.query;
+  const whereClause = {};
 
-    const timeFilter = getTimeFilter(time);
-    if (timeFilter) whereClause.created_at = timeFilter;
+  const timeFilter = getTimeFilter(time);
+  if (timeFilter) whereClause.created_at = timeFilter;
 
-    // Lấy nhóm tour theo điểm trung bình, dùng cho danh sách nổi bật/cần cải thiện.
-    const isImprovementMode = mode === 'improvement';
+  // Lấy nhóm tour theo điểm trung bình, dùng cho danh sách nổi bật/cần cải thiện.
+  const isImprovementMode = mode === 'improvement';
 
-    const topTours = await Vote.findAll({
-        where: whereClause,
-        attributes: [
-            [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
-            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount']
-        ],
-        include: [{ model: Tour, attributes: ['id', 'title'] }],
-        group: ['Vote.tour_id', 'Tour.id', 'Tour.title'],
-        order: [
-            [sequelize.literal('avgRating'), isImprovementMode ? 'ASC' : 'DESC'],
-            [sequelize.literal('reviewCount'), 'DESC'],
-        ],
-        limit: REVIEW_RANKING_LIMIT
-    });
+  const topTours = await Vote.findAll({
+    where: whereClause,
+    attributes: [
+      [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
+      [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount'],
+    ],
+    include: [{ model: Tour, attributes: ['id', 'title'] }],
+    group: ['Vote.tour_id', 'Tour.id', 'Tour.title'],
+    order: [
+      [sequelize.literal('avgRating'), isImprovementMode ? 'ASC' : 'DESC'],
+      [sequelize.literal('reviewCount'), 'DESC'],
+    ],
+    limit: REVIEW_RANKING_LIMIT,
+  });
 
-    res.status(200).json({
-        status: 'success',
-        data: topTours,
-    });
+  res.status(200).json({
+    status: 'success',
+    data: topTours,
+  });
 });
 
 const getRankedTourIds = async ({ time, mode = 'top' }) => {
-    const whereClause = {};
+  const whereClause = {};
 
-    const timeFilter = getTimeFilter(time);
-    if (timeFilter) whereClause.created_at = timeFilter;
+  const timeFilter = getTimeFilter(time);
+  if (timeFilter) whereClause.created_at = timeFilter;
 
-    const rankedTours = await Vote.findAll({
-        where: whereClause,
-        attributes: [
-            'tour_id',
-            [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
-            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount'],
-        ],
-        group: ['tour_id'],
-        order: [
-            [sequelize.literal('avgRating'), mode === 'improvement' ? 'ASC' : 'DESC'],
-            [sequelize.literal('reviewCount'), 'DESC'],
-        ],
-        limit: REVIEW_RANKING_LIMIT,
-        raw: true,
-    });
+  const rankedTours = await Vote.findAll({
+    where: whereClause,
+    attributes: [
+      'tour_id',
+      [sequelize.fn('AVG', sequelize.col('Vote.rating')), 'avgRating'],
+      [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'reviewCount'],
+    ],
+    group: ['tour_id'],
+    order: [
+      [sequelize.literal('avgRating'), mode === 'improvement' ? 'ASC' : 'DESC'],
+      [sequelize.literal('reviewCount'), 'DESC'],
+    ],
+    limit: REVIEW_RANKING_LIMIT,
+    raw: true,
+  });
 
-    return rankedTours.map(item => item.tour_id).filter(Boolean);
+  return rankedTours.map((item) => item.tour_id).filter(Boolean);
 };
 
 const getReviewStats = catchAsync(async (req, res) => {
-    const { tour_id, time, scope = 'system' } = req.query;
-    const whereClause = {};
-    
-    const timeFilter = getTimeFilter(time);
-    if (timeFilter) whereClause.created_at = timeFilter;
+  const { tour_id, time, scope = 'system' } = req.query;
+  const whereClause = {};
 
-    if (scope === 'featured' || scope === 'improvement') {
-        const tourIds = await getRankedTourIds({
-            time,
-            mode: scope === 'improvement' ? 'improvement' : 'top',
-        });
+  const timeFilter = getTimeFilter(time);
+  if (timeFilter) whereClause.created_at = timeFilter;
 
-        if (tourIds.length === 0) {
-            return res.status(200).json({
-                status: 'success',
-                data: [],
-            });
-        }
+  if (scope === 'featured' || scope === 'improvement') {
+    const tourIds = await getRankedTourIds({
+      time,
+      mode: scope === 'improvement' ? 'improvement' : 'top',
+    });
 
-        whereClause.tour_id = { [Op.in]: tourIds };
-    } else if (tour_id) {
-        whereClause.tour_id = tour_id;
+    if (tourIds.length === 0) {
+      return res.status(200).json({
+        status: 'success',
+        data: [],
+      });
     }
 
-    const stats = await Vote.findAll({
-        where: whereClause,
-        attributes: [
-            'rating',
-            [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'count']
-        ],
-        group: ['rating'],
-        order: [['rating', 'DESC']]
-    });
+    whereClause.tour_id = { [Op.in]: tourIds };
+  } else if (tour_id) {
+    whereClause.tour_id = tour_id;
+  }
 
-    res.status(200).json({
-        status: 'success',
-        data: stats,
-    });
+  const stats = await Vote.findAll({
+    where: whereClause,
+    attributes: ['rating', [sequelize.fn('COUNT', sequelize.col('Vote.id')), 'count']],
+    group: ['rating'],
+    order: [['rating', 'DESC']],
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: stats,
+  });
 });
 
 // ══════════════════════════════════════
@@ -1248,168 +1428,187 @@ const getReviewStats = catchAsync(async (req, res) => {
 // ══════════════════════════════════════
 
 const upsertGuideTranslation = async ({ guide, language, title, slug, content, transaction }) => {
-    await GuideTranslation.upsert({
-        guide_id: guide.id,
-        language,
-        title,
-        slug,
-        content,
-    }, { transaction });
+  await GuideTranslation.upsert(
+    {
+      guide_id: guide.id,
+      language,
+      title,
+      slug,
+      content,
+    },
+    { transaction }
+  );
 };
 
-const prepareGuideTranslations = ({ translations, baseSlug }) => (
-    normalizeTranslationList(translations).map(item => ({
+const prepareGuideTranslations = ({ translations, baseSlug }) =>
+  normalizeTranslationList(translations)
+    .map((item) => ({
+      language: item.language,
+      title: (item.title || '').trim(),
+      slug:
+        item.slug ||
+        (item.title
+          ? slugify(item.title, { lower: true, strict: true })
+          : `${baseSlug}-${item.language}`),
+      content: item.content || '',
+    }))
+    .filter((item) => item.title && item.content);
+
+const syncGuideTranslations = async ({
+  guide,
+  title,
+  slug,
+  content,
+  translations = [],
+  transaction,
+}) => {
+  await upsertGuideTranslation({
+    guide,
+    language: 'vi',
+    title,
+    slug,
+    content,
+    transaction,
+  });
+
+  const translatedGuides = prepareGuideTranslations({ translations, baseSlug: slug });
+
+  if (translatedGuides.length > 0) {
+    await GuideTranslation.bulkCreate(
+      translatedGuides.map((item) => ({
+        guide_id: guide.id,
         language: item.language,
-        title: (item.title || '').trim(),
-        slug: item.slug || (item.title
-            ? slugify(item.title, { lower: true, strict: true })
-            : `${baseSlug}-${item.language}`),
-        content: item.content || '',
-    })).filter(item => item.title && item.content)
-);
-
-const syncGuideTranslations = async ({ guide, title, slug, content, translations = [], transaction }) => {
-    await upsertGuideTranslation({
-        guide,
-        language: 'vi',
-        title,
-        slug,
-        content,
+        title: item.title,
+        slug: item.slug,
+        content: item.content,
+      })),
+      {
         transaction,
-    });
-
-    const translatedGuides = prepareGuideTranslations({ translations, baseSlug: slug });
-
-    if (translatedGuides.length > 0) {
-        await GuideTranslation.bulkCreate(
-            translatedGuides.map(item => ({
-                guide_id: guide.id,
-                language: item.language,
-                title: item.title,
-                slug: item.slug,
-                content: item.content,
-            })),
-            {
-                transaction,
-                updateOnDuplicate: ['title', 'slug', 'content'],
-            },
-        );
-    }
+        updateOnDuplicate: ['title', 'slug', 'content'],
+      }
+    );
+  }
 };
 
 const FOOTER_GUIDE_SLUGS = new Set([
-    've-chung-toi',
-    'blog-du-lich',
-    'dieu-khoan-su-dung',
-    'cau-hoi-thuong-gap',
-    'chinh-sach-bao-mat',
-    'huong-dan-thanh-toan',
+  've-chung-toi',
+  'blog-du-lich',
+  'dieu-khoan-su-dung',
+  'cau-hoi-thuong-gap',
+  'chinh-sach-bao-mat',
+  'huong-dan-thanh-toan',
 ]);
 
 const getAllGuides = catchAsync(async (req, res) => {
-    const guides = await Guide.findAll({
-        include: [{ model: GuideTranslation, as: 'translations' }],
-        order: [['updated_at', 'DESC']],
-    });
+  const guides = await Guide.findAll({
+    include: [{ model: GuideTranslation, as: 'translations' }],
+    order: [['updated_at', 'DESC']],
+  });
 
-    res.status(200).json({
-        status: 'success',
-        results: guides.length,
-        data: guides,
-    });
+  res.status(200).json({
+    status: 'success',
+    results: guides.length,
+    data: guides,
+  });
 });
 
 const createGuide = catchAsync(async (req, res) => {
-    const { title, content, is_active, translations } = req.body;
+  const { title, content, is_active, translations } = req.body;
 
-    const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
-    const existingSlug = await Guide.findOne({ where: { slug } });
-    const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
+  const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
+  const existingSlug = await Guide.findOne({ where: { slug } });
+  const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
 
-    const guide = await sequelize.transaction(async (transaction) => {
-        const createdGuide = await Guide.create({
-            title,
-            slug: finalSlug,
-            content,
-            is_active: is_active !== undefined ? is_active : 1,
-        }, { transaction });
+  const guide = await sequelize.transaction(async (transaction) => {
+    const createdGuide = await Guide.create(
+      {
+        title,
+        slug: finalSlug,
+        content,
+        is_active: is_active !== undefined ? is_active : 1,
+      },
+      { transaction }
+    );
 
-        await syncGuideTranslations({
-            guide: createdGuide,
-            title,
-            slug: finalSlug,
-            content,
-            translations,
-            transaction,
-        });
-
-        return createdGuide;
+    await syncGuideTranslations({
+      guide: createdGuide,
+      title,
+      slug: finalSlug,
+      content,
+      translations,
+      transaction,
     });
 
-    res.status(201).json({
-        status: 'success',
-        message: 'Tạo bài hướng dẫn thành công',
-        data: guide,
-    });
+    return createdGuide;
+  });
+
+  res.status(201).json({
+    status: 'success',
+    message: 'Tạo bài hướng dẫn thành công',
+    data: guide,
+  });
 });
 
 const updateGuide = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const guide = await Guide.findByPk(id);
+  const { id } = req.params;
+  const guide = await Guide.findByPk(id);
 
-    if (!guide) {
-        return next(new AppError('Không tìm thấy bài hướng dẫn', HTTP_CODES.NOT_FOUND));
-    }
+  if (!guide) {
+    return next(new AppError('Không tìm thấy bài hướng dẫn', HTTP_CODES.NOT_FOUND));
+  }
 
-    const { title, content, is_active, translations } = req.body;
+  const { title, content, is_active, translations } = req.body;
 
-    let newSlug = guide.slug;
-    if (title && title !== guide.title && !FOOTER_GUIDE_SLUGS.has(guide.slug)) {
-        newSlug = slugify(title, { lower: true, strict: true, locale: 'vi' });
-        const existingSlug = await Guide.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
-        if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
-    }
+  let newSlug = guide.slug;
+  if (title && title !== guide.title && !FOOTER_GUIDE_SLUGS.has(guide.slug)) {
+    newSlug = slugify(title, { lower: true, strict: true, locale: 'vi' });
+    const existingSlug = await Guide.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
+    if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
+  }
 
-    const nextTitle = title || guide.title;
-    const nextContent = content !== undefined ? content : guide.content;
+  const nextTitle = title || guide.title;
+  const nextContent = content !== undefined ? content : guide.content;
 
-    await sequelize.transaction(async (transaction) => {
-        await guide.update({
-            title: nextTitle,
-            slug: newSlug,
-            content: nextContent,
-            is_active: is_active !== undefined ? is_active : guide.is_active,
-            updated_at: new Date(),
-        }, { transaction });
+  await sequelize.transaction(async (transaction) => {
+    await guide.update(
+      {
+        title: nextTitle,
+        slug: newSlug,
+        content: nextContent,
+        is_active: is_active !== undefined ? is_active : guide.is_active,
+        updated_at: new Date(),
+      },
+      { transaction }
+    );
 
-        await syncGuideTranslations({
-            guide,
-            title: nextTitle,
-            slug: newSlug,
-            content: nextContent,
-            translations,
-            transaction,
-        });
+    await syncGuideTranslations({
+      guide,
+      title: nextTitle,
+      slug: newSlug,
+      content: nextContent,
+      translations,
+      transaction,
     });
+  });
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Cập nhật bài hướng dẫn thành công',
-        data: guide,
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Cập nhật bài hướng dẫn thành công',
+    data: guide,
+  });
 });
 
 const uploadGuideImage = catchAsync(async (req, res, next) => {
-    if (!req.file) {
-        return next(new AppError('Vui lòng chọn ảnh bài viết', HTTP_CODES.BAD_REQUEST));
-    }
+  if (!req.file) {
+    return next(new AppError('Vui lòng chọn ảnh bài viết', HTTP_CODES.BAD_REQUEST));
+  }
 
-    res.status(201).json({
-        status: 'success',
-        data: {
-            image_url: normalizePublicUploadUrl(`/uploads/guides/${req.file.filename}`),
-        },
-    });
+  res.status(201).json({
+    status: 'success',
+    data: {
+      image_url: normalizePublicUploadUrl(`/uploads/guides/${req.file.filename}`),
+    },
+  });
 });
 
 /**
@@ -1417,32 +1616,32 @@ const uploadGuideImage = catchAsync(async (req, res, next) => {
  * DELETE /api/admin/tour-images/:id
  */
 const deleteTourImage = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const image = await TourImage.findByPk(id);
+  const { id } = req.params;
+  const image = await TourImage.findByPk(id);
 
-    if (!image) {
-        return next(new AppError('Không tìm thấy ảnh', HTTP_CODES.NOT_FOUND));
-    }
+  if (!image) {
+    return next(new AppError('Không tìm thấy ảnh', HTTP_CODES.NOT_FOUND));
+  }
 
-    const tourId = image.tour_id;
-    const imageUrl = image.image_url;
+  const tourId = image.tour_id;
+  const imageUrl = image.image_url;
 
-    await image.destroy();
+  await image.destroy();
 
-    // Nếu ảnh bị xóa là thumbnail -> cập nhật thumbnail mới (nếu còn ảnh khác)
-    const tour = await Tour.findByPk(tourId);
-    if (tour && tour.thumbnail_url === imageUrl) {
-        const nextImage = await TourImage.findOne({ 
-            where: { tour_id: tourId },
-            order: [['sort_order', 'ASC']]
-        });
-        await tour.update({ thumbnail_url: nextImage ? nextImage.image_url : null });
-    }
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Xóa ảnh thành công',
+  // Nếu ảnh bị xóa là thumbnail -> cập nhật thumbnail mới (nếu còn ảnh khác)
+  const tour = await Tour.findByPk(tourId);
+  if (tour && tour.thumbnail_url === imageUrl) {
+    const nextImage = await TourImage.findOne({
+      where: { tour_id: tourId },
+      order: [['sort_order', 'ASC']],
     });
+    await tour.update({ thumbnail_url: nextImage ? nextImage.image_url : null });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Xóa ảnh thành công',
+  });
 });
 
 // ══════════════════════════════════════
@@ -1450,138 +1649,145 @@ const deleteTourImage = catchAsync(async (req, res, next) => {
 // ══════════════════════════════════════
 
 const getAllBanners = catchAsync(async (req, res) => {
-    const banners = await Banner.findAll({
-        order: [['position', 'ASC'], ['id', 'DESC']],
-    });
-    const data = banners.map((banner) => {
-        const item = banner.toJSON();
-        item.image_url = normalizePublicUploadUrl(item.image_url);
-        return item;
-    });
+  const banners = await Banner.findAll({
+    order: [
+      ['position', 'ASC'],
+      ['id', 'DESC'],
+    ],
+  });
+  const data = banners.map((banner) => {
+    const item = banner.toJSON();
+    item.image_url = normalizePublicUploadUrl(item.image_url);
+    return item;
+  });
 
-    res.status(200).json({
-        status: 'success',
-        results: data.length,
-        data,
-    });
+  res.status(200).json({
+    status: 'success',
+    results: data.length,
+    data,
+  });
 });
 
 const createBanner = catchAsync(async (req, res, next) => {
-    const { title, target_link, position, is_active, tour_id } = req.body;
+  const { title, target_link, position, is_active, tour_id } = req.body;
 
-    if (!title || !position) {
-        return next(new AppError('Tiêu đề và vị trí là bắt buộc', HTTP_CODES.BAD_REQUEST));
-    }
+  if (!title || !position) {
+    return next(new AppError('Tiêu đề và vị trí là bắt buộc', HTTP_CODES.BAD_REQUEST));
+  }
 
-    const validPositions = ['hero', 'left_home', 'right_home'];
-    if (!validPositions.includes(position)) {
-        return next(new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST));
-    }
+  const validPositions = ['hero', 'left_home', 'right_home'];
+  if (!validPositions.includes(position)) {
+    return next(
+      new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST)
+    );
+  }
 
-    if (!req.file) {
-        return next(new AppError('Vui lòng upload ảnh banner', HTTP_CODES.BAD_REQUEST));
-    }
+  if (!req.file) {
+    return next(new AppError('Vui lòng upload ảnh banner', HTTP_CODES.BAD_REQUEST));
+  }
 
-    const banner = await Banner.create({
-        title,
-        image_url: `/uploads/banners/${req.file.filename}`,
-        target_link: target_link || null,
-        position,
-        tour_id: tour_id || null,
-        is_active: is_active !== undefined ? parseInt(is_active) : 1,
-    });
+  const banner = await Banner.create({
+    title,
+    image_url: `/uploads/banners/${req.file.filename}`,
+    target_link: target_link || null,
+    position,
+    tour_id: tour_id || null,
+    is_active: is_active !== undefined ? parseInt(is_active) : 1,
+  });
 
-    res.status(201).json({
-        status: 'success',
-        message: 'Tạo banner thành công',
-        data: {
-            ...banner.toJSON(),
-            image_url: normalizePublicUploadUrl(banner.image_url),
-        },
-    });
+  res.status(201).json({
+    status: 'success',
+    message: 'Tạo banner thành công',
+    data: {
+      ...banner.toJSON(),
+      image_url: normalizePublicUploadUrl(banner.image_url),
+    },
+  });
 });
 
 const updateBanner = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const banner = await Banner.findByPk(id);
+  const { id } = req.params;
+  const banner = await Banner.findByPk(id);
 
-    if (!banner) {
-        return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
+  if (!banner) {
+    return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
+  }
+
+  const { title, target_link, position, is_active } = req.body;
+
+  if (position) {
+    const validPositions = ['hero', 'left_home', 'right_home'];
+    if (!validPositions.includes(position)) {
+      return next(
+        new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST)
+      );
     }
+  }
 
-    const { title, target_link, position, is_active } = req.body;
+  const updateData = {
+    title: title || banner.title,
+    target_link: target_link !== undefined ? target_link : banner.target_link,
+    position: position || banner.position,
+    is_active: is_active !== undefined ? parseInt(is_active) : banner.is_active,
+    updated_at: new Date(),
+  };
 
-    if (position) {
-        const validPositions = ['hero', 'left_home', 'right_home'];
-        if (!validPositions.includes(position)) {
-            return next(new AppError('Vị trí không hợp lệ (hero, left_home, right_home)', HTTP_CODES.BAD_REQUEST));
-        }
-    }
+  if (req.file) {
+    updateData.image_url = `/uploads/banners/${req.file.filename}`;
+  }
 
-    const updateData = {
-        title: title || banner.title,
-        target_link: target_link !== undefined ? target_link : banner.target_link,
-        position: position || banner.position,
-        is_active: is_active !== undefined ? parseInt(is_active) : banner.is_active,
-        updated_at: new Date(),
-    };
+  await banner.update(updateData);
 
-    if (req.file) {
-        updateData.image_url = `/uploads/banners/${req.file.filename}`;
-    }
-
-    await banner.update(updateData);
-
-    res.status(200).json({
-        status: 'success',
-        message: 'Cập nhật banner thành công',
-        data: {
-            ...banner.toJSON(),
-            image_url: normalizePublicUploadUrl(banner.image_url),
-        },
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Cập nhật banner thành công',
+    data: {
+      ...banner.toJSON(),
+      image_url: normalizePublicUploadUrl(banner.image_url),
+    },
+  });
 });
 
 const deleteBanner = catchAsync(async (req, res, next) => {
-    const { id } = req.params;
-    const banner = await Banner.findByPk(id);
+  const { id } = req.params;
+  const banner = await Banner.findByPk(id);
 
-    if (!banner) {
-        return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
-    }
+  if (!banner) {
+    return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
+  }
 
-    await banner.destroy();
+  await banner.destroy();
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Xóa banner thành công',
-    });
+  res.status(200).json({
+    status: 'success',
+    message: 'Xóa banner thành công',
+  });
 });
 
 module.exports = {
-    login,
-    getAllTours,
-    getTourById,
-    createTour,
-    updateTour,
-    deleteTour,
-    getBookings,
-    getBookingOverview,
-    updateBookingStatus,
-    deleteBooking,
-    getVotes,
-    updateVoteStatus,
-    getAllGuides,
-    createGuide,
-    updateGuide,
-    uploadGuideImage,
-    deleteTourImage,
-    getAllBanners,
-    createBanner,
-    updateBanner,
-    deleteBanner,
-    deleteVote,
-    replyToVote,
-    getTopRatedTours,
-    getReviewStats,
+  login,
+  getAllTours,
+  getTourById,
+  createTour,
+  updateTour,
+  deleteTour,
+  getBookings,
+  getBookingOverview,
+  updateBookingStatus,
+  deleteBooking,
+  getVotes,
+  updateVoteStatus,
+  getAllGuides,
+  createGuide,
+  updateGuide,
+  uploadGuideImage,
+  deleteTourImage,
+  getAllBanners,
+  createBanner,
+  updateBanner,
+  deleteBanner,
+  deleteVote,
+  replyToVote,
+  getTopRatedTours,
+  getReviewStats,
 };

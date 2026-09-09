@@ -24,6 +24,7 @@ const AdminTable = ({
     const shellClassName = [
         'relative overflow-hidden rounded-lg border border-border bg-surface shadow-sm',
         scrollable && 'flex min-h-0 flex-col',
+        loading && !hasRows && 'min-h-[200px]',
         className,
     ].filter(Boolean).join(' ');
     const tableWrapClassName = scrollable && hasRows ? 'min-h-0 flex-1 overflow-auto' : 'overflow-x-auto';
@@ -78,7 +79,7 @@ const AdminTable = ({
                 </table>
 
                 {loading && (
-                    <div className="absolute inset-x-0 bottom-0 top-[45px] z-20 flex items-center justify-center bg-surface/65 backdrop-blur-[1px]">
+                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-surface/65 backdrop-blur-[1px]">
                         <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-primary shadow-sm">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Đang tải...

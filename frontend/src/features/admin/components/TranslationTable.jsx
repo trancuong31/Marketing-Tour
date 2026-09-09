@@ -4,10 +4,17 @@ import AdminTable from '@/components/ui/AdminTable';
 
 const clip = (value) => value || '-';
 
-const TranslationTable = ({ items, onEdit, onDelete, loading = false }) => {
+const TranslationTable = ({ items, onEdit, onDelete, loading = false, page = 1, pageSize = 50 }) => {
     const { t } = useTranslation();
 
     const columns = [
+        {
+            key: 'stt',
+            header: 'STT',
+            cellClassName: 'w-14 text-center font-semibold text-text-muted',
+            align: 'center',
+            render: (_, index) => (page - 1) * pageSize + index + 1,
+        },
         {
             key: 'translation_key',
             header: t('admin.translations.key', 'Key'),

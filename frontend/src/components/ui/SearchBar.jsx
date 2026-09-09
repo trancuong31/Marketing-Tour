@@ -157,7 +157,6 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
       className="w-full bg-white/95 backdrop-blur-xl rounded-lg shadow-xl shadow-black/5 border border-white/50 p-3 sm:p-4 flex flex-col lg:flex-row items-end gap-4"
     >
       {/* Điểm đến */}
-      {/* Điểm đến */}
       <div className="flex-1 w-full">
         <label className="flex items-center gap-2 text-[0.7rem] uppercase tracking-wider text-text-secondary font-bold mb-2 ml-1">
           <MapPin className="w-3.5 h-3.5 text-primary" />
@@ -167,7 +166,7 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
           <input
             type="text"
             placeholder={t('home.search.destinationPlaceholder', 'Tên tour, điểm đến...')}
-            className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-sm text-text font-medium placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
+            className="w-full rounded-lg border border-border bg-white py-2.5 px-3.5 text-sm font-medium text-text placeholder:text-text-muted transition-all duration-200 ease-in-out hover:border-primary/40 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30 shadow-xs"
             value={searchParams.keyword}
             onChange={(e) => setSearchParams({ ...searchParams, keyword: e.target.value })}
           />
@@ -176,7 +175,7 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
 
       {/* Ngày khởi hành */}
       <div className="flex-1 w-full relative">
-        <div className="[&>div>button]:py-2.5 [&>div>button]:shadow-sm">
+        <div className="[&>div>button]:py-2.5 [&>div>button]:bg-white [&>div>button]:shadow-xs">
           <DepartureCalendar
             label={t('home.search.departureLabel', 'Ngày khởi hành')}
             labelIcon={<CalendarDays className="w-3.5 h-3.5" />}
@@ -189,7 +188,7 @@ const SearchBar = ({ variant = 'tour', departurePriceMap = {}, ...props }) => {
 
       {/* Ngân sách */}
       <div className="flex-1 w-full relative">
-        <div className="[&>div>button]:py-2.5 [&>div>button]:shadow-sm [&>div>button]:border-gray-200 [&>div>button]:bg-white">
+        <div className="[&>div>button]:py-2.5 [&>div>button]:bg-white [&>div>button]:shadow-xs">
           <CustomSelect
             label={t('home.search.budgetLabel', 'Ngân sách')}
             labelIcon={<Wallet className="w-3.5 h-3.5" />}

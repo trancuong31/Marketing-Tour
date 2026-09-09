@@ -13,7 +13,7 @@ const getMinPrice = (tour) => {
     return prices.length ? Math.min(...prices) : null;
 };
 
-const TourManagementTable = ({ tours, onEdit, onDelete, loading = false }) => {
+const TourManagementTable = ({ tours, onEdit, onDelete, loading = false, page = 1, pageSize = 10 }) => {
     const { t, i18n } = useTranslation();
 
     const statusLabels = {
@@ -23,6 +23,13 @@ const TourManagementTable = ({ tours, onEdit, onDelete, loading = false }) => {
     };
 
     const columns = [
+        {
+            key: 'stt',
+            header: 'STT',
+            cellClassName: 'w-14 text-center font-semibold text-text-muted',
+            align: 'center',
+            render: (_, index) => (page - 1) * pageSize + index + 1,
+        },
         {
             key: 'tour',
             header: t('admin.tours.columns.tour', 'Tour'),

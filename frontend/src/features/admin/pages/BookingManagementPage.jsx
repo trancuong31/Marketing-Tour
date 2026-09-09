@@ -252,7 +252,7 @@ const BookingManagementPage = () => {
                 </div>
 
                 {/* Options Bar */}
-                <div className="hidden shrink-0 items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 lg:flex lg:flex-row">
+                <div className="hidden shrink-0 items-center justify-between gap-4 rounded-lg border border-border bg-surface p-4 lg:flex lg:flex-row">
                     {view === 'list' ? (
                         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                             {selectedTour && (

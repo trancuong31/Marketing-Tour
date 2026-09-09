@@ -382,7 +382,7 @@ export default function ReviewManagementPage() {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-surface border border-border rounded-2xl p-4 mb-6 flex flex-wrap gap-4 items-center shadow-sm">
+            <div className="bg-surface border border-border rounded-lg p-4 mb-6 flex flex-wrap gap-4 items-center shadow-sm">
                 <div className="flex items-center gap-2">
                     <Filter className="w-5 h-5 text-primary" />
                     <span className="font-semibold text-text">Bộ Lọc</span>

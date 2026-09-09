@@ -43,8 +43,23 @@ const otpLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+/**
+ * Strict rate limiter for public booking lookup
+ */
+const lookupLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Max 10 lookup requests per 15 minutes
+    message: {
+        status: 'fail',
+        message: 'Bạn đã tra cứu đơn hàng quá nhiều lần, vui lòng thử lại sau 15 phút.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 module.exports = {
     apiLimiter,
     authLimiter,
     otpLimiter,
+    lookupLimiter,
 };

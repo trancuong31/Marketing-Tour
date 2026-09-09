@@ -107,7 +107,13 @@ const TranslationManagementPage = () => {
 
     return (
         <AdminLayout>
-            <div className="flex h-[calc(100dvh-6rem)] flex-col gap-5 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
+            <div className="flex h-[calc(100dvh-6.5rem)] flex-col gap-4 overflow-hidden sm:h-[calc(100dvh-5.5rem)]">
+                <div className="shrink-0">
+                    <p className="text-sm text-text-muted">
+                        {t('admin.translations.pageDescription', 'Quản lý danh sách các từ khóa dịch thuật và nội dung đa ngôn ngữ trên hệ thống.')}
+                    </p>
+                </div>
+
                 <div className="max-w-xl shrink-0">
                     <SearchBar
                         variant="admin"
@@ -117,13 +123,20 @@ const TranslationManagementPage = () => {
                         placeholder={t('admin.translations.searchPlaceholder', 'Search key or content...')}
                     />
                     <div>
-                        <p className="text-xs text-text-muted">
+                        <p className="text-xs text-text-muted mt-1">
                             {t('admin.translations.total', '{{count}} keys', { count: pagination.totalItems || 0 })}
                         </p>
                     </div>
                 </div>
 
-                <TranslationTable items={items} loading={loading} onEdit={openEdit} onDelete={handleDelete} />
+                <TranslationTable
+                    items={items}
+                    loading={loading}
+                    onEdit={openEdit}
+                    onDelete={handleDelete}
+                    page={pagination.page}
+                    pageSize={PAGE_SIZE}
+                />
 
                 {pagination.totalPages > 1 && (
                     <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">

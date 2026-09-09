@@ -13,7 +13,7 @@ const createBookingSchema = Joi.object({
         .messages({
             'any.required': 'Ngày khởi hành là bắt buộc',
         }),
-    pickup_location_id: Joi.number().integer().positive().allow(null),
+    pickup_location_id: Joi.number().integer().positive().allow(null, ''),
     customer_name: Joi.string().trim().min(2).max(100).required()
         .messages({
             'any.required': 'Họ tên là bắt buộc',
@@ -37,6 +37,7 @@ const createBookingSchema = Joi.object({
     child_qty: Joi.number().integer().min(0).max(100).default(0),
     infant_qty: Joi.number().integer().min(0).max(100).default(0),
     customer_note: Joi.string().trim().max(500).allow('', null),
+    language: Joi.string().trim().max(10).allow('', null),
     selected_options: Joi.array().items(
         Joi.object({
             option_id: Joi.number().integer().positive().required(),

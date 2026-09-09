@@ -4,6 +4,7 @@ const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
+const { getTodayDateString } = require('../utils/date');
 
 /**
  * Lấy danh sách tour, lọc theo type (domestic|international)
@@ -43,8 +44,7 @@ const getTours = catchAsync(async (req, res) => {
         }
     }
 
-    const today = new Date();
-    const formattedToday = today.toISOString().split('T')[0];
+    const formattedToday = getTodayDateString();
     
     const departureWhere = { 
         status: 'open' 
@@ -141,6 +141,8 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     const lang = req.language || 'vi';
     const shouldUseTranslation = lang !== 'vi';
 
+    const formattedToday = getTodayDateString();
+
     const tour = await Tour.findOne({
         where: { 
             status: 'active',
@@ -179,7 +181,7 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
             {
                 model: TourDeparture,
                 as: 'departures',
-                where: { status: 'open', departure_date: { [Op.gte]: new Date() } },
+                where: { status: 'open', departure_date: { [Op.gte]: formattedToday } },
                 required: false,
                 separate: true,
                 order: [['departure_date', 'ASC']],

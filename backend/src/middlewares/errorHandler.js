@@ -11,11 +11,31 @@ const handleCastError = (err) => {
 };
 
 /**
- * Handle duplicate field error from database
+ * Handle duplicate field error from database (MongoDB or generic)
  */
 const handleDuplicateFieldsError = (err) => {
     const value = err.message.match(/(["'])(\\?.)*?\1/)?.[0] || 'value';
     const message = `Duplicate field value: ${value}. Please use another value.`;
+    return new AppError(message, HTTP_CODES.BAD_REQUEST);
+};
+
+/**
+ * Handle Sequelize Unique Constraint Error
+ */
+const handleSequelizeUniqueConstraintError = (err) => {
+    const field = err.errors?.[0]?.path || 'dữ liệu';
+    let message = `Dữ liệu '${field}' đã tồn tại trên hệ thống.`;
+    if (field === 'email') message = 'Email này đã được đăng ký cho tài khoản khác.';
+    if (field === 'phone_number') message = 'Số điện thoại này đã được sử dụng cho tài khoản khác.';
+    return new AppError(message, HTTP_CODES.CONFLICT);
+};
+
+/**
+ * Handle Sequelize Validation Error
+ */
+const handleSequelizeValidationError = (err) => {
+    const errors = Object.values(err.errors || {}).map((el) => el.message);
+    const message = `Dữ liệu không hợp lệ: ${errors.join('. ')}`;
     return new AppError(message, HTTP_CODES.BAD_REQUEST);
 };
 
@@ -85,6 +105,8 @@ const errorHandler = (err, req, res, _next) => {
     if (err.name === 'CastError') error = handleCastError(err);
     if (err.code === 11000) error = handleDuplicateFieldsError(err);
     if (err.name === 'ValidationError') error = handleValidationError(err);
+    if (err.name === 'SequelizeUniqueConstraintError') error = handleSequelizeUniqueConstraintError(err);
+    if (err.name === 'SequelizeValidationError') error = handleSequelizeValidationError(err);
 
     error.statusCode = error.statusCode || HTTP_CODES.INTERNAL_SERVER_ERROR;
     error.status = error.status || 'error';

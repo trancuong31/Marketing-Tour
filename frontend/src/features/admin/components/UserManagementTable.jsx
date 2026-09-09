@@ -21,8 +21,15 @@ const UserAvatar = ({ user }) => {
     );
 };
 
-const UserManagementTable = ({ users, loading, onView, onToggleStatus }) => {
+const UserManagementTable = ({ users, loading, onView, onToggleStatus, page = 1, pageSize = 10 }) => {
     const columns = [
+        {
+            key: 'stt',
+            header: 'STT',
+            cellClassName: 'w-14 text-center font-semibold text-text-muted',
+            align: 'center',
+            render: (_, index) => (page - 1) * pageSize + index + 1,
+        },
         {
             key: 'user',
             header: 'Người dùng',
