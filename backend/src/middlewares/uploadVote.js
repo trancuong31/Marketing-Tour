@@ -1,12 +1,21 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
 
+const voteDir = path.join(__dirname, '../../uploads/votes');
+if (!fs.existsSync(voteDir)) {
+    fs.mkdirSync(voteDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../../uploads/votes'));
+        if (!fs.existsSync(voteDir)) {
+            fs.mkdirSync(voteDir, { recursive: true });
+        }
+        cb(null, voteDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;

@@ -1,13 +1,23 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
 
+// Đảm bảo thư mục uploads/tours tồn tại
+const tourDir = path.join(__dirname, '../../uploads/tours');
+if (!fs.existsSync(tourDir)) {
+    fs.mkdirSync(tourDir, { recursive: true });
+}
+
 // Cấu hình lưu file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, '../../uploads/tours'));
+        if (!fs.existsSync(tourDir)) {
+            fs.mkdirSync(tourDir, { recursive: true });
+        }
+        cb(null, tourDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
