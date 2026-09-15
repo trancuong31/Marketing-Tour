@@ -25,7 +25,7 @@ export default function ReviewManagementPage() {
     const debounceRef = useRef(null);
     const { theme } = useThemeStore();
     const isDark = theme === 'dark';
-    
+
     // Pagination for table
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -36,7 +36,7 @@ export default function ReviewManagementPage() {
     const [rankingTab, setRankingTab] = useState('top');
     const [stats, setStats] = useState([]);
     const [reviews, setReviews] = useState([]);
-    
+
     const [loading, setLoading] = useState(true);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const initialLoadsRef = useRef({ overview: false, reviews: false });
@@ -104,7 +104,7 @@ export default function ReviewManagementPage() {
         setTourSearchTerm(value);
         setShowTourSuggestions(true);
         setHighlightedIndex(-1);
-        
+
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             fetchToursDropdown(value);
@@ -236,7 +236,7 @@ export default function ReviewManagementPage() {
         setReviewsLoading(true);
 
         const requestPromise = (async () => {
-            const voteParams = { page: currentPage, limit: 10 };
+            const voteParams = { page: currentPage, limit: 100 };
             if (selectedTour) voteParams.tour_id = selectedTour;
             if (selectedTime) voteParams.time = selectedTime;
             if (approvalFilter !== '') voteParams.approved = approvalFilter;
@@ -317,7 +317,7 @@ export default function ReviewManagementPage() {
     const handleReply = async (v) => {
         const reply = window.prompt(`Trả lời đánh giá của ${v.customer_name}:`, v.admin_reply || '');
         if (reply === null) return; // User cancelled
-        
+
         try {
             await adminService.replyToVote(v.id, reply);
             toast.success('Gửi phản hồi thành công');
@@ -346,7 +346,7 @@ export default function ReviewManagementPage() {
 
     const pieChartOptions = useMemo(() => ({
         chart: { type: 'pie', backgroundColor: 'transparent', height: 350 },
-        title: { 
+        title: {
             text: `<div style="text-align:center"><span style="font-size:32px; font-weight:bold; color:var(--text)">${avgRating}</span><br><span style="font-size:14px; color:var(--text-muted)">Sao Trung Bình</span></div>`,
             align: 'center',
             verticalAlign: 'middle',
@@ -387,7 +387,7 @@ export default function ReviewManagementPage() {
                     <Filter className="w-5 h-5 text-primary" />
                     <span className="font-semibold text-text">Bộ Lọc</span>
                 </div>
-                
+
                 <div className="flex-1 flex flex-wrap gap-4 max-w-3xl">
                     {/* Tour Filter — Autocomplete Search Input */}
                     <div ref={tourSearchRef} className="flex-1 min-w-[300px] relative">
@@ -490,7 +490,7 @@ export default function ReviewManagementPage() {
                 <>
                     {/* Dashboard Stats */}
                     <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                        
+
                         {/* Top Tours Ranking */}
                         <div className="lg:col-span-1 bg-surface border border-border rounded-2xl p-6 shadow-sm">
                             <h2 className="text-sm font-bold text-text mb-4 uppercase tracking-wider flex items-center gap-2">
@@ -502,11 +502,10 @@ export default function ReviewManagementPage() {
                                         key={tab.value}
                                         type="button"
                                         onClick={() => setRankingTab(tab.value)}
-                                        className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${
-                                            rankingTab === tab.value
-                                                ? 'bg-primary text-white shadow-sm'
-                                                : 'text-text-secondary hover:bg-surface hover:text-text'
-                                        }`}
+                                        className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${rankingTab === tab.value
+                                            ? 'bg-primary text-white shadow-sm'
+                                            : 'text-text-secondary hover:bg-surface hover:text-text'
+                                            }`}
                                     >
                                         {tab.value === 'top' ? 'Đánh giá cao' : 'Cần cải thiện'}
                                     </button>
@@ -541,7 +540,7 @@ export default function ReviewManagementPage() {
                                 <MessageSquare className="w-4 h-4 text-blue-500" />
                                 Đánh giá toàn hệ thống
                             </h2>
-                            
+
                             {stats.length > 0 ? (
                                 <div className="grid md:grid-cols-5 gap-8 items-center">
                                     {/* Left: Summary Metrics */}
@@ -551,15 +550,15 @@ export default function ReviewManagementPage() {
                                                 <div className="text-5xl font-black text-text leading-tight">{avgRating}</div>
                                                 <div className="flex justify-center mt-1">
                                                     {[1, 2, 3, 4, 5].map((s) => (
-                                                        <Star 
-                                                            key={s} 
-                                                            className={`w-4 h-4 ${s <= Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-border'}`} 
+                                                        <Star
+                                                            key={s}
+                                                            className={`w-4 h-4 ${s <= Math.round(avgRating) ? 'fill-amber-400 text-amber-400' : 'text-border'}`}
                                                         />
                                                     ))}
                                                 </div>
                                                 <div className="text-xs text-text-muted mt-2 font-medium uppercase">{totalVotes} nhận xét</div>
                                             </div>
-                                            
+
                                             <div className="flex-1 space-y-2">
                                                 {[5, 4, 3, 2, 1].map(num => {
                                                     const stat = stats.find(s => s.rating === num) || { count: 0 };
@@ -571,8 +570,8 @@ export default function ReviewManagementPage() {
                                                                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                                                             </div>
                                                             <div className="flex-1 h-2 bg-surface-alt rounded-full overflow-hidden">
-                                                                <div 
-                                                                    className="h-full bg-amber-400 rounded-full transition-all duration-1000 ease-out" 
+                                                                <div
+                                                                    className="h-full bg-amber-400 rounded-full transition-all duration-1000 ease-out"
                                                                     style={{ width: `${percentage}%` }}
                                                                 />
                                                             </div>
@@ -586,7 +585,7 @@ export default function ReviewManagementPage() {
                                                 })}
                                             </div>
                                         </div>
-                                        
+
                                         <div className="pt-4 border-t border-border/50">
                                             <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
                                                 <p className="text-[11px] text-primary font-medium leading-relaxed italic">
@@ -617,6 +616,7 @@ export default function ReviewManagementPage() {
                         approvalFilter={approvalFilter}
                         currentPage={currentPage}
                         totalPages={totalPages}
+                        pageSize={100}
                         onApprovalFilterChange={(value) => {
                             setApprovalFilter(value);
                             setCurrentPage(1);

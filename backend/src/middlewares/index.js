@@ -1,7 +1,7 @@
 const { authenticate, authorize } = require('./auth');
 const { errorHandler } = require('./errorHandler');
 const { validate } = require('./validate');
-const { apiLimiter, authLimiter } = require('./rateLimiter');
+const { apiLimiter, authLimiter, bookingLimiter } = require('./rateLimiter');
 const detectLanguage = require('./detectLanguage');
 
 module.exports = {
@@ -11,5 +11,6 @@ module.exports = {
     validate,
     apiLimiter,
     authLimiter,
+    bookingLimiter,
     detectLanguage,
 };

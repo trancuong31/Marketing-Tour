@@ -6,7 +6,7 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 
 const DEFAULT_LIMIT = 10;
-const MAX_LIMIT = 50;
+const MAX_LIMIT = 100;
 
 const getRoleName = (role) => String(role?.role_name || '').trim().toLowerCase();
 const isAdminRole = (role) => role?.id === 1 || getRoleName(role) === 'admin';

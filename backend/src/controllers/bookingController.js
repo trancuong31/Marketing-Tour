@@ -203,15 +203,24 @@ const createBooking = catchAsync(async (req, res) => {
       );
     }
 
-    // KIỂM TRA SỐ CHỖ CHUẨN XÁC (Fix Issue 2 & Issue 1)
-    if (departure.available_seats <= 0) {
-      throw new AppError('Ngày khởi hành này đã hết chỗ trống', HTTP_CODES.BAD_REQUEST);
-    }
+    // KIỂM TRA SỐ CHỖ CHUẨN XÁC VỚI DB TRANSACTION + ROW LOCK (FOR UPDATE)
+    const reservedSeatsSum = await Booking.sum(
+      sequelize.literal('adult_qty + child_qty + infant_qty'),
+      {
+        where: {
+          departure_id: departure.id,
+          status: { [Op.in]: ['pending', 'approved'] },
+        },
+        transaction: t,
+      }
+    );
+    const reservedSeats = Number(reservedSeatsSum) || 0;
+    const actualAvailableSeats = Math.max(0, Number(departure.capacity) - reservedSeats);
 
-    if (totalPassengers > departure.available_seats) {
+    if (actualAvailableSeats <= 0 || totalPassengers > actualAvailableSeats) {
       throw new AppError(
-        `Chỉ còn ${departure.available_seats} chỗ trống cho chuyến đi này`,
-        HTTP_CODES.BAD_REQUEST
+        'Không đủ chỗ cho số lượng khách bạn đã chọn. Vui lòng giảm số lượng khách hoặc chọn ngày khởi hành khác.',
+        HTTP_CODES.CONFLICT
       );
     }
 
@@ -224,7 +233,7 @@ const createBooking = catchAsync(async (req, res) => {
     const totalPrice = basePrice + pickupSurcharge * totalPassengers + optionsTotalPrice;
 
     // Trừ chỗ & cập nhật status nếu hết chỗ
-    const newSeats = departure.available_seats - totalPassengers;
+    const newSeats = actualAvailableSeats - totalPassengers;
     await departure.update(
       {
         available_seats: newSeats,
@@ -364,15 +373,15 @@ const getMyBookings = catchAsync(async (req, res) => {
     tour: mapTranslatedTour(b.Tour),
     departure: b.departure
       ? {
-          id: b.departure.id,
-          departure_date: b.departure.departure_date,
-          price_adult: b.departure.price_adult,
-        }
+        id: b.departure.id,
+        departure_date: b.departure.departure_date,
+        price_adult: b.departure.price_adult,
+      }
       : null,
     pickupLocation: b.pickupLocation
       ? {
-          location_name: b.pickupLocation.location_name,
-        }
+        location_name: b.pickupLocation.location_name,
+      }
       : null,
     bookingOptions: b.bookingOptions || [],
   }));
@@ -462,24 +471,30 @@ const deleteMyBooking = catchAsync(async (req, res) => {
 
 // --------- Tra cứu booking (Public) ---------
 const lookupBooking = catchAsync(async (req, res, next) => {
-  const { email, phone } = req.query;
+  const { booking_code, bookingCode, email, phone } = req.query;
+  const rawCode = booking_code || bookingCode;
   const language = req.language || 'vi';
 
-  if (!email || !phone) {
+  if (!rawCode || !email || !phone) {
     return next(
-      new AppError('Vui lòng cung cấp đầy đủ email và số điện thoại.', HTTP_CODES.BAD_REQUEST)
+      new AppError(
+        'Vui lòng cung cấp đầy đủ mã đơn hàng, email và số điện thoại.',
+        HTTP_CODES.BAD_REQUEST
+      )
     );
   }
 
+  const cleanCode = String(rawCode).trim().toUpperCase();
   const cleanEmail = String(email).toLowerCase().trim();
   const cleanPhone = String(phone).trim();
 
-  if (cleanEmail.length < 5 || cleanPhone.length < 8) {
+  if (cleanCode.length < 3 || cleanEmail.length < 5 || cleanPhone.length < 8) {
     return next(new AppError('Thông tin tra cứu không hợp lệ.', HTTP_CODES.BAD_REQUEST));
   }
 
-  const bookings = await Booking.findAll({
+  const booking = await Booking.findOne({
     where: {
+      booking_code: cleanCode,
       customer_email: cleanEmail,
       customer_phone: cleanPhone,
     },
@@ -493,60 +508,63 @@ const lookupBooking = catchAsync(async (req, res, next) => {
       { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
       { model: BookingOption, as: 'bookingOptions' },
     ],
-    order: [[sequelize.col('Booking.created_at'), 'DESC']],
   });
 
-  const data = bookings.map((b) => ({
-    id: b.id,
-    booking_code: b.booking_code,
-    customer_name: b.customer_name,
-    customer_phone: b.customer_phone,
-    customer_email: b.customer_email,
-    adult_qty: b.adult_qty,
-    child_qty: b.child_qty,
-    infant_qty: b.infant_qty,
-    total_price: b.total_price,
-    customer_note: b.customer_note,
-    language: b.language,
-    review_email_sent_at: b.review_email_sent_at,
-    status: b.status,
-    created_at: b.created_at,
+  if (!booking) {
+    return next(new AppError('Không tìm thấy thông tin đơn hàng.', HTTP_CODES.NOT_FOUND));
+  }
+
+  const mappedBooking = {
+    id: booking.id,
+    booking_code: booking.booking_code,
+    customer_name: booking.customer_name,
+    customer_phone: booking.customer_phone,
+    customer_email: booking.customer_email,
+    adult_qty: booking.adult_qty,
+    child_qty: booking.child_qty,
+    infant_qty: booking.infant_qty,
+    total_price: booking.total_price,
+    customer_note: booking.customer_note,
+    language: booking.language,
+    review_email_sent_at: booking.review_email_sent_at,
+    status: booking.status,
+    created_at: booking.created_at,
 
     // Legacy fields mapping
-    adult_count: b.adult_qty,
-    child_count: b.child_qty,
-    infant_count: b.infant_qty,
-    departure_date: b.departure?.departure_date || b.departure_date_snapshot || null,
+    adult_count: booking.adult_qty,
+    child_count: booking.child_qty,
+    infant_count: booking.infant_qty,
+    departure_date: booking.departure?.departure_date || booking.departure_date_snapshot || null,
 
     // Snapshot fields
-    tour_title_snapshot: b.tour_title_snapshot,
-    departure_date_snapshot: b.departure_date_snapshot,
-    adult_price_snapshot: b.adult_price_snapshot,
-    child_price_snapshot: b.child_price_snapshot,
-    infant_price_snapshot: b.infant_price_snapshot,
-    pickup_location_snapshot: b.pickup_location_snapshot,
-    pickup_price_snapshot: b.pickup_price_snapshot,
+    tour_title_snapshot: booking.tour_title_snapshot,
+    departure_date_snapshot: booking.departure_date_snapshot,
+    adult_price_snapshot: booking.adult_price_snapshot,
+    child_price_snapshot: booking.child_price_snapshot,
+    infant_price_snapshot: booking.infant_price_snapshot,
+    pickup_location_snapshot: booking.pickup_location_snapshot,
+    pickup_price_snapshot: booking.pickup_price_snapshot,
 
-    tour: mapTranslatedTour(b.Tour),
-    departure: b.departure
+    tour: mapTranslatedTour(booking.Tour),
+    departure: booking.departure
       ? {
-          id: b.departure.id,
-          departure_date: b.departure.departure_date,
-          price_adult: b.departure.price_adult,
-        }
+        id: booking.departure.id,
+        departure_date: booking.departure.departure_date,
+        price_adult: booking.departure.price_adult,
+      }
       : null,
-    pickupLocation: b.pickupLocation
+    pickupLocation: booking.pickupLocation
       ? {
-          location_name: b.pickupLocation.location_name,
-        }
+        location_name: booking.pickupLocation.location_name,
+      }
       : null,
-    bookingOptions: b.bookingOptions || [],
-  }));
+    bookingOptions: booking.bookingOptions || [],
+  };
 
   res.status(200).json({
     status: 'success',
-    results: data.length,
-    data,
+    results: 1,
+    data: [mappedBooking],
   });
 });
 

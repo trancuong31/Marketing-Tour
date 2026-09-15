@@ -276,7 +276,7 @@ const mergeTranslationsByLanguage = (defaults, translations = []) =>
   });
 
 const normalizeTourDeparturesPayload = (departures = []) =>
-    departures.map(({ available_seats, status: _status, ...item }) => ({
+  departures.map(({ available_seats, status: _status, ...item }) => ({
     ...item,
     departure_date: normalizeDateOnly(item.departure_date),
     price_adult: normalizeMoneyValue(item.price_adult),
@@ -906,11 +906,10 @@ const GeneralTab = ({
         </label>
 
         <div
-          className={`p-4 border-2 border-dashed rounded-2xl transition-all ${
-            !modal.tour && files.length === 0 && Object.keys(errors).length > 0
+          className={`p-4 border-2 border-dashed rounded-2xl transition-all ${!modal.tour && files.length === 0 && Object.keys(errors).length > 0
               ? 'border-error bg-error/5'
               : 'border-border hover:border-primary/50 bg-surface-alt/50'
-          }`}
+            }`}
           onDragOver={(e) => {
             e.preventDefault();
             e.currentTarget.classList.add('border-primary', 'bg-primary/5');
@@ -1527,7 +1526,7 @@ const OptionsTab = ({ control, register, errors }) => {
   );
 };
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 100;
 
 // ═══ MAIN PAGE ═══
 const TourManagementPage = () => {
@@ -2090,7 +2089,7 @@ const TourManagementPage = () => {
       const fallbackMessage = isTranslationTimeout(error)
         ? `Nội dung ${getTranslationDisplayName(activeTargetLang)} đang dịch quá lâu. Vui lòng thử lại với ít nội dung hơn hoặc đợi rồi bấm dịch lại.`
         : getTranslationServerMessage(error) ||
-          `Không dịch được ${failedFieldLabel}. Vui lòng thử lại.`;
+        `Không dịch được ${failedFieldLabel}. Vui lòng thử lại.`;
       if (isTranslationRateLimited(error)) {
         setTranslationCooldownUntil(Date.now() + TRANSLATION_RATE_LIMIT_COOLDOWN_MS);
       }
@@ -2291,11 +2290,10 @@ const TourManagementPage = () => {
                   key={page}
                   onClick={() => handlePageChange(page)}
                   disabled={loading || page === currentPage}
-                  className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${
-                    page === currentPage
+                  className={`w-10 h-10 rounded-lg text-sm font-semibold border transition ${page === currentPage
                       ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
                       : 'bg-surface border-border text-text-secondary hover:bg-surface-hover'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -2346,11 +2344,10 @@ const TourManagementPage = () => {
                     key={tab.key}
                     type="button"
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200 whitespace-nowrap relative ${
-                      activeTab === tab.key
+                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200 whitespace-nowrap relative ${activeTab === tab.key
                         ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
                         : 'text-text-muted hover:text-text hover:bg-surface-alt'
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-4 h-4 ${activeTab === tab.key ? 'text-primary' : ''}`} />
                     {tab.label}

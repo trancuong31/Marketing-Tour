@@ -649,9 +649,9 @@ const updateTour = catchAsync(async (req, res, next) => {
   const translatedTourContent =
     translations !== undefined
       ? prepareTourTranslations({
-          translations,
-          slug: newSlug,
-        })
+        translations,
+        slug: newSlug,
+      })
       : null;
   const translatedItineraries =
     itineraries !== undefined ? prepareTranslatedItineraries(itineraries) : null;
@@ -755,8 +755,17 @@ const updateTour = catchAsync(async (req, res, next) => {
 
         if (existing) {
           const nextCapacity = getDepartureCapacity(item, index);
-          const currentCapacity = Number(existing.capacity);
-          const reservedSeats = currentCapacity - Number(existing.available_seats);
+          const reservedSeatsSum = await Booking.sum(
+            sequelize.literal('adult_qty + child_qty + infant_qty'),
+            {
+              where: {
+                departure_id: existing.id,
+                status: { [Op.in]: ['pending', 'approved'] },
+              },
+              transaction: t,
+            }
+          );
+          const reservedSeats = Number(reservedSeatsSum) || 0;
           if (nextCapacity < reservedSeats) {
             throw new AppError(
               `Sức chứa của lịch khởi hành #${index + 1} không thể thấp hơn ${reservedSeats} chỗ đã giữ`,
@@ -1024,24 +1033,24 @@ const getBookings = catchAsync(async (req, res) => {
 
     Tour: b.Tour
       ? {
-          id: b.Tour.id,
-          title: b.Tour.title,
-          slug: b.Tour.slug,
-        }
+        id: b.Tour.id,
+        title: b.Tour.title,
+        slug: b.Tour.slug,
+      }
       : null,
     departure: b.departure
       ? {
-          id: b.departure.id,
-          departure_date: b.departure.departure_date,
-          price_adult: b.departure.price_adult,
-        }
+        id: b.departure.id,
+        departure_date: b.departure.departure_date,
+        price_adult: b.departure.price_adult,
+      }
       : null,
     pickupLocation: b.pickupLocation
       ? {
-          id: b.pickupLocation.id,
-          location_name: b.pickupLocation.location_name,
-          surcharge_amount: b.pickupLocation.surcharge_amount,
-        }
+        id: b.pickupLocation.id,
+        location_name: b.pickupLocation.location_name,
+        surcharge_amount: b.pickupLocation.surcharge_amount,
+      }
       : null,
     bookingOptions: b.bookingOptions || [],
   }));

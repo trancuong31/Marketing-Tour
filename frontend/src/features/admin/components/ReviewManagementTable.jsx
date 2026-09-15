@@ -24,6 +24,7 @@ const ReviewManagementTable = ({
     approvalFilter,
     currentPage,
     totalPages,
+    pageSize = 100,
     onApprovalFilterChange,
     onPageChange,
     onReply,
@@ -38,7 +39,24 @@ const ReviewManagementTable = ({
         { value: '0', label: t('admin.reviews.filters.pending', 'Pending') },
     ];
 
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let end = Math.min(totalPages, start + maxVisible - 1);
+        if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+    };
+
     const columns = [
+        {
+            key: 'stt',
+            header: 'STT',
+            cellClassName: 'w-14 text-center font-semibold text-text-muted',
+            align: 'center',
+            render: (_, index) => (currentPage - 1) * pageSize + index + 1,
+        },
         {
             key: 'customer',
             header: t('admin.reviews.columns.customer', 'Customer'),
@@ -149,11 +167,10 @@ const ReviewManagementTable = ({
                             key={tab.value}
                             type="button"
                             onClick={() => onApprovalFilterChange(tab.value)}
-                            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                                approvalFilter === tab.value
-                                    ? 'bg-primary text-white shadow-sm'
-                                    : 'text-text-secondary hover:bg-surface-hover hover:text-text'
-                            }`}
+                            className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 ${approvalFilter === tab.value
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'text-text-secondary hover:bg-surface-hover hover:text-text'
+                                }`}
                         >
                             {tab.label}
                         </button>
@@ -174,47 +191,39 @@ const ReviewManagementTable = ({
             </div>
 
             {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-border bg-surface p-4">
-                    <span className="hidden text-sm text-text-muted sm:block">
-                        {t('admin.reviews.pagination', 'Page {{current}} / {{total}}', {
-                            current: currentPage,
-                            total: totalPages,
-                        })}
-                    </span>
-                    <div className="mx-auto flex gap-2 sm:mx-0">
+                <div className="flex shrink-0 flex-col items-center justify-center gap-4 border-t border-border bg-surface p-4 sm:flex-row">
+                    <div className="flex items-center gap-1.5">
                         <button
                             type="button"
-                            disabled={currentPage === 1}
-                            onClick={() => onPageChange(currentPage - 1)}
-                            className="rounded-lg border border-border p-2 text-text hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+                            disabled={currentPage === 1 || reviewsLoading}
+                            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                            className="rounded-lg border border-border bg-surface p-2 text-text-secondary transition-all hover:bg-surface-hover disabled:opacity-50"
                         >
                             <ChevronLeft className="h-5 w-5" />
                         </button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: totalPages }).map((_, index) => {
-                                const page = index + 1;
 
-                                return (
-                                    <button
-                                        key={page}
-                                        type="button"
-                                        onClick={() => onPageChange(page)}
-                                        className={`h-9 w-9 rounded-lg text-sm font-medium ${
-                                            currentPage === page
-                                                ? 'bg-primary text-white shadow-md'
-                                                : 'text-text hover:bg-surface-hover'
+                        <div className="flex items-center gap-1">
+                            {getPageNumbers().map(page => (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    onClick={() => onPageChange(page)}
+                                    disabled={reviewsLoading || page === currentPage}
+                                    className={`h-10 min-w-[40px] rounded-lg border text-sm font-bold transition-all ${page === currentPage
+                                            ? 'border-primary bg-primary text-white shadow-lg shadow-primary/25'
+                                            : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
                                         }`}
-                                    >
-                                        {page}
-                                    </button>
-                                );
-                            })}
+                                >
+                                    {page}
+                                </button>
+                            ))}
                         </div>
+
                         <button
                             type="button"
-                            disabled={currentPage === totalPages}
-                            onClick={() => onPageChange(currentPage + 1)}
-                            className="rounded-lg border border-border p-2 text-text hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+                            disabled={currentPage === totalPages || reviewsLoading}
+                            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                            className="rounded-lg border border-border bg-surface p-2 text-text-secondary transition-all hover:bg-surface-hover disabled:opacity-50"
                         >
                             <ChevronRight className="h-5 w-5" />
                         </button>

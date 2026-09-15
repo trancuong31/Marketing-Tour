@@ -9,7 +9,7 @@ import TranslationTable from '@/features/admin/components/TranslationTable';
 import { translationService } from '@/services/translationService';
 import { reloadDbTranslations } from '@/i18n';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100;
 
 const TranslationManagementPage = () => {
     const { t } = useTranslation();
@@ -133,7 +133,6 @@ const TranslationManagementPage = () => {
                     items={items}
                     loading={loading}
                     onEdit={openEdit}
-                    onDelete={handleDelete}
                     page={pagination.page}
                     pageSize={PAGE_SIZE}
                 />
@@ -156,11 +155,10 @@ const TranslationManagementPage = () => {
                                 type="button"
                                 onClick={() => fetchTranslations(page)}
                                 disabled={loading || page === pagination.page}
-                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${
-                                    page === pagination.page
-                                        ? 'border-primary bg-primary text-white'
-                                        : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
-                                }`}
+                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${page === pagination.page
+                                    ? 'border-primary bg-primary text-white'
+                                    : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
+                                    }`}
                             >
                                 {page}
                             </button>

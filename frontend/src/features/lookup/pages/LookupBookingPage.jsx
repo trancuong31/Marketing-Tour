@@ -79,9 +79,10 @@ const getCleanNote = (b) => {
 
 const LookupBookingPage = () => {
     const { t } = useTranslation();
+    const [bookingCode, setBookingCode] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [errors, setErrors] = useState({ email: '', phone: '' });
+    const [errors, setErrors] = useState({ bookingCode: '', email: '', phone: '' });
 
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -92,7 +93,12 @@ const LookupBookingPage = () => {
 
     const validateForm = () => {
         let valid = true;
-        let newErrors = { email: '', phone: '' };
+        let newErrors = { bookingCode: '', email: '', phone: '' };
+
+        if (!bookingCode.trim()) {
+            newErrors.bookingCode = t('lookup.errBookingCodeRequired', 'Vui lòng nhập mã đơn hàng');
+            valid = false;
+        }
 
         if (!email.trim()) {
             newErrors.email = t('lookup.errEmailRequired');
@@ -105,7 +111,7 @@ const LookupBookingPage = () => {
         if (!phone.trim()) {
             newErrors.phone = t('lookup.errPhoneRequired');
             valid = false;
-        } else if (phone.trim().length < 9) {
+        } else if (phone.trim().length < 8) {
             newErrors.phone = t('lookup.errPhoneFormat');
             valid = false;
         }
@@ -116,7 +122,7 @@ const LookupBookingPage = () => {
 
     const handleSearch = async (e) => {
         e.preventDefault();
-        
+
         if (!validateForm()) return;
 
         setLoading(true);
@@ -125,7 +131,11 @@ const LookupBookingPage = () => {
         setBookings([]);
 
         try {
-            const res = await bookingService.lookup({ email: email.trim(), phone: phone.trim() });
+            const res = await bookingService.lookup({
+                booking_code: bookingCode.trim(),
+                email: email.trim(),
+                phone: phone.trim(),
+            });
             setBookings(res.data?.data || []);
         } catch (err) {
             console.error('Lỗi tra cứu:', err);
@@ -153,10 +163,27 @@ const LookupBookingPage = () => {
                 </div>
 
                 {/* Form Tra Cứu */}
-                <form onSubmit={handleSearch} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-10 max-w-2xl mx-auto relative overflow-hidden">
-                    <div className="flex flex-col sm:flex-row gap-5 mb-6 focus-within:relative">
+                <form onSubmit={handleSearch} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-10 max-w-3xl mx-auto relative overflow-hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6 focus-within:relative">
+                        {/* Mã Đơn Hàng */}
+                        <div className="relative">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                                <ReceiptText className="w-4 h-4 text-primary" />
+                                {t('lookup.bookingCodeLabel', 'Mã đơn hàng')}
+                            </label>
+                            <input
+                                type="text"
+                                value={bookingCode}
+                                onChange={(e) => { setBookingCode(e.target.value); if (errors.bookingCode) setErrors({ ...errors, bookingCode: '' }); }}
+                                placeholder="BK123456"
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all uppercase ${errors.bookingCode ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
+                                    }`}
+                            />
+                            {errors.bookingCode && <p className="text-red-500 text-xs mt-1 absolute -bottom-5 left-0">{errors.bookingCode}</p>}
+                        </div>
+
                         {/* Email */}
-                        <div className="flex-1 relative">
+                        <div className="relative">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Mail className="w-4 h-4 text-primary" />
                                 {t('lookup.email')}
@@ -164,17 +191,16 @@ const LookupBookingPage = () => {
                             <input
                                 type="text"
                                 value={email}
-                                onChange={(e) => { setEmail(e.target.value); if(errors.email) setErrors({...errors, email: ''}); }}
+                                onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors({ ...errors, email: '' }); }}
                                 placeholder="nguyenvana@gmail.com"
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                                    errors.email ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
-                                }`}
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${errors.email ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
+                                    }`}
                             />
                             {errors.email && <p className="text-red-500 text-xs mt-1 absolute -bottom-5 left-0">{errors.email}</p>}
                         </div>
 
                         {/* Số điện thoại */}
-                        <div className="flex-1 relative">
+                        <div className="relative">
                             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                                 <Phone className="w-4 h-4 text-primary" />
                                 {t('lookup.phoneNumber')}
@@ -182,11 +208,10 @@ const LookupBookingPage = () => {
                             <input
                                 type="tel"
                                 value={phone}
-                                onChange={(e) => { setPhone(e.target.value); if(errors.phone) setErrors({...errors, phone: ''}); }}
+                                onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors({ ...errors, phone: '' }); }}
                                 placeholder="0987654321"
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                                    errors.phone ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
-                                }`}
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-lg text-base focus:outline-none focus:ring-2 focus:bg-white transition-all ${errors.phone ? 'border-red-400 focus:ring-red-400' : 'border-gray-200 focus:ring-primary/30 focus:border-primary'
+                                    }`}
                             />
                             {errors.phone && <p className="text-red-500 text-xs mt-1 absolute -bottom-5 left-0">{errors.phone}</p>}
                         </div>
@@ -340,7 +365,7 @@ const LookupBookingPage = () => {
                                                             <div>
                                                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">📅 {t('lookup.createdDate')}</p>
                                                                 <p className="text-sm text-gray-700 mb-4">{b.created_at ? format(new Date(b.created_at), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
-                                                                
+
                                                                 <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 shadow-inner">
                                                                     <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-1">💰 {t('lookup.estimatedTotal')}</p>
                                                                     <p className="text-xl font-black text-primary">{total !== null ? formatPrice(total) : t('lookup.contactForQuote')}</p>

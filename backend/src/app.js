@@ -11,6 +11,9 @@ const path = require('path');
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxies
+app.set('trust proxy', 1);
+
 // Security middlewares
 app.use(helmet({
     contentSecurityPolicy: false,

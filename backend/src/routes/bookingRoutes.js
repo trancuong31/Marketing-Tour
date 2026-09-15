@@ -3,11 +3,11 @@ const router = express.Router();
 const { createBooking, getMyBookings, cancelBooking, deleteMyBooking, lookupBooking } = require('../controllers/bookingController');
 const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
 const { validate } = require('../middlewares/validate');
-const { lookupLimiter } = require('../middlewares/rateLimiter');
+const { lookupLimiter, bookingLimiter } = require('../middlewares/rateLimiter');
 const { createBookingSchema } = require('../validations/bookingValidation');
 
 // Tạo booking
-router.post('/', optionalAuthenticate, validate(createBookingSchema), createBooking);
+router.post('/', bookingLimiter, optionalAuthenticate, validate(createBookingSchema), createBooking);
 
 // Tra cứu booking
 router.get('/lookup', lookupLimiter, lookupBooking);

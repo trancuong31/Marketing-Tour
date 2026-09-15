@@ -14,15 +14,15 @@ import {
 import { toast } from 'sonner';
 
 const statusConfig = {
-    pending:   { label: 'Đang chờ',   className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
-    approved:  { label: 'Đã duyệt',   className: 'bg-success/10 text-success border-success/20', icon: CheckCircle2 },
-    cancelled: { label: 'Đã hủy',     className: 'bg-error/10 text-error border-error/20', icon: XCircle },
+    pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
+    approved: { label: 'Đã duyệt', className: 'bg-success/10 text-success border-success/20', icon: CheckCircle2 },
+    cancelled: { label: 'Đã hủy', className: 'bg-error/10 text-error border-error/20', icon: XCircle },
 };
 
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 100;
 
 const BookingManagementPage = () => {
     const [view, setView] = useState('overview'); // 'overview' or 'list'
@@ -32,7 +32,7 @@ const BookingManagementPage = () => {
     const [loading, setLoading] = useState(true);
     const [detail, setDetail] = useState(null);
     const [updating, setUpdating] = useState(null);
-    
+
     // Filters
     const [selectedTour, setSelectedTour] = useState(null);
     const [statusFilter, setStatusFilter] = useState('');
@@ -42,7 +42,7 @@ const BookingManagementPage = () => {
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    
+
     // Overview Search
     const [overviewSearch, setOverviewSearch] = useState('');
     const [overviewSearchInput, setOverviewSearchInput] = useState('');
@@ -141,7 +141,7 @@ const BookingManagementPage = () => {
         }
     };
 
-    const filteredOverview = overviewData.filter(tour => 
+    const filteredOverview = overviewData.filter(tour =>
         tour.title.toLowerCase().includes(overviewSearch.toLowerCase())
     );
 
@@ -225,23 +225,23 @@ const BookingManagementPage = () => {
                                 <span>{view === 'overview' ? `Hiển thị ${filteredOverview.length} tour` : `Tổng cộng ${totalItems} đơn hàng`}</span>
                                 {selectedTour && view === 'list' && (
                                     <span className="inline-flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/20 rounded-lg text-primary uppercase tracking-tighter">
-                                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
                                         <span className="truncate max-w-[160px] font-black">{selectedTour.title}</span>
                                     </span>
                                 )}
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="flex min-h-[46px] items-center gap-2 bg-surface p-1 rounded-xl border border-border shadow-sm shrink-0 self-end md:self-auto lg:self-start">
-                        <button 
+                        <button
                             onClick={() => setView('overview')}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${view === 'overview' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-alt'}`}
                         >
                             <LayoutGrid className="w-4 h-4" />
                             Tổng quan
                         </button>
-                        <button 
+                        <button
                             onClick={() => setView('list')}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all ${view === 'list' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-secondary hover:bg-surface-alt'}`}
                         >
@@ -256,7 +256,7 @@ const BookingManagementPage = () => {
                     {view === 'list' ? (
                         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                             {selectedTour && (
-                                <button 
+                                <button
                                     onClick={goBack}
                                     className="flex items-center gap-2 px-4 py-2 bg-surface-alt hover:bg-primary/10 text-text-secondary hover:text-primary rounded-lg transition-all border border-border font-bold"
                                 >
@@ -264,17 +264,16 @@ const BookingManagementPage = () => {
                                     <span className="text-sm">Quay lại Tổng quan</span>
                                 </button>
                             )}
-                            
+
                             <Filter className="w-4 h-4 text-text-muted flex-shrink-0" />
                             {['', 'pending', 'approved', 'cancelled'].map(status => (
                                 <button
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex-shrink-0 border ${
-                                        statusFilter === status
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex-shrink-0 border ${statusFilter === status
                                             ? 'bg-primary border-primary text-white'
                                             : 'bg-surface-alt border-border text-text-secondary hover:bg-surface-hover'
-                                    }`}
+                                        }`}
                                 >
                                     {status === '' ? 'Tất cả' : statusConfig[status]?.label}
                                 </button>
@@ -286,14 +285,14 @@ const BookingManagementPage = () => {
                                 <span className="text-sm font-bold text-text-secondary">Hiển thị <span className="text-primary">{filteredOverview.length}</span> tour</span>
                             </div>
                             <div className="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-border">
-                                <button 
+                                <button
                                     onClick={() => setOverviewLayout('grid')}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${overviewLayout === 'grid' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface/50'}`}
                                 >
                                     <LayoutGrid className="w-4 h-4" />
                                     <span className="hidden sm:block">Lưới</span>
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setOverviewLayout('list')}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${overviewLayout === 'list' ? 'bg-surface shadow-sm text-primary' : 'text-text-muted hover:text-text-secondary hover:bg-surface/50'}`}
                                 >
@@ -308,29 +307,29 @@ const BookingManagementPage = () => {
                 {/* Content Area */}
                 {view === 'overview' ? (
                     loading ? (
-                    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
-                        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                        <p className="text-text-muted font-medium animate-pulse">Đang tải dữ liệu...</p>
-                    </div>
+                        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4">
+                            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                            <p className="text-text-muted font-medium animate-pulse">Đang tải dữ liệu...</p>
+                        </div>
                     ) : (
-                    /* ═══ OVERVIEW DASHBOARD ═══ */
-                    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
-                        <div className={effectiveOverviewLayout === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
-                            {filteredOverview.length > 0 ? filteredOverview.map(tour => (
-                                effectiveOverviewLayout === 'grid' ? (
-                                    <TourOverviewGridItem key={tour.id} tour={tour} onSelectTour={selectTour} />
-                                ) : (
-                                    <TourOverviewListItem key={tour.id} tour={tour} onSelectTour={selectTour} />
-                                )
-                        )) : (
-                            <div className="col-span-full py-20 bg-surface rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-4">
-                                <AlertCircle className="w-12 h-12 text-text-muted" />
-                                <p className="text-text-muted font-medium">Không dữ liệu</p>
+                        /* ═══ OVERVIEW DASHBOARD ═══ */
+                        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
+                            <div className={effectiveOverviewLayout === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+                                {filteredOverview.length > 0 ? filteredOverview.map(tour => (
+                                    effectiveOverviewLayout === 'grid' ? (
+                                        <TourOverviewGridItem key={tour.id} tour={tour} onSelectTour={selectTour} />
+                                    ) : (
+                                        <TourOverviewListItem key={tour.id} tour={tour} onSelectTour={selectTour} />
+                                    )
+                                )) : (
+                                    <div className="col-span-full py-20 bg-surface rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-4">
+                                        <AlertCircle className="w-12 h-12 text-text-muted" />
+                                        <p className="text-text-muted font-medium">Không dữ liệu</p>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    </div>
-                )) : (
+                        </div>
+                    )) : (
                     /* ═══ LIST VIEW TABLE ═══ */
                     <BookingManagementTable
                         bookings={bookings}
@@ -359,8 +358,8 @@ const BookingManagementPage = () => {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setDetail(null)} />
                     <div className="relative bg-surface rounded-3xl shadow-2xl max-w-2xl w-full p-8 animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto border border-border">
-                        <button 
-                            onClick={() => setDetail(null)} 
+                        <button
+                            onClick={() => setDetail(null)}
                             className="absolute top-6 right-6 p-2 rounded-full hover:bg-surface-alt transition-colors"
                         >
                             <X className="w-6 h-6 text-text-muted" />
@@ -444,7 +443,7 @@ const BookingManagementPage = () => {
                                                 ))}
                                             </div>
                                         )}
-                                        
+
                                         <div className="flex flex-col gap-1 mb-6">
                                             <div className="flex justify-between items-center text-text-secondary text-sm">
                                                 <span>Trạng thái thanh toán</span>

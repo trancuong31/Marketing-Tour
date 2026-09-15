@@ -1,10 +1,10 @@
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminTable from '@/components/ui/AdminTable';
 
 const clip = (value) => value || '-';
 
-const TranslationTable = ({ items, onEdit, onDelete, loading = false, page = 1, pageSize = 50 }) => {
+const TranslationTable = ({ items, onEdit, loading = false, page = 1, pageSize = 100 }) => {
     const { t } = useTranslation();
 
     const columns = [
@@ -45,7 +45,6 @@ const TranslationTable = ({ items, onEdit, onDelete, loading = false, page = 1, 
             render: item => (
                 <div className="flex justify-end gap-1.5">
                     <AdminTable.Action icon={Edit2} label={t('common.edit', 'Edit')} tone="primary" onClick={() => onEdit(item)} />
-                    <AdminTable.Action icon={Trash2} label={t('common.delete', 'Delete')} tone="danger" onClick={() => onDelete(item)} />
                 </div>
             ),
         },

@@ -75,7 +75,7 @@ const UserManagementTable = ({ users, loading, onView, onToggleStatus, page = 1,
         },
         {
             key: 'actions',
-            header: 'Thao tác',
+            header: 'HÀNH ĐỘNG',
             align: 'right',
             render: (user) => (
                 <div className="flex justify-end gap-3">

@@ -57,9 +57,24 @@ const lookupLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+/**
+ * Rate limiter for booking creation to prevent spam
+ */
+const bookingLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 10, // Max 10 booking requests per 10 minutes per IP
+    message: {
+        status: 'fail',
+        message: 'Quá nhiều yêu cầu tạo đơn hàng. Vui lòng thử lại sau 10 phút.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 module.exports = {
     apiLimiter,
     authLimiter,
     otpLimiter,
     lookupLimiter,
+    bookingLimiter,
 };

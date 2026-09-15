@@ -12,7 +12,7 @@ import { adminService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
 import UserManagementTable from '@/features/admin/components/UserManagementTable';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 100;
 
 const formatDateTime = (value) => {
     if (!value) return '—';
@@ -402,11 +402,10 @@ const UserManagementPage = () => {
                                 type="button"
                                 onClick={() => setPage(p)}
                                 disabled={loading || p === page}
-                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${
-                                    p === page
+                                className={`h-10 w-10 rounded-lg border text-sm font-bold ${p === page
                                         ? 'border-primary bg-primary text-white'
                                         : 'border-border bg-surface text-text-secondary hover:bg-surface-hover'
-                                }`}
+                                    }`}
                             >
                                 {p}
                             </button>
