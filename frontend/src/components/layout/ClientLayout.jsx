@@ -331,6 +331,30 @@ const ClientLayout = ({ children }) => {
 
             {/* ═══ FLOATING SUPPORT BUTTONS ═══ */}
             <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3">
+                {/* WeChat */}
+                <a
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group"
+                    title={t('footer.chatWechat', 'Chat WeChat')}
+                >
+                    {/* Ripple ring */}
+                    <span className="absolute inset-0 rounded-full bg-[#07C160]/30 animate-ring" />
+                    <span className="absolute inset-0 rounded-full bg-[#07C160]/20 animate-ring delay-300" />
+
+                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[#07C160] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer">
+                        <svg
+                            className="w-6 h-6 sm:w-8 sm:h-8 text-white"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path d="M9.5 4C5.36 4 2 6.72 2 10.08c0 1.94 1.12 3.68 2.87 4.78L4.2 17.5l2.7-1.48c.82.25 1.69.38 2.6.38.25 0 .5-.01.74-.03A6.2 6.2 0 0 1 10 14.1c0-3.36 3.36-6.08 7.5-6.08.36 0 .72.02 1.07.07C17.5 5.74 13.93 4 9.5 4Zm-2.25 5.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
+                            <path d="M17.5 9.25c-3.04 0-5.5 1.94-5.5 4.34 0 2.4 2.46 4.34 5.5 4.34.67 0 1.32-.1 1.91-.28l2.09 1.15-.52-1.83c1.23-.82 2.02-2 2.02-3.38 0-2.4-2.46-4.34-5.5-4.34Zm-1.8 4.02a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+                        </svg>
+                    </div>
+                </a>
+
                 {/* Zalo */}
                 <a href="https://zalo.me/0987654321" target="_blank" rel="noopener noreferrer" className="relative group" title={t('footer.chatZalo', 'Chat Zalo')}>
                     {/* Ripple ring */}
@@ -463,10 +487,18 @@ const ClientLayout = ({ children }) => {
                                     <a href="#" className="w-9 h-9 rounded-full bg-[#0068FF] flex items-center justify-center text-white hover:opacity-80 transition">
                                         <span className="text-xs font-bold text-white">Zalo</span>
                                     </a>
-                                    {/* Instagram */}
-                                    <a href="#" className="w-9 h-9 rounded-full bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#bc1888] flex items-center justify-center text-white hover:opacity-80 transition">
-                                        <svg className="w-4 h-4" fill="#fff" viewBox="0 0 24 24">
-                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.013-3.667-.07-4.847-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                    {/* WeChat */}
+                                    <a
+                                        href="#"
+                                        className="w-9 h-9 rounded-full bg-[#07C160] flex items-center justify-center text-white hover:opacity-80 transition"
+                                    >
+                                        <svg
+                                            className="w-5 h-5"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                        >
+                                            <path d="M9.5 4C5.36 4 2 6.72 2 10.08c0 1.94 1.12 3.68 2.87 4.78L4.2 17.5l2.7-1.48c.82.25 1.69.38 2.6.38.25 0 .5-.01.74-.03A6.2 6.2 0 0 1 10 14.1c0-3.36 3.36-6.08 7.5-6.08.36 0 .72.02 1.07.07C17.5 5.74 13.93 4 9.5 4Zm-2.25 5.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
+                                            <path d="M17.5 9.25c-3.04 0-5.5 1.94-5.5 4.34 0 2.4 2.46 4.34 5.5 4.34.67 0 1.32-.1 1.91-.28l2.09 1.15-.52-1.83c1.23-.82 2.02-2 2.02-3.38 0-2.4-2.46-4.34-5.5-4.34Zm-1.8 4.02a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
                                         </svg>
                                     </a>
                                 </div>

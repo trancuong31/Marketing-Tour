@@ -45,9 +45,9 @@ const getTours = catchAsync(async (req, res) => {
     }
 
     const formattedToday = getTodayDateString();
-    
-    const departureWhere = { 
-        status: 'open' 
+
+    const departureWhere = {
+        status: 'open'
     };
 
     if (date) {
@@ -77,33 +77,33 @@ const getTours = catchAsync(async (req, res) => {
     const tours = await Tour.findAll({
         where: whereClause,
         include: [
-            { 
-                model: TourTranslation, 
-                as: 'translations', 
-                where: { language: lang }, 
-                required: shouldUseTranslation && !!q 
+            {
+                model: TourTranslation,
+                as: 'translations',
+                where: { language: lang },
+                required: shouldUseTranslation && !!q
             },
-            { 
-                model: Category, 
+            {
+                model: Category,
                 attributes: ['id', 'name', 'slug', 'is_international'],
                 include: [
                     { model: CategoryTranslation, as: 'translations', where: { language: lang }, required: false }
                 ]
             },
-            { 
-                model: TourImage, 
-                as: 'images', 
-                attributes: ['id', 'image_url', 'sort_order'], 
-                separate: true, 
-                limit: 1, 
-                order: [['sort_order', 'ASC']] 
+            {
+                model: TourImage,
+                as: 'images',
+                attributes: ['id', 'image_url', 'sort_order'],
+                separate: true,
+                limit: 1,
+                order: [['sort_order', 'ASC']]
             },
             {
                 model: TourDeparture,
                 as: 'departures',
                 attributes: ['id', 'tour_id', 'departure_date', 'price_adult', 'status'],
                 where: departureWhere,
-                required: isDepartureRequired, 
+                required: isDepartureRequired,
                 order: [['price_adult', 'ASC']],
             },
         ],
@@ -144,7 +144,7 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     const formattedToday = getTodayDateString();
 
     const tour = await Tour.findOne({
-        where: { 
+        where: {
             status: 'active',
             [Op.or]: [
                 { slug },
@@ -159,8 +159,8 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
                 where: shouldUseTranslation ? { language: lang } : undefined,
                 required: false,
             },
-            { 
-                model: Category, 
+            {
+                model: Category,
                 attributes: ['id', 'name', 'slug', 'is_international'],
                 include: [{ model: CategoryTranslation, as: 'translations', where: { language: lang }, required: false }]
             },
@@ -171,9 +171,9 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
                 separate: true,
                 order: [['sort_order', 'ASC']],
             },
-            { 
-                model: TourItinerary, 
-                as: 'itineraries', 
+            {
+                model: TourItinerary,
+                as: 'itineraries',
                 separate: true,
                 order: [['day_number', 'ASC']],
                 include: [{ model: TourItineraryTranslation, as: 'translations', where: { language: lang }, required: false }]
@@ -315,9 +315,9 @@ const getDistinctPickupLocations = catchAsync(async (req, res) => {
             }
         },
         order: [['location_name', 'ASC']],
-        raw: true 
+        raw: true
     });
-    
+
     const data = locations.map(loc => loc.location_name);
 
     res.status(200).json({

@@ -755,17 +755,19 @@ const updateTour = catchAsync(async (req, res, next) => {
 
         if (existing) {
           const nextCapacity = getDepartureCapacity(item, index);
-          const reservedSeatsSum = await Booking.sum(
-            sequelize.literal('adult_qty + child_qty + infant_qty'),
-            {
-              where: {
-                departure_id: existing.id,
-                status: { [Op.in]: ['pending', 'approved'] },
-              },
-              transaction: t,
-            }
+          const reservedBookings = await Booking.findAll({
+            where: {
+              departure_id: existing.id,
+              status: { [Op.in]: ['pending', 'approved'] },
+            },
+            attributes: ['adult_qty', 'child_qty', 'infant_qty'],
+            raw: true,
+            transaction: t,
+          });
+          const reservedSeats = reservedBookings.reduce(
+            (sum, b) => sum + Number(b.adult_qty || 0) + Number(b.child_qty || 0) + Number(b.infant_qty || 0),
+            0
           );
-          const reservedSeats = Number(reservedSeatsSum) || 0;
           if (nextCapacity < reservedSeats) {
             throw new AppError(
               `Sức chứa của lịch khởi hành #${index + 1} không thể thấp hơn ${reservedSeats} chỗ đã giữ`,
