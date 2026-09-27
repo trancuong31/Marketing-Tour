@@ -6,18 +6,23 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const logger = require('../config/logger');
 const env = require('../config/env');
+const { normalizeTargetLanguage } = require('../utils/language');
 const TranslationCache = require('../models/TranslationCache');
 
 const MAX_FIELDS = 80;
-const MAX_FIELD_LENGTH = 100000;
 const TRANSLATION_PROVIDER = env.translation.provider;
-const TRANSLATION_CONCURRENCY = Math.max(1, env.translation.concurrency);
+const MIN_TRANSLATION_CONCURRENCY = Math.max(2, env.translation.minConcurrency || env.translation.concurrency || 2);
+const MAX_TRANSLATION_CONCURRENCY = Math.max(MIN_TRANSLATION_CONCURRENCY, env.translation.maxConcurrency || 4);
+const TRANSLATION_CONCURRENCY = Math.min(MAX_TRANSLATION_CONCURRENCY, Math.max(MIN_TRANSLATION_CONCURRENCY, env.translation.concurrency || MIN_TRANSLATION_CONCURRENCY));
+const TRANSLATION_CONCURRENCY_INCREASE_AFTER_SUCCESS = Math.max(1, env.translation.concurrencyIncreaseAfterSuccess || 1);
 const TRANSLATION_REQUEST_DELAY_MS = Math.max(0, env.translation.requestDelayMs);
 const TRANSLATION_TIMEOUT_MS = Math.max(1000, env.translation.timeoutMs);
 const TRANSLATION_RETRY_ATTEMPTS = Math.max(1, env.translation.retryAttempts);
 const TRANSLATION_RETRY_BASE_DELAY_MS = Math.max(0, env.translation.retryBaseDelayMs);
 const TRANSLATION_RATE_LIMIT_COOLDOWN_MS = Math.max(0, env.translation.rateLimitCooldownMs);
+const TRANSLATION_RATE_LIMIT_BACKOFF_BASE_MS = Math.min(1000, Math.max(1000, TRANSLATION_RETRY_BASE_DELAY_MS));
 const TRANSLATION_BATCH_MAX_LENGTH = Math.max(500, env.translation.batchMaxLength);
+const MAX_FIELD_LENGTH = TRANSLATION_BATCH_MAX_LENGTH;
 const TRANSLATION_CACHE_TTL_MS = Math.max(0, env.translation.cacheTtlMs);
 const TRANSLATION_CACHE_MAX_ITEMS = Math.max(0, env.translation.cacheMaxItems);
 const TRANSLATION_HOSTS = Array.isArray(env.translation.hosts) && env.translation.hosts.length > 0
@@ -31,12 +36,14 @@ const RAPIDAPI_TRANSLATOR_HOST = env.translation.rapidapi?.host || 'free-google-
 const RAPIDAPI_TRANSLATOR_ENDPOINT = String(env.translation.rapidapi?.endpoint || 'https://free-google-translator.p.rapidapi.com/external-api/free-google-translator').replace(/\/+$/, '');
 const FIELD_NAME_PATTERN = /^[a-zA-Z0-9_.-]+$/;
 const BATCH_MARKER_PREFIX = 'MT_TRANSLATE_FIELD';
-const LONG_TEXT_CHUNK_MAX_LENGTH = Math.max(500, Math.min(TRANSLATION_BATCH_MAX_LENGTH, 2500));
+const LONG_TEXT_CHUNK_MAX_LENGTH = Math.max(500, TRANSLATION_BATCH_MAX_LENGTH);
 
 const translationCache = new Map();
 const pendingTranslationRequests = [];
 let activeTranslationRequests = 0;
 let nextAllowedRequestAt = 0;
+let currentTranslationConcurrency = TRANSLATION_CONCURRENCY;
+let successfulRequestsSinceLastRateLimit = 0;
 const translationHostCooldowns = new Map();
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -170,8 +177,38 @@ const setPersistentCachedTranslation = async (targetLanguage, value, translatedT
     }
 };
 
+const getTranslationConcurrencyState = () => ({
+    min: MIN_TRANSLATION_CONCURRENCY,
+    max: MAX_TRANSLATION_CONCURRENCY,
+    current: currentTranslationConcurrency,
+    increaseAfterSuccess: TRANSLATION_CONCURRENCY_INCREASE_AFTER_SUCCESS,
+});
+
+const getEffectiveTranslationConcurrency = () => Math.min(
+    MAX_TRANSLATION_CONCURRENCY,
+    Math.max(MIN_TRANSLATION_CONCURRENCY, currentTranslationConcurrency),
+);
+
+const onSuccessfulTranslationRequest = () => {
+    if (currentTranslationConcurrency >= MAX_TRANSLATION_CONCURRENCY) {
+        successfulRequestsSinceLastRateLimit = 0;
+        return;
+    }
+
+    successfulRequestsSinceLastRateLimit += 1;
+    if (successfulRequestsSinceLastRateLimit >= TRANSLATION_CONCURRENCY_INCREASE_AFTER_SUCCESS) {
+        currentTranslationConcurrency = Math.min(MAX_TRANSLATION_CONCURRENCY, currentTranslationConcurrency + 1);
+        successfulRequestsSinceLastRateLimit = 0;
+    }
+};
+
+const onRateLimitedTranslationRequest = () => {
+    currentTranslationConcurrency = Math.max(MIN_TRANSLATION_CONCURRENCY, currentTranslationConcurrency - 1);
+    successfulRequestsSinceLastRateLimit = 0;
+};
+
 const acquireTranslationSlot = () => new Promise((resolve) => {
-    if (activeTranslationRequests < TRANSLATION_CONCURRENCY) {
+    if (activeTranslationRequests < getEffectiveTranslationConcurrency()) {
         activeTranslationRequests += 1;
         resolve();
         return;
@@ -245,6 +282,10 @@ const isTransientTranslationError = (error) => {
     return isRateLimitError(error) ||
         message.includes('timed out') ||
         message.includes('timeout') ||
+        message.includes('network') ||
+        message.includes('fetch failed') ||
+        message.includes('econnreset') ||
+        message.includes('enotfound') ||
         [408, 425, 500, 502, 503, 504].includes(statusCode);
 };
 
@@ -254,7 +295,7 @@ const isClientTranslationError = (error) => {
 };
 
 const getAzureTargetLanguage = (targetLanguage) => (
-    targetLanguage === 'zh-CN' ? 'zh-Hans' : targetLanguage
+    targetLanguage === 'zh' ? 'zh-Hans' : targetLanguage
 );
 
 const hasHtmlMarkup = (value) => /<\/?[a-z][\s\S]*>/i.test(value);
@@ -276,6 +317,7 @@ const buildTranslationHttpError = async (response, providerName) => {
 
     const error = new Error(`${providerName} translate failed: ${details || response.statusText}`);
     error.statusCode = response.status;
+    error.retryAfter = response.headers?.get?.('retry-after') || null;
     return error;
 };
 
@@ -361,18 +403,40 @@ const translateWithRapidAPI = async (value, targetLanguage) => {
     return { text: translatedText };
 };
 
-const applyTranslationRateLimitCooldown = (host) => {
-    if (!TRANSLATION_RATE_LIMIT_COOLDOWN_MS) return;
-    const cooldownUntil = Date.now() + TRANSLATION_RATE_LIMIT_COOLDOWN_MS;
+const applyTranslationRateLimitCooldown = (host, delayMs = TRANSLATION_RATE_LIMIT_COOLDOWN_MS) => {
+    if (!delayMs) return;
+    const cooldownUntil = Date.now() + delayMs;
 
     if (host) {
         translationHostCooldowns.set(host, Math.max(getTranslationHostCooldownUntil(host), cooldownUntil));
     }
 };
 
+const getRetryAfterDelay = (error) => {
+    const retryAfter = error?.retryAfter;
+    if (!retryAfter) return null;
+
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+        return Math.min(seconds * 1000, TRANSLATION_RATE_LIMIT_COOLDOWN_MS);
+    }
+
+    const retryAt = Date.parse(retryAfter);
+    if (!Number.isNaN(retryAt)) {
+        return Math.min(Math.max(0, retryAt - Date.now()), TRANSLATION_RATE_LIMIT_COOLDOWN_MS);
+    }
+
+    return null;
+};
+
 const getRetryDelay = (attempt, error) => {
-    if (isRateLimitError(error) && TRANSLATION_RATE_LIMIT_COOLDOWN_MS) {
-        return TRANSLATION_RATE_LIMIT_COOLDOWN_MS + Math.floor(Math.random() * 1000);
+    if (isRateLimitError(error)) {
+        const retryAfterDelay = getRetryAfterDelay(error);
+        if (retryAfterDelay !== null) return retryAfterDelay;
+
+        const backoff = TRANSLATION_RATE_LIMIT_BACKOFF_BASE_MS * (2 ** (attempt - 1));
+        const jitter = Math.floor(Math.random() * 300);
+        return Math.min(backoff + jitter, TRANSLATION_RATE_LIMIT_COOLDOWN_MS);
     }
 
     const backoff = TRANSLATION_RETRY_BASE_DELAY_MS * (2 ** (attempt - 1));
@@ -405,7 +469,8 @@ const translateWithGoogleHosts = async (value, targetLanguage) => {
             } catch (error) {
                 lastError = error;
                 if (isRateLimitError(error)) {
-                    applyTranslationRateLimitCooldown(host);
+                    onRateLimitedTranslationRequest();
+                    applyTranslationRateLimitCooldown(host, getRetryDelay(attempt, error));
                     logger.warn(`Translate host "${host}" is rate limited. Trying another host when available.`);
                     continue;
                 }
@@ -441,7 +506,12 @@ const translateWithAzureRetry = async (value, targetLanguage) => {
         } catch (error) {
             lastError = error;
             if (isRateLimitError(error)) {
-                applyTranslationRateLimitCooldown('azure');
+                onRateLimitedTranslationRequest();
+                const retryDelay = getRetryDelay(attempt, error);
+                applyTranslationRateLimitCooldown('azure', retryDelay);
+                if (attempt >= TRANSLATION_RETRY_ATTEMPTS) throw error;
+                await wait(retryDelay);
+                continue;
             }
 
             if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(error)) {
@@ -467,7 +537,12 @@ const translateWithRapidAPIRetry = async (value, targetLanguage) => {
         } catch (error) {
             lastError = error;
             if (isRateLimitError(error)) {
-                applyTranslationRateLimitCooldown('rapidapi');
+                onRateLimitedTranslationRequest();
+                const retryDelay = getRetryDelay(attempt, error);
+                applyTranslationRateLimitCooldown('rapidapi', retryDelay);
+                if (attempt >= TRANSLATION_RETRY_ATTEMPTS) throw error;
+                await wait(retryDelay);
+                continue;
             }
 
             if (attempt >= TRANSLATION_RETRY_ATTEMPTS || !isTransientTranslationError(error)) {
@@ -482,15 +557,18 @@ const translateWithRapidAPIRetry = async (value, targetLanguage) => {
 };
 
 const translateWithRetry = async (value, targetLanguage) => {
+    let result;
+
     if (TRANSLATION_PROVIDER === 'azure') {
-        return translateWithAzureRetry(value, targetLanguage);
+        result = await translateWithAzureRetry(value, targetLanguage);
+    } else if (TRANSLATION_PROVIDER === 'rapidapi') {
+        result = await translateWithRapidAPIRetry(value, targetLanguage);
+    } else {
+        result = await translateWithGoogleHosts(value, targetLanguage);
     }
 
-    if (TRANSLATION_PROVIDER === 'rapidapi') {
-        return translateWithRapidAPIRetry(value, targetLanguage);
-    }
-
-    return translateWithGoogleHosts(value, targetLanguage);
+    onSuccessfulTranslationRequest();
+    return result;
 };
 
 const buildStrictTranslationError = (error, fieldKey) => {
@@ -733,7 +811,7 @@ const splitEntriesIntoBatches = (entries) => {
 
     for (const entry of entries) {
         const fieldLength = createBatchText([entry]).length;
-        if (currentBatch.length > 0 && currentLength + fieldLength > TRANSLATION_BATCH_MAX_LENGTH) {
+        if (currentBatch.length > 0 && currentLength + fieldLength > MAX_FIELD_LENGTH) {
             batches.push(currentBatch);
             currentBatch = [];
             currentLength = 0;
@@ -750,50 +828,25 @@ const splitEntriesIntoBatches = (entries) => {
     return batches;
 };
 
-// const translateBatch = async (entries, targetLanguage, options = {}) => {
-//     const batchText = createBatchText(entries);
-//     const result = await translateWithRetry(batchText, targetLanguage);
-//     const parsedEntries = parseBatchTranslation(result.text, entries);
+const translateBatch = async (entries, targetLanguage, options = {}) => {
+    const batchText = createBatchText(entries);
+    const result = await translateWithRetry(batchText, targetLanguage);
+    const parsedEntries = parseBatchTranslation(result.text, entries);
 
-//     if (!parsedEntries) {
-//         logger.warn('Batch translate markers were not preserved; falling back to field-by-field translation.');
-//         return Promise.all(entries.map(entry => translateTextEntry(entry, targetLanguage, options)));
-//     }
+    if (!parsedEntries) {
+        logger.warn('Batch translate markers were not preserved; falling back to field-by-field translation.');
+        return Promise.all(entries.map(entry => translateTextEntry(entry, targetLanguage, options)));
+    }
 
-//     parsedEntries.forEach(([key, translatedText]) => {
-//         const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
-//         if (sourceText) {
-//             setCachedTranslation(targetLanguage, sourceText, translatedText);
-//         }
-//     });
-//     // toi uu call batch
-// await Promise.all(
-//     parsedEntries.map(async ([key, translatedText]) => {
-//         const sourceText = entries.find(
-//             ([entryKey]) => entryKey === key
-//         )?.[1];
+    await Promise.all(parsedEntries.map(async ([key, translatedText]) => {
+        const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
+        if (sourceText) {
+            setCachedTranslation(targetLanguage, sourceText, translatedText);
+            await setPersistentCachedTranslation(targetLanguage, sourceText, translatedText);
+        }
+    }));
 
-//         if (sourceText) {
-//             await setPersistentCachedTranslation(
-//                 targetLanguage,
-//                 sourceText,
-//                 translatedText
-//             );
-//         }
-//     })
-// );
-//     return parsedEntries;
-// };
-
-const normalizeTargetLanguage = (language) => {
-    if (!language || typeof language !== 'string') return null;
-
-    const normalized = language.trim().toLowerCase();
-    if (normalized.startsWith('vi')) return 'vi';
-    if (normalized.startsWith('en')) return 'en';
-    if (normalized.startsWith('zh')) return 'zh-CN';
-
-    return null;
+    return parsedEntries;
 };
 
 const validateTexts = (texts) => {
@@ -868,8 +921,8 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
     }
 
     const batches = splitEntriesIntoBatches(uncachedEntries);
-    for (let index = 0; index < batches.length; index += TRANSLATION_CONCURRENCY) {
-        const chunk = batches.slice(index, index + TRANSLATION_CONCURRENCY);
+    for (let index = 0; index < batches.length; index += getEffectiveTranslationConcurrency()) {
+        const chunk = batches.slice(index, index + getEffectiveTranslationConcurrency());
         const translatedChunks = await Promise.all(chunk.map(async (batch) => {
             try {
                 return batch.length === 1
@@ -908,5 +961,7 @@ const translateTexts = async ({ texts, targetLang, strict = false }) => {
 };
 
 module.exports = {
+    translateBatch,
     translateTexts,
+    getTranslationConcurrencyState,
 };

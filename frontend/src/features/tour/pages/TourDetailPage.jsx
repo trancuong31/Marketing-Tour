@@ -884,7 +884,7 @@ const TourDetailPage = () => {
                         {/* Äiá»ƒm ná»•i báº­t */}
                         {tour.highlights && (
                             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 overflow-hidden">
-                                <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Äiá»ƒm ná»•i báº­t')}</h3>
+                                {/* <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Äiá»ƒm ná»•i báº­t')}</h3> */}
                                 <h3 className="text-lg font-bold text-primary mb-4">{t('tour.detail.highlights', 'Điểm nổi bật')}</h3>
                                 <div className="space-y-3">
                                     {tour.highlights

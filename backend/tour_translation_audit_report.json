@@ -1,0 +1,1691 @@
+{
+  "totals": {
+    "VALID": 64,
+    "MISSING": 112,
+    "INVALID": 4,
+    "OUTDATED": 0,
+    "EMPTY": 30
+  },
+  "audit": [
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 1,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 2,
+      "slug": "nghi-duong-phu-quoc-hon-thom",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 3,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 4,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na1",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 5,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na2",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 6,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na3",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 7,
+      "slug": "hanh-trinh-di-san-da-nang-hoi-an-ba-na4",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 8,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan1",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 9,
+      "slug": "tour-kham-pha-sapa-chinh-phuc-fansipan2",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "EMPTY",
+      "reason": "row exists but field is empty/null"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 10,
+      "slug": "nghi-duong-phu-quoc-hon-thom1",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "title",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "summary",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "title",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 11,
+      "slug": "nghi-duong-phu-quoc-hon-thom2",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "MISSING",
+      "reason": "translation row missing"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 13,
+      "slug": "tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 15,
+      "slug": "tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "INVALID",
+      "reason": "Chinese text in English row"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "INVALID",
+      "reason": "Chinese text in English row"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "INVALID",
+      "reason": "Chinese text in English row"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "INVALID",
+      "reason": "Chinese text in English row"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 16,
+      "slug": "trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "title",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "summary",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "highlights",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "price_includes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "price_excludes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "terms_and_notes",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "cancellation_policy",
+      "target_language": "en",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "title",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "summary",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "highlights",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "price_includes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "price_excludes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "terms_and_notes",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    },
+    {
+      "tour_id": 17,
+      "slug": "luxury-tour-hong-kong-tham-quyen-quang-chau",
+      "field": "cancellation_policy",
+      "target_language": "zh",
+      "status": "VALID",
+      "reason": "exists and matches target content"
+    }
+  ]
+}
