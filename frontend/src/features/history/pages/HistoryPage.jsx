@@ -257,8 +257,8 @@ const HistoryPage = () => {
                                 const total = computeTotal(b);
                                 const cleanNote = getCleanNote(b);
                                 const duration = (b.tour?.duration_days && b.tour?.duration_nights)
-                                    ? `${b.tour.duration_days} ngày ${b.tour.duration_nights} đêm`
-                                    : (b.tour?.duration_days ? `${b.tour.duration_days} ngày` : t('history.notUpdated'));
+                                    ? t('tour.card.durationDaysNights', '{{days}} Ngày {{nights}} Đêm', { days: b.tour.duration_days, nights: b.tour.duration_nights })
+                                    : (b.tour?.duration_days ? t('tour.card.durationDays', '{{days}} Ngày', { days: b.tour.duration_days }) : t('history.notUpdated'));
 
                                 return (
                                     <div
@@ -315,7 +315,7 @@ const HistoryPage = () => {
                                                 </button>
                                             )}
 
-                                            {(b.status === 'cancelled' || b.status === 'completed') && (
+                                            {b.status === 'cancelled' && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }}
                                                     className="px-4 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition-colors text-sm flex items-center gap-1.5"

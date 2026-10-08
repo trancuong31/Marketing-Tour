@@ -36,6 +36,8 @@
     "errSelectDeparture": "Please select a departure date!",
     "errSelectPickup": "Please select a pickup point!",
     "errLoginRequired": "Please log in to book a tour!",
+    "errMissingProfileInfo": "Please update your phone number and email in your profile before booking!",
+    "errInvalidPhone": "The phone number in your account is invalid, please update it in your profile!",
     "errGeneric": "An error occurred, please try again",
     "customerNote": "Note"
 }

@@ -285,8 +285,16 @@ const BookingForm = ({ tour }) => {
 
     const onSubmit = async (data) => {
         if (!selectedDepartureId) { toast.error(t('booking.errSelectDeparture')); return; }
-        if (!selectedPickupId)    { toast.error(t('booking.errSelectPickup'));       return; }
-        if (!user)                { toast.error(t('booking.errLoginRequired')); return; }
+        if (pickupLocations.length > 0 && !selectedPickupId) { toast.error(t('booking.errSelectPickup')); return; }
+        if (!user) { toast.error(t('booking.errLoginRequired')); return; }
+        if (!user.email || !user.phone_number) {
+            toast.error(t('booking.errMissingProfileInfo'));
+            return;
+        }
+        if (!/^(0[35789])[0-9]{8}$/.test(user.phone_number)) {
+            toast.error(t('booking.errInvalidPhone'));
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -304,8 +312,8 @@ const BookingForm = ({ tour }) => {
                 departure_id: parseInt(selectedDepartureId),
                 pickup_location_id: selectedPickupId ? parseInt(selectedPickupId) : null,
                 customer_name: user.full_name || user.username || 'Khách hàng',
-                customer_phone: user.phone_number || '0000000000',
-                customer_email: user.email || 'email@example.com',
+                customer_phone: user.phone_number,
+                customer_email: user.email,
                 adult_qty: adults,
                 child_qty: children,
                 infant_qty: infants,

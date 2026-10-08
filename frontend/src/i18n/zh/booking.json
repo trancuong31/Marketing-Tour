@@ -36,6 +36,8 @@
     "errSelectDeparture": "请选择出发日期！",
     "errSelectPickup": "请选择接送地点！",
     "errLoginRequired": "请登录后再预订行程！",
+    "errMissingProfileInfo": "请在预订前在个人资料中更新您的电话号码和电子邮箱！",
+    "errInvalidPhone": "您账户中的电话号码无效，请在个人资料中更新！",
     "errGeneric": "出现错误，请重试",
     "customerNote": "备注"
 }

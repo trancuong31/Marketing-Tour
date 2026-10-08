@@ -31,6 +31,16 @@ const handleSequelizeUniqueConstraintError = (err) => {
 };
 
 /**
+ * Handle Sequelize Database Error (Lock Wait Timeout / Deadlock)
+ */
+const handleSequelizeDatabaseError = (err) => {
+    if (err.message && (err.message.includes('Lock wait timeout') || err.message.includes('Deadlock') || err.original?.errno === 1205 || err.original?.errno === 1213)) {
+        return new AppError('Hệ thống đang xử lý nhiều lượt đặt cùng lúc, vui lòng thử lại sau giây lát.', HTTP_CODES.CONFLICT);
+    }
+    return err;
+};
+
+/**
  * Handle Sequelize Validation Error
  */
 const handleSequelizeValidationError = (err) => {
@@ -107,6 +117,7 @@ const errorHandler = (err, req, res, _next) => {
     if (err.name === 'ValidationError') error = handleValidationError(err);
     if (err.name === 'SequelizeUniqueConstraintError') error = handleSequelizeUniqueConstraintError(err);
     if (err.name === 'SequelizeValidationError') error = handleSequelizeValidationError(err);
+    if (err.name === 'SequelizeDatabaseError') error = handleSequelizeDatabaseError(err);
 
     error.statusCode = error.statusCode || HTTP_CODES.INTERNAL_SERVER_ERROR;
     error.status = error.status || 'error';
