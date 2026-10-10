@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -472,7 +472,14 @@ const GalleryModal = ({ images, startIndex, onClose }) => {
             if (e.key === 'ArrowRight') setCurrent(p => (p + 1) % images.length);
         };
         window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
+        
+        // Ngăn cuộn trang body khi mở modal
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+            window.removeEventListener('keydown', handler);
+            document.body.style.overflow = '';
+        };
     }, [images.length, onClose]);
 
     return (
