@@ -172,118 +172,137 @@ const createBooking = catchAsync(async (req, res) => {
     }
   }
 
-  // 6. Sinh booking code duy nhất
-  let bookingCode = generateBookingCode();
-  while (await Booking.findOne({ where: { booking_code: bookingCode } })) {
-    bookingCode = generateBookingCode();
-  }
-
   const language = normalizeLanguage(req.language || req.body.language || req.user?.language);
 
   const todayStr = getTodayDateString();
 
-  // 7. THỰC THI TRANSACTION VỚI ROW-LOCKING (FOR UPDATE) - (Fix Issue 1 & Issue 2)
-  const booking = await sequelize.transaction(async (t) => {
-    // Query TourDeparture VỚI LOCK.UPDATE bên trong transaction
-    const departure = await TourDeparture.findOne({
-      where: { id: departure_id, tour_id, status: 'open' },
-      lock: t.LOCK.UPDATE,
-      transaction: t,
-    });
+  // 7. THỰC THI TRANSACTION VỚI ROW-LOCKING (FOR UPDATE) & CONCURRENCY RETRY (Fix Issue 1 & Issue 2)
+  let booking;
+  let attempts = 0;
+  while (attempts < 3) {
+    try {
+      booking = await sequelize.transaction(async (t) => {
+        // Sinh booking code duy nhất bên trong transaction
+        let bookingCode = generateBookingCode();
+        while (await Booking.findOne({ where: { booking_code: bookingCode }, transaction: t })) {
+          bookingCode = generateBookingCode();
+        }
+        // Query TourDeparture VỚI LOCK.UPDATE bên trong transaction
+        const departure = await TourDeparture.findOne({
+          where: { id: departure_id, tour_id, status: 'open' },
+          lock: t.LOCK.UPDATE,
+          transaction: t,
+        });
 
-    if (!departure) {
-      throw new AppError('Ngày khởi hành không hợp lệ hoặc đã đóng', HTTP_CODES.BAD_REQUEST);
+        if (!departure) {
+          throw new AppError('Ngày khởi hành không hợp lệ hoặc đã đóng', HTTP_CODES.BAD_REQUEST);
+        }
+
+        // KIỂM TRA NGÀY KHỞI HÀNH KHÔNG ĐƯỢC Ở TRONG QUÁ KHỨ (Fix Issue 12)
+        if (departure.departure_date < todayStr) {
+          throw new AppError(
+            'Ngày khởi hành này đã trôi qua, không thể đặt tour',
+            HTTP_CODES.BAD_REQUEST
+          );
+        }
+
+        // KIỂM TRA SỐ CHỖ CHUẨN XÁC VỚI DB TRANSACTION + ROW LOCK (FOR UPDATE)
+        const reservedBookings = await Booking.findAll({
+          where: {
+            departure_id: departure.id,
+            status: { [Op.in]: ['pending', 'approved'] },
+          },
+          attributes: ['adult_qty', 'child_qty', 'infant_qty'],
+          raw: true,
+          transaction: t,
+        });
+        const reservedSeats = reservedBookings.reduce(
+          (sum, b) => sum + Number(b.adult_qty || 0) + Number(b.child_qty || 0) + Number(b.infant_qty || 0),
+          0
+        );
+        const actualAvailableSeats = Math.max(0, Number(departure.capacity) - reservedSeats);
+
+        if (actualAvailableSeats <= 0 || totalPassengers > actualAvailableSeats) {
+          throw new AppError(
+            'Không đủ chỗ cho số lượng khách bạn đã chọn. Vui lòng giảm số lượng khách hoặc chọn ngày khởi hành khác.',
+            HTTP_CODES.CONFLICT
+          );
+        }
+
+        // Tính tổng giá đơn hàng chính xác
+        const basePrice =
+          adults * parseFloat(departure.price_adult) +
+          children * parseFloat(departure.price_child || 0) +
+          infants * parseFloat(departure.price_infant || 0);
+
+        const totalPrice = basePrice + pickupSurcharge * totalPassengers + optionsTotalPrice;
+
+        // Trừ chỗ & cập nhật status nếu hết chỗ
+        const newSeats = actualAvailableSeats - totalPassengers;
+        await departure.update(
+          {
+            available_seats: newSeats,
+            status: newSeats === 0 ? 'full' : 'open',
+          },
+          { transaction: t }
+        );
+
+        // Tạo đơn đặt
+        const newBooking = await Booking.create(
+          {
+            user_id: userId || null,
+            tour_id,
+            departure_id,
+            pickup_location_id: pickup_location_id || null,
+            booking_code: bookingCode,
+            customer_name,
+            customer_phone: normPhone,
+            customer_email: normEmail,
+            adult_qty: adults,
+            child_qty: children,
+            infant_qty: infants,
+            customer_note: customer_note || null,
+            language,
+            status: 'pending',
+            total_price: totalPrice,
+            // Snapshot fields
+            tour_title_snapshot: tour.title,
+            departure_date_snapshot: departure.departure_date,
+            adult_price_snapshot: parseFloat(departure.price_adult),
+            child_price_snapshot: parseFloat(departure.price_child || 0),
+            infant_price_snapshot: parseFloat(departure.price_infant || 0),
+            pickup_location_snapshot: pickupRecord ? pickupRecord.location_name : null,
+            pickup_price_snapshot: pickupSurcharge || null,
+          },
+          { transaction: t }
+        );
+
+        // Tạo booking options
+        if (optionRecords.length > 0) {
+          await BookingOption.bulkCreate(
+            optionRecords.map((r) => ({ ...r, booking_id: newBooking.id })),
+            { transaction: t }
+          );
+        }
+
+        return newBooking;
+      });
+      break;
+    } catch (err) {
+      attempts++;
+      if (
+        attempts < 3 &&
+        (err.original?.errno === 1020 ||
+          err.original?.code === 'ER_CHECKREAD' ||
+          err.original?.errno === 1205 ||
+          err.original?.errno === 1213)
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 50 * attempts));
+        continue;
+      }
+      throw err;
     }
-
-    // KIỂM TRA NGÀY KHỞI HÀNH KHÔNG ĐƯỢC Ở TRONG QUÁ KHỨ (Fix Issue 12)
-    if (departure.departure_date < todayStr) {
-      throw new AppError(
-        'Ngày khởi hành này đã trôi qua, không thể đặt tour',
-        HTTP_CODES.BAD_REQUEST
-      );
-    }
-
-    // KIỂM TRA SỐ CHỖ CHUẨN XÁC VỚI DB TRANSACTION + ROW LOCK (FOR UPDATE)
-    const reservedBookings = await Booking.findAll({
-      where: {
-        departure_id: departure.id,
-        status: { [Op.in]: ['pending', 'approved'] },
-      },
-      attributes: ['adult_qty', 'child_qty', 'infant_qty'],
-      raw: true,
-      transaction: t,
-    });
-    const reservedSeats = reservedBookings.reduce(
-      (sum, b) => sum + Number(b.adult_qty || 0) + Number(b.child_qty || 0) + Number(b.infant_qty || 0),
-      0
-    );
-    const actualAvailableSeats = Math.max(0, Number(departure.capacity) - reservedSeats);
-
-    if (actualAvailableSeats <= 0 || totalPassengers > actualAvailableSeats) {
-      throw new AppError(
-        'Không đủ chỗ cho số lượng khách bạn đã chọn. Vui lòng giảm số lượng khách hoặc chọn ngày khởi hành khác.',
-        HTTP_CODES.CONFLICT
-      );
-    }
-
-    // Tính tổng giá đơn hàng chính xác
-    const basePrice =
-      adults * parseFloat(departure.price_adult) +
-      children * parseFloat(departure.price_child || 0) +
-      infants * parseFloat(departure.price_infant || 0);
-
-    const totalPrice = basePrice + pickupSurcharge * totalPassengers + optionsTotalPrice;
-
-    // Trừ chỗ & cập nhật status nếu hết chỗ
-    const newSeats = actualAvailableSeats - totalPassengers;
-    await departure.update(
-      {
-        available_seats: newSeats,
-        status: newSeats === 0 ? 'full' : 'open',
-      },
-      { transaction: t }
-    );
-
-    // Tạo đơn đặt
-    const newBooking = await Booking.create(
-      {
-        user_id: userId || null,
-        tour_id,
-        departure_id,
-        pickup_location_id: pickup_location_id || null,
-        booking_code: bookingCode,
-        customer_name,
-        customer_phone: normPhone,
-        customer_email: normEmail,
-        adult_qty: adults,
-        child_qty: children,
-        infant_qty: infants,
-        customer_note: customer_note || null,
-        language,
-        status: 'pending',
-        total_price: totalPrice,
-        // Snapshot fields
-        tour_title_snapshot: tour.title,
-        departure_date_snapshot: departure.departure_date,
-        adult_price_snapshot: parseFloat(departure.price_adult),
-        child_price_snapshot: parseFloat(departure.price_child || 0),
-        infant_price_snapshot: parseFloat(departure.price_infant || 0),
-        pickup_location_snapshot: pickupRecord ? pickupRecord.location_name : null,
-        pickup_price_snapshot: pickupSurcharge || null,
-      },
-      { transaction: t }
-    );
-
-    // Tạo booking options
-    if (optionRecords.length > 0) {
-      await BookingOption.bulkCreate(
-        optionRecords.map((r) => ({ ...r, booking_id: newBooking.id })),
-        { transaction: t }
-      );
-    }
-
-    return newBooking;
-  });
+  }
 
   // 8. Tạo thông báo cho user (nếu có user_id)
   if (userId) {
@@ -527,8 +546,6 @@ const lookupBooking = catchAsync(async (req, res, next) => {
     infant_qty: booking.infant_qty,
     total_price: booking.total_price,
     customer_note: booking.customer_note,
-    language: booking.language,
-    review_email_sent_at: booking.review_email_sent_at,
     status: booking.status,
     created_at: booking.created_at,
 

@@ -12,10 +12,22 @@ const normalizeLanguage = (language) => {
     return DEFAULT_LANGUAGE;
 };
 
+const normalizeTargetLanguage = (language) => {
+    if (!language || typeof language !== 'string') return null;
+
+    const normalized = normalizeLanguage(language);
+    if (SUPPORTED_LANGUAGES.has(normalized)) {
+        return normalized;
+    }
+
+    return null;
+};
+
 const isSupportedLanguage = (language) => SUPPORTED_LANGUAGES.has(normalizeLanguage(language));
 
 module.exports = {
     DEFAULT_LANGUAGE,
     normalizeLanguage,
+    normalizeTargetLanguage,
     isSupportedLanguage,
 };

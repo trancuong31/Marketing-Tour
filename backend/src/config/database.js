@@ -1,5 +1,9 @@
+const path = require('path');
+const dotenv = require('dotenv');
 const { Sequelize } = require('sequelize');
 const logger = require('./logger');
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -9,6 +13,7 @@ const sequelize = new Sequelize(
         host: process.env.DB_HOST,
         port: process.env.DB_PORT || 3306,
         dialect: 'mariadb',
+        dialectModule: require('mariadb'),
         timezone: '+07:00',
 
         logging: (msg) => logger.debug(msg),

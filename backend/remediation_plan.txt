@@ -1,0 +1,169 @@
+TOUR 1 | tour-kham-pha-sapa-chinh-phuc-fansipan | en
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 1 | tour-kham-pha-sapa-chinh-phuc-fansipan | zh
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 2 | nghi-duong-phu-quoc-hon-thom | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 2 | nghi-duong-phu-quoc-hon-thom | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 3 | hanh-trinh-di-san-da-nang-hoi-an-ba-na | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 3 | hanh-trinh-di-san-da-nang-hoi-an-ba-na | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 4 | hanh-trinh-di-san-da-nang-hoi-an-ba-na1 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 4 | hanh-trinh-di-san-da-nang-hoi-an-ba-na1 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 5 | hanh-trinh-di-san-da-nang-hoi-an-ba-na2 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 5 | hanh-trinh-di-san-da-nang-hoi-an-ba-na2 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 6 | hanh-trinh-di-san-da-nang-hoi-an-ba-na3 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 6 | hanh-trinh-di-san-da-nang-hoi-an-ba-na3 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 7 | hanh-trinh-di-san-da-nang-hoi-an-ba-na4 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 7 | hanh-trinh-di-san-da-nang-hoi-an-ba-na4 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 8 | tour-kham-pha-sapa-chinh-phuc-fansipan1 | en
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 8 | tour-kham-pha-sapa-chinh-phuc-fansipan1 | zh
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 9 | tour-kham-pha-sapa-chinh-phuc-fansipan2 | en
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 9 | tour-kham-pha-sapa-chinh-phuc-fansipan2 | zh
+  - cancellation_policy: EMPTY | row exists but field is empty/null | current_value=null
+  - highlights: EMPTY | row exists but field is empty/null | current_value=null
+  - price_excludes: EMPTY | row exists but field is empty/null | current_value=null
+  - price_includes: EMPTY | row exists but field is empty/null | current_value=null
+  - terms_and_notes: EMPTY | row exists but field is empty/null | current_value=null
+TOUR 10 | nghi-duong-phu-quoc-hon-thom1 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 10 | nghi-duong-phu-quoc-hon-thom1 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 11 | nghi-duong-phu-quoc-hon-thom2 | en
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 11 | nghi-duong-phu-quoc-hon-thom2 | zh
+  - cancellation_policy: MISSING | translation row missing | current_value=null
+  - highlights: MISSING | translation row missing | current_value=null
+  - price_excludes: MISSING | translation row missing | current_value=null
+  - price_includes: MISSING | translation row missing | current_value=null
+  - summary: MISSING | translation row missing | current_value=null
+  - terms_and_notes: MISSING | translation row missing | current_value=null
+  - title: MISSING | translation row missing | current_value=null
+TOUR 16 | trung-quoc-2026-giang-nam-thuy-mac-thuong-hai-hang-chau-o-tran | en
+  - cancellation_policy: INVALID | Chinese text in English row | current_value=null
+  - price_excludes: INVALID | Chinese text in English row | current_value=null
+  - price_includes: INVALID | Chinese text in English row | current_value=null
+  - terms_and_notes: INVALID | Chinese text in English row | current_value=null

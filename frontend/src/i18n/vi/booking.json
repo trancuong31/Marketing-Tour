@@ -36,6 +36,8 @@
     "errSelectDeparture": "Vui lòng chọn ngày khởi hành!",
     "errSelectPickup": "Vui lòng chọn điểm đón!",
     "errLoginRequired": "Vui lòng đăng nhập để đặt tour!",
+    "errMissingProfileInfo": "Vui lòng cập nhật số điện thoại và email trong trang cá nhân trước khi đặt tour!",
+    "errInvalidPhone": "Số điện thoại trong tài khoản không hợp lệ, vui lòng cập nhật lại trong trang cá nhân!",
     "errGeneric": "Có lỗi xảy ra, vui lòng thử lại",
     "customerNote": "Ghi chú"
 }

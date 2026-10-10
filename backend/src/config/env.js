@@ -4,6 +4,12 @@ const path = require('path');
 // Load .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+const configuredTranslationConcurrency = parseInt(process.env.TRANSLATION_CONCURRENCY, 10);
+const configuredMinTranslationConcurrency = parseInt(process.env.TRANSLATION_CONCURRENCY_MIN, 10);
+const configuredMaxTranslationConcurrency = parseInt(process.env.TRANSLATION_CONCURRENCY_MAX, 10);
+const minTranslationConcurrency = Math.max(2, configuredMinTranslationConcurrency || configuredTranslationConcurrency || 2);
+const maxTranslationConcurrency = Math.max(minTranslationConcurrency, configuredMaxTranslationConcurrency || 4);
+
 const envVars = {
     nodeEnv: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT, 10) || 3000,
@@ -43,7 +49,10 @@ const envVars = {
 
     translation: {
         provider: (process.env.TRANSLATION_PROVIDER || (process.env.AZURE_TRANSLATOR_KEY ? 'azure' : 'google')).toLowerCase(),
-        concurrency: parseInt(process.env.TRANSLATION_CONCURRENCY, 10) || 8,
+        concurrency: Math.max(2, configuredTranslationConcurrency || minTranslationConcurrency),
+        minConcurrency: minTranslationConcurrency,
+        maxConcurrency: maxTranslationConcurrency,
+        concurrencyIncreaseAfterSuccess: Math.max(1, parseInt(process.env.TRANSLATION_CONCURRENCY_INCREASE_AFTER_SUCCESS, 10) || 1),
         requestDelayMs: parseInt(
             process.env.TRANSLATION_REQUEST_DELAY_MS,
             10,
