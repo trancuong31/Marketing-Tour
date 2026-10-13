@@ -1,10 +1,16 @@
 const express = require('express');
-const { authenticate } = require('../middlewares/auth');
+const { authenticate, authorize } = require('../middlewares/auth');
 const upload = require('../middlewares/upload');
 const uploadBanner = require('../middlewares/uploadBanner');
 const uploadGuide = require('../middlewares/uploadGuide');
 const { translateContent } = require('../controllers/translateController');
 const adminUserController = require('../controllers/adminUserController');
+const {
+    getAdminContactSettings,
+    updateContactSettings,
+} = require('../controllers/contactSettingsController');
+const { validate } = require('../middlewares/validate');
+const { contactSettingsSchema } = require('../validations/contactSettingsValidation');
 const {
     listTranslations,
     updateUiTranslation,
@@ -45,6 +51,10 @@ router.post('/login', login);
 
 // ── Bảo vệ tất cả routes bên dưới bằng JWT ──
 router.use(authenticate);
+
+// ── Contact settings (administrator only) ──
+router.get('/contact-settings', authorize('ADMIN', 'admin'), getAdminContactSettings);
+router.put('/contact-settings', authorize('ADMIN', 'admin'), validate(contactSettingsSchema), updateContactSettings);
 
 // ── Translation ──
 router.post('/translate', translateContent);

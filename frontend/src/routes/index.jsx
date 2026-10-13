@@ -28,6 +28,7 @@ const AdminLoginPage = lazyPage(() => import('../features/admin/pages/AdminLogin
 const BookingManagementPage = lazyPage(() => import('../features/admin/pages/BookingManagementPage'));
 const TourManagementPage = lazyPage(() => import('../features/admin/pages/TourManagementPage'));
 const ContentManagementPage = lazyPage(() => import('../features/admin/pages/ContentManagementPage'));
+const ContactSettingsPage = lazyPage(() => import('../features/admin/pages/ContactSettingsPage'));
 const BannerManagementPage = lazyPage(() => import('../features/admin/pages/BannerManagementPage'));
 const ReviewManagementPage = lazyPage(() => import('../features/admin/pages/ReviewManagementPage'));
 const TranslationManagementPage = lazyPage(() => import('../features/admin/pages/TranslationManagementPage'));
@@ -65,6 +66,7 @@ const AppRoutes = () => {
                 <Route path="/admin/tours" element={<AdminRoute><TourManagementPage /></AdminRoute>} />
                 <Route path="/admin/banners" element={<AdminRoute><BannerManagementPage /></AdminRoute>} />
                 <Route path="/admin/content" element={<AdminRoute><ContentManagementPage /></AdminRoute>} />
+                <Route path="/admin/contact-settings" element={<AdminRoute><ContactSettingsPage /></AdminRoute>} />
                 <Route path="/admin/reviews" element={<AdminRoute><ReviewManagementPage /></AdminRoute>} />
                 <Route path="/admin/users" element={<AdminRoute><UserManagementPage /></AdminRoute>} />
                 <Route path="/admin/user" element={<Navigate to="/admin/users" replace />} />

@@ -1,11 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Phone, Mail, Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
+import { Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
 import { getImageUrl } from '@/utils/imageUrl';
-import zalo from '../../assets/images/zalo-2.png';
+import { useContactSettings } from '@/hooks/useContactSettings';
+import ContactAction from '@/components/contact/ContactAction';
+import ContactIcon from '@/components/contact/ContactIcon';
+import { getContactText, getVisibleContacts } from '@/utils/contactSettings';
 import logo from '../../../public/logo.jpg';
 import NotificationBell from '../NotificationBell';
 import LanguageSwitcher from '../ui/LanguageSwitcher/LanguageSwitcher';
@@ -34,7 +37,12 @@ const ClientLayout = ({ children }) => {
     const [authMode, setAuthMode] = useState('login');
     const [mobileMenuUserOpen, setMobileMenuUserOpen] = useState(false);
     const { isAuthenticated, user, logout } = useAuthStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { settings: contactSettings } = useContactSettings();
+    const language = i18n.resolvedLanguage || i18n.language;
+    const footerContacts = getVisibleContacts(contactSettings, 'footer');
+    const floatingContacts = getVisibleContacts(contactSettings, 'floating');
+    const hasFooterContact = Boolean(contactSettings && footerContacts.length > 0);
     const ignoreScrollRef = useRef(false);
 
     const getFooterGuidePath = (key) => {
@@ -330,56 +338,35 @@ const ClientLayout = ({ children }) => {
             <main className="flex-1">{children}</main>
 
             {/* ═══ FLOATING SUPPORT BUTTONS ═══ */}
-            <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3">
-                {/* WeChat */}
-                <a
-                    href="#"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="relative group"
-                    title={t('footer.chatWechat', 'Chat WeChat')}
-                >
-                    {/* Ripple ring */}
-                    <span className="absolute inset-0 rounded-full bg-[#07C160]/30 animate-ring" />
-                    <span className="absolute inset-0 rounded-full bg-[#07C160]/20 animate-ring delay-300" />
+            {floatingContacts.length > 0 && (
+                <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3">
+                    {floatingContacts.map((contact) => {
+                        const color = contact.type === 'wechat' ? 'bg-[#07C160]' : contact.type === 'zalo' ? 'bg-[#0068FF]' : 'bg-gradient-to-br from-primary to-primary-dark';
+                        const ripple = contact.type === 'wechat' ? 'bg-[#07C160]' : contact.type === 'zalo' ? 'bg-[#0068FF]' : 'bg-primary';
+                        const iconClassName = contact.icon === 'zalo' ? 'h-7 w-7 sm:h-10 sm:w-10' : 'h-6 w-6 text-white sm:h-8 sm:w-8';
 
-                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[#07C160] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer">
-                        <svg
-                            className="w-6 h-6 sm:w-8 sm:h-8 text-white"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
-                            <path d="M9.5 4C5.36 4 2 6.72 2 10.08c0 1.94 1.12 3.68 2.87 4.78L4.2 17.5l2.7-1.48c.82.25 1.69.38 2.6.38.25 0 .5-.01.74-.03A6.2 6.2 0 0 1 10 14.1c0-3.36 3.36-6.08 7.5-6.08.36 0 .72.02 1.07.07C17.5 5.74 13.93 4 9.5 4Zm-2.25 5.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
-                            <path d="M17.5 9.25c-3.04 0-5.5 1.94-5.5 4.34 0 2.4 2.46 4.34 5.5 4.34.67 0 1.32-.1 1.91-.28l2.09 1.15-.52-1.83c1.23-.82 2.02-2 2.02-3.38 0-2.4-2.46-4.34-5.5-4.34Zm-1.8 4.02a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-                        </svg>
-                    </div>
-                </a>
-
-                {/* Zalo */}
-                <a href="https://zalo.me/0987654321" target="_blank" rel="noopener noreferrer" className="relative group" title={t('footer.chatZalo', 'Chat Zalo')}>
-                    {/* Ripple ring */}
-                    <span className="absolute inset-0 rounded-full bg-[#0068FF]/30 animate-ring" />
-                    <span className="absolute inset-0 rounded-full bg-[#0068FF]/20 animate-ring delay-300" />
-                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-[#0068FF] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer">
-                        <img src={zalo} alt="Zalo" className="w-7 h-7 sm:w-10 sm:h-10" />
-                    </div>
-                </a>
-
-                {/* Phone */}
-                <a href="tel:0987654321" className="relative group" title={t('footer.callNow', 'Gọi ngay')}>
-                    <span className="absolute inset-0 rounded-full bg-primary/30 animate-ring" />
-                    <span className="absolute inset-0 rounded-full bg-primary/20 animate-ring delay-300" />
-                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-xl hover:scale-110 transition-transform delay-200 cursor-pointer">
-                        <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
-                </a>
-            </div>
+                        return (
+                            <div key={contact.id} className="relative group">
+                                <span aria-hidden="true" className={`absolute inset-0 rounded-full ${ripple}/30 animate-ring`} />
+                                <span aria-hidden="true" className={`absolute inset-0 rounded-full ${ripple}/20 animate-ring delay-300`} />
+                                <ContactAction
+                                    contact={contact}
+                                    language={language}
+                                    targetBlank
+                                    className={`relative flex h-11 w-11 items-center justify-center rounded-full ${color} shadow-xl transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-14 sm:w-14`}
+                                    iconClassName={iconClassName}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* ═══ FOOTER — iVIVU Style ═══ */}
             <footer className="border-t border-border mt-auto bg-white">
                 {/* Main Footer */}
                 <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-10">
-                    <div className="grid grid-cols-2 gap-x-5 gap-y-7 text-sm sm:gap-8 lg:grid-cols-4">
+                    <div className={`grid grid-cols-2 gap-x-5 gap-y-7 text-sm sm:gap-8 ${hasFooterContact ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
                         {/* Col 1 - About */}
                         <div className="min-w-0">
                             <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.aboutUs')}</h4>
@@ -457,53 +444,74 @@ const ClientLayout = ({ children }) => {
                         </div>
 
                         {/* Col 4 - Contact + Hotline */}
-                        <div className="min-w-0">
-                            <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.needHelp')}</h4>
-                            <div className="flex flex-col gap-4">
-                                <div className="min-w-0">
-                                    <div className="mb-3 sm:mb-4">
-                                        <a href="tel:19002045" className="flex items-center gap-2 text-primary hover:text-primary-dark transition">
-                                            <Phone className="w-5 h-5 shrink-0" />
-                                            <span className="text-xl font-extrabold tracking-wide sm:text-2xl">1900 0000</span>
-                                        </a>
-                                        <p className="text-xs text-text-muted mt-1 flex items-center gap-1">
-                                            <Clock className="w-3 h-3" /> {t('footer.workingHours', '7h30 → 21h hàng ngày')}
-                                        </p>
-                                    </div>
-                                    <div className="flex min-w-0 items-center gap-2 text-text-secondary">
-                                        <Mail className="w-4 h-4 shrink-0 text-primary" />
-                                        <span className="truncate">info@kynghituyetvoi.vn</span>
-                                    </div>
+                        {hasFooterContact && (
+                            <div className="min-w-0">
+                                {getContactText(contactSettings.general?.heading, language) && (
+                                    <h4 className="mb-3 text-sm font-bold uppercase text-text sm:mb-4 sm:text-base">
+                                        {getContactText(contactSettings.general.heading, language)}
+                                    </h4>
+                                )}
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+                                    {footerContacts.map((contact) => {
+                                        if (contact.id === 'hotline') {
+                                            return (
+                                                <div key={contact.id} className="mb-1 w-full min-w-0">
+                                                    <ContactAction
+                                                        contact={contact}
+                                                        language={language}
+                                                        className="flex items-center gap-2 text-primary transition hover:text-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                                    >
+                                                        <ContactIcon name="phone" className="h-5 w-5 shrink-0" />
+                                                        <span className="text-xl font-extrabold tracking-wide sm:text-2xl">{contact.displayValue}</span>
+                                                    </ContactAction>
+                                                    {getContactText(contactSettings.general?.workingHours, language) && (
+                                                        <p className="mt-1 flex items-center gap-1 text-xs text-text-muted">
+                                                            <Clock className="h-3 w-3" />
+                                                            {getContactText(contactSettings.general.workingHours, language)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        if (contact.id === 'email') {
+                                            return (
+                                                <ContactAction
+                                                    key={contact.id}
+                                                    contact={contact}
+                                                    language={language}
+                                                    className="mb-1 flex w-full min-w-0 items-center gap-2 text-text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                                >
+                                                    <ContactIcon name="mail" className="h-4 w-4 shrink-0 text-primary" />
+                                                    <span className="truncate">{contact.displayValue}</span>
+                                                </ContactAction>
+                                            );
+                                        }
+
+                                        const color = contact.type === 'facebook' ? 'bg-[#1877f2]' : contact.type === 'zalo' ? 'bg-[#0068FF]' : 'bg-[#07C160]';
+                                        return (
+                                            <ContactAction
+                                                key={contact.id}
+                                                contact={contact}
+                                                language={language}
+                                                targetBlank
+                                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${color} text-white transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
+                                                iconClassName={contact.icon === 'wechat' ? 'h-5 w-5' : 'h-4 w-4'}
+                                            >
+                                                {contact.icon === 'zalo'
+                                                    ? <span className="text-xs font-bold text-white">Zalo</span>
+                                                    : <ContactIcon name={contact.icon} className={contact.icon === 'wechat' ? 'h-5 w-5' : 'h-4 w-4'} />}
+                                            </ContactAction>
+                                        );
+                                    })}
                                 </div>
-                                {/* Social Icons */}
-                                <div className="flex shrink-0 gap-2">
-                                    {/* Facebook */}
-                                    <a href="#" className="w-9 h-9 rounded-full bg-[#1877f2] flex items-center justify-center text-white hover:opacity-80 transition">
-                                        <svg className="w-4 h-4" fill="#fff" viewBox="0 0 24 24">
-                                            <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" />
-                                        </svg>
-                                    </a>
-                                    {/* Zalo */}
-                                    <a href="#" className="w-9 h-9 rounded-full bg-[#0068FF] flex items-center justify-center text-white hover:opacity-80 transition">
-                                        <span className="text-xs font-bold text-white">Zalo</span>
-                                    </a>
-                                    {/* WeChat */}
-                                    <a
-                                        href="#"
-                                        className="w-9 h-9 rounded-full bg-[#07C160] flex items-center justify-center text-white hover:opacity-80 transition"
-                                    >
-                                        <svg
-                                            className="w-5 h-5"
-                                            viewBox="0 0 24 24"
-                                            fill="currentColor"
-                                        >
-                                            <path d="M9.5 4C5.36 4 2 6.72 2 10.08c0 1.94 1.12 3.68 2.87 4.78L4.2 17.5l2.7-1.48c.82.25 1.69.38 2.6.38.25 0 .5-.01.74-.03A6.2 6.2 0 0 1 10 14.1c0-3.36 3.36-6.08 7.5-6.08.36 0 .72.02 1.07.07C17.5 5.74 13.93 4 9.5 4Zm-2.25 5.2a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Zm4.5 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8Z" />
-                                            <path d="M17.5 9.25c-3.04 0-5.5 1.94-5.5 4.34 0 2.4 2.46 4.34 5.5 4.34.67 0 1.32-.1 1.91-.28l2.09 1.15-.52-1.83c1.23-.82 2.02-2 2.02-3.38 0-2.4-2.46-4.34-5.5-4.34Zm-1.8 4.02a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Zm3.6 0a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
-                                        </svg>
-                                    </a>
-                                </div>
+                                {contactSettings.general?.description?.[language?.split('-')[0]] && (
+                                    <p className="mt-2 text-xs text-text-muted">
+                                        {getContactText(contactSettings.general.description, language)}
+                                    </p>
+                                )}
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

@@ -20,10 +20,10 @@ export const getImageUrl = (url) => {
  * @param {'tour' | 'banner' | 'avatar'} type - loại ảnh
  */
 export const PLACEHOLDER = {
-    tour:   '/placeholder-tour.jpg',
+    tour:   '/placeholder-tour.svg',
     banner: '/placeholder-banner.jpg',
     avatar: '/placeholder-avatar.png',
-    default: '/placeholder-tour.jpg',
+    default: '/placeholder-tour.svg',
 };
 
 /**
@@ -34,8 +34,9 @@ export const PLACEHOLDER = {
  * và sự kiện sẽ không kích hoạt lại (tránh vòng lặp vô tận).
  */
 export const onImgError = (type = 'default') => (e) => {
+    const image = e.currentTarget;
     const fallback = PLACEHOLDER[type] || PLACEHOLDER.default;
-    if (e.currentTarget.src !== window.location.origin + fallback) {
-        e.currentTarget.src = fallback;
+    if (image.src !== window.location.origin + fallback) {
+        image.src = fallback;
     }
 };

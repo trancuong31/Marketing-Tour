@@ -8,7 +8,7 @@ const TourOverviewGridItem = ({ tour, onSelectTour }) => {
         >
             <div className="relative h-40 overflow-hidden cursor-pointer group/img" onClick={() => window.open(`/tours/${tour.slug}`, '_blank')}>
                 <img 
-                    src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
+                    src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.svg'}
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     onError={onImgError('tour')}

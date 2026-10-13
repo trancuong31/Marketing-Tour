@@ -3,7 +3,7 @@ const { Tour, TourImage, TourItinerary, TourDeparture, TourPickupLocation, TourO
 const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
-const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
+const { normalizePublicUploadUrl, resolveExistingUploadUrl } = require('../utils/uploadUrl');
 const { getTodayDateString } = require('../utils/date');
 
 /**
@@ -112,6 +112,11 @@ const getTours = catchAsync(async (req, res) => {
 
     const resultData = tours.map(t => {
         const data = t.toJSON();
+        data.thumbnail_url = resolveExistingUploadUrl(data.thumbnail_url);
+        data.images = (data.images || []).map(image => ({
+            ...image,
+            image_url: resolveExistingUploadUrl(image.image_url),
+        }));
         if (shouldUseTranslation && data.translations && data.translations.length > 0) {
             const tr = data.translations[0];
             data.title = tr.title || data.title;
@@ -196,6 +201,11 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
     }
 
     const data = tour.toJSON();
+    data.thumbnail_url = resolveExistingUploadUrl(data.thumbnail_url);
+    data.images = (data.images || []).map(image => ({
+        ...image,
+        image_url: resolveExistingUploadUrl(image.image_url),
+    }));
     if (shouldUseTranslation && data.translations && data.translations.length > 0) {
         const tr = data.translations[0];
         data.title = tr.title || data.title;

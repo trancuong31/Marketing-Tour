@@ -11,6 +11,7 @@ import TourCard from '@/components/tour/TourCard';
 import CarouselSection from '@/components/ui/CarouselSection';
 import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import { getCategoryDisplayName } from '@/utils/tourLabels';
+import { getRelatedTours } from '@/features/tour/utils/relatedTours';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     Clock, Tag, Star, X, ChevronLeft, ChevronRight, ZoomIn,
@@ -21,139 +22,9 @@ import {
 const formatPrice = (price) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-const RELATED_DESTINATION_KEYWORDS = [
-    'phu quoc',
-    'hon thom',
-    'ha noi',
-    'ho chi minh',
-    'sapa',
-    'fansipan',
-    'da nang',
-    'hoi an',
-    'ba na',
-    'malaysia',
-    'singapore',
-    'dai loan',
-    'cao hung',
-    'dai trung',
-    'dai bac',
-    'x park',
-];
-
-const RELATED_STOP_WORDS = new Set([
-    'tour',
-    'kham',
-    'pha',
-    'hanh',
-    'trinh',
-    'nghi',
-    'duong',
-    'chinh',
-    'phuc',
-    'ngay',
-    'dem',
-    'nature',
-    'park',
-]);
-
-const getTourCategoryId = (tour) => tour?.category_id || tour?.Category?.id || null;
-
-const normalizeSearchText = (text = '') => text
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/Ä‘/g, 'd')
-    .replace(/Ä/g, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-
-const getTourSearchText = (tour) => normalizeSearchText([
-    tour?.title,
-    tour?.slug,
-    tour?.summary,
-    tour?.Category?.name,
-].filter(Boolean).join(' '));
-
-const getDestinationKeywords = (tour) => {
-    const searchText = getTourSearchText(tour);
-    const knownKeywords = RELATED_DESTINATION_KEYWORDS.filter((keyword) => searchText.includes(keyword));
-
-    if (knownKeywords.length > 0) {
-        return knownKeywords;
-    }
-
-    return normalizeSearchText(tour?.title)
-        .split(' ')
-        .filter((word) => word.length > 2 && !RELATED_STOP_WORDS.has(word))
-        .slice(0, 5);
-};
-
-const getDestinationScore = (currentKeywords, candidateText) => currentKeywords.reduce((score, keyword) => {
-    if (!candidateText.includes(keyword)) return score;
-    return score + (keyword.includes(' ') ? 90 : 45);
-}, 0);
-
-const mergeUniqueTours = (groups) => {
-    const seen = new Set();
-
-    return groups.flat().filter((tour) => {
-        if (!tour || seen.has(tour.id)) return false;
-        seen.add(tour.id);
-        return true;
-    });
-};
-
-const getRelatedTours = (currentTour, tours) => {
-    const currentCategoryId = getTourCategoryId(currentTour);
-    const currentKeywords = getDestinationKeywords(currentTour);
-
-    const candidates = tours.filter((tour) => {
-        if (!tour || tour.id === currentTour?.id) return false;
-        return tour.slug !== currentTour?.slug && tour.status !== 'hidden' && tour.status !== 'sold_out';
-    });
-
-    const withDestinationScore = candidates.map((tour) => ({
-        tour,
-        destinationScore: getDestinationScore(currentKeywords, getTourSearchText(tour)),
-        hasOpenDepartures: (tour.departures || []).length > 0,
-    }));
-
-    const byRelevance = (a, b) => (
-        Number(b.hasOpenDepartures) - Number(a.hasOpenDepartures)
-        || b.destinationScore - a.destinationScore
-        || b.tour.id - a.tour.id
-    );
-
-    const promotionTours = withDestinationScore
-        .filter(({ tour }) => tour.tour_badge === 'promotion')
-        .sort(byRelevance)
-        .map(({ tour }) => tour);
-
-    const featuredTours = withDestinationScore
-        .filter(({ tour }) => tour.tour_badge === 'featured')
-        .sort(byRelevance)
-        .map(({ tour }) => tour);
-
-    const keywordTours = withDestinationScore
-        .filter(({ destinationScore }) => destinationScore > 0)
-        .sort(byRelevance)
-        .map(({ tour }) => tour);
-
-    const categoryTours = withDestinationScore
-        .filter(({ tour }) => currentCategoryId && getTourCategoryId(tour) === currentCategoryId)
-        .sort(byRelevance)
-        .map(({ tour }) => tour);
-
-    const fallbackTours = withDestinationScore
-        .sort(byRelevance)
-        .map(({ tour }) => tour);
-
-    return mergeUniqueTours([promotionTours, featuredTours, keywordTours, categoryTours, fallbackTours]).slice(0, 5);
-};
 
 /* â•â•â• MODERN REVIEWS LIST (Facebook/TikTok Style) â•â•â• */
-const SubReviewItem = ({ reply, onReply, onDelete }) => {
+const SubReviewItem = ({ reply, onReply, onDelete, t }) => {
     const { user } = useAuthStore();
     const [localLikes, setLocalLikes] = useState(reply.likes_count || 0);
     const [isLiked, setIsLiked] = useState(reply.user_has_liked || false);
@@ -165,18 +36,18 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
             setIsLiked(newIsLiked);
             setLocalLikes(likes_count);
         } catch (err) {
-            toast.error('CÃ³ lá»—i xáº£y ra khi like');
+            toast.error(t('tour.review.genericError'));
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a pháº£n há»“i nÃ y?')) return;
+        if (!window.confirm(t('tour.review.confirmDeleteReply'))) return;
         try {
             await tourService.deleteVote(reply.id);
-            toast.success('ÄÃ£ xÃ³a pháº£n há»“i');
+            toast.success(t('tour.review.deleteReplySuccess'));
             if (onDelete) onDelete();
         } catch (err) {
-            toast.error('KhÃ´ng thá»ƒ xÃ³a pháº£n há»“i');
+            toast.error(t('tour.review.deleteReplyError'));
         }
     };
 
@@ -199,7 +70,7 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                                 <button
                                     onClick={handleDelete}
                                     className="p-1 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/item:opacity-100"
-                                    title="XÃ³a pháº£n há»“i"
+                                    title={t('tour.review.deleteReplyTitle')}
                                 >
                                     <Trash2 className="w-3 h-3" />
                                 </button>
@@ -215,13 +86,13 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
                         className={`hover:text-primary transition-colors flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                     >
                         <Heart className={`w-3 h-3 ${isLiked ? 'fill-primary' : ''}`} />
-                        ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
+                        {t('tour.review.like')} {localLikes > 0 && <span>({localLikes})</span>}
                     </button>
                     <button
                         onClick={onReply}
                         className="hover:text-primary transition-colors"
                     >
-                        Pháº£n há»“i
+                        {t('tour.review.reply')}
                     </button>
                 </div>
             </div>
@@ -229,7 +100,7 @@ const SubReviewItem = ({ reply, onReply, onDelete }) => {
     );
 };
 
-const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
+const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess, t }) => {
     const { user } = useAuthStore();
     const [localLikes, setLocalLikes] = useState(vote.likes_count || 0);
     const [isLiked, setIsLiked] = useState(vote.user_has_liked || false);
@@ -257,18 +128,18 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
             setIsLiked(newIsLiked);
             setLocalLikes(likes_count);
         } catch (err) {
-            toast.error('CÃ³ lá»—i xáº£y ra khi like');
+            toast.error(t('tour.review.genericError'));
         }
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a Ä‘Ã¡nh giÃ¡ nÃ y vÃ  táº¥t cáº£ pháº£n há»“i liÃªn quan?')) return;
+        if (!window.confirm(t('tour.review.confirmDeleteReview'))) return;
         try {
             await tourService.deleteVote(vote.id);
-            toast.success('ÄÃ£ xÃ³a Ä‘Ã¡nh giÃ¡');
+            toast.success(t('tour.review.deleteReviewSuccess'));
             if (onDeleteSuccess) onDeleteSuccess();
         } catch (err) {
-            toast.error('KhÃ´ng thá»ƒ xÃ³a Ä‘Ã¡nh giÃ¡');
+            toast.error(t('tour.review.deleteReviewError'));
         }
     };
 
@@ -284,12 +155,12 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
             formData.append('rating', 0); // Pháº£n há»“i khÃ´ng cáº§n rating
 
             await tourService.createVote(tourId, formData);
-            toast.success('Gá»­i pháº£n há»“i thÃ nh cÃ´ng!');
+            toast.success(t('tour.review.replySuccess'));
             setReplyContent('');
             setShowReplyForm(false);
             if (onReplySuccess) onReplySuccess();
         } catch (error) {
-            toast.error(error.response?.data?.message || 'CÃ³ lá»—i xáº£y ra');
+            toast.error(error.response?.data?.message || t('tour.review.genericError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -322,7 +193,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <button
                                         onClick={handleDelete}
                                         className="p-1.5 hover:bg-error/10 rounded-full text-error transition-all opacity-0 group-hover/root:opacity-100"
-                                        title="XÃ³a Ä‘Ã¡nh giÃ¡"
+                                        title={t('tour.review.deleteReviewTitle')}
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>
@@ -339,7 +210,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                             ))}
                             {vote.rating >= 4 && (
                                 <span className="ml-2 text-[10px] font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded uppercase">
-                                    HÃ i lÃ²ng
+                                    {t('tour.review.satisfied')}
                                 </span>
                             )}
                         </div>
@@ -349,7 +220,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                 {vote.comment}
                             </p>
                         ) : (
-                            <p className="text-sm text-text-muted italic opacity-70">KhÃ¡ch hÃ ng khÃ´ng Ä‘á»ƒ láº¡i bÃ¬nh luáº­n vÄƒn báº£n.</p>
+                            <p className="text-sm text-text-muted italic opacity-70">{t('tour.review.noComment')}</p>
                         )}
 
                         {/* Images */}
@@ -378,8 +249,8 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                                         <span className="text-[10px] text-white font-bold">A</span>
                                     </div>
-                                    <span className="text-xs font-bold text-primary">Pháº£n há»“i cá»§a KyNghiTuyetVoi</span>
-                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase">ChÃ­nh thá»©c</span>
+                                    <span className="text-xs font-bold text-primary">{t('tour.review.adminReply')}</span>
+                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold uppercase">{t('tour.review.official')}</span>
                                 </div>
                                 <p className="text-sm text-text-secondary italic pl-8">
                                     &quot;{vote.admin_reply}&quot;
@@ -395,16 +266,16 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                             className={`hover:text-primary transition-colors cursor-pointer flex items-center gap-1 ${isLiked ? 'text-primary' : ''}`}
                         >
                             <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-primary' : ''}`} />
-                            ThÃ­ch {localLikes > 0 && <span>({localLikes})</span>}
+                            {t('tour.review.like')} {localLikes > 0 && <span>({localLikes})</span>}
                         </button>
                         <button
                             className="hover:text-primary transition-colors cursor-pointer"
                             onClick={() => setShowReplyForm(!showReplyForm)}
                         >
-                            Pháº£n há»“i {vote.replies?.length > 0 && <span>({vote.replies.length})</span>}
+                            {t('tour.review.reply')} {vote.replies?.length > 0 && <span>({vote.replies.length})</span>}
                         </button>
-                        <span className="text-[10px] font-medium">â€¢</span>
-                        <span className="text-[10px] font-medium opacity-60">KyNghiTuyetVoi Ä‘Ã£ ghi nháº­n</span>
+                        <span className="text-[10px] font-medium">·</span>
+                        <span className="text-[10px] font-medium opacity-60">{t('tour.review.officialAcknowledgement')}</span>
                     </div>
 
                     {/* Community Replies List */}
@@ -414,6 +285,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                 <SubReviewItem
                                     key={reply.id}
                                     reply={reply}
+                                    t={t}
                                     onDelete={onReplySuccess}
                                     onReply={() => {
                                         setShowReplyForm(true);
@@ -432,7 +304,7 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                     <textarea
                                         value={replyContent}
                                         onChange={(e) => setReplyContent(e.target.value)}
-                                        placeholder="Viáº¿t pháº£n há»“i cá»§a báº¡n..."
+                                        placeholder={t('tour.review.replyPlaceholder')}
                                         className="w-full bg-surface-alt rounded-lg p-3 text-xs border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none h-20"
                                         autoFocus
                                     />
@@ -442,13 +314,13 @@ const ReviewItem = ({ vote, tourId, onReplySuccess, onDeleteSuccess }) => {
                                             onClick={() => setShowReplyForm(false)}
                                             className="px-3 py-1.5 text-[10px] font-bold text-text-muted hover:text-text transition"
                                         >
-                                            Há»§y
+                                            {t('tour.review.cancel')}
                                         </button>
                                         <button
                                             disabled={isSubmitting || !replyContent.trim()}
                                             className="px-4 py-1.5 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary-dark transition disabled:opacity-50"
                                         >
-                                            {isSubmitting ? 'Äang gá»­i...' : 'Gá»­i'}
+                                            {isSubmitting ? t('tour.review.sending') : t('tour.review.send')}
                                         </button>
                                     </div>
                                 </div>
@@ -1001,6 +873,7 @@ const TourDetailPage = () => {
                                     key={vote.id}
                                     vote={vote}
                                     tourId={tour.id}
+                                    t={t}
                                     onReplySuccess={refreshVotes}
                                     onDeleteSuccess={refreshVotes}
                                 />

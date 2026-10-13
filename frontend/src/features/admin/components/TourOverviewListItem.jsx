@@ -8,7 +8,7 @@ const TourOverviewListItem = ({ tour, onSelectTour }) => {
         >
             <div className="relative w-full md:w-64 h-48 md:h-auto overflow-hidden cursor-pointer shrink-0 group/img" onClick={() => window.open(`/tours/${tour.slug}`, '_blank')}>
                 <img 
-                    src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.jpg'} 
+                    src={getImageUrl(tour.thumbnail_url) || '/placeholder-tour.svg'}
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700"
                     onError={onImgError('tour')}

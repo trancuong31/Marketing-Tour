@@ -28,7 +28,7 @@ const getMinPrice = (tour) => {
 
 const TourCard = ({ tour, compact = false }) => {
     const { t } = useTranslation();
-    const thumbnail = getImageUrl(tour.thumbnail_url || tour.images?.[0]?.image_url) || '/placeholder-tour.jpg';
+    const thumbnail = getImageUrl(tour.thumbnail_url || tour.images?.[0]?.image_url) || '/placeholder-tour.svg';
     const duration = formatDuration(tour.duration_days, tour.duration_nights, t);
     const minPrice = getMinPrice(tour);
     const summary = truncateText(tour.summary, compact ? 90 : 159);

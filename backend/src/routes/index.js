@@ -9,6 +9,7 @@ const bannerRoutes = require('./bannerRoutes');
 const adminRoutes = require('./adminRoutes');
 const userRoutes = require('./userRoutes');
 const translationRoutes = require('./translationRoutes');
+const { getPublicContactSettings } = require('../controllers/contactSettingsController');
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.use('/tours', tourRoutes); // /api/tours/:slug
 router.use('/bookings', bookingRoutes);
 router.use('/guides', guideRoutes);
 router.use('/banners', bannerRoutes);
+router.get('/contact-settings', getPublicContactSettings);
 router.use('/translations', translationRoutes);
 
 // ── User API ──
