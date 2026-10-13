@@ -546,7 +546,7 @@ const PriceInputField = ({ field, error, placeholder }) => {
         const sanitizedValue = sanitizeMoneyDisplayInput(e.target.value);
         const digits = sanitizedValue.replace(/[^\d]/g, '');
 
-        setDisplayValue(sanitizedValue);
+        setDisplayValue(digits === '' ? '' : formatMoneyDisplayValue(digits));
         field.onChange(digits === '' ? '' : Number(digits));
       }}
       onBlur={(e) => {

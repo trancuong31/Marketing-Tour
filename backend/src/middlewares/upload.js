@@ -41,6 +41,7 @@ const upload = multer({
     limits: {
         fileSize: env.upload.maxSize,
         files: 10, // Tối đa 10 ảnh
+        fieldSize: 25 * 1024 * 1024, // Tăng giới hạn fieldSize lên 25MB (để chứa mảng JSON lớn như itineraries)
     },
 });
 
