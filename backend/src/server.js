@@ -2,7 +2,7 @@ require('./config/env');
 const app = require('./app');
 const { connectDB } = require('./config/database');
 const logger = require('./config/logger');
-const { startReviewReminderScheduler } = require('./jobs');
+const { startReviewReminderScheduler, startBookingExpirationScheduler } = require('./jobs');
 
 // Import models để đăng ký associations
 require('./models');
@@ -38,6 +38,7 @@ const startServer = async () => {
         });
 
         startReviewReminderScheduler();
+        startBookingExpirationScheduler();
 
         // Handle unhandled promise rejections
         process.on('unhandledRejection', (err) => {

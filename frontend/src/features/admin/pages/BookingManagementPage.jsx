@@ -12,6 +12,7 @@ import {
     LayoutGrid, List, AlertCircle, Clock, XCircle, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { isBookingDepartureExpired, formatLocalDate } from '@/utils/dateUtils';
 
 const statusConfig = {
     pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
@@ -383,9 +384,19 @@ const BookingManagementPage = () => {
                                     <div className="bg-surface-alt p-4 rounded-2xl border border-border space-y-3">
                                         <p className="font-bold text-text leading-snug">{detail.Tour?.title || detail.tour_title_snapshot || 'Tour chưa cập nhật tên'}</p>
                                         {(detail.departure || detail.departure_date_snapshot) && (
-                                            <div className="flex items-center gap-2 text-sm text-text-secondary">
-                                                <Calendar className="w-4 h-4 text-primary" />
-                                                <span className="font-medium">Khởi hành: {new Date(detail.departure?.departure_date || detail.departure_date_snapshot).toLocaleDateString('vi-VN')}</span>
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2 text-sm text-text-secondary">
+                                                    <Calendar className="w-4 h-4 text-primary" />
+                                                    <span className="font-medium">
+                                                        Khởi hành: {formatLocalDate(detail.departure?.departure_date || detail.departure_date_snapshot)}
+                                                    </span>
+                                                </div>
+                                                {isBookingDepartureExpired(detail) && detail.status === 'pending' && (
+                                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error/10 text-error border border-error/20 rounded-lg text-xs font-bold">
+                                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                                                        <span>Tour này đã qua ngày khởi hành</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         {(detail.pickupLocation || detail.pickup_location_snapshot) && (
@@ -468,23 +479,32 @@ const BookingManagementPage = () => {
 
                                 {/* Modal Actions */}
                                 <div className="flex flex-col gap-3">
-                                    {detail.status !== 'approved' && detail.status !== 'cancelled' && (
-                                        <button
-                                            onClick={() => { handleUpdateStatus(detail.id, 'approved'); setDetail(null); }}
-                                            className="w-full py-4 bg-success text-white font-black rounded-2xl hover:shadow-xl hover:shadow-success/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <CheckCircle2 className="w-5 h-5" />
-                                            DUYỆT ĐƠN HÀNG
-                                        </button>
-                                    )}
-                                    {detail.status !== 'cancelled' && (
-                                        <button
-                                            onClick={() => { handleUpdateStatus(detail.id, 'cancelled'); setDetail(null); }}
-                                            className="w-full py-4 bg-error text-white font-black rounded-2xl hover:shadow-xl hover:shadow-error/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <XCircle className="w-5 h-5" />
-                                            HỦY ĐƠN HÀNG
-                                        </button>
+                                    {isBookingDepartureExpired(detail) ? (
+                                        <div className="p-3.5 bg-error/10 border border-error/20 rounded-2xl text-error text-xs font-semibold flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                            <span>Tour này đã qua ngày khởi hành. Đơn hàng đã đóng, không thể thay đổi trạng thái.</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {detail.status === 'pending' && (
+                                                <button
+                                                    onClick={() => { handleUpdateStatus(detail.id, 'approved'); setDetail(null); }}
+                                                    className="w-full py-4 bg-success text-white font-black rounded-2xl hover:shadow-xl hover:shadow-success/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <CheckCircle2 className="w-5 h-5" />
+                                                    DUYỆT ĐƠN HÀNG
+                                                </button>
+                                            )}
+                                            {detail.status === 'pending' && (
+                                                <button
+                                                    onClick={() => { handleUpdateStatus(detail.id, 'cancelled'); setDetail(null); }}
+                                                    className="w-full py-4 bg-error text-white font-black rounded-2xl hover:shadow-xl hover:shadow-error/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <XCircle className="w-5 h-5" />
+                                                    HỦY ĐƠN HÀNG
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                     {detail.status === 'cancelled' && (
                                         <button

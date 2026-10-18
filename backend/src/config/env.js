@@ -47,6 +47,12 @@ const envVars = {
         limit: parseInt(process.env.REVIEW_REMINDER_LIMIT, 10) || 50,
     },
 
+    bookingExpiration: {
+        enabled: process.env.BOOKING_EXPIRATION_ENABLED !== 'false',
+        cron: process.env.BOOKING_EXPIRATION_CRON || '0 * * * *',
+        limit: parseInt(process.env.BOOKING_EXPIRATION_LIMIT, 10) || 100,
+    },
+
     translation: {
         provider: (process.env.TRANSLATION_PROVIDER || (process.env.AZURE_TRANSLATOR_KEY ? 'azure' : 'google')).toLowerCase(),
         concurrency: Math.max(2, configuredTranslationConcurrency || minTranslationConcurrency),

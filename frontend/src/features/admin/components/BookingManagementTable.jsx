@@ -1,5 +1,6 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Eye, Loader2, Search, Trash2, Users, XCircle } from 'lucide-react';
 import AdminTable from '@/components/ui/AdminTable';
+import { isBookingDepartureExpired, formatLocalDate } from '@/utils/dateUtils';
 
 const statusConfig = {
     pending: { label: 'Đang chờ', className: 'bg-warning/10 text-warning border-warning/20', icon: Clock },
@@ -64,18 +65,28 @@ const BookingManagementTable = ({
             header: 'Tour',
             headerClassName: 'hidden md:table-cell',
             cellClassName: 'hidden max-w-[200px] md:table-cell',
-            render: booking => (
-                <div>
-                    <p className="truncate font-medium text-text">
-                        {booking.Tour?.title || booking.tour_title_snapshot || 'Tour chua cap nhat ten'}
-                    </p>
-                    {(booking.departure || booking.departure_date_snapshot) && (
-                        <span className="mt-1 inline-block rounded border border-primary/10 bg-primary/5 px-1.5 py-0.5 text-[10px] text-primary">
-                            Khoi hanh: {new Date(booking.departure?.departure_date || booking.departure_date_snapshot).toLocaleDateString('vi-VN')}
-                        </span>
-                    )}
-                </div>
-            ),
+            render: booking => {
+                const expired = isBookingDepartureExpired(booking);
+                const rawDate = booking.departure?.departure_date || booking.departure_date_snapshot;
+                return (
+                    <div>
+                        <p className="truncate font-medium text-text">
+                            {booking.Tour?.title || booking.tour_title_snapshot || 'Tour chua cap nhat ten'}
+                        </p>
+                        {rawDate && (
+                            expired && booking.status === 'pending' ? (
+                                <span className="mt-1 inline-flex items-center gap-1 rounded border border-error/30 bg-error/10 px-1.5 py-0.5 text-[10px] font-semibold text-error">
+                                    Đã qua ngày: {formatLocalDate(rawDate)}
+                                </span>
+                            ) : (
+                                <span className="mt-1 inline-block rounded border border-primary/10 bg-primary/5 px-1.5 py-0.5 text-[10px] text-primary">
+                                    Khoi hanh: {formatLocalDate(rawDate)}
+                                </span>
+                            )
+                        )}
+                    </div>
+                );
+            },
         },
         {
             key: 'people',
@@ -123,24 +134,27 @@ const BookingManagementTable = ({
             header: 'Hanh dong',
             align: 'right',
             cellClassName: 'whitespace-nowrap',
-            render: booking => (
-                <div className="flex justify-end gap-1.5">
-                    <AdminTable.Action icon={Eye} label="Xem chi tiet" onClick={() => onShowDetail(booking)} />
-                    {booking.status === 'pending' && (
-                        <AdminTable.Action
-                            icon={updating === booking.id ? Loader2 : CheckCircle2}
-                            label="Duyet"
-                            tone="success"
-                            className={updating === booking.id ? '[&_svg]:animate-spin' : ''}
-                            disabled={updating === booking.id}
-                            onClick={() => onApprove(booking.id)}
-                        />
-                    )}
-                    {booking.status === 'cancelled' && (
-                        <AdminTable.Action icon={Trash2} label="Xoa" tone="danger" onClick={() => onDelete(booking.id)} />
-                    )}
-                </div>
-            ),
+            render: booking => {
+                const expired = isBookingDepartureExpired(booking);
+                return (
+                    <div className="flex justify-end gap-1.5">
+                        <AdminTable.Action icon={Eye} label="Xem chi tiet" onClick={() => onShowDetail(booking)} />
+                        {booking.status === 'pending' && !expired && (
+                            <AdminTable.Action
+                                icon={updating === booking.id ? Loader2 : CheckCircle2}
+                                label="Duyet"
+                                tone="success"
+                                className={updating === booking.id ? '[&_svg]:animate-spin' : ''}
+                                disabled={updating === booking.id}
+                                onClick={() => onApprove(booking.id)}
+                            />
+                        )}
+                        {booking.status === 'cancelled' && (
+                            <AdminTable.Action icon={Trash2} label="Xoa" tone="danger" onClick={() => onDelete(booking.id)} />
+                        )}
+                    </div>
+                );
+            },
         },
     ].filter(Boolean);
 

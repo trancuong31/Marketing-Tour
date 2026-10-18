@@ -21,3 +21,28 @@ export const formatLocalDate = (dateStr, locale = 'vi-VN') => {
     if (!d) return '';
     return d.toLocaleDateString(locale);
 };
+
+/**
+ * Check if a date (YYYY-MM-DD) is strictly before today in Vietnam timezone
+ */
+export const isDateBeforeToday = (dateStr) => {
+    if (!dateStr) return false;
+    const cleanStr = String(dateStr).split('T')[0];
+    const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date());
+    return cleanStr < todayStr;
+};
+
+/**
+ * Check if a booking's departure date is in the past
+ */
+export const isBookingDepartureExpired = (booking) => {
+    if (!booking) return false;
+    const rawDate = booking.departure?.departure_date || booking.departure_date_snapshot;
+    return isDateBeforeToday(rawDate);
+};
+

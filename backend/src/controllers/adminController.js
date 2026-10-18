@@ -1088,6 +1088,34 @@ const updateBookingStatus = catchAsync(async (req, res, next) => {
     if (!lockedBooking) throw new AppError('Không tìm thấy đơn đặt', HTTP_CODES.NOT_FOUND);
 
     const previousStatus = lockedBooking.status;
+
+    // 1. Chặn mọi thao tác thay đổi trạng thái nếu tour đã qua ngày khởi hành
+    let departureDate = lockedBooking.departure_date_snapshot;
+    if (lockedBooking.departure_id) {
+      const dep = await TourDeparture.findByPk(lockedBooking.departure_id, {
+        attributes: ['id', 'departure_date'],
+        transaction: t,
+      });
+      if (dep?.departure_date) {
+        departureDate = dep.departure_date;
+      }
+    }
+
+    if (departureDate && String(departureDate).slice(0, 10) < getTodayDateOnly()) {
+      throw new AppError(
+        'Không thể thay đổi trạng thái: Tour này đã qua ngày khởi hành!',
+        HTTP_CODES.BAD_REQUEST
+      );
+    }
+
+    // 2. Chặn hủy đơn đã duyệt (chỉ cho phép hủy khi đơn còn đang pending)
+    if (status === 'cancelled' && previousStatus === 'approved') {
+      throw new AppError(
+        'Đơn hàng đã được duyệt, không thể hủy!',
+        HTTP_CODES.BAD_REQUEST
+      );
+    }
+
     const changesInventory =
       previousStatus !== status && (previousStatus === 'cancelled' || status === 'cancelled');
 
