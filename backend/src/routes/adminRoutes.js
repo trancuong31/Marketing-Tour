@@ -11,11 +11,20 @@ const {
 } = require('../controllers/contactSettingsController');
 const { validate } = require('../middlewares/validate');
 const { contactSettingsSchema } = require('../validations/contactSettingsValidation');
+const { footerLinkSchema, footerLinkReorderSchema } = require('../validations/footerLinkValidation');
 const {
     listTranslations,
     updateUiTranslation,
     deleteUiTranslation,
 } = require('../controllers/uiTranslationController');
+const {
+    getAdminFooterLinks,
+    createFooterLink,
+    updateFooterLink,
+    deleteFooterLink,
+    toggleFooterLink,
+    reorderFooterLinks,
+} = require('../controllers/footerLinkController');
 const {
     login,
     getAllTours,
@@ -103,6 +112,14 @@ router.get('/banners', getAllBanners);
 router.post('/banners', uploadBanner.single('image'), createBanner);
 router.put('/banners/:id', uploadBanner.single('image'), updateBanner);
 router.delete('/banners/:id', deleteBanner);
+
+// ── Footer Links ──
+router.get('/footer-links', authorize('ADMIN', 'admin'), getAdminFooterLinks);
+router.post('/footer-links', authorize('ADMIN', 'admin'), validate(footerLinkSchema), createFooterLink);
+router.put('/footer-links/reorder', authorize('ADMIN', 'admin'), validate(footerLinkReorderSchema), reorderFooterLinks);
+router.put('/footer-links/:id', authorize('ADMIN', 'admin'), validate(footerLinkSchema), updateFooterLink);
+router.patch('/footer-links/:id/toggle', authorize('ADMIN', 'admin'), toggleFooterLink);
+router.delete('/footer-links/:id', authorize('ADMIN', 'admin'), deleteFooterLink);
 
 module.exports = router;
 

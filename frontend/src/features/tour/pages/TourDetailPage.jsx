@@ -11,6 +11,7 @@ import TourCard from '@/components/tour/TourCard';
 import CarouselSection from '@/components/ui/CarouselSection';
 import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import { getCategoryDisplayName } from '@/utils/tourLabels';
+import { hasUnavailableTourContent } from '@/features/tour/utils/localeContent';
 import { getRelatedTours } from '@/features/tour/utils/relatedTours';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -643,6 +644,7 @@ const TourDetailPage = () => {
     const images = tour.images || [];
     const itineraries = tour.itineraries || [];
     const departures = tour.departures || [];
+    const hasUnavailableLocaleContent = hasUnavailableTourContent({ ...tour, itineraries });
     const durationText = tour.duration_days && tour.duration_nights
         ? t('tour.card.durationDaysNights', '{{days}} ngÃ y {{nights}} Ä‘Ãªm', { days: tour.duration_days, nights: tour.duration_nights })
         : tour.duration_days ? t('tour.card.durationDays', '{{days}} ngÃ y', { days: tour.duration_days }) : null;
@@ -657,8 +659,13 @@ const TourDetailPage = () => {
         <ClientLayout>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2">
                 <h1 className="text-3xl sm:text-4xl font-bold text-text leading-tight">
-                    {tour.title}
+                    {tour.title || t('tour.detail.titleUnavailable', 'Tour title unavailable')}
                 </h1>
+                {hasUnavailableLocaleContent && (
+                    <p role="status" className="mt-3 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-text-secondary">
+                        {t('tour.detail.contentUnavailable', 'Some tour content is unavailable or under review. It has not been replaced with content from another language.')}
+                    </p>
+                )}
 
                 {/* Meta */}
                 <div className="flex flex-wrap gap-4 pb-2 text-text-secondary">
@@ -910,4 +917,3 @@ const TourDetailPage = () => {
 };
 
 export default TourDetailPage;
-

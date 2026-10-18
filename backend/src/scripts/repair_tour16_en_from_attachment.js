@@ -1,15 +1,12 @@
 require('../config/env');
 
 const fs = require('fs');
-const path = require('path');
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
 const TOUR_ID = 16;
 const TARGET_LANGUAGE = 'en';
-const ATTACHMENT_PATH = path.resolve(
-    'C:/Users/Admin/.codex/attachments/9733edf6-daca-4af9-9dc3-28f643445aee/pasted-text.txt',
-);
+const ATTACHMENT_PATH = process.env.TOUR16_EN_ATTACHMENT_PATH;
 
 const SECTION_TITLES = {
     price_includes: 'Giá bao gồm',
@@ -128,6 +125,12 @@ const assertEnglishContent = (fields) => {
 
 const run = async () => {
     try {
+        if (!ATTACHMENT_PATH || !process.env.TOUR16_EN_ATTACHMENT_PROVENANCE?.trim()) {
+            throw new Error(
+                'Set TOUR16_EN_ATTACHMENT_PATH and verify its origin in TOUR16_EN_ATTACHMENT_PROVENANCE before running this repair.',
+            );
+        }
+
         const rawContent = fs.readFileSync(ATTACHMENT_PATH, 'utf8');
         const fields = buildEnglishContent(rawContent);
         assertEnglishContent(fields);
@@ -165,4 +168,6 @@ const run = async () => {
     }
 };
 
-run();
+if (require.main === module) {
+    run();
+}

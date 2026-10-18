@@ -29,6 +29,11 @@ const env = require('../config/env');
 const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
 const { getNotificationCopy } = require('../utils/notificationMessages');
 const { normalizeLanguage } = require('../utils/language');
+const {
+  TOUR_CONTENT_FIELDS,
+  assertTranslationFields,
+  assertVietnameseSourceFields,
+} = require('../utils/tourLocaleContent');
 
 // ══════════════════════════════════════
 // AUTH
@@ -260,6 +265,34 @@ const validateUpdateDepartures = (submittedDepartures, existingDepartures) => {
 
 const AUTO_TRANSLATION_LANGUAGES = ['en', 'zh'];
 
+const validateVietnameseTourSource = (body, { requireTitle = false } = {}) => {
+  const values = Object.fromEntries(
+    TOUR_CONTENT_FIELDS
+      .filter((field) => body[field] !== undefined)
+      .map((field) => [field, body[field]])
+  );
+
+  try {
+    assertVietnameseSourceFields(values, {
+      requiredFields: requireTitle ? ['title'] : [],
+    });
+  } catch (error) {
+    const validationError = new AppError(error.message, HTTP_CODES.BAD_REQUEST);
+    validationError.fields = error.fields;
+    throw validationError;
+  }
+};
+
+const TOUR_TRANSLATION_FIELDS = [
+  'title',
+  'summary',
+  'highlights',
+  'price_includes',
+  'price_excludes',
+  'terms_and_notes',
+  'cancellation_policy',
+];
+
 const normalizeTranslationList = (translations) => {
   const parsedTranslations = Array.isArray(translations)
     ? translations
@@ -270,18 +303,70 @@ const normalizeTranslationList = (translations) => {
     .filter((item) => AUTO_TRANSLATION_LANGUAGES.includes(item.language));
 };
 
+const validateAndParseTourTranslations = (translations) => {
+  if (translations === undefined) return null;
+  const parsedTranslations = Array.isArray(translations)
+    ? translations
+    : parseJsonField(translations);
+
+  if (!Array.isArray(parsedTranslations)) {
+    throw new AppError('Dữ liệu bản dịch không hợp lệ', HTTP_CODES.BAD_REQUEST);
+  }
+
+  for (const item of parsedTranslations) {
+    if (!item || typeof item !== 'object') {
+      throw new AppError('Dữ liệu bản dịch không hợp lệ', HTTP_CODES.BAD_REQUEST);
+    }
+    const rawLang = item.language;
+    if (!rawLang || typeof rawLang !== 'string') {
+      throw new AppError('Thiếu thông tin ngôn ngữ trong bản dịch', HTTP_CODES.BAD_REQUEST);
+    }
+    const normalized = normalizeLanguage(rawLang);
+    if (!AUTO_TRANSLATION_LANGUAGES.includes(normalized)) {
+      throw new AppError(
+        `Ngôn ngữ bản dịch không hợp lệ: "${rawLang}". Chỉ hỗ trợ: ${AUTO_TRANSLATION_LANGUAGES.join(', ')}`,
+        HTTP_CODES.BAD_REQUEST
+      );
+    }
+    const content = {};
+    for (const field of TOUR_TRANSLATION_FIELDS) {
+      if (item[field] === undefined || item[field] === null) continue;
+      if (typeof item[field] !== 'string') {
+        throw new AppError(`Trường bản dịch "${field}" phải là văn bản`, HTTP_CODES.BAD_REQUEST);
+      }
+      content[field] = item[field];
+    }
+    try {
+      assertTranslationFields(content, normalized);
+    } catch (error) {
+      const validationError = new AppError(error.message, HTTP_CODES.BAD_REQUEST);
+      validationError.fields = error.fields;
+      throw validationError;
+    }
+  }
+
+  const languages = parsedTranslations.map((item) => normalizeLanguage(item.language));
+  if (new Set(languages).size !== languages.length) {
+    throw new AppError('Chỉ được gửi tối đa một bản dịch cho mỗi ngôn ngữ', HTTP_CODES.BAD_REQUEST);
+  }
+
+  return parsedTranslations;
+};
+
 const prepareTourTranslations = ({ translations, slug }) =>
-  normalizeTranslationList(translations).map((item) => ({
-    language: item.language,
-    title: item.title || '',
-    slug: item.slug || slugify(item.title || '', { lower: true, strict: true }) || slug,
-    summary: item.summary || null,
-    highlights: item.highlights || null,
-    price_includes: item.price_includes || null,
-    price_excludes: item.price_excludes || null,
-    terms_and_notes: item.terms_and_notes || null,
-    cancellation_policy: item.cancellation_policy || null,
-  }));
+  normalizeTranslationList(translations)
+    .filter((item) => item.title && item.title.trim().length > 0)
+    .map((item) => ({
+      language: item.language,
+      title: item.title.trim(),
+      slug: item.slug || slugify(item.title.trim(), { lower: true, strict: true }) || slug,
+      summary: item.summary || null,
+      highlights: item.highlights || null,
+      price_includes: item.price_includes || null,
+      price_excludes: item.price_excludes || null,
+      terms_and_notes: item.terms_and_notes || null,
+      cancellation_policy: item.cancellation_policy || null,
+    }));
 
 const prepareItineraryTranslations = (itinerary) => {
   const existingTranslations = normalizeTranslationList(itinerary.translations);
@@ -447,13 +532,16 @@ const createTour = catchAsync(async (req, res, next) => {
     return next(new AppError('Tiêu đề và danh mục là bắt buộc', HTTP_CODES.BAD_REQUEST));
   }
 
+  validateVietnameseTourSource(req.body, { requireTitle: true });
+  const parsedTranslationsForCreate = validateAndParseTourTranslations(translations);
+
   const slug = slugify(title, { lower: true, strict: true, locale: 'vi' });
   const existingSlug = await Tour.findOne({ where: { slug } });
   const finalSlug = existingSlug ? `${slug}-${Date.now()}` : slug;
   const parsedDepartures = parseJsonField(departures);
   validateCreateDepartures(parsedDepartures);
   const translatedTourContent = prepareTourTranslations({
-    translations,
+    translations: parsedTranslationsForCreate,
     slug: finalSlug,
   });
   const translatedItineraries = prepareTranslatedItineraries(itineraries);
@@ -636,6 +724,8 @@ const updateTour = catchAsync(async (req, res, next) => {
     translations,
   } = req.body;
 
+  validateVietnameseTourSource(req.body);
+
   // Nếu đổi title → tạo slug mới
   let newSlug = tour.slug;
   if (title && title !== tour.title) {
@@ -646,37 +736,31 @@ const updateTour = catchAsync(async (req, res, next) => {
 
   const parsedDeparturesForUpdate = departures !== undefined ? parseJsonField(departures) : null;
 
-  const translatedTourContent =
-    translations !== undefined
-      ? prepareTourTranslations({
-        translations,
-        slug: newSlug,
-      })
-      : null;
+  const parsedTranslationsForUpdate = validateAndParseTourTranslations(translations);
   const translatedItineraries =
     itineraries !== undefined ? prepareTranslatedItineraries(itineraries) : null;
 
   await sequelize.transaction(async (t) => {
-    // 1. Update tour chính
-    await tour.update(
-      {
-        category_id: category_id || tour.category_id,
-        title: title || tour.title,
-        slug: newSlug,
-        summary: summary !== undefined ? summary : tour.summary,
-        highlights: highlights !== undefined ? highlights : tour.highlights,
-        price_includes: price_includes !== undefined ? price_includes : tour.price_includes,
-        price_excludes: price_excludes !== undefined ? price_excludes : tour.price_excludes,
-        terms_and_notes: terms_and_notes !== undefined ? terms_and_notes : tour.terms_and_notes,
-        cancellation_policy:
-          cancellation_policy !== undefined ? cancellation_policy : tour.cancellation_policy,
-        duration_days: duration_days !== undefined ? duration_days : tour.duration_days,
-        duration_nights: duration_nights !== undefined ? duration_nights : tour.duration_nights,
-        tour_badge: tour_badge !== undefined ? tour_badge : tour.tour_badge,
-        status: status || tour.status,
-      },
-      { transaction: t }
-    );
+    const tourUpdate = {};
+    if (category_id !== undefined) tourUpdate.category_id = category_id || tour.category_id;
+    if (title !== undefined) {
+      tourUpdate.title = title || tour.title;
+      if (newSlug !== tour.slug) tourUpdate.slug = newSlug;
+    }
+    if (summary !== undefined) tourUpdate.summary = summary;
+    if (highlights !== undefined) tourUpdate.highlights = highlights;
+    if (price_includes !== undefined) tourUpdate.price_includes = price_includes;
+    if (price_excludes !== undefined) tourUpdate.price_excludes = price_excludes;
+    if (terms_and_notes !== undefined) tourUpdate.terms_and_notes = terms_and_notes;
+    if (cancellation_policy !== undefined) tourUpdate.cancellation_policy = cancellation_policy;
+    if (duration_days !== undefined) tourUpdate.duration_days = duration_days;
+    if (duration_nights !== undefined) tourUpdate.duration_nights = duration_nights;
+    if (tour_badge !== undefined) tourUpdate.tour_badge = tour_badge;
+    if (status !== undefined) tourUpdate.status = status || tour.status;
+
+    if (Object.keys(tourUpdate).length > 0) {
+      await tour.update(tourUpdate, { transaction: t });
+    }
 
     // 2. Ảnh upload mới
     if (req.files && req.files.length > 0) {
@@ -852,24 +936,73 @@ const updateTour = catchAsync(async (req, res, next) => {
       }
     }
 
-    if (translations !== undefined) {
-      await TourTranslation.destroy({ where: { tour_id: id }, transaction: t });
-      if (translatedTourContent.length > 0) {
-        await TourTranslation.bulkCreate(
-          translatedTourContent.map((item) => ({
-            tour_id: id,
-            language: item.language,
-            title: item.title,
-            slug: item.slug || newSlug,
-            summary: item.summary || null,
-            highlights: item.highlights || null,
-            price_includes: item.price_includes || null,
-            price_excludes: item.price_excludes || null,
-            terms_and_notes: item.terms_and_notes || null,
-            cancellation_policy: item.cancellation_policy || null,
-          })),
-          { transaction: t }
-        );
+    if (parsedTranslationsForUpdate !== null) {
+      for (const item of parsedTranslationsForUpdate) {
+        const targetLang = normalizeLanguage(item.language);
+
+        const existingTranslation = await TourTranslation.findOne({
+          where: { tour_id: id, language: targetLang },
+          lock: t.LOCK.UPDATE,
+          transaction: t,
+        });
+
+        const textFields = [
+          'summary',
+          'highlights',
+          'price_includes',
+          'price_excludes',
+          'terms_and_notes',
+          'cancellation_policy',
+        ];
+
+        const hasNonEmptyTitle = typeof item.title === 'string' && item.title.trim().length > 0;
+
+        if (!existingTranslation) {
+          if (!hasNonEmptyTitle) {
+            continue;
+          }
+
+          const itemTitle = item.title.trim();
+          const itemSlug = item.slug || slugify(itemTitle, { lower: true, strict: true }) || newSlug;
+
+          await TourTranslation.create(
+            {
+              tour_id: id,
+              language: targetLang,
+              title: itemTitle,
+              slug: itemSlug,
+              summary: item.summary !== undefined ? (item.summary || null) : null,
+              highlights: item.highlights !== undefined ? (item.highlights || null) : null,
+              price_includes: item.price_includes !== undefined ? (item.price_includes || null) : null,
+              price_excludes: item.price_excludes !== undefined ? (item.price_excludes || null) : null,
+              terms_and_notes: item.terms_and_notes !== undefined ? (item.terms_and_notes || null) : null,
+              cancellation_policy: item.cancellation_policy !== undefined ? (item.cancellation_policy || null) : null,
+            },
+            { transaction: t }
+          );
+        } else {
+          const updateData = {};
+
+          if (typeof item.title === 'string') {
+            const trimmedTitle = item.title.trim();
+            if (trimmedTitle.length > 0) {
+              updateData.title = trimmedTitle;
+              updateData.slug = item.slug || slugify(trimmedTitle, { lower: true, strict: true }) || existingTranslation.slug;
+            }
+          } else if (item.slug !== undefined) {
+            updateData.slug = item.slug || existingTranslation.slug;
+          }
+
+          for (const field of textFields) {
+            if (typeof item[field] === 'string' && item[field].trim().length > 0) {
+              updateData[field] = item[field];
+            }
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            await existingTranslation.update(updateData, { transaction: t });
+          }
+        }
       }
     }
   });

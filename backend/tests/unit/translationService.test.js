@@ -5,16 +5,19 @@ jest.mock('../../src/config/database', () => ({
     },
 }));
 
+const mockTranslationCacheUpsert = jest.fn().mockResolvedValue(null);
+
 jest.mock('../../src/models/TranslationCache', () => ({
     findAll: jest.fn().mockResolvedValue([]),
     findOne: jest.fn().mockResolvedValue(null),
-    upsert: jest.fn().mockResolvedValue(null),
+    upsert: mockTranslationCacheUpsert,
 }));
 
 const { translateBatch, translateTexts } = require('../../src/services/translationService');
+const TranslationCache = require('../../src/models/TranslationCache');
 
 const batchResponse = (entries, targetLanguage) => entries
-    .map(([key, value]) => `[[MT_TRANSLATE_FIELD:${key}:START]]\n${targetLanguage.toUpperCase()} ${value}\n[[MT_TRANSLATE_FIELD:${key}:END]]`)
+    .map(([key, value]) => `[[MT_TRANSLATE_FIELD:${key}:START]]\n${targetLanguage === 'zh' ? '中文' : 'EN'} ${value}\n[[MT_TRANSLATE_FIELD:${key}:END]]`)
     .join('\n\n');
 
 const providerResponse = (status, body, headers = {}) => ({
@@ -30,14 +33,16 @@ const providerResponse = (status, body, headers = {}) => ({
 
 describe('translation service batching', () => {
     beforeEach(() => {
+        jest.clearAllMocks();
         global.fetch = jest.fn(async (_url, request) => {
             const body = JSON.parse(request.body);
             const entries = [...body.query.matchAll(/\[\[MT_TRANSLATE_FIELD:([^:]+):START\]\]\n([\s\S]*?)\n\[\[MT_TRANSLATE_FIELD:\1:END\]\]/g)]
                 .map(match => [match[1], match[2]]);
+            const translatedText = body.to === 'zh' ? '中文' : 'EN';
             return {
                 ok: true,
                 json: async () => ({
-                    translation: entries.length > 0 ? batchResponse(entries, body.to) : `${body.to.toUpperCase()} ${body.query}`,
+                    translation: entries.length > 0 ? batchResponse(entries, body.to) : `${translatedText} ${body.query}`,
                 }),
             };
         });
@@ -74,8 +79,8 @@ describe('translation service batching', () => {
         });
 
         expect(result).toEqual({
-            title: 'ZH Tour Hà Nội',
-            summary: 'ZH Khám phá phố cổ',
+            title: '中文 Tour Hà Nội',
+            summary: '中文 Khám phá phố cổ',
         });
         expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toMatchObject({ from: 'vi', to: 'zh' });
         expect(JSON.parse(global.fetch.mock.calls[0][1].body).query).toContain('Tour Hà Nội');
@@ -90,6 +95,26 @@ describe('translation service batching', () => {
 
         expect(result).toEqual({ title: '', summary: 'EN Nội dung' });
         expect(JSON.parse(global.fetch.mock.calls[0][1].body).query).not.toContain('title');
+    });
+
+    it('rejects suspicious source text before calling the provider', async () => {
+        await expect(translateTexts({
+            texts: { title: 'Round-trip airline tickets and hotel accommodation.' },
+            targetLang: 'en',
+            strict: true,
+        })).rejects.toThrow(/title \(likely_english\)/);
+
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects non-text input instead of translating it as an empty field', async () => {
+        await expect(translateTexts({
+            texts: { title: 123 },
+            targetLang: 'en',
+            strict: true,
+        })).rejects.toThrow(/title.*văn bản/);
+
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('always sends Vietnamese as the source for both target languages', async () => {
@@ -113,6 +138,57 @@ describe('translation service batching', () => {
         const providerQueries = global.fetch.mock.calls.map(([, request]) => JSON.parse(request.body).query);
         expect(providerQueries.length).toBeGreaterThan(1);
         expect(providerQueries.every(query => query.length <= 5000)).toBe(true);
+    });
+
+    it.each([
+        ['empty output', ''],
+        ['wrong-language output', 'Round-trip airline tickets and hotel accommodation.'],
+    ])('does not accept or cache %s for Chinese', async (_label, translation) => {
+        global.fetch = jest.fn(async () => ({
+            ok: true,
+            json: async () => ({ translation }),
+        }));
+        const sourceTitle = `Tour Hà Nội invalid ${Date.now()} ${Math.random()}`;
+
+        await expect(translateTexts({
+            texts: { title: sourceTitle },
+            targetLang: 'zh',
+            strict: true,
+        })).rejects.toThrow(/Không dịch được trường/);
+
+        expect(TranslationCache.upsert).not.toHaveBeenCalled();
+    });
+
+    it('rejects empty English output instead of returning a successful translation', async () => {
+        global.fetch = jest.fn(async () => ({
+            ok: true,
+            json: async () => ({ translation: '' }),
+        }));
+        const sourceTitle = `Tour Hà Nội empty ${Date.now()} ${Math.random()}`;
+
+        await expect(translateTexts({
+            texts: { title: sourceTitle },
+            targetLang: 'en',
+            strict: true,
+        })).rejects.toThrow(/Không dịch được trường/);
+
+        expect(TranslationCache.upsert).not.toHaveBeenCalled();
+    });
+
+    it('does not accept an untranslated short Vietnamese phrase as Chinese output', async () => {
+        const sourceTitle = `Hà Nội tour ${Date.now()}`;
+        global.fetch = jest.fn(async () => ({
+            ok: true,
+            json: async () => ({ translation: sourceTitle }),
+        }));
+
+        await expect(translateTexts({
+            texts: { title: sourceTitle },
+            targetLang: 'zh',
+            strict: true,
+        })).rejects.toThrow(/Không dịch được trường/);
+
+        expect(TranslationCache.upsert).not.toHaveBeenCalled();
     });
 });
 
@@ -139,7 +215,7 @@ describe('translation service large text handling', () => {
         jest.resetModules();
         global.fetch = jest.fn(async (_url, request) => {
             const body = JSON.parse(request.body);
-            const translatedText = `${body.to.toUpperCase()} ${body.query}`;
+            const translatedText = `${body.to === 'zh' ? '中文' : 'EN'} ${body.query}`;
             return {
                 ok: true,
                 json: async () => ({ translation: translatedText }),
@@ -186,7 +262,7 @@ describe('translation service large text handling', () => {
         expect(payloads.every(payload => payload.to === 'zh')).toBe(true);
         expect(payloads.every(payload => payload.query.length <= 5000)).toBe(true);
         expect(payloads.map(payload => payload.query).join('')).toBe(sourceText);
-        expect(payloads.map(payload => `ZH ${payload.query}`).join('')).toBe(result.description);
+        expect(payloads.map(payload => `中文 ${payload.query}`).join('')).toBe(result.description);
     });
 
     it('keeps every provider payload at or below 5000 characters and never drops or duplicates chunks', async () => {
@@ -222,7 +298,7 @@ describe('translation service large text handling', () => {
 
             return {
                 ok: true,
-                json: async () => ({ translation: `${body.to.toUpperCase()} ${body.query}` }),
+                json: async () => ({ translation: `${body.to === 'zh' ? '中文' : 'EN'} ${body.query}` }),
             };
         });
 
@@ -282,10 +358,11 @@ describe('translation service adaptive concurrency', () => {
                 const body = JSON.parse(request.body);
                 const entries = [...body.query.matchAll(/\[\[MT_TRANSLATE_FIELD:([^:]+):START\]\]\n([\s\S]*?)\n\[\[MT_TRANSLATE_FIELD:\1:END\]\]/g)]
                     .map(match => [match[1], match[2]]);
+                const translatedText = body.to === 'zh' ? '中文' : 'EN';
                 return {
                     ok: true,
                     json: async () => ({
-                        translation: entries.length > 0 ? batchResponse(entries, body.to) : `${body.to.toUpperCase()} ${body.query}`,
+                        translation: entries.length > 0 ? batchResponse(entries, body.to) : `${translatedText} ${body.query}`,
                     }),
                 };
             });

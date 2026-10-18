@@ -1,4 +1,8 @@
-const { normalizeLanguage, normalizeTargetLanguage } = require('../../src/utils/language');
+const {
+    isSupportedLanguage,
+    normalizeLanguage,
+    normalizeTargetLanguage,
+} = require('../../src/utils/language');
 
 describe('translation locale normalization', () => {
     it('keeps the app locale canonical as vi, en, or zh', () => {
@@ -16,5 +20,11 @@ describe('translation locale normalization', () => {
 
     it('normalizes zh-CN to the canonical app locale zh', () => {
         expect(normalizeTargetLanguage('zh-CN')).toBe('zh');
+    });
+
+    it('rejects unsupported target languages instead of defaulting them to Vietnamese', () => {
+        expect(normalizeTargetLanguage('fr')).toBeNull();
+        expect(normalizeTargetLanguage('')).toBeNull();
+        expect(isSupportedLanguage('fr')).toBe(false);
     });
 });

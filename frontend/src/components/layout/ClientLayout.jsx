@@ -6,6 +6,7 @@ import AuthModal from '../../features/auth/components/AuthModal';
 import { useAuthStore } from '../../store';
 import { getImageUrl } from '@/utils/imageUrl';
 import { useContactSettings } from '@/hooks/useContactSettings';
+import { useFooterLinks } from '@/hooks/useFooterLinks';
 import ContactAction from '@/components/contact/ContactAction';
 import ContactIcon from '@/components/contact/ContactIcon';
 import { getContactText, getVisibleContacts } from '@/utils/contactSettings';
@@ -39,6 +40,7 @@ const ClientLayout = ({ children }) => {
     const { isAuthenticated, user, logout } = useAuthStore();
     const { t, i18n } = useTranslation();
     const { settings: contactSettings } = useContactSettings();
+    const { column1: footerCol1, column2: footerCol2, column3: footerCol3, loading: footerLinksLoading } = useFooterLinks();
     const language = i18n.resolvedLanguage || i18n.language;
     const footerContacts = getVisibleContacts(contactSettings, 'footer');
     const floatingContacts = getVisibleContacts(contactSettings, 'floating');
@@ -48,6 +50,71 @@ const ClientLayout = ({ children }) => {
     const getFooterGuidePath = (key) => {
         const targetSlug = FOOTER_GUIDE_LINKS[key];
         return targetSlug ? `/guides/${targetSlug}` : '/guides';
+    };
+
+    const getLinkTitle = (title) => {
+        const keyMap = {
+            'Về Chúng Tôi': 'footer.about',
+            'Blog Du Lịch': 'footer.blog',
+            'Điều Khoản Sử Dụng': 'footer.terms',
+            'Câu Hỏi Thường Gặp': 'footer.faq',
+            'Chính Sách Bảo Mật': 'footer.policy',
+            'Hướng Dẫn Thanh Toán': 'footer.payment',
+            'Đối Tác': 'footer.partners',
+        };
+        return keyMap[title] ? t(keyMap[title]) : title;
+    };
+
+    const DEFAULT_FOOTER_COL1 = [
+        { id: 'def-about', title: 'Về Chúng Tôi', url: getFooterGuidePath('about'), link_type: 'internal' },
+        { id: 'def-blog', title: 'Blog Du Lịch', url: getFooterGuidePath('blog'), link_type: 'internal' },
+        { id: 'def-terms', title: 'Điều Khoản Sử Dụng', url: getFooterGuidePath('terms'), link_type: 'internal' },
+        { id: 'def-faq', title: 'Câu Hỏi Thường Gặp', url: getFooterGuidePath('faq'), link_type: 'internal' },
+    ];
+
+    const DEFAULT_FOOTER_COL2 = [
+        { id: 'def-terms2', title: 'Điều Khoản Sử Dụng', url: getFooterGuidePath('terms'), link_type: 'internal' },
+        { id: 'def-policy', title: 'Chính Sách Bảo Mật', url: getFooterGuidePath('policy'), link_type: 'internal' },
+        { id: 'def-payment', title: 'Hướng Dẫn Thanh Toán', url: getFooterGuidePath('payment'), link_type: 'internal' },
+    ];
+
+    const DEFAULT_FOOTER_COL3 = [
+        { id: 'def-vna', title: 'Vietnam Airlines', url: 'https://www.vietnamairlines.com', link_type: 'external' },
+        { id: 'def-vne', title: 'VNExpress', url: 'https://vnexpress.net', link_type: 'external' },
+        { id: 'def-bkg', title: 'Booking.com', url: 'https://www.booking.com', link_type: 'external' },
+        { id: 'def-ta', title: 'TripAdvisor', url: 'https://www.tripadvisor.com', link_type: 'external' },
+    ];
+
+    const displayCol1 = footerLinksLoading && (!footerCol1 || footerCol1.length === 0) ? DEFAULT_FOOTER_COL1 : (footerCol1?.length > 0 ? footerCol1 : (footerLinksLoading ? DEFAULT_FOOTER_COL1 : footerCol1));
+    const displayCol2 = footerLinksLoading && (!footerCol2 || footerCol2.length === 0) ? DEFAULT_FOOTER_COL2 : (footerCol2?.length > 0 ? footerCol2 : (footerLinksLoading ? DEFAULT_FOOTER_COL2 : footerCol2));
+    const displayCol3 = footerLinksLoading && (!footerCol3 || footerCol3.length === 0) ? DEFAULT_FOOTER_COL3 : (footerCol3?.length > 0 ? footerCol3 : (footerLinksLoading ? DEFAULT_FOOTER_COL3 : footerCol3));
+
+    const renderFooterLink = (link) => {
+        const isExternal = link.link_type === 'external' || /^https?:\/\//i.test(link.url);
+        if (isExternal) {
+            return (
+                <li key={link.id || link.url}>
+                    <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary transition text-text-secondary"
+                    >
+                        {getLinkTitle(link.title)}
+                    </a>
+                </li>
+            );
+        }
+        return (
+            <li key={link.id || link.url}>
+                <Link
+                    to={link.url}
+                    className="hover:text-primary transition text-text-secondary"
+                >
+                    {getLinkTitle(link.title)}
+                </Link>
+            </li>
+        );
     };
 
     useEffect(() => {
@@ -371,26 +438,7 @@ const ClientLayout = ({ children }) => {
                         <div className="min-w-0">
                             <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.aboutUs')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
-                                <li>
-                                    <Link to={getFooterGuidePath('about')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.about')}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to={getFooterGuidePath('blog')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.blog')}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to={getFooterGuidePath('terms')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.terms')}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to={getFooterGuidePath('faq')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.faq')}
-                                    </Link>
-                                </li>
+                                {displayCol1.map(renderFooterLink)}
                             </ul>
                         </div>
 
@@ -398,21 +446,7 @@ const ClientLayout = ({ children }) => {
                         <div className="min-w-0">
                             <h4 className="font-bold uppercase text-text mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.info')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
-                                <li>
-                                    <Link to={getFooterGuidePath('terms')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.terms')}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to={getFooterGuidePath('policy')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.policy')}
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link to={getFooterGuidePath('payment')} className="hover:text-primary transition text-text-secondary">
-                                        {t('footer.payment')}
-                                    </Link>
-                                </li>
+                                {displayCol2.map(renderFooterLink)}
                             </ul>
                         </div>
 
@@ -420,26 +454,7 @@ const ClientLayout = ({ children }) => {
                         <div className="min-w-0">
                             <h4 className="font-bold text-text uppercase mb-3 text-sm sm:mb-4 sm:text-base">{t('footer.partners')}</h4>
                             <ul className="space-y-2.5 text-text-secondary">
-                                <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
-                                        Vietnam Airlines
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
-                                        VNExpress
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
-                                        Booking.com
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" className="hover:text-primary transition text-text-secondary">
-                                        TripAdvisor
-                                    </a>
-                                </li>
+                                {displayCol3.map(renderFooterLink)}
                             </ul>
                         </div>
 

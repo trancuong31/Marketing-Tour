@@ -1,8 +1,9 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
 import GuideGrid from '@/features/admin/components/GuideGrid';
-import { Languages, Loader2, X } from 'lucide-react';
+import FooterLinkManager from '@/features/admin/components/FooterLinkManager';
+import { Languages, Loader2, X, FileText, Link2 } from 'lucide-react';
 import { getImageUrl } from '@/utils/imageUrl';
 
 const ADMIN_GUIDE_TEXT = {
@@ -53,6 +54,7 @@ const mergeGuideTranslations = (translations = []) => (
 const getPlainText = (html = '') => html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
 const ContentManagementPage = () => {
+    const [activeTab, setActiveTab] = useState('guides');
     const [guides, setGuides] = useState([]);
     const [loading, setLoading] = useState(true);
     const [guideModal, setGuideModal] = useState({ open: false, guide: null });
@@ -264,23 +266,58 @@ const ContentManagementPage = () => {
 
     return (
         <AdminLayout>
-            <div className="mb-4">
-                <p className="text-sm text-text-muted mt-1">
-                    {ADMIN_GUIDE_TEXT.pageDescription}
-                </p>
+            {/* Tab navigation */}
+            <div className="flex items-center gap-4 border-b border-border mb-6">
+                <button
+                    onClick={() => setActiveTab('guides')}
+                    className={`flex items-center gap-2 pb-3.5 px-2 text-sm font-semibold border-b-2 transition-all ${
+                        activeTab === 'guides'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-text-muted hover:text-text'
+                    }`}
+                >
+                    <FileText className="w-4 h-4" />
+                    <span>Bài viết hướng dẫn</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-surface-alt text-text-secondary border border-border">
+                        {guides.length}
+                    </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('footer')}
+                    className={`flex items-center gap-2 pb-3.5 px-2 text-sm font-semibold border-b-2 transition-all ${
+                        activeTab === 'footer'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-text-muted hover:text-text'
+                    }`}
+                >
+                    <Link2 className="w-4 h-4" />
+                    <span>Liên kết chân trang (Footer)</span>
+                </button>
             </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                    <p className="text-sm text-text-muted mt-3">{ADMIN_GUIDE_TEXT.loading}</p>
-                </div>
+            {activeTab === 'footer' ? (
+                <FooterLinkManager guides={guides} />
             ) : (
-                <GuideGrid
-                    guides={guides}
-                    onCreate={openGuideCreate}
-                    onEdit={openGuideEdit}
-                />
+                <>
+                    <div className="mb-4">
+                        <p className="text-sm text-text-muted">
+                            {ADMIN_GUIDE_TEXT.pageDescription}
+                        </p>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            <p className="text-sm text-text-muted mt-3">{ADMIN_GUIDE_TEXT.loading}</p>
+                        </div>
+                    ) : (
+                        <GuideGrid
+                            guides={guides}
+                            onCreate={openGuideCreate}
+                            onEdit={openGuideEdit}
+                        />
+                    )}
+                </>
             )}
 
             {/* â•â•â• GUIDE MODAL â•â•â• */}

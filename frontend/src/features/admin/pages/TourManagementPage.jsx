@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { adminService, categoryService } from '@/services/tourService';
 import { getImageUrl } from '@/utils/imageUrl';
+import { getTourSourcePayload, ROOT_CONTENT_FIELDS } from '@/features/admin/utils/tourSourcePayload';
+import { getTourTranslationPayload } from '@/features/admin/utils/tourTranslationPayload';
 import AdminLayout from '@/components/layout/AdminLayout';
 import CustomSelect from '@/components/ui/CustomSelect/CustomSelect';
 import DepartureCalendar from '@/components/ui/DepartureCalendar';
@@ -1527,7 +1529,6 @@ const OptionsTab = ({ control, register, errors }) => {
 };
 
 const ITEMS_PER_PAGE = 100;
-
 // ═══ MAIN PAGE ═══
 const TourManagementPage = () => {
   const { t } = useTranslation();
@@ -1537,6 +1538,7 @@ const TourManagementPage = () => {
   const [modal, setModal] = useState({ open: false, tour: null });
   const [submitting, setSubmitting] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [failedTranslationLanguages, setFailedTranslationLanguages] = useState(() => new Set());
   const [translationCooldownUntil, setTranslationCooldownUntil] = useState(0);
   const [activeTab, setActiveTab] = useState('general');
   const [currentLang, setCurrentLang] = useState('vi'); // Language Switcher State
@@ -1549,6 +1551,8 @@ const TourManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const translatedSourceCacheRef = useRef(new Map());
+  const sourceFieldBaselineRef = useRef(null);
+  const translationBaselineRef = useRef([]);
 
   const defaultValues = {
     category_id: '',
@@ -1706,6 +1710,9 @@ const TourManagementPage = () => {
 
   const openCreate = () => {
     translatedSourceCacheRef.current.clear();
+    sourceFieldBaselineRef.current = null;
+    translationBaselineRef.current = [];
+    setFailedTranslationLanguages(new Set());
     reset(defaultValues);
     setFiles([]);
     setActiveTab('general');
@@ -1719,7 +1726,13 @@ const TourManagementPage = () => {
       const res = await adminService.getTourById(tour.id);
       const detail = res.data.data;
       translatedSourceCacheRef.current.clear();
+      setFailedTranslationLanguages(new Set());
       rememberStoredTranslatedSources(detail);
+      const tourTranslations = mergeTranslationsByLanguage(
+        [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
+        detail.translations
+      );
+      translationBaselineRef.current = tourTranslations;
 
       reset({
         category_id: String(detail.category_id),
@@ -1761,11 +1774,11 @@ const TourManagementPage = () => {
           price: normalizeMoneyValue(o.price),
           charge_type: o.charge_type || 'quantity',
         })),
-        translations: mergeTranslationsByLanguage(
-          [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
-          detail.translations
-        ),
+        translations: tourTranslations,
       });
+      sourceFieldBaselineRef.current = Object.fromEntries(
+        ROOT_CONTENT_FIELDS.map((field) => [field, detail[field] ?? ''])
+      );
 
       setFiles([]);
       setActiveTab('general');
@@ -1777,6 +1790,18 @@ const TourManagementPage = () => {
   };
 
   const onSubmit = async (data) => {
+    if (translating) {
+      toast.warning('Vui lòng đợi quá trình dịch hoàn tất trước khi lưu tour.');
+      return;
+    }
+    if (failedTranslationLanguages.size > 0) {
+      const failedLanguages = [...failedTranslationLanguages]
+        .map((language) => getTranslationDisplayName(language))
+        .join(', ');
+      toast.error(`Dịch chưa hoàn tất cho: ${failedLanguages}. Vui lòng dịch lại trước khi lưu.`);
+      return;
+    }
+
     const missingVietnameseContent = findMissingVietnameseContent(data);
     if (missingVietnameseContent) {
       setCurrentLang('vi');
@@ -1853,13 +1878,6 @@ const TourManagementPage = () => {
       // Thông tin chung
       const generalFields = [
         'category_id',
-        'title',
-        'summary',
-        'highlights',
-        'price_includes',
-        'price_excludes',
-        'terms_and_notes',
-        'cancellation_policy',
         'duration_days',
         'duration_nights',
         'tour_badge',
@@ -1870,13 +1888,23 @@ const TourManagementPage = () => {
           fd.append(key, data[key]);
         }
       });
+      Object.entries(getTourSourcePayload(data, {
+        isCreate: !modal.tour,
+        baseline: sourceFieldBaselineRef.current || {},
+      })).forEach(([key, value]) => fd.append(key, value));
 
       // Satellite data → JSON strings
       fd.append('itineraries', JSON.stringify(data.itineraries || []));
       fd.append('departures', JSON.stringify(normalizedDepartures));
       fd.append('pickup_locations', JSON.stringify(normalizedPickupLocations));
       fd.append('options', JSON.stringify(normalizedOptions));
-      fd.append('translations', JSON.stringify(data.translations || []));
+      fd.append('translations', JSON.stringify(getTourTranslationPayload(
+        data.translations || [],
+        {
+          isCreate: !modal.tour,
+          baseline: translationBaselineRef.current,
+        }
+      )));
 
       // Images
       files.forEach((f) => fd.append('images', f));
@@ -2066,6 +2094,18 @@ const TourManagementPage = () => {
               strict: true,
             });
 
+            const currentSource = normalizeTranslationSource(
+              getVietnameseContentForTranslation()[fieldKey]
+            );
+            if (currentSource !== normalizeTranslationSource(sourceValue)) {
+              throw new Error('Nội dung nguồn tiếng Việt đã thay đổi trong lúc dịch. Vui lòng dịch lại.');
+            }
+
+            const translatedValue = res?.data?.data?.[fieldKey];
+            if (typeof translatedValue !== 'string' || !translatedValue.trim()) {
+              throw new Error(`Kết quả dịch trường "${fieldKey}" bị thiếu hoặc rỗng.`);
+            }
+
             applyTranslatedContent(res.data.data, targetLang);
             rememberTranslatedSources(targetLang, { [fieldKey]: sourceValue });
             translatedFieldCount += 1;
@@ -2079,11 +2119,17 @@ const TourManagementPage = () => {
         }
       }
 
+      setFailedTranslationLanguages((previous) => {
+        const next = new Set(previous);
+        languagesToTranslate.forEach((language) => next.delete(language));
+        return next;
+      });
       toast.success('Dịch tự động thành công!', { id: toastId });
     } catch (error) {
       if (error.translationTargetLang) {
         activeTargetLang = error.translationTargetLang;
       }
+      setFailedTranslationLanguages((previous) => new Set(previous).add(activeTargetLang));
       const failedFieldKey = getFailedTranslationFieldKey(error);
       const failedFieldLabel = getTranslationFieldLabel(failedFieldKey, activeTargetLang);
       const fallbackMessage = isTranslationTimeout(error)
@@ -2436,7 +2482,7 @@ const TourManagementPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || translating}
                   className="px-8 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-lg hover:opacity-90 transition text-sm disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                 >
                   {submitting ? (

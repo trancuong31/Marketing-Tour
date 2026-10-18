@@ -4,6 +4,7 @@ const slugify = require('slugify');
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../src/config/database');
 const { translateTexts } = require('../src/services/translationService');
+const { translateVietnameseSourceFields } = require('../src/utils/tourLocaleContent');
 
 const REPORT_PATH = path.join(__dirname, '../tour_translation_audit_report.json');
 const REMEDIATION_FIELDS = [
@@ -62,12 +63,14 @@ const getTranslationRow = async (tourId, language) => {
 
 const translateField = async (field, sourceValue, targetLanguage) => {
   const cleanSource = normalizeText(sourceValue);
-  if (!cleanSource) return null;
-
-  const result = await translateTexts({
+  const result = await translateVietnameseSourceFields({
     texts: { [field]: cleanSource },
-    targetLang: targetLanguage,
-    strict: true,
+    targetLanguage,
+    translate: (texts, language) => translateTexts({
+      texts,
+      targetLang: language,
+      strict: true,
+    }),
   });
 
   const translated = result && Object.prototype.hasOwnProperty.call(result, field) ? result[field] : null;
@@ -102,10 +105,14 @@ const buildRowInsertValues = async (tour, targetLanguage) => {
     throw new Error(`No source fields available for tour ${tour.id} ${targetLanguage}`);
   }
 
-  const translations = await translateTexts({
+  const translations = await translateVietnameseSourceFields({
     texts: translatedFields,
-    targetLang: targetLanguage,
-    strict: true,
+    targetLanguage,
+    translate: (texts, language) => translateTexts({
+      texts,
+      targetLang: language,
+      strict: true,
+    }),
   });
 
   const titleValue = normalizeText(translations.title || tour.title || '');
@@ -185,7 +192,7 @@ const main = async () => {
     if (seenTargets.has(targetKey)) continue;
     seenTargets.add(targetKey);
 
-    let tour = await getTourById(item.tour_id) || await getTourBySlug(item.slug);
+    const tour = await getTourById(item.tour_id) || await getTourBySlug(item.slug);
     if (!tour) {
       execution.failedTranslationCells += 1;
       execution.failedDetails.push({
@@ -308,12 +315,16 @@ const main = async () => {
   console.log(JSON.stringify(reportSummary, null, 2));
 };
 
-main()
-  .catch((error) => {
-    console.error('REMEDIATION SCRIPT FAILED');
-    console.error(error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await sequelize.close();
-  });
+if (require.main === module) {
+  main()
+    .catch((error) => {
+      console.error('REMEDIATION SCRIPT FAILED');
+      console.error(error);
+      process.exitCode = 1;
+    })
+    .finally(async () => {
+      await sequelize.close();
+    });
+}
+
+module.exports = { translateField };

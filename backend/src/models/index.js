@@ -22,6 +22,7 @@ const GuideTranslation = require('./GuideTranslation');
 const UiTranslation = require('./UiTranslation');
 const TranslationCache = require('./TranslationCache');
 const ContactSetting = require('./ContactSetting');
+const FooterLink = require('./FooterLink');
 
 // ── Associations ──
 
@@ -134,4 +135,5 @@ module.exports = {
     UiTranslation,
     TranslationCache,
     ContactSetting,
+    FooterLink,
 };

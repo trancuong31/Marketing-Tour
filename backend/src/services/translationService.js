@@ -8,6 +8,12 @@ const logger = require('../config/logger');
 const env = require('../config/env');
 const { normalizeTargetLanguage } = require('../utils/language');
 const TranslationCache = require('../models/TranslationCache');
+const {
+    assertVietnameseSourceFields,
+    hasClearEnglishSignals,
+    hasVietnameseEvidence,
+    inspectTranslation,
+} = require('../utils/tourLocaleContent');
 
 const MAX_FIELDS = 80;
 const TRANSLATION_PROVIDER = env.translation.provider;
@@ -53,6 +59,21 @@ const hashText = (value) => crypto
     .update(value, 'utf8')
     .digest('hex');
 
+const isValidTranslationOutput = (sourceText, translatedText, targetLanguage) => {
+    if (typeof translatedText !== 'string' || !translatedText.trim()) return false;
+    const result = inspectTranslation(translatedText, targetLanguage);
+    if (result.status === 'available') return true;
+
+    if (targetLanguage === 'zh' && result.reason === 'not_verifiably_chinese') {
+        const wordCount = String(sourceText || '').match(/\p{L}+/gu)?.length || 0;
+        return wordCount < 4
+            && !hasClearEnglishSignals(translatedText)
+            && !hasVietnameseEvidence(sourceText);
+    }
+
+    return false;
+};
+
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const getCacheKey = (targetLanguage, value) => `${TRANSLATION_PROVIDER}:${targetLanguage}:${hashText(value)}`;
@@ -68,7 +89,7 @@ const getCachedTranslation = (targetLanguage, value) => {
         return null;
     }
 
-    return cached.text;
+    return isValidTranslationOutput(value, cached.text, targetLanguage) ? cached.text : null;
 };
 
 const setCachedTranslation = (targetLanguage, value, text) => {
@@ -103,7 +124,7 @@ const getPersistentCachedTranslation = async (targetLanguage, value) => {
             ],
         });
 
-        if (!cached?.translated_text) return null;
+        if (!cached?.translated_text || !isValidTranslationOutput(value, cached.translated_text, normLang)) return null;
         setCachedTranslation(targetLanguage, value, cached.translated_text);
         return cached.translated_text;
     } catch (error) {
@@ -148,7 +169,12 @@ const getPersistentCachedTranslationsBulk = async (targetLanguage, values) => {
 
         for (const row of cachedRows) {
             const originalVal = missingValuesMap.get(row.source_hash);
-            if (originalVal && !results.has(originalVal) && row.translated_text) {
+            if (
+                originalVal
+                && !results.has(originalVal)
+                && row.translated_text
+                && isValidTranslationOutput(originalVal, row.translated_text, normLang)
+            ) {
                 results.set(originalVal, row.translated_text);
                 setCachedTranslation(targetLanguage, originalVal, row.translated_text);
             }
@@ -161,6 +187,10 @@ const getPersistentCachedTranslationsBulk = async (targetLanguage, values) => {
 };
 
 const setPersistentCachedTranslation = async (targetLanguage, value, translatedText) => {
+    if (!isValidTranslationOutput(value, translatedText, targetLanguage)) {
+        throw new Error(`Translation output is empty or not valid for target language "${targetLanguage}".`);
+    }
+
     setCachedTranslation(targetLanguage, value, translatedText);
 
     try {
@@ -726,6 +756,9 @@ const translatePlainTextValue = async (value, targetLanguage) => {
 
     if (value.length <= LONG_TEXT_CHUNK_MAX_LENGTH) {
         const result = await translateWithRetry(value, targetLanguage);
+        if (!isValidTranslationOutput(value, result.text, targetLanguage)) {
+            throw new Error(`Translation output is empty or not valid for target language "${targetLanguage}".`);
+        }
         await setPersistentCachedTranslation(targetLanguage, value, result.text);
         return result.text;
     }
@@ -742,6 +775,9 @@ const translatePlainTextValue = async (value, targetLanguage) => {
         }
 
         const result = await translateWithRetry(chunk, targetLanguage);
+        if (!isValidTranslationOutput(chunk, result.text, targetLanguage)) {
+            throw new Error(`Translation output is empty or not valid for target language "${targetLanguage}".`);
+        }
         await setPersistentCachedTranslation(targetLanguage, chunk, result.text);
         translatedChunks.push(result.text);
     }
@@ -838,6 +874,13 @@ const translateBatch = async (entries, targetLanguage, options = {}) => {
         return Promise.all(entries.map(entry => translateTextEntry(entry, targetLanguage, options)));
     }
 
+    for (const [key, translatedText] of parsedEntries) {
+        const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
+        if (!isValidTranslationOutput(sourceText, translatedText, targetLanguage)) {
+            throw new Error(`Translation output for field "${key}" is empty or invalid for "${targetLanguage}".`);
+        }
+    }
+
     await Promise.all(parsedEntries.map(async ([key, translatedText]) => {
         const sourceText = entries.find(([entryKey]) => entryKey === key)?.[1];
         if (sourceText) {
@@ -863,8 +906,11 @@ const validateTexts = (texts) => {
         if (!FIELD_NAME_PATTERN.test(key)) {
             throw new AppError('Tên trường dịch không hợp lệ', HTTP_CODES.BAD_REQUEST);
         }
+        if (typeof value !== 'string') {
+            throw new AppError(`Nội dung trường "${key}" phải là văn bản`, HTTP_CODES.BAD_REQUEST);
+        }
 
-        const text = typeof value === 'string' ? value.trim() : '';
+        const text = value.trim();
         // if (text.length > MAX_FIELD_LENGTH) {
         //     throw new AppError(`Nội dung trường "${key}" vượt quá giới hạn ${MAX_FIELD_LENGTH} ký tự`, HTTP_CODES.BAD_REQUEST);
         // }
@@ -953,6 +999,8 @@ const translateTexts = async ({ texts, targetLang, strict = false }) => {
     }
 
     const entries = validateTexts(texts);
+    const nonEmptySourceFields = Object.fromEntries(entries.filter(([, value]) => value));
+    assertVietnameseSourceFields(nonEmptySourceFields);
     if (targetLanguage === 'vi') {
         return Object.fromEntries(entries);
     }

@@ -80,7 +80,9 @@
         "priceIncludes": "Giá bao gồm",
         "priceExcludes": "Giá không bao gồm",
         "termsNotes": "Điều khoản & Lưu ý",
-        "cancellationPolicy": "Quy định hoàn hủy"
+        "cancellationPolicy": "Quy định hoàn hủy",
+        "titleUnavailable": "Tiêu đề tour đang được rà soát",
+        "contentUnavailable": "Một số nội dung tour hiện không khả dụng hoặc đang được rà soát. Nội dung không bị thay thế bằng ngôn ngữ khác."
     },
     "review": {
         "cannotCheckEligibility": "Không thể kiểm tra quyền đánh giá.",

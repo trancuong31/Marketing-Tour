@@ -15,15 +15,11 @@ const normalizeLanguage = (language) => {
 const normalizeTargetLanguage = (language) => {
     if (!language || typeof language !== 'string') return null;
 
-    const normalized = normalizeLanguage(language);
-    if (SUPPORTED_LANGUAGES.has(normalized)) {
-        return normalized;
-    }
-
-    return null;
+    const prefix = language.trim().toLowerCase().split(/[-_]/, 1)[0];
+    return SUPPORTED_LANGUAGES.has(prefix) ? prefix : null;
 };
 
-const isSupportedLanguage = (language) => SUPPORTED_LANGUAGES.has(normalizeLanguage(language));
+const isSupportedLanguage = (language) => normalizeTargetLanguage(language) !== null;
 
 module.exports = {
     DEFAULT_LANGUAGE,

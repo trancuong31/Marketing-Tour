@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Clock } from 'lucide-react';
 import { getImageUrl, onImgError } from '@/utils/imageUrl';
 import { getCategoryDisplayName } from '@/utils/tourLabels';
+import { hasUnavailableTourContent } from '@/features/tour/utils/localeContent';
 import { useTranslation } from 'react-i18next';
 const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -33,17 +34,25 @@ const TourCard = ({ tour, compact = false }) => {
     const minPrice = getMinPrice(tour);
     const summary = truncateText(tour.summary, compact ? 90 : 159);
     const categoryName = getCategoryDisplayName(tour.Category, t);
+    const title = tour.locale_content_status && tour.locale_content_status.title !== 'available'
+        ? t('tour.detail.titleUnavailable', 'Tour title unavailable')
+        : tour.title || t('tour.detail.titleUnavailable', 'Tour title unavailable');
+    const hasUnavailableContent = hasUnavailableTourContent(tour);
 
     return (
         <Link
-            to={`/tours/${tour.slug}`}
+            to={tour.slug ? `/tours/${tour.slug}` : '/tours'}
+            aria-disabled={!tour.slug}
+            onClick={(event) => {
+                if (!tour.slug) event.preventDefault();
+            }}
             className="group block bg-white rounded-2xl overflow-hidden border-2 border-transparent shadow-[0_2px_12px_rgba(0,0,0,0.2)] transition-all duration-300"
         >
             {/* Ảnh */}
             <div className={`relative overflow-hidden bg-surface-alt ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
                 <img
                     src={thumbnail}
-                    alt={tour.title}
+                    alt={title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                     onError={onImgError('tour')}
@@ -83,13 +92,18 @@ const TourCard = ({ tour, compact = false }) => {
 
                 {/* Title */}
                 <h3 className={`mt-1.5 font-bold text-text line-clamp-2 group-hover:text-primary transition-colors leading-snug ${compact ? 'text-sm' : 'text-lg'}`}>
-                    {tour.title}
+                    {title}
                 </h3>
 
                 {/* Description */}
                 {tour.summary && (
                     <p className={`mt-2 text-text-secondary leading-relaxed line-clamp-2 ${compact ? 'text-xs' : 'text-sm'}`}>
                         {summary}
+                    </p>
+                )}
+                {hasUnavailableContent && (
+                    <p role="status" className="mt-2 text-xs text-text-muted">
+                        {t('tour.detail.contentUnavailable', 'Some tour content is unavailable or under review. It has not been replaced with content from another language.')}
                     </p>
                 )}
 

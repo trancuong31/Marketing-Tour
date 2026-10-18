@@ -97,6 +97,12 @@ src/
 | `npm run lint` | Run ESLint |
 | `npm run format` | Format code with Prettier |
 
+## Tour Content Locales
+
+Public tour list and detail responses use the normalized `x-language` locale. Vietnamese content is read from the tour source fields; English and Chinese content is read only from the matching translation row. Missing, empty, or unverified localized content is returned as `null` rather than being replaced with another language.
+
+Tour responses include an additive `locale_content_status` object keyed by content field. Values are `available`, `missing`, or `unverified`. Detail itinerary items and categories expose the same status object for their localized fields. Responses vary on `x-language` so shared HTTP caches do not reuse content across header-selected locales.
+
 ## License
 
 MIT

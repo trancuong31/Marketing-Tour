@@ -3,9 +3,10 @@
  * Run: node src/migrations/run_i18n_migration.js
  */
 require('../config/env');
-const { DataTypes } = require('sequelize');
+const { DataTypes, QueryTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const logger = require('../config/logger');
+const { TOUR_CONTENT_FIELDS, assertVietnameseSourceFields } = require('../utils/tourLocaleContent');
 
 const copySourceData = async (sql, label) => {
     await sequelize.query(sql);
@@ -23,6 +24,37 @@ const getExistingTableNames = async (queryInterface) => {
 };
 
 const hasTable = (existingTables, tableName) => existingTables.includes(tableName);
+
+const validateTourSourcesBeforeCopy = async () => {
+    const tourRows = await sequelize.query(
+        `SELECT id, ${TOUR_CONTENT_FIELDS.map((field) => `\`${field}\``).join(', ')} FROM tours`,
+        { type: QueryTypes.SELECT },
+    );
+
+    for (const row of tourRows) {
+        const values = Object.fromEntries(TOUR_CONTENT_FIELDS.map((field) => [field, row[field]]));
+        try {
+            assertVietnameseSourceFields(values, { requiredFields: ['title'] });
+        } catch (error) {
+            throw new Error(`Cannot label tour id=${row.id} as Vietnamese: ${error.message}`);
+        }
+    }
+
+    const itineraryRows = await sequelize.query(
+        'SELECT id, tour_id, title, content FROM tour_itineraries',
+        { type: QueryTypes.SELECT },
+    );
+    for (const row of itineraryRows) {
+        try {
+            assertVietnameseSourceFields(
+                { title: row.title, content: row.content },
+                { requiredFields: ['title', 'content'] },
+            );
+        } catch (error) {
+            throw new Error(`Cannot label itinerary id=${row.id} as Vietnamese: ${error.message}`);
+        }
+    }
+};
 
 const addUniqueIndexIfMissing = async (queryInterface, tableName, fields, name) => {
     const indexes = await queryInterface.showIndex(tableName);
@@ -328,6 +360,13 @@ const run = async () => {
         const queryInterface = sequelize.getQueryInterface();
         const existingTables = await getExistingTableNames(queryInterface);
 
+        if (
+            !hasTable(existingTables, 'tour_translations')
+            || !hasTable(existingTables, 'tour_itinerary_translations')
+        ) {
+            await validateTourSourcesBeforeCopy();
+        }
+
         await ensureUserLanguage(queryInterface);
         await createTourTranslations(queryInterface, existingTables);
         await seedSapaTourTranslations();
@@ -346,4 +385,8 @@ const run = async () => {
     }
 };
 
-run();
+if (require.main === module) {
+    run();
+}
+
+module.exports = { validateTourSourcesBeforeCopy };

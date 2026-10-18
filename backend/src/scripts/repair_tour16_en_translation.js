@@ -3,6 +3,7 @@ require('../config/env');
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { translateTexts } = require('../services/translationService');
+const { assertVietnameseSourceFields, translateVietnameseSourceFields } = require('../utils/tourLocaleContent');
 
 const TOUR_ID = 16;
 const TARGET_LANGUAGE = 'en';
@@ -76,16 +77,16 @@ const repairField = async (sourceTour, currentTranslation, field) => {
     }
 
     const sourceText = String(sourceTour[field] || '').trim();
-    if (!sourceText) {
-        console.log(`[skip] ${field}: Vietnamese source is empty.`);
-        return;
-    }
 
     console.log(`[translate] ${field}: ${sourceText.length} chars`);
-    const translated = await translateTexts({
+    const translated = await translateVietnameseSourceFields({
         texts: { [field]: sourceText },
-        targetLang: TARGET_LANGUAGE,
-        strict: true,
+        targetLanguage: TARGET_LANGUAGE,
+        translate: (texts, language) => translateTexts({
+            texts,
+            targetLang: language,
+            strict: true,
+        }),
     });
 
     const translatedText = translated[field] || '';
@@ -105,6 +106,10 @@ const run = async () => {
     try {
         const sourceTour = await getTourSource();
         const currentTranslation = await getCurrentEnglishTranslation();
+        const sourceFields = Object.fromEntries(
+            TRANSLATABLE_FIELDS.map((field) => [field, sourceTour[field]])
+        );
+        assertVietnameseSourceFields(sourceFields, { requiredFields: TRANSLATABLE_FIELDS });
 
         for (const field of TRANSLATABLE_FIELDS) {
             await repairField(sourceTour, currentTranslation, field);
@@ -120,4 +125,8 @@ const run = async () => {
     }
 };
 
-run();
+if (require.main === module) {
+    run();
+}
+
+module.exports = { repairField };

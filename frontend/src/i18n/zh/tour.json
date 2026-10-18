@@ -80,7 +80,9 @@
         "priceIncludes": "价格包含",
         "priceExcludes": "价格不包含",
         "termsNotes": "条款和注意事项",
-        "cancellationPolicy": "取消政策"
+        "cancellationPolicy": "取消政策",
+        "titleUnavailable": "旅游标题正在审核中",
+        "contentUnavailable": "部分旅游内容暂不可用或正在审核中，不会使用其他语言的内容替代。"
     },
     "review": {
         "cannotCheckEligibility": "无法检查评价资格。",

@@ -80,7 +80,9 @@
         "priceIncludes": "Price Includes",
         "priceExcludes": "Price Excludes",
         "termsNotes": "Terms & Notes",
-        "cancellationPolicy": "Cancellation Policy"
+        "cancellationPolicy": "Cancellation Policy",
+        "titleUnavailable": "Tour title under review",
+        "contentUnavailable": "Some tour content is unavailable or under review. It has not been replaced with content from another language."
     },
     "review": {
         "cannotCheckEligibility": "Unable to check review eligibility.",

@@ -10,6 +10,7 @@ const adminRoutes = require('./adminRoutes');
 const userRoutes = require('./userRoutes');
 const translationRoutes = require('./translationRoutes');
 const { getPublicContactSettings } = require('../controllers/contactSettingsController');
+const { getPublicFooterLinks } = require('../controllers/footerLinkController');
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use('/bookings', bookingRoutes);
 router.use('/guides', guideRoutes);
 router.use('/banners', bannerRoutes);
 router.get('/contact-settings', getPublicContactSettings);
+router.get('/footer-links', getPublicFooterLinks);
 router.use('/translations', translationRoutes);
 
 // ── User API ──

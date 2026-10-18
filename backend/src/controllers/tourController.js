@@ -5,6 +5,79 @@ const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const { normalizePublicUploadUrl, resolveExistingUploadUrl } = require('../utils/uploadUrl');
 const { getTodayDateString } = require('../utils/date');
+const logger = require('../config/logger');
+const { resolveLocalizedFields, resolveTourContentForLocale } = require('../utils/tourLocaleContent');
+
+const applyTourLocaleContent = (data, language) => {
+    const translation = data.translations?.find((item) => item.language === language);
+    const resolved = resolveTourContentForLocale({
+        source: data,
+        translation,
+        language,
+    });
+    Object.assign(data, resolved.content);
+    data.locale_content_status = resolved.status;
+
+    const unavailableFields = Object.entries(resolved.status)
+        .filter(([, status]) => status !== 'available')
+        .map(([field]) => field);
+    if (unavailableFields.length > 0) {
+        logger.warn('Tour locale content is missing or unverified', {
+            tour_id: data.id,
+            language,
+            fields: unavailableFields,
+        });
+    }
+};
+
+const applyItineraryLocaleContent = (itinerary, language) => {
+    const translation = itinerary.translations?.find((item) => item.language === language);
+    const resolved = resolveLocalizedFields({
+        source: itinerary,
+        translation,
+        language,
+        fields: ['title', 'content'],
+    });
+    Object.assign(itinerary, resolved.content);
+    itinerary.locale_content_status = resolved.status;
+
+    const unavailableFields = Object.entries(resolved.status)
+        .filter(([, status]) => status !== 'available')
+        .map(([field]) => field);
+    if (unavailableFields.length > 0) {
+        logger.warn('Tour itinerary locale content is missing or unverified', {
+            tour_id: itinerary.tour_id,
+            itinerary_id: itinerary.id,
+            language,
+            fields: unavailableFields,
+        });
+    }
+};
+
+const applyCategoryLocaleContent = (category, language) => {
+    if (!category) return;
+
+    const translation = category.translations?.find((item) => item.language === language);
+    const resolved = resolveLocalizedFields({
+        source: category,
+        translation,
+        language,
+        fields: ['name'],
+    });
+    Object.assign(category, resolved.content);
+    category.locale_content_status = resolved.status;
+
+    if (language !== 'vi') {
+        category.slug = translation?.slug || null;
+    }
+    if (resolved.status.name !== 'available') {
+        logger.warn('Tour category locale content is missing or unverified', {
+            category_id: category.id,
+            language,
+            fields: ['name'],
+        });
+    }
+};
 
 /**
  * Lấy danh sách tour, lọc theo type (domestic|international)
@@ -14,6 +87,7 @@ const { getTodayDateString } = require('../utils/date');
 const getTours = catchAsync(async (req, res) => {
     const { type, q, date, budget } = req.query;
 
+    res.vary('x-language');
     const lang = req.language || 'vi';
     const shouldUseTranslation = lang !== 'vi';
     const whereClause = { status: 'active' };
@@ -117,19 +191,14 @@ const getTours = catchAsync(async (req, res) => {
             ...image,
             image_url: resolveExistingUploadUrl(image.image_url),
         }));
-        if (shouldUseTranslation && data.translations && data.translations.length > 0) {
-            const tr = data.translations[0];
-            data.title = tr.title || data.title;
-            data.slug = tr.slug || data.slug;
-            data.summary = tr.summary || data.summary;
+        applyTourLocaleContent(data, lang);
+        if (shouldUseTranslation) {
+            const tr = data.translations?.find((item) => item.language === lang);
+            data.slug = tr?.slug || null;
         }
         delete data.translations;
 
-        if (shouldUseTranslation && data.Category && data.Category.translations && data.Category.translations.length > 0) {
-            const ctr = data.Category.translations[0];
-            data.Category.name = ctr.name || data.Category.name;
-            data.Category.slug = ctr.slug || data.Category.slug;
-        }
+        applyCategoryLocaleContent(data.Category, lang);
         if (data.Category) delete data.Category.translations;
         return data;
     });
@@ -143,6 +212,7 @@ const getTours = catchAsync(async (req, res) => {
 
 const getTourBySlug = catchAsync(async (req, res, next) => {
     const { slug } = req.params;
+    res.vary('x-language');
     const lang = req.language || 'vi';
     const shouldUseTranslation = lang !== 'vi';
 
@@ -161,7 +231,7 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
             {
                 model: TourTranslation,
                 as: 'translations',
-                where: shouldUseTranslation ? { language: lang } : undefined,
+                where: { language: lang },
                 required: false,
             },
             {
@@ -206,33 +276,19 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
         ...image,
         image_url: resolveExistingUploadUrl(image.image_url),
     }));
-    if (shouldUseTranslation && data.translations && data.translations.length > 0) {
-        const tr = data.translations[0];
-        data.title = tr.title || data.title;
-        data.slug = tr.slug || data.slug;
-        data.summary = tr.summary || data.summary;
-        data.highlights = tr.highlights || data.highlights;
-        data.price_includes = tr.price_includes || data.price_includes;
-        data.price_excludes = tr.price_excludes || data.price_excludes;
-        data.terms_and_notes = tr.terms_and_notes || data.terms_and_notes;
-        data.cancellation_policy = tr.cancellation_policy || data.cancellation_policy;
+    applyTourLocaleContent(data, lang);
+    if (shouldUseTranslation) {
+        const tr = data.translations?.find((item) => item.language === lang);
+        data.slug = tr?.slug || null;
     }
     delete data.translations;
 
-    if (shouldUseTranslation && data.Category && data.Category.translations && data.Category.translations.length > 0) {
-        const ctr = data.Category.translations[0];
-        data.Category.name = ctr.name || data.Category.name;
-        data.Category.slug = ctr.slug || data.Category.slug;
-    }
+    applyCategoryLocaleContent(data.Category, lang);
     if (data.Category) delete data.Category.translations;
 
     if (data.itineraries) {
         data.itineraries = data.itineraries.map(iti => {
-            if (shouldUseTranslation && iti.translations && iti.translations.length > 0) {
-                const itr = iti.translations[0];
-                iti.title = itr.title || iti.title;
-                iti.content = itr.content || iti.content;
-            }
+            applyItineraryLocaleContent(iti, lang);
             delete iti.translations;
             return iti;
         });

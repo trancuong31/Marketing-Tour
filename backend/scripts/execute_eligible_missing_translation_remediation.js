@@ -3,6 +3,7 @@ const path = require('path');
 const slugify = require('slugify');
 const { QueryTypes } = require('sequelize');
 const { sequelize } = require('../src/config/database');
+const { translateVietnameseSourceFields } = require('../src/utils/tourLocaleContent');
 
 const FIELD_NAMES = ['title', 'summary', 'highlights', 'price_includes', 'price_excludes', 'terms_and_notes', 'cancellation_policy'];
 const ELIGIBLE_FIELDS = new Set(['title', 'summary']);
@@ -36,6 +37,16 @@ const snapshotDatabase = async () => {
         FROM tour_translations ORDER BY tour_id, language`);
     return { tours, translations };
 };
+
+const translateSourceValues = (sourceValues, targetLanguage) =>
+    translateVietnameseSourceFields({
+        texts: sourceValues,
+        targetLanguage,
+        translate: (texts, language) => {
+            const { translateTexts } = require('../src/services/translationService');
+            return translateTexts({ texts, targetLang: language, strict: true });
+        },
+    });
 
 const buildEligibleGroups = async (report) => {
     const groups = new Map();
@@ -125,8 +136,7 @@ const main = async () => {
 
             let translations;
             try {
-                const { translateTexts } = require('../src/services/translationService');
-                translations = await translateTexts({ texts: sourceValues, targetLang: group.language, strict: true });
+                translations = await translateSourceValues(sourceValues, group.language);
             } catch (error) {
                 execution.failedCells += Object.keys(sourceValues).length;
                 execution.failedDetails.push({ tour_id: group.tourId, target_language: group.language, fields: Object.keys(sourceValues), reason: error.message });
@@ -254,12 +264,16 @@ const main = async () => {
     }, null, 2));
 };
 
-main()
-    .catch(error => {
-        console.error('ELIGIBLE REMEDIATION FAILED');
-        console.error(error);
-        process.exitCode = 1;
-    })
-    .finally(async () => {
-        await sequelize.close();
-    });
+if (require.main === module) {
+    main()
+        .catch(error => {
+            console.error('ELIGIBLE REMEDIATION FAILED');
+            console.error(error);
+            process.exitCode = 1;
+        })
+        .finally(async () => {
+            await sequelize.close();
+        });
+}
+
+module.exports = { translateSourceValues };
