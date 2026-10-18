@@ -127,16 +127,29 @@ const DEFAULT_TRANSLATION_LANGUAGES = ['en', 'zh'];
 
 const getTranslationLangIndex = (language, translations = []) => {
   const normalizedLanguage = normalizeAdminTranslationLanguage(language);
-  const existingIndex = translations.findIndex(
+  if (!normalizedLanguage || normalizedLanguage === 'vi') return -1;
+
+  const existingIndex = (translations || []).findIndex(
     (item) => normalizeAdminTranslationLanguage(item?.language) === normalizedLanguage
   );
 
   if (existingIndex >= 0) return existingIndex;
-  return Math.max(0, DEFAULT_TRANSLATION_LANGUAGES.indexOf(normalizedLanguage));
+
+  const defaultIndex = DEFAULT_TRANSLATION_LANGUAGES.indexOf(normalizedLanguage);
+  return defaultIndex >= 0 ? defaultIndex : -1;
 };
 
-const getItineraryTranslationLangIndex = (itinerary, language) =>
-  getTranslationLangIndex(language, itinerary?.translations || []);
+const getItineraryTranslationLangIndex = (itinerary, language) => {
+  const normalizedLanguage = normalizeAdminTranslationLanguage(language);
+  if (!normalizedLanguage || normalizedLanguage === 'vi') return -1;
+  return getTranslationLangIndex(normalizedLanguage, itinerary?.translations || []);
+};
+
+const getSafeTranslationLangIndex = (language, translations = []) => {
+  const langIndex = getTranslationLangIndex(language, translations);
+  if (langIndex >= 0) return langIndex;
+  return normalizeAdminTranslationLanguage(language) === 'zh' ? 1 : 0;
+};
 
 const getTranslationDisplayName = (language) =>
   normalizeAdminTranslationLanguage(language) === 'zh' ? 'Tiếng Trung' : 'English';
@@ -267,8 +280,8 @@ const getEmptyItineraryTranslation = (language) => ({
 
 const mergeTranslationsByLanguage = (defaults, translations = []) =>
   defaults.map((defaultTranslation) => {
-    const found = translations.find(
-      (item) => normalizeAdminTranslationLanguage(item.language) === defaultTranslation.language
+    const found = (translations || []).find(
+      (item) => normalizeAdminTranslationLanguage(item?.language) === defaultTranslation.language
     );
     return found
       ? { ...defaultTranslation, ...found, language: defaultTranslation.language }
@@ -294,12 +307,14 @@ const normalizePickupLocationsPayload = (pickupLocations = []) =>
   }));
 
 const normalizeTourOptionsPayload = (options = []) =>
-  options.map((item) => ({
-    ...item,
-    option_name: String(item.option_name || '').trim(),
-    price: normalizeMoneyValue(item.price),
-    charge_type: item.charge_type || 'quantity',
-  }));
+  options
+    .filter((item) => String(item.option_name || '').trim() !== '')
+    .map((item) => ({
+      ...item,
+      option_name: String(item.option_name || '').trim(),
+      price: normalizeMoneyValue(item.price),
+      charge_type: item.charge_type || 'quantity',
+    }));
 
 const BULLET_LIBRARY = [
   { label: 'None', symbol: '', title: 'Bỏ bullet' },
@@ -664,14 +679,14 @@ const GeneralTab = ({
 
   const getFieldName = (name) => {
     if (currentLang === 'vi') return name;
-    const langIndex = getTranslationLangIndex(currentLang, watch('translations') || []);
-    return `translations.${langIndex}.${name}`;
+    const safeLangIndex = getSafeTranslationLangIndex(currentLang, watch('translations') || []);
+    return `translations.${safeLangIndex}.${name}`;
   };
 
   const getFieldError = (name) => {
     if (currentLang === 'vi') return errors[name];
-    const langIndex = getTranslationLangIndex(currentLang, watch('translations') || []);
-    return errors?.translations?.[langIndex]?.[name];
+    const safeLangIndex = getSafeTranslationLangIndex(currentLang, watch('translations') || []);
+    return errors?.translations?.[safeLangIndex]?.[name];
   };
   const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
@@ -725,6 +740,7 @@ const GeneralTab = ({
           Tên tour ({currentLang.toUpperCase()}) *
         </label>
         <input
+          key={`title-${currentLang}`}
           {...register(getFieldName('title'), getRequiredRule('Tên tour không được để trống'))}
           className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
           placeholder="Nhập tên tour..."
@@ -740,6 +756,7 @@ const GeneralTab = ({
           Tóm tắt ({currentLang.toUpperCase()}) *
         </label>
         <textarea
+          key={`summary-${currentLang}`}
           {...register(getFieldName('summary'), getRequiredRule('Tóm tắt không được để trống'))}
           rows={2}
           className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('summary') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
@@ -807,6 +824,7 @@ const GeneralTab = ({
             Điểm nổi bật ({currentLang.toUpperCase()}) *
           </label>
           <textarea
+            key={`highlights-${currentLang}`}
             {...register(getFieldName('highlights'), getRequiredRule('Vui lòng nhập điểm nổi bật'))}
             rows={4}
             className={`w-full px-3 py-2.5 bg-surface-alt border ${getFieldError('highlights') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all resize-none`}
@@ -821,6 +839,7 @@ const GeneralTab = ({
 
         <div>
           <RichTextEditor
+            key={`price_includes-${currentLang}`}
             value={watch(getFieldName('price_includes'))}
             onChange={(val) =>
               setValue(getFieldName('price_includes'), val, { shouldValidate: true })
@@ -840,6 +859,7 @@ const GeneralTab = ({
 
         <div>
           <RichTextEditor
+            key={`price_excludes-${currentLang}`}
             value={watch(getFieldName('price_excludes'))}
             onChange={(val) =>
               setValue(getFieldName('price_excludes'), val, { shouldValidate: true })
@@ -859,6 +879,7 @@ const GeneralTab = ({
 
         <div>
           <RichTextEditor
+            key={`terms_and_notes-${currentLang}`}
             value={watch(getFieldName('terms_and_notes'))}
             onChange={(val) =>
               setValue(getFieldName('terms_and_notes'), val, { shouldValidate: true })
@@ -878,6 +899,7 @@ const GeneralTab = ({
 
         <div>
           <RichTextEditor
+            key={`cancellation_policy-${currentLang}`}
             value={watch(getFieldName('cancellation_policy'))}
             onChange={(val) =>
               setValue(getFieldName('cancellation_policy'), val, { shouldValidate: true })
@@ -1003,57 +1025,105 @@ const GeneralTab = ({
   );
 };
 
+// ═══ ITEM CREATORS (DEFAULT 1 EMPTY ITEM) ═══
+const createEmptyItinerary = (dayNumber = 1) => ({
+  day_number: dayNumber,
+  title: '',
+  content: '',
+  translations: [
+    getEmptyItineraryTranslation('en'),
+    getEmptyItineraryTranslation('zh'),
+  ],
+});
+
+const createEmptyDeparture = () => ({
+  departure_date: '',
+  price_adult: '',
+  price_child: 0,
+  price_infant: 0,
+  capacity: 20,
+});
+
+const createEmptyPickupLocation = () => ({
+  location_name: '',
+  pickup_time: '',
+  surcharge_amount: 0,
+});
+
+const createEmptyOption = () => ({
+  option_name: '',
+  price: 0,
+  charge_type: 'quantity',
+});
+
+// Helper: Tự động trôi mượt đến item mới và focus input đầu tiên để nhập liệu ngay
+const scrollAndFocusNewItem = (cardSelector, inputSelector) => {
+  setTimeout(() => {
+    const cards = document.querySelectorAll(cardSelector);
+    if (!cards || cards.length === 0) return;
+    const lastCard = cards[cards.length - 1];
+
+    // Trôi mượt đến giữa khung nhìn
+    lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Focus input đầu tiên để user viết luôn
+    setTimeout(() => {
+      let targetInput = null;
+      if (inputSelector) {
+        targetInput = lastCard.querySelector(inputSelector);
+      }
+      if (!targetInput) {
+        targetInput = lastCard.querySelector(
+          'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([title]):not([disabled])'
+        );
+      }
+      if (targetInput) {
+        targetInput.focus({ preventScroll: true });
+        if (typeof targetInput.select === 'function' && targetInput.type !== 'button') {
+          targetInput.select();
+        }
+      }
+    }, 150);
+  }, 60);
+};
+
 // ═══ TAB: LỊCH TRÌNH ═══
 const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLang }) => {
   const { fields, append, remove } = useFieldArray({ control, name: 'itineraries' });
 
+  // Mặc định luôn có ít nhất 1 item trống
+  useEffect(() => {
+    if (fields.length === 0) {
+      append(createEmptyItinerary(1));
+    }
+  }, [fields.length, append]);
+
   const getFieldName = (index, name) => {
     if (currentLang === 'vi') return `itineraries.${index}.${name}`;
     const itinerary = watch(`itineraries.${index}`);
-    const langIndex = getItineraryTranslationLangIndex(itinerary, currentLang);
-    return `itineraries.${index}.translations.${langIndex}.${name}`;
+    const safeLangIndex = getSafeTranslationLangIndex(currentLang, itinerary?.translations);
+    return `itineraries.${index}.translations.${safeLangIndex}.${name}`;
   };
 
   const getFieldError = (index, name) => {
     if (currentLang === 'vi') return errors.itineraries?.[index]?.[name];
     const itinerary = watch(`itineraries.${index}`);
-    const langIndex = getItineraryTranslationLangIndex(itinerary, currentLang);
-    return errors.itineraries?.[index]?.translations?.[langIndex]?.[name];
+    const safeLangIndex = getSafeTranslationLangIndex(currentLang, itinerary?.translations);
+    return errors.itineraries?.[index]?.translations?.[safeLangIndex]?.[name];
   };
   const getRequiredRule = (message) => (currentLang === 'vi' ? { required: message } : {});
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-text">
-          Lịch trình từng ngày ({currentLang.toUpperCase()}) *
-        </h4>
-        <button
-          type="button"
-          onClick={() => {
-            append({
-              day_number: fields.length + 1,
-              title: '',
-              content: '',
-              translations: [
-                getEmptyItineraryTranslation('en'),
-                getEmptyItineraryTranslation('zh'),
-              ],
-            });
-            setTimeout(() => {
-              const elements = document.querySelectorAll('.itinerary-day-card');
-              if (elements.length > 0) {
-                const lastEl = elements[elements.length - 1];
-                lastEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const input = lastEl.querySelector('input[type="text"]');
-                if (input) input.focus();
-              }
-            }, 100);
-          }}
-          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition flex items-center gap-1 shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Thêm ngày
-        </button>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-text">
+            Lịch trình từng ngày ({currentLang.toUpperCase()}) *
+          </h4>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
+            {fields.length} ngày
+          </span>
+        </div>
       </div>
 
       {fields.length === 0 && (
@@ -1078,9 +1148,15 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
               </span>
               <button
                 type="button"
-                onClick={() => remove(index)}
+                onClick={() => {
+                  if (fields.length <= 1) {
+                    setValue('itineraries.0', createEmptyItinerary(1), { shouldDirty: true });
+                  } else {
+                    remove(index);
+                  }
+                }}
                 className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition"
-                title="Xóa ngày"
+                title={fields.length <= 1 ? 'Làm mới nội dung ngày' : 'Xóa ngày'}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -1095,6 +1171,8 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
                 Tiêu đề ngày ({currentLang.toUpperCase()}) *
               </label>
               <input
+                key={`iti-title-${index}-${currentLang}`}
+                type="text"
                 {...register(getFieldName(index, 'title'), getRequiredRule('Nhập tiêu đề ngày'))}
                 className={`w-full px-3 py-2 bg-surface border ${getFieldError(index, 'title') ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
                 placeholder="VD: Đón khách - Tham quan phố cổ"
@@ -1108,6 +1186,7 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
 
             <div>
               <RichTextEditor
+                key={`iti-content-${index}-${currentLang}`}
                 value={watch(getFieldName(index, 'content'))}
                 onChange={(val) =>
                   setValue(getFieldName(index, 'content'), val, { shouldValidate: true })
@@ -1127,6 +1206,24 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
           </div>
         );
       })}
+
+      {/* Nút thêm ngày ở ngay dưới item */}
+      <button
+        type="button"
+        onClick={() => {
+          append(createEmptyItinerary(fields.length + 1));
+          scrollAndFocusNewItem(
+            '.itinerary-day-card',
+            'input[type="text"]:not([type="hidden"])'
+          );
+        }}
+        className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-primary/25 hover:border-primary bg-primary/[0.02] hover:bg-primary/[0.06] text-primary font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 group shadow-sm hover:shadow active:scale-[0.995]"
+      >
+        <span className="w-6 h-6 rounded-lg bg-primary/10 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-200">
+          <Plus className="w-4 h-4" />
+        </span>
+        <span>Thêm ngày tiếp theo (Ngày {fields.length + 1})</span>
+      </button>
     </div>
   );
 };
@@ -1140,25 +1237,22 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
   });
   const todayDateOnly = getTodayDateOnly();
 
+  // Mặc định luôn có ít nhất 1 item trống
+  useEffect(() => {
+    if (fields.length === 0) {
+      append(createEmptyDeparture());
+    }
+  }, [fields.length, append]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-text">Lịch khởi hành & Giá *</h4>
-        <button
-          type="button"
-          onClick={() =>
-            append({
-              departure_date: '',
-              price_adult: '',
-              price_child: 0,
-              price_infant: 0,
-              capacity: 20,
-            })
-          }
-          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition flex items-center gap-1 shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Thêm khởi hành
-        </button>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-text">Lịch khởi hành & Giá *</h4>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
+            {fields.length} lịch
+          </span>
+        </div>
       </div>
 
       {fields.length === 0 && (
@@ -1177,7 +1271,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
         return (
           <div
             key={field.fieldId}
-            className="p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative"
+            className="departure-item-card p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative"
           >
             <div className="flex items-center justify-between border-b border-border/50 pb-2">
               <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
@@ -1186,11 +1280,16 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
               <button
                 type="button"
                 onClick={() => {
-                  if (!isDeparted) remove(index);
+                  if (isDeparted) return;
+                  if (fields.length <= 1) {
+                    setValue('departures.0', createEmptyDeparture(), { shouldDirty: true });
+                  } else {
+                    remove(index);
+                  }
                 }}
                 disabled={isDeparted}
-                className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition"
-                title="Xóa"
+                className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition disabled:opacity-30 disabled:cursor-not-allowed"
+                title={isDeparted ? 'Lịch đã khởi hành' : fields.length <= 1 ? 'Làm mới lịch' : 'Xóa'}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -1220,7 +1319,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   selectableDatesOnly={false}
                   disabled={isDeparted}
                   placeholder="Chọn ngày đi"
-                  className={`[&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
+                  className={`departure-calendar-box [&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
                 />
                 <input
                   type="hidden"
@@ -1311,25 +1410,48 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
           </div>
         );
       })}
+
+      {/* Nút thêm khởi hành ngay dưới item */}
+      <button
+        type="button"
+        onClick={() => {
+          append(createEmptyDeparture());
+          scrollAndFocusNewItem(
+            '.departure-item-card',
+            '.departure-calendar-box button, input:not([type="hidden"])'
+          );
+        }}
+        className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-primary/25 hover:border-primary bg-primary/[0.02] hover:bg-primary/[0.06] text-primary font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 group shadow-sm hover:shadow active:scale-[0.995]"
+      >
+        <span className="w-6 h-6 rounded-lg bg-primary/10 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-200">
+          <Plus className="w-4 h-4" />
+        </span>
+        <span>Thêm lịch khởi hành mới</span>
+      </button>
     </div>
   );
 };
 
 // ═══ TAB: ĐIỂM ĐÓN ═══
-const PickupsTab = ({ control, register, errors }) => {
+const PickupsTab = ({ control, register, setValue, errors }) => {
   const { fields, append, remove } = useFieldArray({ control, name: 'pickup_locations' });
+
+  // Mặc định luôn có ít nhất 1 item trống
+  useEffect(() => {
+    if (fields.length === 0) {
+      append(createEmptyPickupLocation());
+    }
+  }, [fields.length, append]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-text">Điểm đón khách *</h4>
-        <button
-          type="button"
-          onClick={() => append({ location_name: '', pickup_time: '', surcharge_amount: 0 })}
-          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition flex items-center gap-1 shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Thêm điểm đón
-        </button>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-text">Điểm đón khách *</h4>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
+            {fields.length} điểm đón
+          </span>
+        </div>
       </div>
 
       {fields.length === 0 && (
@@ -1345,7 +1467,7 @@ const PickupsTab = ({ control, register, errors }) => {
       {fields.map((field, index) => (
         <div
           key={field.id}
-          className="p-4 bg-surface-alt rounded-2xl border border-border shadow-sm"
+          className="pickup-item-card p-4 bg-surface-alt rounded-2xl border border-border shadow-sm"
         >
           <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
             <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
@@ -1353,9 +1475,15 @@ const PickupsTab = ({ control, register, errors }) => {
             </span>
             <button
               type="button"
-              onClick={() => remove(index)}
+              onClick={() => {
+                if (fields.length <= 1) {
+                  setValue('pickup_locations.0', createEmptyPickupLocation(), { shouldDirty: true });
+                } else {
+                  remove(index);
+                }
+              }}
               className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition"
-              title="Xóa"
+              title={fields.length <= 1 ? 'Làm mới điểm đón' : 'Xóa'}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -1366,6 +1494,7 @@ const PickupsTab = ({ control, register, errors }) => {
                 Tên điểm đón *
               </label>
               <input
+                type="text"
                 {...register(`pickup_locations.${index}.location_name`, {
                   required: 'Nhập tên điểm đón',
                 })}
@@ -1414,13 +1543,38 @@ const PickupsTab = ({ control, register, errors }) => {
           </div>
         </div>
       ))}
+
+      {/* Nút thêm điểm đón ngay dưới item */}
+      <button
+        type="button"
+        onClick={() => {
+          append(createEmptyPickupLocation());
+          scrollAndFocusNewItem(
+            '.pickup-item-card',
+            'input[type="text"]:not([type="hidden"])'
+          );
+        }}
+        className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-primary/25 hover:border-primary bg-primary/[0.02] hover:bg-primary/[0.06] text-primary font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 group shadow-sm hover:shadow active:scale-[0.995]"
+      >
+        <span className="w-6 h-6 rounded-lg bg-primary/10 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-200">
+          <Plus className="w-4 h-4" />
+        </span>
+        <span>Thêm điểm đón mới</span>
+      </button>
     </div>
   );
 };
 
 // ═══ TAB: TÙY CHỌN ═══
-const OptionsTab = ({ control, register, errors }) => {
+const OptionsTab = ({ control, register, watch, setValue, errors }) => {
   const { fields, append, remove } = useFieldArray({ control, name: 'options' });
+
+  // Mặc định luôn có ít nhất 1 item trống
+  useEffect(() => {
+    if (fields.length === 0) {
+      append(createEmptyOption());
+    }
+  }, [fields.length, append]);
 
   const chargeTypeOptions = [
     { label: 'Theo người', value: 'per_person' },
@@ -1431,14 +1585,12 @@ const OptionsTab = ({ control, register, errors }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-text">Tùy chọn nâng cao (Add-ons)</h4>
-        <button
-          type="button"
-          onClick={() => append({ option_name: '', price: 0, charge_type: 'quantity' })}
-          className="px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition flex items-center gap-1 shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Thêm tùy chọn
-        </button>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-text">Tùy chọn nâng cao (Add-ons)</h4>
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
+            {fields.length} tùy chọn
+          </span>
+        </div>
       </div>
 
       {fields.length === 0 && (
@@ -1454,7 +1606,7 @@ const OptionsTab = ({ control, register, errors }) => {
       {fields.map((field, index) => (
         <div
           key={field.id}
-          className="p-4 bg-surface-alt rounded-2xl border border-border shadow-sm"
+          className="option-item-card p-4 bg-surface-alt rounded-2xl border border-border shadow-sm"
         >
           <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-2">
             <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
@@ -1462,9 +1614,15 @@ const OptionsTab = ({ control, register, errors }) => {
             </span>
             <button
               type="button"
-              onClick={() => remove(index)}
+              onClick={() => {
+                if (fields.length <= 1) {
+                  setValue('options.0', createEmptyOption(), { shouldDirty: true });
+                } else {
+                  remove(index);
+                }
+              }}
               className="p-1.5 rounded-lg hover:bg-error/10 hover:text-error text-text-muted transition"
-              title="Xóa"
+              title={fields.length <= 1 ? 'Làm trống tùy chọn' : 'Xóa'}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -1472,12 +1630,23 @@ const OptionsTab = ({ control, register, errors }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">
-                Tên dịch vụ *
+                Tên dịch vụ {watch && Number(watch(`options.${index}.price`)) > 0 ? '*' : ''}
               </label>
               <input
-                {...register(`options.${index}.option_name`, { required: 'Bắt buộc' })}
+                type="text"
+                {...register(`options.${index}.option_name`, {
+                  validate: (value) => {
+                    const opt = watch ? watch(`options.${index}`) : null;
+                    const hasPrice = Number(opt?.price) > 0;
+                    const hasName = String(value || '').trim().length > 0;
+                    if (hasPrice && !hasName) {
+                      return 'Vui lòng nhập tên dịch vụ tùy chọn khi đã nhập giá';
+                    }
+                    return true;
+                  },
+                })}
                 className={`w-full px-3 py-2 bg-surface border ${errors.options?.[index]?.option_name ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
-                placeholder="VD: Phụ thu phòng đơn"
+                placeholder="VD: Phụ thu phòng đơn (để trống nếu không dùng)"
               />
               {errors.options?.[index]?.option_name && (
                 <p className="text-error text-[10px] mt-1 font-medium">
@@ -1487,12 +1656,22 @@ const OptionsTab = ({ control, register, errors }) => {
             </div>
             <div>
               <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">
-                Giá (VNĐ) *
+                Giá (VNĐ)
               </label>
               <PriceInput
                 control={control}
                 name={`options.${index}.price`}
-                rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }}
+                rules={{
+                  validate: (val) => {
+                    const opt = watch ? watch(`options.${index}`) : null;
+                    const hasName = String(opt?.option_name || '').trim().length > 0;
+                    if (hasName && (val === '' || val === null || val === undefined)) {
+                      return 'Bắt buộc';
+                    }
+                    return true;
+                  },
+                  min: { value: 0, message: '>=0' },
+                }}
                 error={errors.options?.[index]?.price}
                 placeholder="0"
               />
@@ -1522,6 +1701,24 @@ const OptionsTab = ({ control, register, errors }) => {
           </div>
         </div>
       ))}
+
+      {/* Nút thêm tùy chọn ngay dưới item */}
+      <button
+        type="button"
+        onClick={() => {
+          append(createEmptyOption());
+          scrollAndFocusNewItem(
+            '.option-item-card',
+            'input[type="text"]:not([type="hidden"])'
+          );
+        }}
+        className="w-full py-3 px-4 rounded-xl border-2 border-dashed border-primary/25 hover:border-primary bg-primary/[0.02] hover:bg-primary/[0.06] text-primary font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 group shadow-sm hover:shadow active:scale-[0.995]"
+      >
+        <span className="w-6 h-6 rounded-lg bg-primary/10 group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all duration-200">
+          <Plus className="w-4 h-4" />
+        </span>
+        <span>Thêm tùy chọn mới</span>
+      </button>
     </div>
   );
 };
@@ -1563,10 +1760,10 @@ const TourManagementPage = () => {
     duration_nights: '',
     tour_badge: 'none',
     status: 'active',
-    itineraries: [],
-    departures: [],
-    pickup_locations: [],
-    options: [],
+    itineraries: [createEmptyItinerary(1)],
+    departures: [createEmptyDeparture()],
+    pickup_locations: [createEmptyPickupLocation()],
+    options: [createEmptyOption()],
     translations: [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
   };
 
@@ -1706,7 +1903,14 @@ const TourManagementPage = () => {
 
   const openCreate = () => {
     translatedSourceCacheRef.current.clear();
-    reset(defaultValues);
+    reset({
+      ...defaultValues,
+      itineraries: [createEmptyItinerary(1)],
+      departures: [createEmptyDeparture()],
+      pickup_locations: [createEmptyPickupLocation()],
+      options: [createEmptyOption()],
+      translations: [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
+    });
     setFiles([]);
     setActiveTab('general');
     setCurrentLang('vi');
@@ -1721,6 +1925,11 @@ const TourManagementPage = () => {
       translatedSourceCacheRef.current.clear();
       rememberStoredTranslatedSources(detail);
 
+      const rawItineraries = detail.itineraries || [];
+      const rawDepartures = detail.departures || [];
+      const rawPickups = detail.pickupLocations || [];
+      const rawOptions = detail.options || [];
+
       reset({
         category_id: String(detail.category_id),
         title: detail.title,
@@ -1734,33 +1943,45 @@ const TourManagementPage = () => {
         duration_nights: detail.duration_nights || '',
         tour_badge: detail.tour_badge || 'none',
         status: detail.status || 'active',
-        itineraries: (detail.itineraries || []).map((it) => ({
-          day_number: it.day_number,
-          title: it.title,
-          content: it.content,
-          translations: mergeTranslationsByLanguage(
-            [getEmptyItineraryTranslation('en'), getEmptyItineraryTranslation('zh')],
-            it.translations
-          ),
-        })),
-        departures: (detail.departures || []).map((d) => ({
-          id: d.id,
-          departure_date: normalizeDateOnly(d.departure_date),
-          price_adult: normalizeMoneyValue(d.price_adult),
-          price_child: normalizeMoneyValue(d.price_child),
-          price_infant: normalizeMoneyValue(d.price_infant),
-          capacity: normalizeIntegerValue(d.capacity ?? d.available_seats),
-        })),
-        pickup_locations: (detail.pickupLocations || []).map((p) => ({
-          location_name: p.location_name,
-          pickup_time: normalizeTimeValue(p.pickup_time),
-          surcharge_amount: normalizeMoneyValue(p.surcharge_amount),
-        })),
-        options: (detail.options || []).map((o) => ({
-          option_name: o.option_name,
-          price: normalizeMoneyValue(o.price),
-          charge_type: o.charge_type || 'quantity',
-        })),
+        itineraries:
+          rawItineraries.length > 0
+            ? rawItineraries.map((it) => ({
+                day_number: it.day_number,
+                title: it.title,
+                content: it.content,
+                translations: mergeTranslationsByLanguage(
+                  [getEmptyItineraryTranslation('en'), getEmptyItineraryTranslation('zh')],
+                  it.translations
+                ),
+              }))
+            : [createEmptyItinerary(1)],
+        departures:
+          rawDepartures.length > 0
+            ? rawDepartures.map((d) => ({
+                id: d.id,
+                departure_date: normalizeDateOnly(d.departure_date),
+                price_adult: normalizeMoneyValue(d.price_adult),
+                price_child: normalizeMoneyValue(d.price_child),
+                price_infant: normalizeMoneyValue(d.price_infant),
+                capacity: normalizeIntegerValue(d.capacity ?? d.available_seats),
+              }))
+            : [createEmptyDeparture()],
+        pickup_locations:
+          rawPickups.length > 0
+            ? rawPickups.map((p) => ({
+                location_name: p.location_name,
+                pickup_time: normalizeTimeValue(p.pickup_time),
+                surcharge_amount: normalizeMoneyValue(p.surcharge_amount),
+              }))
+            : [createEmptyPickupLocation()],
+        options:
+          rawOptions.length > 0
+            ? rawOptions.map((o) => ({
+                option_name: o.option_name,
+                price: normalizeMoneyValue(o.price),
+                charge_type: o.charge_type || 'quantity',
+              }))
+            : [createEmptyOption()],
         translations: mergeTranslationsByLanguage(
           [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
           detail.translations
@@ -1900,8 +2121,12 @@ const TourManagementPage = () => {
   };
 
   const applyTranslatedContent = (translated, targetLang) => {
+    const normalizedTarget = normalizeAdminTranslationLanguage(targetLang);
+    if (!normalizedTarget || normalizedTarget === 'vi') return;
+
     const translations = watch('translations') || [];
-    const langIndex = getTranslationLangIndex(targetLang, translations);
+    const langIndex = getSafeTranslationLangIndex(normalizedTarget, translations);
+
     const setTranslatedValue = (fieldName, value) => {
       setValue(fieldName, value, {
         shouldDirty: true,
@@ -1909,6 +2134,8 @@ const TourManagementPage = () => {
         shouldValidate: true,
       });
     };
+
+    setTranslatedValue(`translations.${langIndex}.language`, normalizedTarget);
 
     Object.keys(translated).forEach((key) => {
       if (key.startsWith('tour_')) {
@@ -1922,7 +2149,12 @@ const TourManagementPage = () => {
         const index = parts[1];
         const field = parts[2];
         const itinerary = watch(`itineraries.${index}`);
-        const itineraryLangIndex = getItineraryTranslationLangIndex(itinerary, targetLang);
+        const itineraryLangIndex = getSafeTranslationLangIndex(normalizedTarget, itinerary?.translations);
+
+        setTranslatedValue(
+          `itineraries.${index}.translations.${itineraryLangIndex}.language`,
+          normalizedTarget
+        );
         setTranslatedValue(
           `itineraries.${index}.translations.${itineraryLangIndex}.${field}`,
           translated[key]
@@ -1954,8 +2186,11 @@ const TourManagementPage = () => {
   const normalizeTranslationSource = (value) => String(value || '').trim();
 
   const getTargetTranslationValue = (key, targetLang) => {
+    const normalizedTarget = normalizeAdminTranslationLanguage(targetLang);
+    if (!normalizedTarget || normalizedTarget === 'vi') return '';
+
     const translations = watch('translations') || [];
-    const langIndex = getTranslationLangIndex(targetLang, translations);
+    const langIndex = getSafeTranslationLangIndex(normalizedTarget, translations);
 
     if (key.startsWith('tour_')) {
       const field = key.replace(/^tour_/, '');
@@ -1967,7 +2202,7 @@ const TourManagementPage = () => {
       const index = parts[1];
       const field = parts[2];
       const itinerary = watch(`itineraries.${index}`);
-      const itineraryLangIndex = getItineraryTranslationLangIndex(itinerary, targetLang);
+      const itineraryLangIndex = getSafeTranslationLangIndex(normalizedTarget, itinerary?.translations);
       return watch(`itineraries.${index}.translations.${itineraryLangIndex}.${field}`);
     }
 
@@ -2384,6 +2619,7 @@ const TourManagementPage = () => {
                 >
                   {activeTab === 'general' && (
                     <GeneralTab
+                      key={`general-${currentLang}`}
                       register={register}
                       watch={watch}
                       setValue={setValue}
@@ -2399,6 +2635,7 @@ const TourManagementPage = () => {
                   )}
                   {activeTab === 'itineraries' && (
                     <ItinerariesTab
+                      key={`itineraries-${currentLang}`}
                       control={control}
                       register={register}
                       watch={watch}
@@ -2417,10 +2654,21 @@ const TourManagementPage = () => {
                     />
                   )}
                   {activeTab === 'pickups' && (
-                    <PickupsTab control={control} register={register} errors={errors} />
+                    <PickupsTab
+                      control={control}
+                      register={register}
+                      setValue={setValue}
+                      errors={errors}
+                    />
                   )}
                   {activeTab === 'options' && (
-                    <OptionsTab control={control} register={register} errors={errors} />
+                    <OptionsTab
+                      control={control}
+                      register={register}
+                      watch={watch}
+                      setValue={setValue}
+                      errors={errors}
+                    />
                   )}
                 </div>
               </div>
