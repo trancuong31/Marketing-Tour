@@ -6,7 +6,39 @@ const { HTTP_CODES } = require('../constants/httpCodes');
 const { normalizePublicUploadUrl, resolveExistingUploadUrl } = require('../utils/uploadUrl');
 const { getTodayDateString } = require('../utils/date');
 const logger = require('../config/logger');
-const { resolveLocalizedFields, resolveTourContentForLocale } = require('../utils/tourLocaleContent');
+const {
+    inspectTranslation,
+    inspectVietnameseSource,
+    resolveLocalizedFields,
+    resolveTourContentForLocale,
+} = require('../utils/tourLocaleContent');
+
+const getContentPreview = (value) => String(value ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300);
+
+const getUnavailableContentDetails = ({ source, translation, language, status }) =>
+    Object.entries(status)
+        .filter(([, fieldStatus]) => fieldStatus !== 'available')
+        .map(([field, fieldStatus]) => {
+            const sourceValue = source?.[field];
+            const localeValue = language === 'vi' ? sourceValue : translation?.[field];
+            const inspection = language === 'vi'
+                ? inspectVietnameseSource(sourceValue)
+                : inspectTranslation(localeValue, language);
+
+            return {
+                field,
+                status: fieldStatus,
+                reason: inspection.reason,
+                source_preview: getContentPreview(sourceValue),
+                locale_preview: getContentPreview(localeValue),
+            };
+        });
 
 const applyTourLocaleContent = (data, language) => {
     const translation = data.translations?.find((item) => item.language === language);
@@ -15,18 +47,21 @@ const applyTourLocaleContent = (data, language) => {
         translation,
         language,
     });
+    const unavailableContent = getUnavailableContentDetails({
+        source: data,
+        translation,
+        language,
+        status: resolved.status,
+    });
     Object.assign(data, resolved.content);
     data.locale_content_status = resolved.status;
 
-    const unavailableFields = Object.entries(resolved.status)
-        .filter(([, status]) => status !== 'available')
-        .map(([field]) => field);
-    if (unavailableFields.length > 0) {
-        logger.warn('Tour locale content is missing or unverified', {
+    if (unavailableContent.length > 0) {
+        logger.warn(`Tour locale content is missing or unverified ${JSON.stringify({
             tour_id: data.id,
             language,
-            fields: unavailableFields,
-        });
+            content: unavailableContent,
+        })}`);
     }
 };
 
@@ -40,18 +75,6 @@ const applyItineraryLocaleContent = (itinerary, language) => {
     });
     Object.assign(itinerary, resolved.content);
     itinerary.locale_content_status = resolved.status;
-
-    const unavailableFields = Object.entries(resolved.status)
-        .filter(([, status]) => status !== 'available')
-        .map(([field]) => field);
-    if (unavailableFields.length > 0) {
-        logger.warn('Tour itinerary locale content is missing or unverified', {
-            tour_id: itinerary.tour_id,
-            itinerary_id: itinerary.id,
-            language,
-            fields: unavailableFields,
-        });
-    }
 };
 
 const applyCategoryLocaleContent = (category, language) => {
@@ -69,13 +92,6 @@ const applyCategoryLocaleContent = (category, language) => {
 
     if (language !== 'vi') {
         category.slug = translation?.slug || null;
-    }
-    if (resolved.status.name !== 'available') {
-        logger.warn('Tour category locale content is missing or unverified', {
-            category_id: category.id,
-            language,
-            fields: ['name'],
-        });
     }
 };
 

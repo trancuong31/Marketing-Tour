@@ -1,6 +1,5 @@
 const TRANSLATION_FIELDS = [
   'title',
-  'slug',
   'summary',
   'highlights',
   'price_includes',

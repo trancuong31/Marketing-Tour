@@ -1907,6 +1907,7 @@ const TourManagementPage = () => {
 
   const openCreate = () => {
     translatedSourceCacheRef.current.clear();
+    setFailedTranslationLanguages(new Set());
     reset({
       ...defaultValues,
       itineraries: [createEmptyItinerary(1)],
@@ -2346,6 +2347,23 @@ const TourManagementPage = () => {
           } catch (error) {
             throw attachTranslationContext(error, fieldKey, targetLang);
           }
+        }
+
+        // Source fields can still be edited while translation requests are running.
+        // Recheck the full snapshot so an earlier field cannot silently remain stale.
+        const currentSources = getVietnameseContentForTranslation();
+        const changedEntry = translationEntries.find(
+          ([fieldKey, sourceValue]) =>
+            normalizeTranslationSource(currentSources[fieldKey]) !==
+            normalizeTranslationSource(sourceValue)
+        );
+        if (changedEntry) {
+          const [fieldKey] = changedEntry;
+          throw attachTranslationContext(
+            new Error('Nội dung nguồn tiếng Việt đã thay đổi trong lúc dịch. Vui lòng dịch lại.'),
+            fieldKey,
+            targetLang
+          );
         }
       }
 

@@ -1,9 +1,15 @@
-const hasUnavailableStatus = (status = {}) =>
-    Object.values(status || {}).some((value) => value !== 'available');
+const CHECKED_TOUR_CONTENT_FIELDS = [
+    'title',
+    'summary',
+    'highlights',
+    'price_includes',
+    'price_excludes',
+    'terms_and_notes',
+    'cancellation_policy',
+];
 
 export const hasUnavailableTourContent = (tour) =>
-    hasUnavailableStatus(tour?.locale_content_status)
-    || hasUnavailableStatus(tour?.Category?.locale_content_status)
-    || (tour?.itineraries || []).some((itinerary) =>
-        hasUnavailableStatus(itinerary?.locale_content_status)
-    );
+    CHECKED_TOUR_CONTENT_FIELDS.some((field) => {
+        const status = tour?.locale_content_status?.[field];
+        return status !== undefined && status !== 'available';
+    });

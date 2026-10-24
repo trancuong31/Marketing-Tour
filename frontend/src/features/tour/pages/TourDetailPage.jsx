@@ -690,17 +690,17 @@ const TourDetailPage = () => {
                 </div>
                 {/* â•â•â• Bá» Cá»¤C áº¢NH GRID THÃ”NG MINH â•â•â• */}
                 {(images.length > 0 || tour.thumbnail_url) && (
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px]">
+                    <div className="grid grid-cols-1 grid-rows-[minmax(0,1fr)] md:grid-cols-12 gap-2 sm:gap-3 mb-8 h-[300px] sm:h-[400px] md:h-[400px] min-h-0">
 
                         {/* áº¢NH CHÃNH (BÃŠN TRÃI) */}
                         <div
-                            className={`relative group cursor-pointer h-full ${images.length > 1 ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} rounded-2xl overflow-hidden shadow-sm`}
+                            className={`relative group cursor-pointer h-full min-h-0 min-w-0 ${images.length > 1 ? 'md:col-span-7 lg:col-span-8' : 'md:col-span-12'} rounded-2xl overflow-hidden shadow-sm`}
                             onClick={() => setGallery({ open: true, index: 0 })}
                         >
                             <img
                                 src={getImageUrl(images.length > 0 ? images[0].image_url : tour.thumbnail_url)}
                                 alt={tour.title}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                                className="block w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                                 onError={onImgError('tour')}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
@@ -730,9 +730,9 @@ const TourDetailPage = () => {
 
                         {/* GRID áº¢NH PHá»¤ (BÃŠN PHáº¢I) - Chá»‰ hiá»‡n khi cÃ³ >1 áº£nh, trÃªn Desktop */}
                         {images.length > 1 && (
-                            <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full ${images.length === 2 ? 'grid-cols-1 grid-rows-1' :
-                                    images.length === 3 ? 'grid-cols-1 grid-rows-2' :
-                                        'grid-cols-2 grid-rows-2'
+                            <div className={`hidden md:grid md:col-span-5 lg:col-span-4 gap-2 sm:gap-3 h-full min-h-0 min-w-0 ${images.length === 2 ? 'grid-cols-1 grid-rows-[minmax(0,1fr)]' :
+                                    images.length === 3 ? 'grid-cols-1 grid-rows-[repeat(2,minmax(0,1fr))]' :
+                                        'grid-cols-2 grid-rows-[repeat(2,minmax(0,1fr))]'
                                 }`}>
                                 {images.slice(1, 5).map((img, i) => {
                                     // TÃ­nh toÃ¡n lÆ°á»›i khi cÃ³ sá»‘ láº» áº£nh phá»¥
@@ -745,13 +745,13 @@ const TourDetailPage = () => {
                                     return (
                                         <div
                                             key={img.id || i}
-                                            className={`relative group cursor-pointer overflow-hidden rounded-2xl shadow-sm ${itemClass}`}
+                                            className={`relative group cursor-pointer min-h-0 min-w-0 overflow-hidden rounded-2xl shadow-sm ${itemClass}`}
                                             onClick={() => setGallery({ open: true, index: i + 1 })}
                                         >
                                             <img
                                                 src={getImageUrl(img.image_url)}
                                                 alt={`${tour.title} - ${i + 1}`}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                className="block w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                 onError={onImgError('tour')}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300" />

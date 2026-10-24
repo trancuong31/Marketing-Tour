@@ -359,7 +359,8 @@ const prepareTourTranslations = ({ translations, slug }) =>
     .map((item) => ({
       language: item.language,
       title: item.title.trim(),
-      slug: item.slug || slugify(item.title.trim(), { lower: true, strict: true }) || slug,
+      // Tour translations share the canonical tour slug; slugs are not translated.
+      slug,
       summary: item.summary || null,
       highlights: item.highlights || null,
       price_includes: item.price_includes || null,
@@ -658,7 +659,7 @@ const createTour = catchAsync(async (req, res, next) => {
           tour_id: tour.id,
           language: item.language,
           title: item.title || '',
-          slug: item.slug || finalSlug,
+          slug: finalSlug,
           summary: item.summary || null,
           highlights: item.highlights || null,
           price_includes: item.price_includes || null,
@@ -733,6 +734,7 @@ const updateTour = catchAsync(async (req, res, next) => {
     const existingSlug = await Tour.findOne({ where: { slug: newSlug, id: { [Op.ne]: id } } });
     if (existingSlug) newSlug = `${newSlug}-${Date.now()}`;
   }
+  const sourceSlugChanged = newSlug !== tour.slug;
 
   const parsedDeparturesForUpdate = departures !== undefined ? parseJsonField(departures) : null;
 
@@ -760,6 +762,13 @@ const updateTour = catchAsync(async (req, res, next) => {
 
     if (Object.keys(tourUpdate).length > 0) {
       await tour.update(tourUpdate, { transaction: t });
+    }
+
+    if (sourceSlugChanged) {
+      await TourTranslation.update(
+        { slug: newSlug },
+        { where: { tour_id: id }, transaction: t }
+      );
     }
 
     // 2. Ảnh upload mới
@@ -963,14 +972,12 @@ const updateTour = catchAsync(async (req, res, next) => {
           }
 
           const itemTitle = item.title.trim();
-          const itemSlug = item.slug || slugify(itemTitle, { lower: true, strict: true }) || newSlug;
-
           await TourTranslation.create(
             {
               tour_id: id,
               language: targetLang,
               title: itemTitle,
-              slug: itemSlug,
+              slug: newSlug,
               summary: item.summary !== undefined ? (item.summary || null) : null,
               highlights: item.highlights !== undefined ? (item.highlights || null) : null,
               price_includes: item.price_includes !== undefined ? (item.price_includes || null) : null,
@@ -987,11 +994,11 @@ const updateTour = catchAsync(async (req, res, next) => {
             const trimmedTitle = item.title.trim();
             if (trimmedTitle.length > 0) {
               updateData.title = trimmedTitle;
-              updateData.slug = item.slug || slugify(trimmedTitle, { lower: true, strict: true }) || existingTranslation.slug;
             }
-          } else if (item.slug !== undefined) {
-            updateData.slug = item.slug || existingTranslation.slug;
           }
+
+          // Keep even existing translation rows aligned with the source tour slug.
+          updateData.slug = newSlug;
 
           for (const field of textFields) {
             if (typeof item[field] === 'string' && item[field].trim().length > 0) {
