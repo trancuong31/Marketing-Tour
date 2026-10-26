@@ -37,7 +37,7 @@ const TourCard = ({ tour, compact = false }) => {
     const title = tour.locale_content_status && tour.locale_content_status.title !== 'available'
         ? t('tour.detail.titleUnavailable', 'Tour title unavailable')
         : tour.title || t('tour.detail.titleUnavailable', 'Tour title unavailable');
-    const hasUnavailableContent = hasUnavailableTourContent(tour);
+    const hasUnavailableContent = !compact && hasUnavailableTourContent(tour, ['title', 'summary']);
 
     return (
         <Link
@@ -46,10 +46,10 @@ const TourCard = ({ tour, compact = false }) => {
             onClick={(event) => {
                 if (!tour.slug) event.preventDefault();
             }}
-            className="group block bg-white rounded-2xl overflow-hidden border-2 border-transparent shadow-[0_2px_12px_rgba(0,0,0,0.2)] transition-all duration-300"
+            className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-border/70 hover:border-primary/40 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-xl transition-all duration-300"
         >
             {/* Ảnh */}
-            <div className={`relative overflow-hidden bg-surface-alt ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
+            <div className={`relative overflow-hidden bg-surface-alt shrink-0 ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
                 <img
                     src={thumbnail}
                     alt={title}
@@ -82,36 +82,36 @@ const TourCard = ({ tour, compact = false }) => {
             </div>
 
             {/* Content */}
-            <div className={`flex flex-col ${compact ? 'p-4 min-h-[150px]' : 'p-5 min-h-[180px]'}`}>
-                {/* Category */}
-                {categoryName && (
-                    <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                        {categoryName}
-                    </span>
-                )}
+            <div className={`flex flex-col flex-1 justify-between ${compact ? 'p-4' : 'p-5'}`}>
+                <div className="flex flex-col">
+                    {/* Category */}
+                    {categoryName ? (
+                        <span className="text-xs font-semibold text-primary uppercase tracking-wider line-clamp-1">
+                            {categoryName}
+                        </span>
+                    ) : (
+                        <span className="text-xs font-semibold text-transparent select-none">&nbsp;</span>
+                    )}
 
-                {/* Title */}
-                <h3 className={`mt-1.5 font-bold text-text line-clamp-2 group-hover:text-primary transition-colors leading-snug ${compact ? 'text-sm' : 'text-lg'}`}>
-                    {title}
-                </h3>
+                    {/* Title */}
+                    <h3 className={`mt-1.5 font-bold text-text line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem] group-hover:text-primary transition-colors leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
+                        {title}
+                    </h3>
 
-                {/* Description */}
-                {tour.summary && (
-                    <p className={`mt-2 text-text-secondary leading-relaxed line-clamp-2 ${compact ? 'text-xs' : 'text-sm'}`}>
-                        {summary}
+                    {/* Description */}
+                    <p className={`mt-2 text-text-secondary leading-relaxed line-clamp-2 min-h-[2.5rem] ${compact ? 'text-xs' : 'text-sm'}`}>
+                        {summary || '\u00A0'}
                     </p>
-                )}
-                {hasUnavailableContent && (
-                    <p role="status" className="mt-2 text-xs text-text-muted">
-                        {t('tour.detail.contentUnavailable', 'Some tour content is unavailable or under review. It has not been replaced with content from another language.')}
-                    </p>
-                )}
 
-                {/* Spacer */}
-                <div className="flex-1" />
+                    {hasUnavailableContent && (
+                        <p role="status" className="mt-2 text-xs text-text-muted line-clamp-2">
+                            {t('tour.detail.contentUnavailable', 'Some tour content is unavailable or under review. It has not been replaced with content from another language.')}
+                        </p>
+                    )}
+                </div>
 
                 {/* Price — từ departures */}
-                <div className="mt-4 flex items-end justify-end gap-2">
+                <div className="mt-4 pt-3 border-t border-border/40 flex items-end justify-end gap-2">
                     {minPrice ? (
                         <div className="text-right">
                             <p className="text-xs text-text-muted">{t('tour.card.from', 'Giá từ')}</p>
@@ -120,7 +120,7 @@ const TourCard = ({ tour, compact = false }) => {
                             </span>
                         </div>
                     ) : (
-                        <span className="text-sm text-text-muted">{t('tour.card.contact', 'Liên hệ')}</span>
+                        <span className="text-sm font-semibold text-text-muted">{t('tour.card.contact', 'Liên hệ')}</span>
                     )}
                 </div>
             </div>

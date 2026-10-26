@@ -23,4 +23,28 @@ describe('getRelatedTours', () => {
         expect(related[0].title).toBe('Phu Quoc Island Escape');
         expect(related[0].summary).toBe(related[1].summary);
     });
+
+    it('safely handles null currentTour, null tours, or tours with null title/summary without throwing', () => {
+        expect(getRelatedTours(null, [])).toEqual([]);
+        expect(getRelatedTours(undefined, null)).toEqual([]);
+        expect(getRelatedTours({ id: 1, title: null, summary: null }, null)).toEqual([]);
+
+        const tourWithNulls = {
+            id: 2,
+            title: null,
+            slug: 'test-tour',
+            summary: null,
+            status: 'active',
+            departures: [],
+        };
+        const candidateTours = [
+            null,
+            { id: 3, title: null, slug: 'tour-3', status: 'active', departures: [] },
+            makeTour(4, 'Ha Noi City Tour'),
+        ];
+
+        expect(() => getRelatedTours(tourWithNulls, candidateTours)).not.toThrow();
+        const results = getRelatedTours(tourWithNulls, candidateTours);
+        expect(results.length).toBeGreaterThanOrEqual(1);
+    });
 });

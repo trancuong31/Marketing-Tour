@@ -172,11 +172,11 @@ const CarouselSection = ({
                 </div>
 
                 <div className="overflow-hidden touch-pan-y select-none p-3" {...swipeHandlers}>
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
                         {visibleItems.map((item, index) => (
                             <div
                                 key={`${getItemKey(item) ?? index}-${activeIndex}-${index}`}
-                                className="min-w-0 animate-in fade-in slide-in-from-right-2"
+                                className="min-w-0 h-full flex flex-col animate-in fade-in slide-in-from-right-2"
                             >
                                 {renderItem(item, index, activeIndex)}
                             </div>

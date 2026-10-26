@@ -14,7 +14,9 @@ jest.mock('../../src/models', () => ({
   TourOption: {},
   Category: {},
   Banner: {},
-  TourTranslation: {},
+  TourTranslation: {
+    findOne: jest.fn(),
+  },
   CategoryTranslation: {},
   TourItineraryTranslation: {},
 }));
@@ -144,7 +146,7 @@ describe.each([
 
     expect(data.price_includes).toBeNull();
     expect(data.title).toBeNull();
-    expect(data.slug).toBeNull();
+    expect(data.slug).toBe(sourceFields.slug);
     expect(data.locale_content_status.price_includes).toBe('missing');
   });
 
@@ -189,7 +191,7 @@ describe.each([
     const data = endpoint === getTours ? response[0] : response;
 
     expect(data.Category.name).toBeNull();
-    expect(data.Category.slug).toBeNull();
+    expect(data.Category.slug).toBe('ten-danh-muc-nguon');
   });
 
   it('rejects a Chinese value mistakenly saved in the EN row', async () => {

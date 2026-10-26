@@ -89,10 +89,6 @@ const applyCategoryLocaleContent = (category, language) => {
     });
     Object.assign(category, resolved.content);
     category.locale_content_status = resolved.status;
-
-    if (language !== 'vi') {
-        category.slug = translation?.slug || null;
-    }
 };
 
 /**
@@ -208,10 +204,6 @@ const getTours = catchAsync(async (req, res) => {
             image_url: resolveExistingUploadUrl(image.image_url),
         }));
         applyTourLocaleContent(data, lang);
-        if (shouldUseTranslation) {
-            const tr = data.translations?.find((item) => item.language === lang);
-            data.slug = tr?.slug || null;
-        }
         delete data.translations;
 
         applyCategoryLocaleContent(data.Category, lang);
@@ -234,15 +226,30 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
 
     const formattedToday = getTodayDateString();
 
+    let targetTourId = null;
+    if (/^\d+$/.test(slug)) {
+        targetTourId = Number(slug);
+    } else if (typeof TourTranslation?.findOne === 'function') {
+        const matchedTr = await TourTranslation.findOne({
+            where: { slug },
+            attributes: ['tour_id'],
+        });
+        if (matchedTr) {
+            targetTourId = matchedTr.tour_id;
+        }
+    }
+
+    const whereClause = {
+        status: 'active',
+    };
+    if (targetTourId) {
+        whereClause[Op.or] = [{ id: targetTourId }, { slug }];
+    } else {
+        whereClause.slug = slug;
+    }
+
     const tour = await Tour.findOne({
-        where: {
-            status: 'active',
-            [Op.or]: [
-                { slug },
-                { '$translations.slug$': slug },
-            ],
-        },
-        subQuery: false,
+        where: whereClause,
         include: [
             {
                 model: TourTranslation,
@@ -293,10 +300,6 @@ const getTourBySlug = catchAsync(async (req, res, next) => {
         image_url: resolveExistingUploadUrl(image.image_url),
     }));
     applyTourLocaleContent(data, lang);
-    if (shouldUseTranslation) {
-        const tr = data.translations?.find((item) => item.language === lang);
-        data.slug = tr?.slug || null;
-    }
     delete data.translations;
 
     applyCategoryLocaleContent(data.Category, lang);

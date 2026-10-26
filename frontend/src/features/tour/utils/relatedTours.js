@@ -35,12 +35,11 @@ const RELATED_STOP_WORDS = new Set([
 
 const getTourCategoryId = (tour) => tour?.category_id || tour?.Category?.id || null;
 
-const normalizeSearchText = (text = '') => text
+const normalizeSearchText = (text = '') => (text ?? '')
     .toString()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/Ä‘/g, 'd')
-    .replace(/Ä/g, 'd')
+    .replace(/[đĐ]/g, 'd')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
@@ -53,6 +52,8 @@ const getTourSearchText = (tour) => normalizeSearchText([
 ].filter(Boolean).join(' '));
 
 const getDestinationKeywords = (tour) => {
+    if (!tour) return [];
+
     const searchText = getTourSearchText(tour);
     const knownKeywords = RELATED_DESTINATION_KEYWORDS.filter((keyword) => searchText.includes(keyword));
 
@@ -60,7 +61,10 @@ const getDestinationKeywords = (tour) => {
         return knownKeywords;
     }
 
-    return normalizeSearchText(tour?.title)
+    const titleText = normalizeSearchText(tour?.title);
+    if (!titleText) return [];
+
+    return titleText
         .split(' ')
         .filter((word) => word.length > 2 && !RELATED_STOP_WORDS.has(word))
         .slice(0, 5);
@@ -75,13 +79,17 @@ const mergeUniqueTours = (groups) => {
     const seen = new Set();
 
     return groups.flat().filter((tour) => {
-        if (!tour || seen.has(tour.id)) return false;
+        if (!tour || tour.id == null || seen.has(tour.id)) return false;
         seen.add(tour.id);
         return true;
     });
 };
 
 export const getRelatedTours = (currentTour, tours) => {
+    if (!currentTour || !Array.isArray(tours) || tours.length === 0) {
+        return [];
+    }
+
     const currentCategoryId = getTourCategoryId(currentTour);
     const currentKeywords = getDestinationKeywords(currentTour);
 
@@ -93,22 +101,22 @@ export const getRelatedTours = (currentTour, tours) => {
     const withDestinationScore = candidates.map((tour) => ({
         tour,
         destinationScore: getDestinationScore(currentKeywords, getTourSearchText(tour)),
-        hasOpenDepartures: (tour.departures || []).length > 0,
+        hasOpenDepartures: Array.isArray(tour?.departures) && tour.departures.length > 0,
     }));
 
     const byRelevance = (a, b) => (
         Number(b.hasOpenDepartures) - Number(a.hasOpenDepartures)
         || b.destinationScore - a.destinationScore
-        || b.tour.id - a.tour.id
+        || ((b.tour?.id || 0) - (a.tour?.id || 0))
     );
 
     const promotionTours = withDestinationScore
-        .filter(({ tour }) => tour.tour_badge === 'promotion')
+        .filter(({ tour }) => tour?.tour_badge === 'promotion')
         .sort(byRelevance)
         .map(({ tour }) => tour);
 
     const featuredTours = withDestinationScore
-        .filter(({ tour }) => tour.tour_badge === 'featured')
+        .filter(({ tour }) => tour?.tour_badge === 'featured')
         .sort(byRelevance)
         .map(({ tour }) => tour);
 

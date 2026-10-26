@@ -573,6 +573,9 @@ const TourDetailPage = () => {
                 const res = await tourService.getBySlug(slug);
                 const tourData = res.data.data;
                 setTour(tourData);
+                if (tourData?.slug && tourData.slug !== slug) {
+                    window.history.replaceState(null, '', `/tours/${tourData.slug}`);
+                }
 
                 const fetchPromises = [];
                 if (tourData?.id) {
@@ -591,10 +594,14 @@ const TourDetailPage = () => {
                 const realFeatured = featuredRes.data.data || [];
                 setFeaturedVotes(realFeatured.length > 0 ? realFeatured : getMockReviews(t));
 
-                const allTours = toursRes.data.data || [];
-                setRelatedTours(getRelatedTours(tourData, allTours));
+                const allTours = toursRes?.data?.data || [];
+                setRelatedTours(tourData ? getRelatedTours(tourData, allTours) : []);
             } catch (err) {
-                console.error('Lá»—i táº£i dá»¯ liá»‡u:', err);
+                if (err?.response?.status === 404) {
+                    console.warn(`[TourDetailPage] Tour không tồn tại hoặc đã ngừng hoạt động (slug: "${slug}")`);
+                } else {
+                    console.error('Lỗi tải dữ liệu:', err);
+                }
                 setFeaturedVotes(getMockReviews(t));
                 setRelatedTours([]);
             } finally {
@@ -634,8 +641,17 @@ const TourDetailPage = () => {
         return (
             <ClientLayout>
                 <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-                    <h2 className="text-2xl font-bold text-text mb-2">{t('tour.list.noResults', 'KhÃ´ng tÃ¬m tháº¥y tour')}</h2>
-                    <p className="text-text-muted">{t('tour.detail.notFoundDesc', 'Tour nÃ y cÃ³ thá»ƒ Ä‘Ã£ ngá»«ng hoáº·c khÃ´ng tá»“n táº¡i.')}</p>
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-alt flex items-center justify-center text-text-muted">
+                        <AlertTriangle className="w-8 h-8 stroke-1 text-amber-500" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-text mb-2">{t('tour.list.noResults', 'Không tìm thấy tour')}</h2>
+                    <p className="text-text-muted mb-6">{t('tour.detail.notFoundDesc', 'Tour này có thể đã ngừng hoặc không tồn tại.')}</p>
+                    <Link
+                        to="/tours/noi-dia"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors shadow-sm"
+                    >
+                        {t('common.backToTours', 'Xem danh sách tour')}
+                    </Link>
                 </div>
             </ClientLayout>
         );

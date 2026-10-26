@@ -8,8 +8,8 @@ const CHECKED_TOUR_CONTENT_FIELDS = [
     'cancellation_policy',
 ];
 
-export const hasUnavailableTourContent = (tour) =>
-    CHECKED_TOUR_CONTENT_FIELDS.some((field) => {
+export const hasUnavailableTourContent = (tour, fields = CHECKED_TOUR_CONTENT_FIELDS) =>
+    fields.some((field) => {
         const status = tour?.locale_content_status?.[field];
         return status !== undefined && status !== 'available';
     });
