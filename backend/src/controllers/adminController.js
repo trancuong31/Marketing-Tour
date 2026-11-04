@@ -965,13 +965,12 @@ const updateTour = catchAsync(async (req, res, next) => {
         ];
 
         const hasNonEmptyTitle = typeof item.title === 'string' && item.title.trim().length > 0;
+        const itemTitle = hasNonEmptyTitle ? item.title.trim() : (tour.title || '');
 
         if (!existingTranslation) {
-          if (!hasNonEmptyTitle) {
+          if (!itemTitle) {
             continue;
           }
-
-          const itemTitle = item.title.trim();
           await TourTranslation.create(
             {
               tour_id: id,
@@ -1044,11 +1043,94 @@ const deleteTour = catchAsync(async (req, res, next) => {
     return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
   }
 
-  await tour.destroy();
+  // 1. Kiểm tra các đơn đặt tour còn hiệu lực (pending / approved)
+  const activeBookings = await Booking.findAll({
+    where: {
+      tour_id: id,
+      status: { [Op.in]: ['pending', 'approved'] },
+    },
+    include: [
+      {
+        model: TourDeparture,
+        as: 'departure',
+        attributes: ['id', 'departure_date'],
+      },
+    ],
+  });
+
+  // Kiểm tra xem có đơn nào thuộc lịch khởi hành sắp tới (hôm nay hoặc tương lai) không
+  const hasUpcomingActiveBookings = activeBookings.some((booking) => {
+    const depDate = booking.departure?.departure_date || booking.departure_date_snapshot;
+    return !depDate || !isDateOnlyBeforeToday(depDate);
+  });
+
+  if (hasUpcomingActiveBookings) {
+    return next(
+      new AppError(
+        'Tour đang có đơn đặt chỗ sắp khởi hành hoặc chưa hoàn tất. Để bảo toàn dữ liệu khách hàng, vui lòng chuyển trạng thái tour sang "Ẩn" (Hidden) thay vì xóa.',
+        HTTP_CODES.BAD_REQUEST
+      )
+    );
+  }
+
+  // 2. Nếu tour không có đơn đặt sắp tới (các chuyến đi đã kết thúc hoặc chỉ có đơn huỷ):
+  // Xóa tour và dọn dẹp các dữ liệu liên quan trong transaction
+  await sequelize.transaction(async (t) => {
+    const bookings = await Booking.findAll({
+      where: { tour_id: id },
+      attributes: ['id'],
+      transaction: t,
+    });
+    const bookingIds = bookings.map((b) => b.id);
+
+    if (bookingIds.length > 0) {
+      await BookingOption.destroy({
+        where: { booking_id: { [Op.in]: bookingIds } },
+        transaction: t,
+      });
+      await Booking.destroy({
+        where: { id: { [Op.in]: bookingIds } },
+        transaction: t,
+      });
+    }
+
+    await TourDeparture.destroy({
+      where: { tour_id: id },
+      transaction: t,
+    });
+
+    await tour.destroy({ transaction: t });
+  });
 
   res.status(200).json({
     status: 'success',
     message: 'Xóa tour thành công',
+  });
+});
+
+/**
+ * Cập nhật trạng thái tour (active, hidden, sold_out)
+ * PATCH /api/admin/tours/:id/status
+ */
+const updateTourStatus = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!['active', 'hidden', 'sold_out'].includes(status)) {
+    return next(new AppError('Trạng thái tour không hợp lệ', HTTP_CODES.BAD_REQUEST));
+  }
+
+  const tour = await Tour.findByPk(id);
+  if (!tour) {
+    return next(new AppError('Không tìm thấy tour', HTTP_CODES.NOT_FOUND));
+  }
+
+  await tour.update({ status });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Cập nhật trạng thái tour thành công',
+    data: tour,
   });
 });
 
@@ -1949,6 +2031,7 @@ module.exports = {
   getTourById,
   createTour,
   updateTour,
+  updateTourStatus,
   deleteTour,
   getBookings,
   getBookingOverview,

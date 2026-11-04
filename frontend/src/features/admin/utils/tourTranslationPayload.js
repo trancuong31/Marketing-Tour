@@ -8,16 +8,36 @@ const TRANSLATION_FIELDS = [
   'cancellation_policy',
 ];
 
+const isMeaningfulText = (value) =>
+  String(value || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .trim().length > 0;
+
 export const getTourTranslationPayload = (
   translations,
   { isCreate, baseline = [] }
 ) => {
-  if (isCreate) return translations;
+  if (isCreate) {
+    return translations.filter((t) =>
+      TRANSLATION_FIELDS.some((field) => isMeaningfulText(t?.[field]))
+    );
+  }
 
   return translations.filter((translation) => {
     const original = baseline.find((item) => item.language === translation.language) || {};
-    return TRANSLATION_FIELDS.some(
+    const hasChanged = TRANSLATION_FIELDS.some(
       (field) => (translation[field] ?? '') !== (original[field] ?? '')
     );
+    if (!hasChanged) return false;
+
+    const hasAnyContent = TRANSLATION_FIELDS.some((field) =>
+      isMeaningfulText(translation[field])
+    );
+    const hadOriginalContent = TRANSLATION_FIELDS.some((field) =>
+      isMeaningfulText(original[field])
+    );
+
+    return hasAnyContent || hadOriginalContent;
   });
 };

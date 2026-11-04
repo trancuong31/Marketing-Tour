@@ -68,6 +68,7 @@ export const adminService = {
     getTourById: (id) => api.get(`/admin/tours/${id}`),
     createTour: (formData) => api.post('/admin/tours', formData),
     updateTour: (id, formData) => api.put(`/admin/tours/${id}`, formData),
+    updateTourStatus: (id, status) => api.patch(`/admin/tours/${id}/status`, { status }),
     deleteTour: (id) => api.delete(`/admin/tours/${id}`),
     deleteTourImage: (id) => api.delete(`/admin/tour-images/${id}`),
 

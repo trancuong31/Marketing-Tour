@@ -967,8 +967,10 @@ const translateEntries = async (entries, targetLanguage, options = {}) => {
     }
 
     const batches = splitEntriesIntoBatches(uncachedEntries);
-    for (let index = 0; index < batches.length; index += getEffectiveTranslationConcurrency()) {
-        const chunk = batches.slice(index, index + getEffectiveTranslationConcurrency());
+    for (let index = 0; index < batches.length; ) {
+        const concurrency = getEffectiveTranslationConcurrency();
+        const chunk = batches.slice(index, index + concurrency);
+        index += chunk.length;
         const translatedChunks = await Promise.all(chunk.map(async (batch) => {
             try {
                 return batch.length === 1

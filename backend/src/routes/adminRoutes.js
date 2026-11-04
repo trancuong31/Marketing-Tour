@@ -31,6 +31,7 @@ const {
     getTourById,
     createTour,
     updateTour,
+    updateTourStatus,
     deleteTour,
     getBookings,
     getBookingOverview,
@@ -84,6 +85,7 @@ router.get('/tours', getAllTours);
 router.get('/tours/:id', getTourById);
 router.post('/tours', upload.array('images', 10), createTour);
 router.put('/tours/:id', upload.array('images', 10), updateTour);
+router.patch('/tours/:id/status', updateTourStatus);
 router.delete('/tours/:id', deleteTour);
 router.delete('/tour-images/:id', deleteTourImage);
 

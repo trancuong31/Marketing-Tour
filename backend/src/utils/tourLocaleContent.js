@@ -223,9 +223,10 @@ const assertTranslationFields = (values, language) => {
   const invalid = [];
 
   for (const [field, value] of Object.entries(values || {})) {
-    if (value === undefined || value === null || String(value).trim() === '') continue;
+    if (!plainText(value)) continue;
     const result = inspectTranslation(value, language);
-    if (result.status !== 'available') invalid.push({ field, ...result });
+    if (result.status === 'available' || result.status === 'missing') continue;
+    invalid.push({ field, ...result });
   }
 
   if (invalid.length > 0) {
