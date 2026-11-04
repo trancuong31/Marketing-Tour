@@ -315,7 +315,34 @@ button {
 }
 
 .prose-content img {
-    @apply rounded-lg max-w-full my-4;
+    @apply rounded-lg my-3;
+    max-width: 100%;
+}
+
+.prose-content::after,
+.ql-editor::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.ql-editor img {
+    cursor: pointer;
+    transition: outline 0.15s ease-in-out;
+}
+
+.ql-editor img.ql-selected-image {
+    outline: 3px solid #1E6FBF !important;
+    outline-offset: 3px !important;
+}
+
+@media (max-width: 640px) {
+    .prose-content img[style*="float"] {
+        max-width: 100% !important;
+        float: none !important;
+        display: block !important;
+        margin: 12px auto !important;
+    }
 }
 
 .prose-content a {

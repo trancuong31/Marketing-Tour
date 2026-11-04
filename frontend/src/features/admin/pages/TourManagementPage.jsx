@@ -22,6 +22,12 @@ import {
   Navigation,
   ChevronLeft,
   ChevronRight,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Image as ImageIcon,
+  Frame,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -283,10 +289,187 @@ const BULLET_LIBRARY = [
 const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
   const [ReactQuill, setReactQuill] = useState(null);
   const quillRef = useRef(null);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [imgAlign, setImgAlign] = useState('inline');
+  const [imgSize, setImgSize] = useState('100%');
+  const [hasFrame, setHasFrame] = useState(false);
 
   useEffect(() => {
-    import('react-quill-new').then((mod) => setReactQuill(() => mod.default));
+    import('react-quill-new').then((mod) => {
+      const Quill = mod.Quill || mod.default?.Quill;
+      if (Quill) {
+        try {
+          const BaseImage = Quill.import('formats/image');
+          if (BaseImage) {
+            const ATTRIBUTES = ['alt', 'height', 'width', 'style', 'class', 'data-align'];
+            class CustomImage extends BaseImage {
+              static formats(domNode) {
+                return ATTRIBUTES.reduce((formats, attribute) => {
+                  if (domNode.hasAttribute(attribute)) {
+                    formats[attribute] = domNode.getAttribute(attribute);
+                  }
+                  return formats;
+                }, {});
+              }
+              format(name, value) {
+                if (ATTRIBUTES.includes(name)) {
+                  if (value) {
+                    this.domNode.setAttribute(name, value);
+                  } else {
+                    this.domNode.removeAttribute(name);
+                  }
+                } else {
+                  super.format(name, value);
+                }
+              }
+            }
+            Quill.register(CustomImage, true);
+          }
+        } catch (e) {
+          console.warn('Could not register CustomImage on Quill', e);
+        }
+      }
+      setReactQuill(() => mod.default);
+    });
     import('react-quill-new/dist/quill.snow.css');
+  }, []);
+
+  const updateActiveImageState = (img) => {
+    if (!img) return;
+    const style = img.style || {};
+
+    // Check align
+    if (style.float === 'right') {
+      setImgAlign('right');
+    } else if (style.float === 'left') {
+      setImgAlign('left');
+    } else if (style.display === 'block' && String(style.margin || '').includes('auto')) {
+      setImgAlign('center');
+    } else {
+      setImgAlign('inline');
+    }
+
+    // Check size
+    const maxWidth = style.maxWidth || style.width || '';
+    if (maxWidth === '25%') setImgSize('25%');
+    else if (maxWidth === '40%' || maxWidth === '45%') setImgSize('40%');
+    else if (maxWidth === '60%') setImgSize('60%');
+    else if (maxWidth === '100%') setImgSize('100%');
+    else setImgSize('custom');
+
+    // Check frame
+    const hasShadow = !!(style.boxShadow && style.boxShadow.includes('rgba'));
+    setHasFrame(hasShadow);
+  };
+
+  const triggerChange = useCallback((targetImg) => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+    if (targetImg) targetImg.classList.remove('ql-selected-image');
+    const html = editor.root.innerHTML;
+    if (targetImg) targetImg.classList.add('ql-selected-image');
+    onChange(html);
+  }, [onChange]);
+
+  const applyAlignment = (align) => {
+    if (!selectedImg) return;
+    if (align === 'right') {
+      selectedImg.style.float = 'right';
+      selectedImg.style.display = 'inline-block';
+      selectedImg.style.margin = '4px 0 14px 18px';
+      selectedImg.style.clear = 'none';
+      if (!selectedImg.style.maxWidth || selectedImg.style.maxWidth === '100%') {
+        selectedImg.style.maxWidth = '40%';
+      }
+    } else if (align === 'left') {
+      selectedImg.style.float = 'left';
+      selectedImg.style.display = 'inline-block';
+      selectedImg.style.margin = '4px 18px 14px 0';
+      selectedImg.style.clear = 'none';
+      if (!selectedImg.style.maxWidth || selectedImg.style.maxWidth === '100%') {
+        selectedImg.style.maxWidth = '40%';
+      }
+    } else if (align === 'center') {
+      selectedImg.style.float = 'none';
+      selectedImg.style.display = 'block';
+      selectedImg.style.margin = '14px auto';
+      selectedImg.style.clear = 'both';
+      if (!selectedImg.style.maxWidth || selectedImg.style.maxWidth === '40%') {
+        selectedImg.style.maxWidth = '75%';
+      }
+    } else {
+      // inline / default
+      selectedImg.style.float = 'none';
+      selectedImg.style.display = 'inline-block';
+      selectedImg.style.margin = '6px 0';
+      selectedImg.style.clear = 'none';
+    }
+    selectedImg.setAttribute('style', selectedImg.style.cssText);
+    updateActiveImageState(selectedImg);
+    triggerChange(selectedImg);
+  };
+
+  const applySize = (size) => {
+    if (!selectedImg) return;
+    selectedImg.style.maxWidth = size;
+    selectedImg.style.width = 'auto';
+    selectedImg.setAttribute('style', selectedImg.style.cssText);
+    updateActiveImageState(selectedImg);
+    triggerChange(selectedImg);
+  };
+
+  const toggleFrame = () => {
+    if (!selectedImg) return;
+    if (hasFrame) {
+      selectedImg.style.border = '';
+      selectedImg.style.boxShadow = '';
+      selectedImg.style.borderRadius = '6px';
+    } else {
+      selectedImg.style.border = '4px solid #ffffff';
+      selectedImg.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.2)';
+      selectedImg.style.borderRadius = '4px';
+    }
+    selectedImg.setAttribute('style', selectedImg.style.cssText);
+    updateActiveImageState(selectedImg);
+    triggerChange(selectedImg);
+  };
+
+  const deleteSelectedImage = () => {
+    if (!selectedImg) return;
+    const editor = quillRef.current?.getEditor();
+    selectedImg.classList.remove('ql-selected-image');
+    selectedImg.remove();
+    setSelectedImg(null);
+    if (editor) {
+      onChange(editor.root.innerHTML);
+    }
+  };
+
+  const uploadAndInsertImage = useCallback(async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const editor = quillRef.current?.getEditor();
+    const range = editor?.getSelection(true) || { index: editor?.getLength() || 0, length: 0 };
+
+    try {
+      const res = await adminService.uploadGuideImage(formData);
+      const imageUrl = getImageUrl(res.data?.data?.image_url);
+      if (editor && imageUrl) {
+        editor.insertEmbed(range.index, 'image', imageUrl, 'user');
+        editor.setSelection(range.index + 1);
+        toast.success('Đã dán và tải ảnh lên thành công');
+      }
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (editor && evt.target?.result) {
+          editor.insertEmbed(range.index, 'image', evt.target.result, 'user');
+          editor.setSelection(range.index + 1);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   }, []);
 
   const insertBulletSymbol = useCallback((symbol) => {
@@ -318,36 +501,11 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
-
-      const formData = new FormData();
-      formData.append('image', file);
-
-      try {
-        const res = await adminService.uploadGuideImage(formData);
-        const imageUrl = getImageUrl(res.data?.data?.image_url);
-        const editor = quillRef.current?.getEditor();
-        const range = editor?.getSelection(true);
-
-        if (editor && range) {
-          editor.insertEmbed(range.index, 'image', imageUrl, 'user');
-          editor.setSelection(range.index + 1);
-        }
-      } catch {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const editor = quillRef.current?.getEditor();
-          const range = editor?.getSelection(true);
-          if (editor && range && e.target?.result) {
-            editor.insertEmbed(range.index, 'image', e.target.result, 'user');
-            editor.setSelection(range.index + 1);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+      uploadAndInsertImage(file);
     };
 
     input.click();
-  }, []);
+  }, [uploadAndInsertImage]);
 
   const formats = [
     'header',
@@ -363,6 +521,9 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     'color',
     'background',
     'align',
+    'width',
+    'height',
+    'style',
   ];
 
   const modules = useMemo(
@@ -388,50 +549,66 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     [handleImageUpload]
   );
 
-  const handlePaste = useCallback((e) => {
-    const clipboardData = e.clipboardData || window.clipboardData;
-    if (!clipboardData) return;
+  // Lắng nghe sự kiện paste ở chế độ CAPTURE trên editor.root để ngăn Quill chèn ảnh base64 trùng lặp
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor || !editor.root) return;
 
-    const items = clipboardData.items;
-    if (!items) return;
+    const root = editor.root;
 
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        const file = items[i].getAsFile();
-        if (!file) continue;
+    const handlePasteCapture = (e) => {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      if (!clipboardData) return;
 
-        e.preventDefault();
+      const items = clipboardData.items;
+      if (!items || items.length === 0) return;
 
-        const formData = new FormData();
-        formData.append('image', file);
-
-        adminService
-          .uploadGuideImage(formData)
-          .then((res) => {
-            const imageUrl = getImageUrl(res.data?.data?.image_url);
-            const editor = quillRef.current?.getEditor();
-            const range = editor?.getSelection(true) || { index: editor?.getLength() || 0 };
-            if (editor && imageUrl) {
-              editor.insertEmbed(range.index, 'image', imageUrl, 'user');
-              editor.setSelection(range.index + 1);
-            }
-          })
-          .catch(() => {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              const editor = quillRef.current?.getEditor();
-              const range = editor?.getSelection(true) || { index: editor?.getLength() || 0 };
-              if (editor && evt.target?.result) {
-                editor.insertEmbed(range.index, 'image', evt.target.result, 'user');
-                editor.setSelection(range.index + 1);
-              }
-            };
-            reader.readAsDataURL(file);
-          });
-        break;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            // Ngăn chặn hoàn toàn Quill xử lý paste nội bộ thành ảnh base64 duplicate
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            uploadAndInsertImage(file);
+            return;
+          }
+        }
       }
+    };
+
+    const handleEditorClick = (e) => {
+      const target = e.target;
+      if (target && target.tagName === 'IMG') {
+        e.stopPropagation();
+        setSelectedImg(target);
+        updateActiveImageState(target);
+      } else {
+        setSelectedImg(null);
+      }
+    };
+
+    root.addEventListener('paste', handlePasteCapture, true);
+    root.addEventListener('click', handleEditorClick);
+
+    return () => {
+      root.removeEventListener('paste', handlePasteCapture, true);
+      root.removeEventListener('click', handleEditorClick);
+    };
+  }, [ReactQuill, uploadAndInsertImage]);
+
+  // Hiển thị viền highlight cho ảnh đang được chọn
+  useEffect(() => {
+    if (selectedImg) {
+      selectedImg.classList.add('ql-selected-image');
     }
-  }, []);
+    return () => {
+      if (selectedImg) {
+        selectedImg.classList.remove('ql-selected-image');
+      }
+    };
+  }, [selectedImg]);
 
   return (
     <div>
@@ -462,9 +639,140 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
         ))}
       </div>
 
+      {/* ═══ IMAGE FORMATTING TOOLBAR (WORD STYLE) ═══ */}
+      {selectedImg ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 bg-primary/10 border-2 border-primary/40 p-2 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 uppercase tracking-wide bg-primary/15 px-2 py-1 rounded-md">
+              <ImageIcon className="w-3.5 h-3.5" /> Bố cục ảnh (Word):
+            </span>
+
+            {/* Căn lề / Trôi chữ */}
+            <div className="flex items-center gap-1 bg-surface p-0.5 rounded-lg border border-border shadow-2xs">
+              <button
+                type="button"
+                onClick={() => applyAlignment('right')}
+                className={`h-7 px-2.5 flex items-center gap-1.5 text-xs font-bold rounded-md transition-all ${
+                  imgAlign === 'right'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text hover:bg-surface-hover hover:text-primary'
+                }`}
+                title="Trôi sang phải (Chữ bao quanh bên trái — như mẫu Word)"
+              >
+                <AlignRight className="w-3.5 h-3.5" />
+                <span>Trôi phải</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyAlignment('left')}
+                className={`h-7 px-2.5 flex items-center gap-1.5 text-xs font-bold rounded-md transition-all ${
+                  imgAlign === 'left'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text hover:bg-surface-hover hover:text-primary'
+                }`}
+                title="Trôi sang trái (Chữ bao quanh bên phải)"
+              >
+                <AlignLeft className="w-3.5 h-3.5" />
+                <span>Trôi trái</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyAlignment('center')}
+                className={`h-7 px-2.5 flex items-center gap-1.5 text-xs font-bold rounded-md transition-all ${
+                  imgAlign === 'center'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text hover:bg-surface-hover hover:text-primary'
+                }`}
+                title="Căn giữa (Tách riêng 1 hàng)"
+              >
+                <AlignCenter className="w-3.5 h-3.5" />
+                <span>Giữa</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => applyAlignment('inline')}
+                className={`h-7 px-2 flex items-center gap-1 text-xs font-bold rounded-md transition-all ${
+                  imgAlign === 'inline'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-text hover:bg-surface-hover hover:text-primary'
+                }`}
+                title="Mặc định (Nằm cùng dòng text)"
+              >
+                <AlignJustify className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Kích thước */}
+            <div className="flex items-center gap-1 bg-surface p-0.5 rounded-lg border border-border shadow-2xs">
+              <span className="text-[10px] font-bold text-text-muted px-1.5">Size:</span>
+              {[
+                { label: '25%', val: '25%' },
+                { label: '40%', val: '40%' },
+                { label: '60%', val: '60%' },
+                { label: '100%', val: '100%' },
+              ].map((s) => (
+                <button
+                  key={s.val}
+                  type="button"
+                  onClick={() => applySize(s.val)}
+                  className={`h-7 px-2 text-xs font-bold rounded-md transition-all ${
+                    imgSize === s.val
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'text-text hover:bg-surface-hover hover:text-primary'
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Khung ảnh nghệ thuật */}
+            <button
+              type="button"
+              onClick={toggleFrame}
+              className={`h-8 px-2.5 flex items-center gap-1.5 text-xs font-bold rounded-lg border transition-all ${
+                hasFrame
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : 'bg-surface text-text border-border hover:border-amber-500 hover:text-amber-600'
+              }`}
+              title="Bật/Tắt khung viền trắng và bóng đổ nghệ thuật"
+            >
+              <Frame className="w-3.5 h-3.5" />
+              <span>Khung ảnh {hasFrame ? '✓' : ''}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={deleteSelectedImage}
+              className="h-8 px-2.5 flex items-center gap-1 text-xs font-bold rounded-lg bg-error/10 text-error hover:bg-error hover:text-white border border-error/20 transition-all"
+              title="Xóa hình ảnh này"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa ảnh</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedImg(null)}
+              className="h-8 px-2 flex items-center justify-center rounded-lg bg-surface text-text-muted hover:text-text border border-border hover:bg-surface-hover transition-all text-xs font-bold"
+              title="Đóng thanh công cụ"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between text-[11px] text-text-muted mb-2 px-1">
+          <span className="flex items-center gap-1.5">
+            <ImageIcon className="w-3.5 h-3.5 text-primary" />
+            <span>Mẹo: Nhấp chuột vào bất kỳ hình ảnh nào trong bài để mở thanh căn chỉnh (Trôi phải, trôi trái kiểu Word, kích thước, khung viền...)</span>
+          </span>
+        </div>
+      )}
+
       <div
         className={`rounded-lg border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}
-        onPaste={handlePaste}
       >
         {ReactQuill ? (
           <ReactQuill
@@ -488,7 +796,6 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
         )}
       </div>
     </div>
-  );
 };
 
 const PriceInputField = ({ field, error, placeholder }) => {
