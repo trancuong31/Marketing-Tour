@@ -3,6 +3,7 @@ const mockTourFindByPk = jest.fn();
 const mockTourCreate = jest.fn();
 const mockTourTranslationFindOne = jest.fn();
 const mockTourTranslationCreate = jest.fn();
+const mockTourTranslationUpdate = jest.fn();
 const mockTourTranslationDestroy = jest.fn();
 const mockTourTranslationBulkCreate = jest.fn();
 const mockTourDepartureFindAll = jest.fn();
@@ -44,6 +45,7 @@ jest.mock('../../src/models', () => {
   const TourTranslation = {
     findOne: mockTourTranslationFindOne,
     create: mockTourTranslationCreate,
+    update: mockTourTranslationUpdate,
     destroy: mockTourTranslationDestroy,
     bulkCreate: mockTourTranslationBulkCreate,
   };

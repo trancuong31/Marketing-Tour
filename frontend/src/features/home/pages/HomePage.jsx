@@ -57,8 +57,9 @@ const HomePage = () => {
         setHeroIndex(prev => (heroBanners.length === 0 ? 0 : Math.min(prev, heroBanners.length - 1)));
     }, [heroBanners.length]);
 
-    const featured = tours.filter(t => t.tour_badge === 'featured' && t.departures?.length > 0).slice(0, 6);
-    const onSale = tours.filter(t => t.tour_badge === 'promotion' && t.departures?.length > 0).slice(0, 6);
+    const sortByDepartures = (a, b) => (b.departures?.length || 0) - (a.departures?.length || 0);
+    const featured = tours.filter(t => t.tour_badge === 'featured').sort(sortByDepartures).slice(0, 6);
+    const onSale = tours.filter(t => t.tour_badge === 'promotion').sort(sortByDepartures).slice(0, 6);
     const activeHeroBanner = heroBanners[heroIndex] || null;
     const nextHeroBanner = heroBanners.length > 0 ? heroBanners[(heroIndex + 1) % heroBanners.length] : null;
 

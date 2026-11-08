@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useAuthStore } from '@/store';
 import { bookingService } from '@/services/tourService';
 import SuccessModal from '@/components/ui/SuccessModal';
-import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check, ChevronDown, Armchair } from 'lucide-react';
+import { Loader2, Calendar, Users, Minus, Plus, MapPin, Settings, Check, ChevronDown, Armchair, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CustomSelect } from '@/components/ui';
 import { toast } from 'sonner';
@@ -30,7 +30,17 @@ const parseDeparture = (d, t) => {
             ? { label: t('booking.seatsLeft', { count: seats }), variant: 'warning' }
             : { label: t('booking.seatsLeft', { count: seats }), variant: 'success' };
 
-    return { day, month, year, weekday, seatBadge, disabled: seats === 0 };
+    return {
+        day,
+        month,
+        year,
+        weekday,
+        seatBadge,
+        disabled: seats === 0,
+        flight: d.flight || null,
+        flight_outbound: d.flight_outbound || null,
+        flight_inbound: d.flight_inbound || null,
+    };
 };
 
 const BADGE_CLASS = {
@@ -78,7 +88,14 @@ const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
                         <div className="w-px h-7 bg-border shrink-0" />
                         {/* Thứ + năm */}
                         <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-text truncate">{parsed.weekday}</div>
+                            <div className="text-sm font-medium text-text truncate flex items-center gap-1.5">
+                                <span>{parsed.weekday}</span>
+                                {(parsed.flight || parsed.flight_outbound || parsed.flight_inbound) && (
+                                    <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md truncate max-w-[140px]" title={`Chặng bay: ${parsed.flight_outbound || parsed.flight || ''}`}>
+                                        ✈ Chuyến bay
+                                    </span>
+                                )}
+                            </div>
                             <div className="text-xs text-text-muted">{parsed.year}</div>
                         </div>
                         {/* Badge */}
@@ -125,7 +142,14 @@ const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
                                     <div className="w-px self-stretch bg-border shrink-0" />
                                     {/* Thứ + năm */}
                                     <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-medium text-text">{p.weekday}</div>
+                                        <div className="text-sm font-medium text-text flex items-center gap-1.5 flex-wrap">
+                                            <span>{p.weekday}</span>
+                                            {(p.flight || p.flight_outbound || p.flight_inbound) && (
+                                                <span className="text-[11px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md" title={`Chặng bay: ${p.flight_outbound || p.flight || ''}`}>
+                                                    ✈ Chuyến bay
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="text-xs text-text-muted">{p.year}</div>
                                     </div>
                                 </div>
@@ -372,6 +396,43 @@ const BookingForm = ({ tour }) => {
                             }}
                         />
                     </div>
+
+                    {/* ═══ THÔNG TIN CHẶNG BAY KHI ĐÃ CHỌN NGÀY ═══ */}
+                    {selectedDeparture && (selectedDeparture.flight_outbound || selectedDeparture.flight_inbound || selectedDeparture.flight) && (
+                        <div className="bg-primary/[0.04] border border-primary/20 rounded-xl p-3.5 space-y-2.5 animate-in fade-in duration-200">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wide">
+                                <Plane className="w-4 h-4" />
+                                <span>Thông tin chặng bay</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2">
+                                {selectedDeparture.flight_outbound && (
+                                    <div className="text-xs bg-white rounded-lg p-2.5 border border-border/80 shadow-2xs">
+                                        <div className="font-bold text-emerald-700 flex items-center gap-1 mb-1">
+                                            🛫 Chặng đi:
+                                        </div>
+                                        <div className="font-mono text-text text-[11px] whitespace-pre-line leading-relaxed">
+                                            {selectedDeparture.flight_outbound}
+                                        </div>
+                                    </div>
+                                )}
+                                {selectedDeparture.flight_inbound && (
+                                    <div className="text-xs bg-white rounded-lg p-2.5 border border-border/80 shadow-2xs">
+                                        <div className="font-bold text-blue-700 flex items-center gap-1 mb-1">
+                                            🛬 Chặng về:
+                                        </div>
+                                        <div className="font-mono text-text text-[11px] whitespace-pre-line leading-relaxed">
+                                            {selectedDeparture.flight_inbound}
+                                        </div>
+                                    </div>
+                                )}
+                                {!selectedDeparture.flight_outbound && !selectedDeparture.flight_inbound && selectedDeparture.flight && (
+                                    <div className="text-xs font-mono text-text bg-white rounded-lg p-2.5 border border-border/80 whitespace-pre-line shadow-2xs">
+                                        {selectedDeparture.flight}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* ═══ BƯỚC 2: HÀNH KHÁCH ═══ */}
                     <div>

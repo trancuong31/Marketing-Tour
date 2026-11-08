@@ -328,7 +328,12 @@ button {
 
 .ql-editor img {
     cursor: pointer;
-    transition: outline 0.15s ease-in-out;
+    transition: outline 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.ql-editor img:hover {
+    outline: 2px dashed #1E6FBF !important;
+    outline-offset: 2px !important;
 }
 
 .ql-editor img.ql-selected-image {

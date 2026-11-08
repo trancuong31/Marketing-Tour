@@ -1,4 +1,4 @@
-﻿-- --------------------------------------------------------
+-- --------------------------------------------------------
 -- Host:                         127.0.0.1
 -- Server version:               12.0.2-MariaDB - mariadb.org binary distribution
 -- Server OS:                    Win64
@@ -379,6 +379,9 @@ CREATE TABLE IF NOT EXISTS `tour_departures` (
   `capacity` int(11) NOT NULL DEFAULT 0 COMMENT 'Tổng số chỗ có thể bán',
   `available_seats` int(11) NOT NULL DEFAULT 0 COMMENT 'Số chỗ còn có thể bán',
   `status` enum('open','full','cancelled') DEFAULT 'open' COMMENT 'Trạng thái mở bán',
+  `flight` varchar(255) DEFAULT NULL COMMENT 'Chặng bay / thông tin chuyến bay',
+  `flight_outbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng đi',
+  `flight_inbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng về',
   PRIMARY KEY (`id`),
   KEY `tour_id` (`tour_id`),
   CONSTRAINT `tour_d` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON UPDATE CASCADE
@@ -825,7 +828,7 @@ INSERT INTO `translations` (`id`, `translation_key`, `description`, `vi`, `en`, 
 	(108, 'common.save', 'common.save', 'Lưu', 'Save', '保存', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
 	(109, 'common.search', 'common.search', 'Tìm kiếm', 'Search', '搜索', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
 	(110, 'footer.about', 'footer.about', 'Về Chúng Tôi', 'About Us', '关于我们', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
-	(111, 'footer.aboutUs', 'footer.aboutUs', 'VỀ KỲ NGHỈ TUYỆT VỜI', 'ABOUT KY NGHỈ TUYET VOI', '关于 KyNghiTuyetVoi', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
+	(111, 'footer.aboutUs', 'footer.aboutUs','KỲ NGHỈ TUYỆT VỜI', 'ABOUT KY NGHỈ TUYET VOI', '关于 KyNghiTuyetVoi', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
 	(112, 'footer.address', 'footer.address', 'Phố Nhổn, P. Phương Canh, Q. Bắc Từ Liêm, TP. Hà Nội', 'Nhon Street, Phuong Canh Ward, Bac Tu Liem Dist., Hanoi', '河内市北慈廉区1号Nhon街', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
 	(113, 'footer.blog', 'footer.blog', 'Blog Du Lịch', 'Travel Blog', '旅游博客', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
 	(114, 'footer.copyright', 'footer.copyright', '© 2026 Marketing Tour. Tất cả các quyền được bảo lưu.', '© 2026 Marketing Tour. All rights reserved.', '© 2026 Marketing Tour. 保留所有权利。', '2026-07-21 21:41:05', '2026-07-21 21:41:05'),
@@ -1204,6 +1207,42 @@ DELETE FROM `vote_likes`;
 INSERT INTO `vote_likes` (`id`, `vote_id`, `user_id`, `created_at`) VALUES
 	(2, 8, 8, '2026-06-13 09:27:34'),
 	(3, 19, 8, '2026-06-13 09:27:36');
+
+-- Dumping structure for table db_marketing_tour.contact_settings
+DROP TABLE IF EXISTS `contact_settings`;
+CREATE TABLE IF NOT EXISTS `contact_settings` (
+  `id` int(11) NOT NULL,
+  `configuration` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`configuration`)),
+  `updated_by` int(11) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping structure for table db_marketing_tour.footer_links
+DROP TABLE IF EXISTS `footer_links`;
+CREATE TABLE IF NOT EXISTS `footer_links` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `url` varchar(500) NOT NULL,
+  `link_type` enum('internal','external') NOT NULL DEFAULT 'internal',
+  `column_position` tinyint(4) NOT NULL DEFAULT 1,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `is_active` tinyint(4) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.footer_links
+DELETE FROM `footer_links`;
+INSERT INTO `footer_links` (`id`, `title`, `url`, `link_type`, `column_position`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'Về Chúng Tôi', '/guides/ve-chung-toi', 'internal', 1, 1, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55'),
+	(2, 'Blog Du Lịch', '/guides/blog-du-lich', 'internal', 1, 2, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55'),
+	(3, 'Câu Hỏi Thường Gặp', '/guides/cau-hoi-thuong-gap', 'internal', 2, 1, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55'),
+	(4, 'Hướng Dẫn Thanh Toán', '/guides/huong-dan-thanh-toan', 'internal', 2, 2, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55'),
+	(5, 'Điều Khoản Sử Dụng', '/guides/dieu-khoan-su-dung', 'internal', 3, 1, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55'),
+	(6, 'Chính Sách Bảo Mật', '/guides/chinh-sach-bao-mat', 'internal', 3, 2, 1, '2026-11-08 14:18:55', '2026-11-08 14:18:55');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

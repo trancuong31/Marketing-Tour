@@ -28,6 +28,7 @@ import {
   AlignJustify,
   Image as ImageIcon,
   Frame,
+  Plane,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -254,6 +255,9 @@ const normalizeTourDeparturesPayload = (departures = []) =>
     price_child: normalizeMoneyValue(item.price_child),
     price_infant: normalizeMoneyValue(item.price_infant),
     capacity: normalizeIntegerValue(item.capacity ?? available_seats),
+    flight: item.flight ? String(item.flight).trim() : '',
+    flight_outbound: item.flight_outbound ? String(item.flight_outbound).trim() : '',
+    flight_inbound: item.flight_inbound ? String(item.flight_inbound).trim() : '',
   }));
 
 const normalizePickupLocationsPayload = (pickupLocations = []) =>
@@ -289,10 +293,19 @@ const BULLET_LIBRARY = [
 const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
   const [ReactQuill, setReactQuill] = useState(null);
   const quillRef = useRef(null);
+  const containerRef = useRef(null);
   const [selectedImg, setSelectedImg] = useState(null);
   const [imgAlign, setImgAlign] = useState('inline');
   const [imgSize, setImgSize] = useState('100%');
   const [hasFrame, setHasFrame] = useState(false);
+
+  const getSafeEditor = useCallback(() => {
+    try {
+      return quillRef.current?.getEditor?.() || null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     import('react-quill-new').then((mod) => {
@@ -363,13 +376,13 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
   };
 
   const triggerChange = useCallback((targetImg) => {
-    const editor = quillRef.current?.getEditor();
+    const editor = getSafeEditor();
     if (!editor) return;
     if (targetImg) targetImg.classList.remove('ql-selected-image');
     const html = editor.root.innerHTML;
     if (targetImg) targetImg.classList.add('ql-selected-image');
     onChange(html);
-  }, [onChange]);
+  }, [onChange, getSafeEditor]);
 
   const applyAlignment = (align) => {
     if (!selectedImg) return;
@@ -436,7 +449,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
 
   const deleteSelectedImage = () => {
     if (!selectedImg) return;
-    const editor = quillRef.current?.getEditor();
+    const editor = getSafeEditor();
     selectedImg.classList.remove('ql-selected-image');
     selectedImg.remove();
     setSelectedImg(null);
@@ -449,8 +462,8 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     const formData = new FormData();
     formData.append('image', file);
 
-    const editor = quillRef.current?.getEditor();
-    const range = editor?.getSelection(true) || { index: editor?.getLength() || 0, length: 0 };
+    const editor = getSafeEditor();
+    const range = editor?.getSelection?.(true) || { index: editor?.getLength?.() || 0, length: 0 };
 
     try {
       const res = await adminService.uploadGuideImage(formData);
@@ -470,15 +483,15 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
       };
       reader.readAsDataURL(file);
     }
-  }, []);
+  }, [getSafeEditor]);
 
   const insertBulletSymbol = useCallback((symbol) => {
-    const editor = quillRef.current?.getEditor();
+    const editor = getSafeEditor();
     if (!editor) return;
 
-    const range = editor.getSelection(true) || { index: 0, length: 0 };
+    const range = editor.getSelection?.(true) || { index: 0, length: 0 };
     if (symbol === '') {
-      const [line] = editor.getLine(range.index);
+      const [line] = editor.getLine?.(range.index) || [];
       if (line) {
         const lineText = line.domNode?.textContent || '';
         const cleanedText = lineText.replace(/^[-*•○■❖➢✓]\s*/, '');
@@ -491,7 +504,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
 
     editor.insertText(range.index, symbol, 'user');
     editor.setSelection(range.index + symbol.length);
-  }, []);
+  }, [getSafeEditor]);
 
   const handleImageUpload = useCallback(() => {
     const input = document.createElement('input');
@@ -521,9 +534,6 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     'color',
     'background',
     'align',
-    'width',
-    'height',
-    'style',
   ];
 
   const modules = useMemo(
@@ -549,14 +559,41 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
     [handleImageUpload]
   );
 
-  // Lắng nghe sự kiện paste ở chế độ CAPTURE trên editor.root để ngăn Quill chèn ảnh base64 trùng lặp
+  const handleSelectImage = useCallback((imgNode) => {
+    if (!imgNode) return;
+    setSelectedImg(imgNode);
+    updateActiveImageState(imgNode);
+  }, []);
+
+  // Lắng nghe sự kiện click chọn ảnh và paste ảnh an toàn trên containerRef
   useEffect(() => {
-    const editor = quillRef.current?.getEditor();
-    if (!editor || !editor.root) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const root = editor.root;
+    const handleNativeClick = (e) => {
+      const target = e.target;
+      const img = target?.tagName === 'IMG' ? target : target?.closest?.('img');
+      if (img) {
+        e.stopPropagation();
+        handleSelectImage(img);
+      } else if (
+        !target?.closest?.('.ql-toolbar') &&
+        !target?.closest?.('.image-toolbar') &&
+        !target?.closest?.('.bullet-library-bar')
+      ) {
+        setSelectedImg(null);
+      }
+    };
 
-    const handlePasteCapture = (e) => {
+    const handleNativeMouseDown = (e) => {
+      const target = e.target;
+      const img = target?.tagName === 'IMG' ? target : target?.closest?.('img');
+      if (img) {
+        handleSelectImage(img);
+      }
+    };
+
+    const handleNativePaste = (e) => {
       const clipboardData = e.clipboardData || window.clipboardData;
       if (!clipboardData) return;
 
@@ -564,10 +601,9 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
       if (!items || items.length === 0) return;
 
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
+        if (items[i].type && items[i].type.indexOf('image') !== -1) {
           const file = items[i].getAsFile();
           if (file) {
-            // Ngăn chặn hoàn toàn Quill xử lý paste nội bộ thành ảnh base64 duplicate
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -578,25 +614,16 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
       }
     };
 
-    const handleEditorClick = (e) => {
-      const target = e.target;
-      if (target && target.tagName === 'IMG') {
-        e.stopPropagation();
-        setSelectedImg(target);
-        updateActiveImageState(target);
-      } else {
-        setSelectedImg(null);
-      }
-    };
-
-    root.addEventListener('paste', handlePasteCapture, true);
-    root.addEventListener('click', handleEditorClick);
+    container.addEventListener('click', handleNativeClick, true);
+    container.addEventListener('mousedown', handleNativeMouseDown, true);
+    container.addEventListener('paste', handleNativePaste, true);
 
     return () => {
-      root.removeEventListener('paste', handlePasteCapture, true);
-      root.removeEventListener('click', handleEditorClick);
+      container.removeEventListener('click', handleNativeClick, true);
+      container.removeEventListener('mousedown', handleNativeMouseDown, true);
+      container.removeEventListener('paste', handleNativePaste, true);
     };
-  }, [ReactQuill, uploadAndInsertImage]);
+  }, [handleSelectImage, uploadAndInsertImage]);
 
   // Hiển thị viền highlight cho ảnh đang được chọn
   useEffect(() => {
@@ -641,7 +668,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
 
       {/* ═══ IMAGE FORMATTING TOOLBAR (WORD STYLE) ═══ */}
       {selectedImg ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 bg-primary/10 border-2 border-primary/40 p-2 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-sm">
+        <div className="image-toolbar flex flex-wrap items-center justify-between gap-2 mb-2 bg-primary/10 border-2 border-primary/40 p-2 rounded-xl animate-in fade-in slide-in-from-top-1 duration-200 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-extrabold text-primary flex items-center gap-1.5 uppercase tracking-wide bg-primary/15 px-2 py-1 rounded-md">
               <ImageIcon className="w-3.5 h-3.5" /> Bố cục ảnh (Word):
@@ -772,6 +799,22 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
       )}
 
       <div
+        ref={containerRef}
+        onClickCapture={(e) => {
+          const target = e.target;
+          const img = target?.tagName === 'IMG' ? target : target?.closest?.('img');
+          if (img) {
+            e.stopPropagation();
+            handleSelectImage(img);
+          }
+        }}
+        onMouseDownCapture={(e) => {
+          const target = e.target;
+          const img = target?.tagName === 'IMG' ? target : target?.closest?.('img');
+          if (img) {
+            handleSelectImage(img);
+          }
+        }}
         className={`rounded-lg border transition-colors duration-200 ${error ? 'border-error ring-1 ring-error/20' : 'border-transparent'}`}
       >
         {ReactQuill ? (
@@ -1302,6 +1345,9 @@ const createEmptyDeparture = () => ({
   price_child: 0,
   price_infant: 0,
   capacity: 20,
+  flight: '',
+  flight_outbound: '',
+  flight_inbound: '',
 });
 
 const createEmptyPickupLocation = () => ({
@@ -1665,6 +1711,42 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                     {errors.departures[index].capacity.message}
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* THÔNG TIN CHẶNG BAY */}
+            <div className="bg-surface rounded-xl p-3.5 border border-border/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-primary flex items-center gap-1.5 uppercase tracking-wide">
+                  <Plane className="w-3.5 h-3.5" /> Thông tin chặng bay
+                </span>
+                <span className="text-[11px] text-text-muted">Nhập hoặc dán mã chuyến bay chặng đi & về (nếu có)</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                    <span className="flex items-center gap-1 font-bold">🛫 Chặng đi:</span>
+                    <span className="text-[10px] text-text-muted font-normal">Hỗ trợ dán nhiều chặng</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    {...register(`departures.${index}.flight_outbound`)}
+                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed"
+                    placeholder={`VD: VN 156 DADHAN HK25 06:35 08:00\nVN 512 HANPEK HK25 10:00 14:30`}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between">
+                    <span className="flex items-center gap-1 font-bold">🛬 Chặng về:</span>
+                    <span className="text-[10px] text-text-muted font-normal">Hỗ trợ dán nhiều chặng</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    {...register(`departures.${index}.flight_inbound`)}
+                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed"
+                    placeholder={`VD: VN 533 PVGHAN HK25 15:25 18:05\nVN7193 HANDAD HK25 21:05 22:20`}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -2237,6 +2319,9 @@ const TourManagementPage = () => {
                 price_child: normalizeMoneyValue(d.price_child),
                 price_infant: normalizeMoneyValue(d.price_infant),
                 capacity: normalizeIntegerValue(d.capacity ?? d.available_seats),
+                flight: d.flight || '',
+                flight_outbound: d.flight_outbound || '',
+                flight_inbound: d.flight_inbound || '',
               }))
             : [createEmptyDeparture()],
         pickup_locations:

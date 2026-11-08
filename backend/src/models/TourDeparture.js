@@ -50,6 +50,21 @@ const TourDeparture = sequelize.define(
       defaultValue: 'open',
       comment: 'Trạng thái mở bán',
     },
+    flight: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Chặng bay / thông tin chuyến bay',
+    },
+    flight_outbound: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Thông tin chuyến bay chặng đi',
+    },
+    flight_inbound: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Thông tin chuyến bay chặng về',
+    },
   },
   {
     tableName: 'tour_departures',

@@ -216,6 +216,9 @@ const buildDeparturePayload = (item, index) => {
     capacity,
     available_seats: capacity,
     status: item.status === 'cancelled' ? 'cancelled' : 'open',
+    flight: item.flight ? String(item.flight).trim() : null,
+    flight_outbound: item.flight_outbound ? String(item.flight_outbound).trim() : null,
+    flight_inbound: item.flight_inbound ? String(item.flight_inbound).trim() : null,
   };
 };
 
@@ -892,6 +895,9 @@ const updateTour = catchAsync(async (req, res, next) => {
             available_seats: availableSeats,
             status:
               item.status === 'cancelled' ? 'cancelled' : availableSeats === 0 ? 'full' : 'open',
+            flight: item.flight !== undefined ? (item.flight ? String(item.flight).trim() : null) : existing.flight,
+            flight_outbound: item.flight_outbound !== undefined ? (item.flight_outbound ? String(item.flight_outbound).trim() : null) : existing.flight_outbound,
+            flight_inbound: item.flight_inbound !== undefined ? (item.flight_inbound ? String(item.flight_inbound).trim() : null) : existing.flight_inbound,
           };
           await existing.update(payload, { transaction: t });
         } else {
@@ -996,8 +1002,10 @@ const updateTour = catchAsync(async (req, res, next) => {
             }
           }
 
-          // Keep even existing translation rows aligned with the source tour slug.
-          updateData.slug = newSlug;
+          // Keep existing translation rows aligned with the source tour slug if source slug changed
+          if (sourceSlugChanged && newSlug && existingTranslation.slug !== newSlug) {
+            updateData.slug = newSlug;
+          }
 
           for (const field of textFields) {
             if (typeof item[field] === 'string' && item[field].trim().length > 0) {
