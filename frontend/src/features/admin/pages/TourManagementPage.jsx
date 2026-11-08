@@ -796,6 +796,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
         )}
       </div>
     </div>
+  );
 };
 
 const PriceInputField = ({ field, error, placeholder }) => {
