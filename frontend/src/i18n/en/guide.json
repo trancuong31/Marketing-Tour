@@ -1,6 +1,9 @@
 {
-    "title": "Travel Guides",
-    "subtitle": "Helpful tips and information for your trip",
+    "title": "Blog & Travel Guide",
+    "titleMain": "Blog & Travel",
+    "titleHighlight": "Guide",
+    "badge": "Explore more",
+    "subtitle": "Discover useful travel tips, tricks, and the latest information to make your trip more complete!",
     "updatedAt": "Updated",
     "empty": "No guide articles yet",
     "backToList": "Back to list",

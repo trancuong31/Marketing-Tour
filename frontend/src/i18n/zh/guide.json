@@ -1,6 +1,9 @@
 {
-    "title": "旅游指南",
-    "subtitle": "为您的旅程提供实用提示和信息",
+    "title": "博客与旅游指南",
+    "titleMain": "博客与旅游",
+    "titleHighlight": "指南",
+    "badge": "探索更多",
+    "subtitle": "发现实用的旅行经验、技巧和最新资讯，让您的旅途更加完美！",
     "updatedAt": "更新",
     "empty": "暂无指南文章",
     "backToList": "返回列表",

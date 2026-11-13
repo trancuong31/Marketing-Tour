@@ -1,6 +1,9 @@
 {
-    "title": "Hướng Dẫn Du Lịch",
-    "subtitle": "Mẹo và thông tin hữu ích cho chuyến đi của bạn",
+    "title": "Blog & Cẩm Nang Du Lịch",
+    "titleMain": "Blog & Cẩm Nang",
+    "titleHighlight": "Du Lịch",
+    "badge": "Khám phá thêm",
+    "subtitle": "Khám phá những kinh nghiệm du lịch hữu ích, mẹo hay và thông tin mới nhất để chuyến đi của bạn thêm trọn vẹn!",
     "updatedAt": "Cập nhật",
     "empty": "Chưa có bài hướng dẫn nào",
     "backToList": "Quay lại danh sách",

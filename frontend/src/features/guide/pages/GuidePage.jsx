@@ -3,7 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { guideService } from '@/services/tourService';
 import ClientLayout from '@/components/layout/ClientLayout';
-import { ArrowLeft, BookOpen, Briefcase, CalendarDays, Headphones, Loader2, ShieldCheck, Waves } from 'lucide-react';
+import {
+    ArrowLeft, BookOpen, Briefcase, CalendarDays, ChevronRight,
+    Globe, Headphones, HelpCircle, LayoutGrid, Loader2,
+    MapPin, Send, Shield, ShieldCheck, Star, Waves
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const getDateLocale = (language) => {
@@ -18,6 +22,16 @@ const getFirstImageSrc = (html = '') => {
 };
 
 const stripFirstImage = (html = '') => html.replace(/<img[^>]+>/i, '');
+
+const GUIDE_STYLES = [
+    { icon: BookOpen, bg: 'bg-blue-50', ring: 'ring-blue-200', text: 'text-blue-500' },
+    { icon: Globe, bg: 'bg-emerald-50', ring: 'ring-emerald-200', text: 'text-emerald-500' },
+    { icon: MapPin, bg: 'bg-orange-50', ring: 'ring-orange-200', text: 'text-orange-500' },
+    { icon: HelpCircle, bg: 'bg-violet-50', ring: 'ring-violet-200', text: 'text-violet-500' },
+    { icon: Shield, bg: 'bg-teal-50', ring: 'ring-teal-200', text: 'text-teal-500' },
+    { icon: Star, bg: 'bg-amber-50', ring: 'ring-amber-200', text: 'text-amber-500' },
+    { icon: LayoutGrid, bg: 'bg-cyan-50', ring: 'ring-cyan-200', text: 'text-cyan-500' },
+];
 
 const GuideHeroIllustration = ({ imageSrc, title }) => (
     <div className="relative mx-auto mt-5 mb-7 w-full max-w-[360px] sm:max-w-[430px]">
@@ -92,52 +106,126 @@ const GuidePage = () => {
         fetchData();
     }, [slug, i18n.language]);
 
-    // Trang danh sách
+    // ═══ Trang danh sách (Redesigned) ═══
     if (!slug) {
         return (
             <ClientLayout>
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-text mb-3 tracking-tight">{t('guide.title')}</h1>
-                        <p className="text-text-muted">{t('guide.subtitle')}</p>
+                <div className="relative overflow-hidden bg-gradient-to-b from-sky-50/80 via-blue-50/30 to-white min-h-[60vh]">
+                    {/* ═══ Decorative background blobs ═══ */}
+                    <div className="pointer-events-none absolute inset-0">
+                        <div className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-sky-100/50 rounded-full blur-3xl" />
+                        <div className="absolute top-40 -left-32 w-80 h-80 bg-blue-50/80 rounded-full blur-3xl" />
+                        <div className="absolute bottom-0 right-20 w-72 h-48 bg-sky-50/40 rounded-full blur-2xl" />
                     </div>
 
-                    {loading ? (
-                        <div className="flex justify-center py-12">
-                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+                        {/* ═══ Header Section ═══ */}
+                        <div className="relative flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-12 mb-10 sm:mb-14">
+                            {/* Left: Text content */}
+                            <div className="flex-1 max-w-2xl">
+                                {/* "Khám phá thêm" badge pill */}
+                                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-sky-100 text-sm font-medium text-primary mb-5">
+                                    <Send className="w-4 h-4" />
+                                    {t('guide.badge')}
+                                </div>
+
+                                {/* Title: "Blog & Cẩm Nang Du Lịch" */}
+                                <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-black text-gray-900 leading-tight mb-4 tracking-tight">
+                                    {t('guide.titleMain')}{' '}
+                                    <span className="text-primary">{t('guide.titleHighlight')}</span>
+                                </h1>
+
+                                {/* Subtitle */}
+                                <p className="text-gray-500 text-base sm:text-lg leading-relaxed max-w-lg">
+                                    {t('guide.subtitle')}
+                                </p>
+                            </div>
+
+                            {/* Right: Decorative travel illustration */}
+                            <div className="hidden lg:flex relative w-72 h-56 shrink-0 items-center justify-center">
+                                {/* Organic blob background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-sky-100/60 via-blue-50/40 to-transparent rounded-[40%_60%_55%_45%] blur-sm" />
+
+                                {/* Map pin icon */}
+                                <div className="absolute -top-2 -right-2 z-10">
+                                    <MapPin className="w-10 h-10 text-primary drop-shadow-md" fill="rgba(59,130,246,0.15)" />
+                                </div>
+
+                                {/* Cloud shapes */}
+                                <div className="absolute top-4 left-8 w-24 h-8 bg-white/70 rounded-full shadow-sm" />
+                                <div className="absolute top-14 right-12 w-16 h-6 bg-white/60 rounded-full" />
+                                <div className="absolute bottom-20 left-4 w-20 h-6 bg-white/50 rounded-full" />
+
+                                {/* Airplane dashed path */}
+                                <div className="absolute top-8 left-20 z-10">
+                                    <svg width="120" height="50" viewBox="0 0 120 50" className="text-primary/30">
+                                        <path d="M5 40 Q30 10 60 20 Q90 30 115 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
+                                    </svg>
+                                </div>
+                                <div className="absolute top-3 right-6 text-2xl transform -rotate-45 z-10 drop-shadow-md">✈️</div>
+
+                                {/* Pagoda center */}
+                                <div className="relative z-10 text-6xl drop-shadow-lg mt-4">🏯</div>
+
+                                {/* Bottom landmarks silhouette */}
+                                <div className="absolute -bottom-2 inset-x-0 flex justify-center opacity-[0.12] text-sky-900">
+                                    <svg width="180" height="40" viewBox="0 0 180 40" fill="currentColor">
+                                        <path d="M10 40 L10 25 L5 25 L15 10 L25 25 L20 25 L20 40Z" />
+                                        <path d="M40 40 L40 15 L45 10 L50 15 L50 40Z" />
+                                        <path d="M65 40 L65 25 Q75 10 85 25 L85 40Z" />
+                                        <path d="M100 40 L100 30 L95 30 L105 20 L115 30 L110 30 L110 40Z M102 20 L98 20 L105 12 L112 20 L108 20Z" />
+                                        <path d="M130 40 L130 18 L140 18 L140 40Z M132 22 L138 22 L138 24 L132 24Z M132 26 L138 26 L138 28 L132 28Z" />
+                                        <path d="M155 40 L155 22 L160 15 L165 22 L165 40Z" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
-                    ) : guides.length > 0 ? (
-                        <div className="space-y-4">
-                            {guides.map((g, i) => (
-                                <Link
-                                    key={g.id}
-                                    to={`/guides/${g.slug}`}
-                                    className="block bg-surface rounded-lg border border-border p-5 hover:shadow-md hover:border-primary/30 transition-all animate-fade-up"
-                                    style={{ animationDelay: `${i * 80}ms` }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                            <BookOpen className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-text">{g.title}</h3>
-                                            <p className="text-xs text-text-muted mt-0.5">
-                                                {t('guide.updatedAt')}: {new Date(g.updated_at).toLocaleDateString(dateLocale)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-center text-text-muted py-12">{t('guide.empty')}</p>
-                    )}
+
+                        {/* ═══ Guide List ═══ */}
+                        {loading ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            </div>
+                        ) : guides.length > 0 ? (
+                            <div className="space-y-3 sm:space-y-4">
+                                {guides.map((g, i) => {
+                                    const style = GUIDE_STYLES[i % GUIDE_STYLES.length];
+                                    const IconComp = style.icon;
+                                    return (
+                                        <Link
+                                            key={g.id}
+                                            to={`/guides/${g.slug}`}
+                                            className="group flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/60 shadow-[0_2px_12px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-4 sm:py-5 hover:shadow-lg hover:border-primary/20 hover:bg-white transition-all duration-300 animate-fade-up"
+                                            style={{ animationDelay: `${i * 80}ms` }}
+                                        >
+                                            {/* Colored icon */}
+                                            <div className={`w-11 h-11 sm:w-12 sm:h-12 ${style.bg} ring-1 ${style.ring} rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110`}>
+                                                <IconComp className={`w-5 h-5 sm:w-6 sm:h-6 ${style.text}`} />
+                                            </div>
+
+                                            {/* Title only — no update date */}
+                                            <h3 className="flex-1 font-bold text-gray-800 group-hover:text-primary transition-colors text-sm sm:text-base">
+                                                {g.title}
+                                            </h3>
+
+                                            {/* Chevron arrow */}
+                                            <div className="w-9 h-9 bg-gray-50 group-hover:bg-primary group-hover:shadow-md rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300">
+                                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-center text-text-muted py-12">{t('guide.empty')}</p>
+                        )}
+                    </div>
                 </div>
             </ClientLayout>
         );
     }
 
-    // Trang chi tiết
+    // ═══ Trang chi tiết ═══
     return (
         <ClientLayout>
             <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
