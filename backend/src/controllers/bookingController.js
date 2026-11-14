@@ -16,13 +16,41 @@ const { HTTP_CODES } = require('../constants/httpCodes');
 const { normalizeLanguage } = require('../utils/language');
 const { getNotificationCopy } = require('../utils/notificationMessages');
 const { getTodayDateString } = require('../utils/date');
-const crypto = require('crypto');
 
-// Sinh booking code duy nhất
-const generateBookingCode = () => {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = crypto.randomBytes(3).toString('hex').toUpperCase();
-  return `BK${timestamp}${random}`;
+// Sinh booking code duy nhất dạng: BK-YYYYMMDD-0001 (tự động reset về 0001 mỗi khi sang ngày mới)
+const generateBookingCode = async (transaction) => {
+  const today = getTodayDateString().replace(/-/g, '');
+  const prefix = `BK-${today}-`;
+
+  const latestBooking = await Booking.findOne({
+    where: {
+      booking_code: {
+        [Op.like]: `${prefix}%`,
+      },
+    },
+    order: [['id', 'DESC']],
+    attributes: ['booking_code'],
+    transaction,
+    lock: transaction ? transaction.LOCK.UPDATE : undefined,
+  });
+
+  let nextSeq = 1;
+  if (latestBooking && latestBooking.booking_code) {
+    const parts = latestBooking.booking_code.split('-');
+    const lastSeq = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(lastSeq) && lastSeq >= 1) {
+      nextSeq = lastSeq + 1;
+    }
+  }
+
+  let code = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+
+  while (await Booking.findOne({ where: { booking_code: code }, transaction })) {
+    nextSeq += 1;
+    code = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+  }
+
+  return code;
 };
 
 const getTourInclude = (language) => ({
@@ -182,11 +210,8 @@ const createBooking = catchAsync(async (req, res) => {
   while (attempts < 3) {
     try {
       booking = await sequelize.transaction(async (t) => {
-        // Sinh booking code duy nhất bên trong transaction
-        let bookingCode = generateBookingCode();
-        while (await Booking.findOne({ where: { booking_code: bookingCode }, transaction: t })) {
-          bookingCode = generateBookingCode();
-        }
+        // Sinh booking code duy nhất bên trong transaction (dạng BK-YYYYMMDD-0001, tự reset mỗi ngày)
+        const bookingCode = await generateBookingCode(t);
         // Query TourDeparture VỚI LOCK.UPDATE bên trong transaction
         const departure = await TourDeparture.findOne({
           where: { id: departure_id, tour_id, status: 'open' },
@@ -292,7 +317,9 @@ const createBooking = catchAsync(async (req, res) => {
       attempts++;
       if (
         attempts < 3 &&
-        (err.original?.errno === 1020 ||
+        (err.name === 'SequelizeUniqueConstraintError' ||
+          err.original?.errno === 1062 ||
+          err.original?.errno === 1020 ||
           err.original?.code === 'ER_CHECKREAD' ||
           err.original?.errno === 1205 ||
           err.original?.errno === 1213)

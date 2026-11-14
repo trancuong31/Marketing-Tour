@@ -4,17 +4,21 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import GuideGrid from '@/features/admin/components/GuideGrid';
 import FooterLinkManager from '@/features/admin/components/FooterLinkManager';
 import { Languages, Loader2, X, FileText, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { getImageUrl } from '@/utils/imageUrl';
 
 const ADMIN_GUIDE_TEXT = {
-    viLabel: 'Ti\u1ebfng Vi\u1ec7t',
-    zhLabel: '\u4e2d\u6587',
-    uploadImageError: 'L\u1ed7i upload \u1ea3nh b\u00e0i vi\u1ebft',
-    vietnameseRequiredBeforeTranslate: 'Vui l\u00f2ng nh\u1eadp ti\u00eau \u0111\u1ec1 v\u00e0 n\u1ed9i dung ti\u1ebfng Vi\u1ec7t tr\u01b0\u1edbc khi d\u1ecbch.',
-    translateError: 'Kh\u00f4ng th\u1ec3 d\u1ecbch b\u00e0i vi\u1ebft l\u00fac n\u00e0y.',
-    vietnameseRequiredBeforeSave: 'Ti\u00eau \u0111\u1ec1 v\u00e0 n\u1ed9i dung ti\u1ebfng Vi\u1ec7t kh\u00f4ng \u0111\u01b0\u1ee3c b\u1ecf tr\u1ed1ng.',
-    saveError: 'L\u1ed7i l\u01b0u b\u00e0i vi\u1ebft',
-    pageDescription: 'Qu\u1ea3n l\u00fd danh s\u00e1ch c\u00e1c b\u00e0i vi\u1ebft h\u01b0\u1edbng d\u1eabn du l\u1ecbch tr\u00ean trang web.',
+    viLabel: 'Tiếng Việt',
+    zhLabel: '中文',
+    uploadImageError: 'Lỗi upload ảnh bài viết',
+    vietnameseRequiredBeforeTranslate: 'Vui lòng nhập tiêu đề và nội dung tiếng Việt trước khi dịch.',
+    translateSuccess: 'Đã dịch nội dung bài viết',
+    translateError: 'Không thể dịch bài viết lúc này.',
+    vietnameseRequiredBeforeSave: 'Tiêu đề và nội dung tiếng Việt không được bỏ trống.',
+    saveSuccessUpdate: 'Cập nhật bài viết thành công',
+    saveSuccessCreate: 'Thêm bài viết mới thành công',
+    saveError: 'Lỗi lưu bài viết',
+    pageDescription: 'Quản lý danh sách các bài viết hướng dẫn du lịch trên trang web.',
     loading: '\u0110ang t\u1ea3i d\u1eef li\u1ec7u...',
     editTitle: 'Ch\u1ec9nh s\u1eeda b\u00e0i vi\u1ebft',
     createTitle: 'Th\u00eam b\u00e0i vi\u1ebft m\u1edbi',
@@ -99,7 +103,7 @@ const ContentManagementPage = () => {
                     editor.setSelection(range.index + 1);
                 }
             } catch (err) {
-                alert(err.response?.data?.message || ADMIN_GUIDE_TEXT.uploadImageError);
+                toast.error(err.response?.data?.message || ADMIN_GUIDE_TEXT.uploadImageError);
             } finally {
                 setUploadingImage(false);
             }
@@ -197,7 +201,7 @@ const ContentManagementPage = () => {
     const handleTranslateGuide = async () => {
         if (currentGuideLang === 'vi' || translating) return;
         if (!guideForm.title.trim() || !getPlainText(guideForm.content)) {
-            alert(ADMIN_GUIDE_TEXT.vietnameseRequiredBeforeTranslate);
+            toast.warning(ADMIN_GUIDE_TEXT.vietnameseRequiredBeforeTranslate);
             return;
         }
 
@@ -224,8 +228,9 @@ const ContentManagementPage = () => {
                         : item
                 )),
             }));
+            toast.success(ADMIN_GUIDE_TEXT.translateSuccess);
         } catch (err) {
-            alert(err.response?.data?.message || ADMIN_GUIDE_TEXT.translateError);
+            toast.error(err.response?.data?.message || ADMIN_GUIDE_TEXT.translateError);
         } finally {
             setTranslating(false);
         }
@@ -234,7 +239,7 @@ const ContentManagementPage = () => {
     const handleGuideSubmit = async (e) => {
         e.preventDefault();
         if (!guideForm.title.trim() || !getPlainText(guideForm.content)) {
-            alert(ADMIN_GUIDE_TEXT.vietnameseRequiredBeforeSave);
+            toast.warning(ADMIN_GUIDE_TEXT.vietnameseRequiredBeforeSave);
             setCurrentGuideLang('vi');
             return;
         }
@@ -255,10 +260,11 @@ const ContentManagementPage = () => {
             } else {
                 await adminService.createGuide(payload);
             }
+            toast.success(guideModal.guide ? ADMIN_GUIDE_TEXT.saveSuccessUpdate : ADMIN_GUIDE_TEXT.saveSuccessCreate);
             closeGuideModal();
             await fetchGuides();
         } catch (err) {
-            alert(err.response?.data?.message || ADMIN_GUIDE_TEXT.saveError);
+            toast.error(err.response?.data?.message || ADMIN_GUIDE_TEXT.saveError);
         } finally {
             setSubmitting(false);
         }

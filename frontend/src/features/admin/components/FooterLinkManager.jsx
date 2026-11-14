@@ -9,12 +9,11 @@ import {
     ArrowDown,
     Loader2,
     X,
-    CheckCircle2,
-    AlertCircle,
     Eye,
     EyeOff,
     Filter,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { footerLinkService } from '@/services/footerLinkService';
 
 const COLUMN_NAMES = {
@@ -35,29 +34,18 @@ const DEFAULT_FORM = {
 const FooterLinkManager = ({ guides = [] }) => {
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [togglingId, setTogglingId] = useState(null);
     const [selectedColumn, setSelectedColumn] = useState('all');
     const [modal, setModal] = useState({ open: false, isEdit: false, item: null });
     const [form, setForm] = useState(DEFAULT_FORM);
     const [submitting, setSubmitting] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
-    const [successMsg, setSuccessMsg] = useState('');
-
-    const showNotification = (msg, isErr = false) => {
-        if (isErr) {
-            setErrorMsg(msg);
-            setTimeout(() => setErrorMsg(''), 4000);
-        } else {
-            setSuccessMsg(msg);
-            setTimeout(() => setSuccessMsg(''), 4000);
-        }
-    };
 
     const fetchLinks = useCallback(async () => {
         try {
             const res = await footerLinkService.getAdmin();
             setLinks(res.data?.data || []);
         } catch {
-            showNotification('Không thể tải danh sách liên kết footer', true);
+            toast.error('Không thể tải danh sách liên kết footer');
         } finally {
             setLoading(false);
         }
@@ -150,18 +138,18 @@ const FooterLinkManager = ({ guides = [] }) => {
         e.preventDefault();
 
         if (!form.title.trim()) {
-            showNotification('Vui lòng nhập tiêu đề hiển thị', true);
+            toast.error('Vui lòng nhập tiêu đề hiển thị');
             return;
         }
 
         if (form.link_type === 'internal') {
             if (!form.url || !form.url.trim()) {
-                showNotification('Vui lòng chọn bài viết nội bộ cho liên kết', true);
+                toast.error('Vui lòng chọn bài viết nội bộ cho liên kết');
                 return;
             }
         } else {
             if (!form.url || !form.url.trim()) {
-                showNotification('Vui lòng nhập đường dẫn URL cho liên kết ngoài', true);
+                toast.error('Vui lòng nhập đường dẫn URL cho liên kết ngoài');
                 return;
             }
         }
@@ -179,28 +167,41 @@ const FooterLinkManager = ({ guides = [] }) => {
 
             if (modal.isEdit && modal.item) {
                 await footerLinkService.update(modal.item.id, payload);
-                showNotification('Cập nhật liên kết footer thành công');
+                toast.success('Cập nhật liên kết footer thành công');
             } else {
                 await footerLinkService.create(payload);
-                showNotification('Thêm mới liên kết footer thành công');
+                toast.success('Thêm mới liên kết footer thành công');
             }
 
             closeModal();
             await fetchLinks();
         } catch (err) {
-            showNotification(err.response?.data?.message || 'Có lỗi xảy ra', true);
+            toast.error(err.response?.data?.message || 'Có lỗi xảy ra');
         } finally {
             setSubmitting(false);
         }
     };
 
-    const handleToggle = async (id) => {
+    const handleToggle = async (itemOrId) => {
+        const id = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
+        const targetItem = typeof itemOrId === 'object' ? itemOrId : links.find((l) => l.id === id);
+        setTogglingId(id);
         try {
             await footerLinkService.toggle(id);
             await fetchLinks();
-            showNotification('Đã thay đổi trạng thái hiển thị');
+            if (targetItem?.title) {
+                toast.success(
+                    targetItem.is_active
+                        ? `Đã ẩn liên kết "${targetItem.title}"`
+                        : `Đã hiển thị liên kết "${targetItem.title}"`
+                );
+            } else {
+                toast.success('Đã thay đổi trạng thái hiển thị');
+            }
         } catch (err) {
-            showNotification(err.response?.data?.message || 'Không thể đổi trạng thái', true);
+            toast.error(err.response?.data?.message || 'Không thể đổi trạng thái');
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -211,9 +212,9 @@ const FooterLinkManager = ({ guides = [] }) => {
         try {
             await footerLinkService.delete(id);
             await fetchLinks();
-            showNotification(`Đã xóa liên kết "${title}"`);
+            toast.success(`Đã xóa liên kết "${title}"`);
         } catch (err) {
-            showNotification(err.response?.data?.message || 'Không thể xóa liên kết', true);
+            toast.error(err.response?.data?.message || 'Không thể xóa liên kết');
         }
     };
 
@@ -252,27 +253,14 @@ const FooterLinkManager = ({ guides = [] }) => {
         try {
             await footerLinkService.reorder(reorderPayload);
             await fetchLinks();
-            showNotification('Đã cập nhật thứ tự liên kết');
+            toast.success('Đã cập nhật thứ tự liên kết');
         } catch (err) {
-            showNotification(err.response?.data?.message || 'Không thể đổi thứ tự', true);
+            toast.error(err.response?.data?.message || 'Không thể đổi thứ tự');
         }
     };
 
     return (
         <div className="space-y-6">
-            {/* Notifications */}
-            {successMsg && (
-                <div className="flex items-center gap-2 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm animate-fade-up">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span>{successMsg}</span>
-                </div>
-            )}
-            {errorMsg && (
-                <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm animate-fade-up">
-                    <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-                    <span>{errorMsg}</span>
-                </div>
-            )}
 
             {/* Filter and Action Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface p-4 rounded-2xl border border-border">
@@ -438,15 +426,21 @@ const FooterLinkManager = ({ guides = [] }) => {
                                             {/* Toggle Active */}
                                             <td className="py-3.5 px-4 text-center">
                                                 <button
-                                                    onClick={() => handleToggle(item.id)}
+                                                    onClick={() => handleToggle(item)}
+                                                    disabled={togglingId === item.id}
                                                     title={item.is_active ? 'Bấm để ẩn' : 'Bấm để hiển thị'}
-                                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition ${
+                                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
                                                         item.is_active
                                                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                                                             : 'bg-zinc-100 text-zinc-500 border border-zinc-200 hover:bg-zinc-200'
                                                     }`}
                                                 >
-                                                    {item.is_active ? (
+                                                    {togglingId === item.id ? (
+                                                        <>
+                                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                            <span>Đang xử lý...</span>
+                                                        </>
+                                                    ) : item.is_active ? (
                                                         <>
                                                             <Eye className="w-3.5 h-3.5" />
                                                             <span>Hiển thị</span>

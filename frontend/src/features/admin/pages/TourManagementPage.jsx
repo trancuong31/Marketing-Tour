@@ -29,6 +29,7 @@ import {
   Image as ImageIcon,
   Frame,
   Plane,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -842,7 +843,7 @@ const RichTextEditor = ({ value, onChange, label, placeholder, error }) => {
   );
 };
 
-const PriceInputField = ({ field, error, placeholder }) => {
+const PriceInputField = ({ field, error, placeholder, disabled }) => {
   const [displayValue, setDisplayValue] = useState(formatMoneyDisplayValue(field.value));
   const isFocusedRef = useRef(false);
 
@@ -856,11 +857,13 @@ const PriceInputField = ({ field, error, placeholder }) => {
     <input
       type="text"
       inputMode="numeric"
+      disabled={disabled}
       value={displayValue}
       onFocus={() => {
         isFocusedRef.current = true;
       }}
       onChange={(e) => {
+        if (disabled) return;
         const sanitizedValue = sanitizeMoneyDisplayInput(e.target.value);
         const digits = sanitizedValue.replace(/[^\d]/g, '');
 
@@ -872,19 +875,19 @@ const PriceInputField = ({ field, error, placeholder }) => {
         field.onBlur(e);
         setDisplayValue(formatMoneyDisplayValue(e.target.value));
       }}
-      className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+      className={`w-full px-3 py-2 bg-surface border ${error ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all ${disabled ? 'opacity-60 bg-surface-alt cursor-not-allowed select-none text-text-muted' : ''}`}
       placeholder={placeholder}
     />
   );
 };
 
-const PriceInput = ({ control, name, rules, error, placeholder }) => (
+const PriceInput = ({ control, name, rules, error, placeholder, disabled }) => (
   <Controller
     name={name}
     control={control}
     rules={rules}
     render={({ field }) => (
-      <PriceInputField field={field} error={error} placeholder={placeholder} />
+      <PriceInputField field={field} error={error} placeholder={placeholder} disabled={disabled} />
     )}
   />
 );
@@ -955,6 +958,7 @@ const GeneralTab = ({
   errors,
   control,
   currentLang,
+  trigger,
 }) => {
   const categoryOptions = useMemo(
     () => categories.map((c) => ({ label: c.name, value: String(c.id) })),
@@ -1076,9 +1080,32 @@ const GeneralTab = ({
           <label className="text-sm font-medium text-text mb-1 block">Số ngày *</label>
           <input
             type="number"
+            min="1"
+            max="60"
             {...register('duration_days', {
-              required: 'Nhập số ngày',
-              min: { value: 1, message: 'Tối thiểu 1 ngày' },
+              required: 'Vui lòng nhập số ngày',
+              min: { value: 1, message: 'Số ngày tối thiểu là 1' },
+              max: { value: 60, message: 'Số ngày tối đa là 60' },
+              validate: (val) => {
+                const days = Number(val);
+                if (!Number.isInteger(days) || days < 1) {
+                  return 'Số ngày phải là số nguyên từ 1 trở lên';
+                }
+                const nightsVal = watch('duration_nights');
+                if (nightsVal !== '' && nightsVal !== null && nightsVal !== undefined && !isNaN(Number(nightsVal))) {
+                  const nights = Number(nightsVal);
+                  if (nights > days) {
+                    return `Số ngày (${days}) không được nhỏ hơn số đêm (${nights})`;
+                  }
+                  if (days >= 2 && nights === 0) {
+                    return `Tour ${days} ngày phải có ít nhất 1 đêm nghỉ`;
+                  }
+                }
+                return true;
+              },
+              onChange: () => {
+                if (trigger) trigger('duration_nights');
+              },
             })}
             className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_days ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
             placeholder="VD: 3"
@@ -1091,10 +1118,32 @@ const GeneralTab = ({
           <label className="text-sm font-medium text-text mb-1 block">Số đêm *</label>
           <input
             type="number"
+            min="0"
+            max="60"
             {...register('duration_nights', {
-              required: 'Nhập số đêm',
-              min: { value: 0, message: 'Tối thiểu 0 đêm' },
-              max: { value: 30, message: 'Tối đa 30 đêm' },
+              required: 'Vui lòng nhập số đêm',
+              min: { value: 0, message: 'Số đêm tối thiểu là 0' },
+              max: { value: 60, message: 'Số đêm tối đa là 60' },
+              validate: (val) => {
+                const nights = Number(val);
+                if (!Number.isInteger(nights) || nights < 0) {
+                  return 'Số đêm phải là số nguyên từ 0 trở lên';
+                }
+                const daysVal = watch('duration_days');
+                if (daysVal !== '' && daysVal !== null && daysVal !== undefined && !isNaN(Number(daysVal))) {
+                  const days = Number(daysVal);
+                  if (nights > days) {
+                    return `Số đêm (${nights} đêm) không được lớn hơn số ngày (${days} ngày)`;
+                  }
+                  if (days >= 2 && nights === 0) {
+                    return `Tour ${days} ngày phải có ít nhất 1 đêm nghỉ`;
+                  }
+                }
+                return true;
+              },
+              onChange: () => {
+                if (trigger) trigger('duration_days');
+              },
             })}
             className={`w-full px-3 py-2.5 bg-surface-alt border ${errors.duration_nights ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
             placeholder="VD: 2"
@@ -1223,18 +1272,30 @@ const GeneralTab = ({
 
       {/* Unified Image Management */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-text block">
-          Album ảnh tour{' '}
-          {!modal.tour && files.length === 0 && (
-            <span className="text-error font-normal">(Bắt buộc ít nhất 1 ảnh)</span>
-          )}
-        </label>
+        {(() => {
+          const totalAlbumImages = (modal.tour?.images?.length || 0) + files.length;
+          return (
+            <>
+              <label className="text-sm font-medium text-text flex items-center justify-between">
+                <span>
+                  Album ảnh tour *{' '}
+                  <span className="text-xs text-text-muted font-normal">
+                    ({totalAlbumImages} ảnh)
+                  </span>
+                </span>
+                {totalAlbumImages === 0 && (
+                  <span className="text-error text-xs font-semibold">
+                    * Bắt buộc tối thiểu 1 ảnh
+                  </span>
+                )}
+              </label>
 
-        <div
-          className={`p-4 border-2 border-dashed rounded-2xl transition-all ${!modal.tour && files.length === 0 && Object.keys(errors).length > 0
-              ? 'border-error bg-error/5'
-              : 'border-border hover:border-primary/50 bg-surface-alt/50'
-            }`}
+              <div
+                className={`p-4 border-2 border-dashed rounded-2xl transition-all ${
+                  totalAlbumImages === 0 && Object.keys(errors).length > 0
+                    ? 'border-error bg-error/5 ring-1 ring-error/20'
+                    : 'border-border hover:border-primary/50 bg-surface-alt/50'
+                }`}
           onDragOver={(e) => {
             e.preventDefault();
             e.currentTarget.classList.add('border-primary', 'bg-primary/5');
@@ -1323,7 +1384,16 @@ const GeneralTab = ({
             </div>
           )}
         </div>
-      </div>
+        {totalAlbumImages === 0 && (
+          <p className="text-error text-xs font-medium flex items-center gap-1.5 mt-1">
+            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>Tour bắt buộc phải có tối thiểu 1 ảnh trong album. Vui lòng tải ảnh lên.</span>
+          </p>
+        )}
+      </>
+    );
+  })()}
+</div>
     </div>
   );
 };
@@ -1396,6 +1466,9 @@ const scrollAndFocusNewItem = (cardSelector, inputSelector) => {
 // ═══ TAB: LỊCH TRÌNH ═══
 const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLang }) => {
   const { fields, append, remove } = useFieldArray({ control, name: 'itineraries' });
+  const durationDaysRaw = watch('duration_days');
+  const targetDays = parseInt(durationDaysRaw, 10) || 0;
+  const isMatch = targetDays > 0 && fields.length === targetDays;
 
   // Mặc định luôn có ít nhất 1 item trống
   useEffect(() => {
@@ -1421,16 +1494,79 @@ const ItinerariesTab = ({ control, register, watch, setValue, errors, currentLan
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="flex items-center gap-2 flex-wrap">
           <h4 className="text-sm font-bold text-text">
             Lịch trình từng ngày ({currentLang.toUpperCase()}) *
           </h4>
-          <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary">
-            {fields.length} ngày
+          <span
+            className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
+              isMatch
+                ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-400'
+                : 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:text-rose-400'
+            }`}
+          >
+            {fields.length} / {targetDays || '?'} ngày
+            {isMatch ? ' (Đã khớp)' : ' (Chưa khớp)'}
           </span>
         </div>
+
+        {targetDays > 0 && fields.length !== targetDays && (
+          <button
+            type="button"
+            onClick={() => {
+              if (fields.length < targetDays) {
+                const diff = targetDays - fields.length;
+                for (let i = 0; i < diff; i++) {
+                  append(createEmptyItinerary(fields.length + 1 + i));
+                }
+                toast.success(`Đã tự động tạo thêm ${diff} ngày lịch trình`);
+              } else if (fields.length > targetDays) {
+                const diff = fields.length - targetDays;
+                for (let i = fields.length - 1; i >= targetDays; i--) {
+                  remove(i);
+                }
+                toast.info(`Đã bớt ${diff} ngày thừa ở cuối`);
+              }
+            }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white font-medium transition self-start sm:self-auto flex items-center gap-1.5 shadow-sm"
+          >
+            {fields.length < targetDays ? (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Tự động tạo đủ {targetDays} ngày</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Bớt {fields.length - targetDays} ngày thừa</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
+
+      {targetDays > 0 && fields.length !== targetDays && (
+        <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">Lịch trình chưa khớp số ngày của tour:</p>
+            <p>
+              Tour được cấu hình là <strong>{targetDays} ngày</strong> nhưng hiện có{' '}
+              <strong>{fields.length} ngày lịch trình</strong>.{' '}
+              {fields.length < targetDays ? (
+                <span>
+                  Bạn cần thêm <strong>{targetDays - fields.length} ngày</strong> nữa để có thể lưu tour.
+                </span>
+              ) : (
+                <span>
+                  Bạn cần xóa bớt <strong>{fields.length - targetDays} ngày</strong> thừa để có thể lưu tour.
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {fields.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 px-4 bg-surface-alt rounded-2xl border border-dashed border-border text-center">
@@ -1580,9 +1716,17 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
             className="departure-item-card p-4 bg-surface-alt rounded-2xl border border-border space-y-4 shadow-sm relative"
           >
             <div className="flex items-center justify-between border-b border-border/50 pb-2">
-              <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                Khởi hành #{index + 1}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                  Khởi hành #{index + 1}
+                </span>
+                {isDeparted && (
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-700 border border-amber-500/30 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-amber-700" />
+                    Đã khởi hành (Khóa chỉnh sửa)
+                  </span>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -1601,8 +1745,8 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
               </button>
             </div>
             {isDeparted && (
-              <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                Lịch này đã khởi hành nên không thể xóa.
+              <p className="text-[11px] font-medium text-amber-800 dark:text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                Lịch này đã khởi hành nên toàn bộ thông tin ngày đi, giá, sức chứa và chuyến bay đã được khóa để bảo vệ dữ liệu.
               </p>
             )}
             <input type="hidden" {...register(`departures.${index}.id`)} />
@@ -1625,7 +1769,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   selectableDatesOnly={false}
                   disabled={isDeparted}
                   placeholder="Chọn ngày đi"
-                  className={`departure-calendar-box [&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'}`}
+                  className={`departure-calendar-box [&>button]:bg-surface ${errors.departures?.[index]?.departure_date ? '[&>button]:border-error [&>button]:focus:ring-error/30' : '[&>button]:border-border [&>button]:focus:ring-primary/30'} ${isDeparted ? '[&>button]:opacity-60 [&>button]:cursor-not-allowed [&>button]:bg-surface-alt' : ''}`}
                 />
                 <input
                   type="hidden"
@@ -1652,6 +1796,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   rules={{ required: 'Bắt buộc', min: { value: 1, message: '>0' } }}
                   error={errors.departures?.[index]?.price_adult}
                   placeholder="3.500.000"
+                  disabled={isDeparted}
                 />
                 {errors.departures?.[index]?.price_adult && (
                   <p className="text-error text-[10px] mt-1 font-medium">
@@ -1669,6 +1814,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }}
                   error={errors.departures?.[index]?.price_child}
                   placeholder="0"
+                  disabled={isDeparted}
                 />
                 {errors.departures?.[index]?.price_child && (
                   <p className="text-error text-[10px] mt-1 font-medium">
@@ -1686,6 +1832,7 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   rules={{ required: 'Bắt buộc', min: { value: 0, message: '>=0' } }}
                   error={errors.departures?.[index]?.price_infant}
                   placeholder="0"
+                  disabled={isDeparted}
                 />
                 {errors.departures?.[index]?.price_infant && (
                   <p className="text-error text-[10px] mt-1 font-medium">
@@ -1699,11 +1846,12 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                 </label>
                 <input
                   type="number"
+                  disabled={isDeparted}
                   {...register(`departures.${index}.capacity`, {
                     required: 'Bắt buộc',
                     min: { value: 1, message: '>0' },
                   })}
-                  className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.capacity ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all`}
+                  className={`w-full px-3 py-2 bg-surface border ${errors.departures?.[index]?.capacity ? 'border-error focus:ring-error/30' : 'border-border focus:ring-primary/30'} rounded-lg text-sm focus:outline-none focus:ring-2 transition-all disabled:opacity-60 disabled:bg-surface-alt disabled:cursor-not-allowed`}
                   placeholder="20"
                 />
                 {errors.departures?.[index]?.capacity && (
@@ -1730,8 +1878,9 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   </label>
                   <textarea
                     rows={2}
+                    disabled={isDeparted}
                     {...register(`departures.${index}.flight_outbound`)}
-                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed"
+                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed disabled:opacity-60 disabled:bg-surface-alt/80 disabled:cursor-not-allowed"
                     placeholder={`VD: VN 156 DADHAN HK25 06:35 08:00\nVN 512 HANPEK HK25 10:00 14:30`}
                   />
                 </div>
@@ -1742,8 +1891,9 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   </label>
                   <textarea
                     rows={2}
+                    disabled={isDeparted}
                     {...register(`departures.${index}.flight_inbound`)}
-                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed"
+                    className="w-full px-3 py-2 bg-surface-alt border border-border focus:ring-primary/30 rounded-lg text-xs font-mono focus:outline-none focus:ring-2 transition-all resize-none leading-relaxed disabled:opacity-60 disabled:bg-surface-alt/80 disabled:cursor-not-allowed"
                     placeholder={`VD: VN 533 PVGHAN HK25 15:25 18:05\nVN7193 HANDAD HK25 21:05 22:20`}
                   />
                 </div>
@@ -2065,6 +2215,64 @@ const OptionsTab = ({ control, register, watch, setValue, errors }) => {
   );
 };
 
+const normalizeTourForDiff = (formData) => {
+  if (!formData) return null;
+  return {
+    category_id: String(formData.category_id || '').trim(),
+    title: String(formData.title || '').trim(),
+    summary: String(formData.summary || '').trim(),
+    highlights: String(formData.highlights || '').trim(),
+    price_includes: String(formData.price_includes || '').trim(),
+    price_excludes: String(formData.price_excludes || '').trim(),
+    terms_and_notes: String(formData.terms_and_notes || '').trim(),
+    cancellation_policy: String(formData.cancellation_policy || '').trim(),
+    duration_days: Number(formData.duration_days || 0),
+    duration_nights: Number(formData.duration_nights || 0),
+    tour_badge: String(formData.tour_badge || 'none'),
+    status: String(formData.status || 'active'),
+    itineraries: (formData.itineraries || []).map((iti) => ({
+      day_number: Number(iti.day_number || 0),
+      title: String(iti.title || '').trim(),
+      content: String(iti.content || '').trim(),
+      translations: (iti.translations || []).map((t) => ({
+        language: t.language,
+        title: String(t.title || '').trim(),
+        content: String(t.content || '').trim(),
+      })),
+    })),
+    departures: (formData.departures || []).map((dep) => ({
+      id: dep.id ? Number(dep.id) : null,
+      departure_date: String(dep.departure_date || '').trim(),
+      price_adult: Number(dep.price_adult || 0),
+      price_child: Number(dep.price_child || 0),
+      price_infant: Number(dep.price_infant || 0),
+      capacity: Number(dep.capacity || 0),
+      flight_outbound: String(dep.flight_outbound || '').trim(),
+      flight_inbound: String(dep.flight_inbound || '').trim(),
+    })),
+    pickup_locations: (formData.pickup_locations || []).map((pic) => ({
+      location_name: String(pic.location_name || '').trim(),
+      pickup_time: String(pic.pickup_time || '').trim(),
+      surcharge_amount: Number(pic.surcharge_amount || 0),
+    })),
+    options: (formData.options || []).map((opt) => ({
+      option_name: String(opt.option_name || '').trim(),
+      price: Number(opt.price || 0),
+      charge_type: String(opt.charge_type || 'quantity'),
+    })),
+    translations: (formData.translations || []).map((t) => ({
+      language: t.language,
+      title: String(t.title || '').trim(),
+      summary: String(t.summary || '').trim(),
+      highlights: String(t.highlights || '').trim(),
+      price_includes: String(t.price_includes || '').trim(),
+      price_excludes: String(t.price_excludes || '').trim(),
+      terms_and_notes: String(t.terms_and_notes || '').trim(),
+      cancellation_policy: String(t.cancellation_policy || '').trim(),
+    })),
+  };
+};
+
 const ITEMS_PER_PAGE = 100;
 // ═══ MAIN PAGE ═══
 const TourManagementPage = () => {
@@ -2079,6 +2287,7 @@ const TourManagementPage = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [currentLang, setCurrentLang] = useState('vi'); // Language Switcher State
   const [files, setFiles] = useState([]);
+  const initialFormDataRef = useRef(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -2119,6 +2328,7 @@ const TourManagementPage = () => {
     watch,
     setValue,
     setError,
+    trigger,
     reset,
     formState: { errors },
   } = useForm({ defaultValues });
@@ -2256,6 +2466,7 @@ const TourManagementPage = () => {
     initialViDataRef.current = {};
     cancelTranslationRef.current = false;
     translatedSourceCacheRef.current.clear();
+    initialFormDataRef.current = null;
     reset({
       ...defaultValues,
       itineraries: [createEmptyItinerary(1)],
@@ -2285,7 +2496,7 @@ const TourManagementPage = () => {
       const rawPickups = detail.pickupLocations || [];
       const rawOptions = detail.options || [];
 
-      reset({
+      const initialFormValues = {
         category_id: String(detail.category_id),
         title: detail.title,
         summary: detail.summary || '',
@@ -2344,7 +2555,11 @@ const TourManagementPage = () => {
           [getEmptyTourTranslation('en'), getEmptyTourTranslation('zh')],
           detail.translations
         ),
-      });
+      };
+
+      reset(initialFormValues);
+      initialFormDataRef.current = normalizeTourForDiff(initialFormValues);
+
       sourceFieldBaselineRef.current = Object.fromEntries(
         ROOT_CONTENT_FIELDS.map((field) => [field, detail[field] ?? ''])
       );
@@ -2365,6 +2580,58 @@ const TourManagementPage = () => {
   const onSubmit = async (data) => {
     if (translating) {
       toast.warning('Hệ thống đang dịch, vui lòng đợi quá trình dịch hoàn tất trước khi lưu.');
+      return;
+    }
+
+    // 1. KIỂM TRA SỐ NGÀY & SỐ ĐÊM CHUẨN XÁC, KHÔNG ĐƯỢC VÔ LÝ
+    const days = parseInt(data.duration_days, 10);
+    const nights = parseInt(data.duration_nights, 10);
+
+    if (isNaN(days) || days < 1) {
+      setActiveTab('general');
+      setError('duration_days', { type: 'manual', message: 'Số ngày phải từ 1 trở lên' });
+      toast.error('Số ngày tour phải là số nguyên từ 1 trở lên');
+      return;
+    }
+
+    if (isNaN(nights) || nights < 0) {
+      setActiveTab('general');
+      setError('duration_nights', { type: 'manual', message: 'Số đêm phải từ 0 trở lên' });
+      toast.error('Số đêm tour phải từ 0 trở lên');
+      return;
+    }
+
+    if (nights > days) {
+      setActiveTab('general');
+      setError('duration_nights', {
+        type: 'manual',
+        message: `Số đêm (${nights}) không được lớn hơn số ngày (${days})`,
+      });
+      toast.error(`Số đêm (${nights} đêm) không được lớn hơn số ngày (${days} ngày). Ví dụ: Tour 3 ngày tối đa 3 đêm.`);
+      return;
+    }
+
+    if (days >= 2 && nights === 0) {
+      setActiveTab('general');
+      setError('duration_nights', {
+        type: 'manual',
+        message: 'Tour từ 2 ngày trở lên phải có ít nhất 1 đêm',
+      });
+      toast.error(`Tour ${days} ngày bắt buộc phải có ít nhất 1 đêm nghỉ`);
+      return;
+    }
+
+    // 2. KIỂM TRA SỐ LƯỢNG NGÀY LỊCH TRÌNH PHẢI ĐÚNG BẰNG SỐ NGÀY TOUR
+    const itineraryList = data.itineraries || [];
+    if (itineraryList.length !== days) {
+      setActiveTab('itineraries');
+      toast.error(
+        `Lịch trình không khớp số ngày tour! Tour cấu hình ${days} ngày nhưng đang có ${itineraryList.length} ngày lịch trình. Vui lòng ${
+          itineraryList.length < days
+            ? `thêm ${days - itineraryList.length}`
+            : `xóa bớt ${itineraryList.length - days}`
+        } ngày cho khớp.`
+      );
       return;
     }
 
@@ -2426,10 +2693,21 @@ const TourManagementPage = () => {
       return;
     }
 
-    if (!modal.tour && files.length === 0) {
+    const totalAlbumImages = (modal.tour?.images?.length || 0) + files.length;
+    if (totalAlbumImages === 0) {
       setActiveTab('general');
-      toast.error('Vui lòng tải lên ít nhất 1 ảnh đại diện cho tour');
+      toast.error('Tour bắt buộc phải có tối thiểu 1 hình ảnh trong album');
       return;
+    }
+
+    // Nếu cập nhật mà không có gì thay đổi thì cảnh báo, không gọi API
+    if (modal.tour && files.length === 0 && initialFormDataRef.current) {
+      const currentSnapshot = JSON.stringify(normalizeTourForDiff(data));
+      const initialSnapshot = JSON.stringify(initialFormDataRef.current);
+      if (currentSnapshot === initialSnapshot) {
+        toast.info('Thông tin tour không có gì thay đổi');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -2792,6 +3070,17 @@ const TourManagementPage = () => {
 
   // Check if a specific tab has validation errors
   const checkTabHasError = (tabKey) => {
+    if (tabKey === 'general') {
+      const totalImg = (modal.tour?.images?.length || 0) + files.length;
+      if (totalImg === 0) return true;
+    }
+    if (tabKey === 'itineraries') {
+      const days = parseInt(watch('duration_days'), 10);
+      const iti = watch('itineraries') || [];
+      if (!isNaN(days) && days > 0 && iti.length !== days) {
+        return true;
+      }
+    }
     return Object.keys(errors).some((key) => {
       if (
         tabKey === 'general' &&
@@ -2961,23 +3250,28 @@ const TourManagementPage = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="px-6 pt-4 border-b border-border flex gap-2 overflow-x-auto shrink-0 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+            <div className="px-6 pt-3 border-b border-border flex gap-1.5 overflow-x-auto shrink-0 scrollbar-hide [&::-webkit-scrollbar]:hidden">
               {TABS.map((tab) => {
                 const Icon = tab.icon;
                 const isError = checkTabHasError(tab.key);
+                const isActive = activeTab === tab.key;
 
                 return (
                   <button
                     key={tab.key}
                     type="button"
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200 whitespace-nowrap relative ${activeTab === tab.key
-                        ? 'bg-primary/10 text-primary border-b-2 border-primary -mb-px'
+                    className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-xl transition-all duration-200 whitespace-nowrap relative group ${
+                      isActive
+                        ? 'bg-primary/10 text-primary'
                         : 'text-text-muted hover:text-text hover:bg-surface-alt'
-                      }`}
+                    }`}
                   >
-                    <Icon className={`w-4 h-4 ${activeTab === tab.key ? 'text-primary' : ''}`} />
-                    {tab.label}
+                    <Icon className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'text-primary scale-110' : 'group-hover:scale-105'}`} />
+                    <span>{tab.label}</span>
+                    {isActive && (
+                      <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full shadow-sm" />
+                    )}
                     {isError && (
                       <span
                         className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse shadow-sm"
@@ -3007,7 +3301,7 @@ const TourManagementPage = () => {
               <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-surface-alt/30">
                 <div
                   key={activeTab}
-                  className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500 ease-out fill-mode-both"
+                  className="max-w-4xl mx-auto animate-in fade-in-50 duration-200 ease-out fill-mode-both"
                 >
                   {activeTab === 'general' && (
                     <GeneralTab
@@ -3023,6 +3317,7 @@ const TourManagementPage = () => {
                       errors={errors}
                       control={control}
                       currentLang={currentLang}
+                      trigger={trigger}
                     />
                   )}
                   {activeTab === 'itineraries' && (

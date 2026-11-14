@@ -12,7 +12,7 @@ const VoteForm = ({ tourId, onSuccess }) => {
     const [submitted, setSubmitted] = useState(false);
     const [hoverRating, setHoverRating] = useState(0);
     const [images, setImages] = useState([]);
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, openAuthModal } = useAuthStore();
 
     // Vote eligibility state
     const [eligibility, setEligibility] = useState({ loading: true, eligible: false, reason: '' });
@@ -108,12 +108,38 @@ const VoteForm = ({ tourId, onSuccess }) => {
 
     if (!isAuthenticated) {
         return (
-            <div className="mt-6 p-6 bg-surface-alt rounded-lg border border-border text-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div
+                onClick={() => openAuthModal('login')}
+                className="mt-6 p-6 bg-surface-alt hover:bg-surface-alt/80 rounded-lg border border-border text-center cursor-pointer transition-colors group"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openAuthModal('login');
+                    }
+                }}
+            >
+                <div className="w-12 h-12 bg-primary/10 group-hover:bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3 transition-colors">
                     <LogIn className="w-6 h-6 text-primary" />
                 </div>
-                <h4 className="font-semibold text-text mb-2">{t('tour.review.loginTitle')}</h4>
-                <p className="text-sm text-text-secondary mb-4">{t('tour.review.loginDesc')}</p>
+                <h4 className="font-semibold text-text group-hover:text-primary mb-2 transition-colors">
+                    {t('tour.review.loginTitle')}
+                </h4>
+                <p className="text-sm text-text-secondary mb-4">
+                    {t('tour.review.loginDesc')}
+                </p>
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openAuthModal('login');
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-medium text-sm rounded-lg transition-colors shadow-sm"
+                >
+                    <LogIn className="w-4 h-4" />
+                    <span>{t('tour.review.loginTitle')}</span>
+                </button>
             </div>
         );
     }

@@ -236,7 +236,7 @@ const CustomCheckbox = ({ checked, onChange, label, className = '' }) => (
 // ─── BookingForm ──────────────────────────────────────────────────────────────
 const BookingForm = ({ tour }) => {
     const { t } = useTranslation();
-    const { user } = useAuthStore();
+    const { user, openAuthModal } = useAuthStore();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
     const [modal, setModal] = useState({ open: false, code: '', amount: 0 });
@@ -310,7 +310,11 @@ const BookingForm = ({ tour }) => {
     const onSubmit = async (data) => {
         if (!selectedDepartureId) { toast.error(t('booking.errSelectDeparture')); return; }
         if (pickupLocations.length > 0 && !selectedPickupId) { toast.error(t('booking.errSelectPickup')); return; }
-        if (!user) { toast.error(t('booking.errLoginRequired')); return; }
+        if (!user) {
+            toast.error(t('booking.errLoginRequired'));
+            openAuthModal('login');
+            return;
+        }
         if (!user.email || !user.phone_number) {
             toast.error(t('booking.errMissingProfileInfo'));
             return;

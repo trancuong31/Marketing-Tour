@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield } from 'lucide-react';
+import { Menu, X, MapPin, Globe2, Clock, LogIn, UserPlus, LogOut, User as UserIcon, List, Shield, ArrowUp } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthModal from '../../features/auth/components/AuthModal';
@@ -34,10 +34,8 @@ const ClientLayout = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-    const [authMode, setAuthMode] = useState('login');
     const [mobileMenuUserOpen, setMobileMenuUserOpen] = useState(false);
-    const { isAuthenticated, user, logout } = useAuthStore();
+    const { isAuthenticated, user, logout, authModal, openAuthModal, closeAuthModal } = useAuthStore();
     const { t, i18n } = useTranslation();
     const { settings: contactSettings } = useContactSettings();
     const { column1: footerCol1, column2: footerCol2, column3: footerCol3, loading: footerLinksLoading } = useFooterLinks();
@@ -46,6 +44,23 @@ const ClientLayout = ({ children }) => {
     const floatingContacts = getVisibleContacts(contactSettings, 'floating');
     const hasFooterContact = Boolean(contactSettings && footerContacts.length > 0);
     const ignoreScrollRef = useRef(false);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 150);
+        };
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+        });
+    };
 
     const getFooterGuidePath = (key) => {
         const targetSlug = FOOTER_GUIDE_LINKS[key];
@@ -135,8 +150,7 @@ const ClientLayout = ({ children }) => {
     }, []);
 
     const openAuth = (mode) => {
-        setAuthMode(mode);
-        setAuthModalOpen(true);
+        openAuthModal(mode);
     };
 
     const handleLogout = () => {
@@ -397,25 +411,54 @@ const ClientLayout = ({ children }) => {
                         </>
                     )}
 
-                    <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} initialMode={authMode} />
+                    <AuthModal
+                        isOpen={Boolean(authModal?.isOpen)}
+                        onClose={closeAuthModal}
+                        initialMode={authModal?.mode || 'login'}
+                    />
                 </div>
             </header>
 
             {/* ═══ MAIN CONTENT ═══ */}
             <main className="flex-1">{children}</main>
 
-            {/* ═══ FLOATING SUPPORT BUTTONS ═══ */}
-            {floatingContacts.length > 0 && (
-                <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3">
+            {/* ═══ FLOATING SUPPORT & SCROLL TO TOP BUTTONS ═══ */}
+            {(floatingContacts.length > 0 || showScrollTop) && (
+                <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col gap-2 sm:gap-3 items-center">
+                    {/* Nút Cuộn về đầu trang (ở vị trí đầu tiên) */}
+                    {showScrollTop && (
+                        <button
+                            type="button"
+                            onClick={scrollToTop}
+                            title={t('common.scrollToTop', 'Cuộn về đầu trang')}
+                            aria-label={t('common.scrollToTop', 'Cuộn về đầu trang')}
+                            className="relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white text-primary hover:bg-[#EEF4FC] border border-[#C2D8F0] shadow-xl hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary animate-fade-in group cursor-pointer"
+                        >
+                            <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-200 group-hover:-translate-y-1 text-primary stroke-[2.5]" />
+                        </button>
+                    )}
+
                     {floatingContacts.map((contact) => {
                         const color = contact.type === 'wechat' ? 'bg-[#07C160]' : contact.type === 'zalo' ? 'bg-[#0068FF]' : 'bg-gradient-to-br from-primary to-primary-dark';
-                        const ripple = contact.type === 'wechat' ? 'bg-[#07C160]' : contact.type === 'zalo' ? 'bg-[#0068FF]' : 'bg-primary';
+                        const getRippleBg = (alpha) => {
+                            if (contact.type === 'wechat') return `rgba(7, 193, 96, ${alpha})`;
+                            if (contact.type === 'zalo') return `rgba(0, 104, 255, ${alpha})`;
+                            return `rgba(30, 111, 191, ${alpha})`;
+                        };
                         const iconClassName = contact.icon === 'zalo' ? 'h-7 w-7 sm:h-10 sm:w-10' : 'h-6 w-6 text-white sm:h-8 sm:w-8';
 
                         return (
                             <div key={contact.id} className="relative group">
-                                <span aria-hidden="true" className={`absolute inset-0 rounded-full ${ripple}/30 animate-ring`} />
-                                <span aria-hidden="true" className={`absolute inset-0 rounded-full ${ripple}/20 animate-ring delay-300`} />
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 rounded-full animate-ring pointer-events-none"
+                                    style={{ backgroundColor: getRippleBg(0.22) }}
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 rounded-full animate-ring pointer-events-none"
+                                    style={{ backgroundColor: getRippleBg(0.12), animationDelay: '0.4s' }}
+                                />
                                 <ContactAction
                                     contact={contact}
                                     language={language}

@@ -1,27 +1,21 @@
 {
     "title": "Blog & Cẩm Nang Du Lịch",
-    "titleMain": "Blog & Cẩm Nang",
-    "titleHighlight": "Du Lịch",
-    "badge": "Khám phá thêm",
-    "subtitle": "Khám phá những kinh nghiệm du lịch hữu ích, mẹo hay và thông tin mới nhất để chuyến đi của bạn thêm trọn vẹn!",
+    "titleMain": "Blog & Cẩm",
+    "titleHighlight": "Nang Du Lịch",
+    "badge": "What's new",
+    "exploreMore": "Khám phá thêm",
+    "subtitle": "Mẹo và thông tin hữu ích cho chuyến đi của bạn",
     "updatedAt": "Cập nhật",
     "empty": "Chưa có bài hướng dẫn nào",
+    "emptyContent": "Chưa có nội dung chi tiết cho mục này.",
     "backToList": "Quay lại danh sách",
-    "features": {
-        "diverse": {
-            "title": "Tour đa dạng",
-            "desc": "Hàng ngàn tour hấp dẫn trong và ngoài nước"
-        },
-        "trusted": {
-            "title": "Dịch vụ uy tín",
-            "desc": "Cam kết chất lượng và hỗ trợ tận tâm"
-        },
-        "support": {
-            "title": "Hỗ trợ 24/7",
-            "desc": "Luôn sẵn sàng đồng hành cùng bạn trên mọi hành trình"
-        }
-    },
+    "backToMenu": "Lên mục lục",
     "notFoundTitle": "Không tìm thấy",
     "notFoundDesc": "Bài hướng dẫn không tồn tại hoặc đã bị ẩn.",
-    "back": "Quay lại"
+    "back": "Quay lại",
+    "features": {
+        "diverse": { "title": "Tour đa dạng" },
+        "trusted": { "title": "Dịch vụ uy tín" },
+        "support": { "title": "Hỗ trợ 24/7" }
+    }
 }

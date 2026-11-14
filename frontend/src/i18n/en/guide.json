@@ -1,27 +1,21 @@
 {
     "title": "Blog & Travel Guide",
-    "titleMain": "Blog & Travel",
-    "titleHighlight": "Guide",
-    "badge": "Explore more",
-    "subtitle": "Discover useful travel tips, tricks, and the latest information to make your trip more complete!",
+    "titleMain": "Blog &",
+    "titleHighlight": "Travel Guide",
+    "badge": "What's new",
+    "exploreMore": "Explore more",
+    "subtitle": "Helpful tips and information for your journey",
     "updatedAt": "Updated",
     "empty": "No guide articles yet",
+    "emptyContent": "No detailed content for this section yet.",
     "backToList": "Back to list",
-    "features": {
-        "diverse": {
-            "title": "Diverse tours",
-            "desc": "Thousands of inspiring domestic and international tours"
-        },
-        "trusted": {
-            "title": "Trusted service",
-            "desc": "Quality commitment with thoughtful support"
-        },
-        "support": {
-            "title": "24/7 support",
-            "desc": "Always ready to accompany you on every journey"
-        }
-    },
+    "backToMenu": "Back to menu",
     "notFoundTitle": "Not found",
     "notFoundDesc": "This guide article does not exist or has been hidden.",
-    "back": "Back"
+    "back": "Back",
+    "features": {
+        "diverse": { "title": "Diverse tours" },
+        "trusted": { "title": "Trusted service" },
+        "support": { "title": "24/7 support" }
+    }
 }

@@ -41,7 +41,38 @@ const resolveExistingUploadUrl = (url) => {
     return normalized;
 };
 
+const deletePhysicalFile = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        const normalized = normalizePublicUploadUrl(url);
+        if (!normalized || !normalized.startsWith(PUBLIC_UPLOAD_PREFIX)) return false;
+
+        const relativePath = normalized.slice(PUBLIC_UPLOAD_PREFIX.length);
+        const filePath = path.resolve(UPLOAD_DIRECTORY, relativePath);
+
+        // Security check: ensure path is strictly within UPLOAD_DIRECTORY (prevent path traversal)
+        if (!filePath.startsWith(`${UPLOAD_DIRECTORY}${path.sep}`) && filePath !== UPLOAD_DIRECTORY) {
+            return false;
+        }
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            return true;
+        }
+
+        const jpegFilePath = `${filePath}.jpg`;
+        if (fs.existsSync(jpegFilePath)) {
+            fs.unlinkSync(jpegFilePath);
+            return true;
+        }
+    } catch (err) {
+        console.warn(`[deletePhysicalFile] Failed to remove file: ${url}`, err.message);
+    }
+    return false;
+};
+
 module.exports = {
     normalizePublicUploadUrl,
     resolveExistingUploadUrl,
+    deletePhysicalFile,
 };

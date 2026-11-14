@@ -26,7 +26,7 @@ const { catchAsync } = require('../utils/catchAsync');
 const { AppError } = require('../utils/appError');
 const { HTTP_CODES } = require('../constants/httpCodes');
 const env = require('../config/env');
-const { normalizePublicUploadUrl } = require('../utils/uploadUrl');
+const { normalizePublicUploadUrl, deletePhysicalFile } = require('../utils/uploadUrl');
 const { getNotificationCopy } = require('../utils/notificationMessages');
 const { normalizeLanguage } = require('../utils/language');
 const {
@@ -536,6 +536,32 @@ const createTour = catchAsync(async (req, res, next) => {
     return next(new AppError('Tiêu đề và danh mục là bắt buộc', HTTP_CODES.BAD_REQUEST));
   }
 
+  const days = parseInt(duration_days, 10);
+  const nights = parseInt(duration_nights, 10);
+
+  if (isNaN(days) || days < 1) {
+    return next(new AppError('Số ngày tour phải là số nguyên từ 1 trở lên', HTTP_CODES.BAD_REQUEST));
+  }
+  if (isNaN(nights) || nights < 0) {
+    return next(new AppError('Số đêm tour phải là số nguyên từ 0 trở lên', HTTP_CODES.BAD_REQUEST));
+  }
+  if (nights > days) {
+    return next(new AppError(`Số đêm (${nights}) không được lớn hơn số ngày (${days})`, HTTP_CODES.BAD_REQUEST));
+  }
+  if (days >= 2 && nights === 0) {
+    return next(new AppError(`Tour ${days} ngày phải có ít nhất 1 đêm`, HTTP_CODES.BAD_REQUEST));
+  }
+
+  const parsedItinerariesForCheck = parseJsonField(itineraries);
+  if (Array.isArray(parsedItinerariesForCheck) && parsedItinerariesForCheck.length !== days) {
+    return next(
+      new AppError(
+        `Số ngày lịch trình (${parsedItinerariesForCheck.length}) phải bằng đúng số ngày của tour (${days})`,
+        HTTP_CODES.BAD_REQUEST
+      )
+    );
+  }
+
   validateVietnameseTourSource(req.body, { requireTitle: true });
   const parsedTranslationsForCreate = validateAndParseTourTranslations(translations);
 
@@ -729,6 +755,40 @@ const updateTour = catchAsync(async (req, res, next) => {
   } = req.body;
 
   validateVietnameseTourSource(req.body);
+
+  const targetDays = duration_days !== undefined ? parseInt(duration_days, 10) : tour.duration_days;
+  const targetNights = duration_nights !== undefined ? parseInt(duration_nights, 10) : tour.duration_nights;
+
+  if (targetDays !== null && targetDays !== undefined) {
+    if (isNaN(targetDays) || targetDays < 1) {
+      return next(new AppError('Số ngày tour phải là số nguyên từ 1 trở lên', HTTP_CODES.BAD_REQUEST));
+    }
+    if (targetNights !== null && targetNights !== undefined) {
+      if (isNaN(targetNights) || targetNights < 0) {
+        return next(new AppError('Số đêm tour phải là số nguyên từ 0 trở lên', HTTP_CODES.BAD_REQUEST));
+      }
+      if (targetNights > targetDays) {
+        return next(
+          new AppError(`Số đêm (${targetNights}) không được lớn hơn số ngày (${targetDays})`, HTTP_CODES.BAD_REQUEST)
+        );
+      }
+      if (targetDays >= 2 && targetNights === 0) {
+        return next(new AppError(`Tour ${targetDays} ngày phải có ít nhất 1 đêm`, HTTP_CODES.BAD_REQUEST));
+      }
+    }
+  }
+
+  if (itineraries !== undefined && targetDays) {
+    const parsedItinerariesForCheck = parseJsonField(itineraries);
+    if (Array.isArray(parsedItinerariesForCheck) && parsedItinerariesForCheck.length !== targetDays) {
+      return next(
+        new AppError(
+          `Số ngày lịch trình (${parsedItinerariesForCheck.length}) phải bằng đúng số ngày của tour (${targetDays})`,
+          HTTP_CODES.BAD_REQUEST
+        )
+      );
+    }
+  }
 
   // Nếu đổi title → tạo slug mới
   let newSlug = tour.slug;
@@ -1082,6 +1142,12 @@ const deleteTour = catchAsync(async (req, res, next) => {
   }
 
   // 2. Nếu tour không có đơn đặt sắp tới (các chuyến đi đã kết thúc hoặc chỉ có đơn huỷ):
+  // Lấy trước danh sách ảnh của tour để dọn dẹp file vật lý sau khi xóa DB thành công
+  const tourImages = await TourImage.findAll({
+    where: { tour_id: id },
+    attributes: ['image_url'],
+  });
+
   // Xóa tour và dọn dẹp các dữ liệu liên quan trong transaction
   await sequelize.transaction(async (t) => {
     const bookings = await Booking.findAll({
@@ -1109,6 +1175,14 @@ const deleteTour = catchAsync(async (req, res, next) => {
 
     await tour.destroy({ transaction: t });
   });
+
+  // Dọn dẹp các file ảnh vật lý trên ổ đĩa tránh dư thừa data
+  if (tourImages && tourImages.length > 0) {
+    tourImages.forEach((img) => deletePhysicalFile(img.image_url));
+  }
+  if (tour.thumbnail_url) {
+    deletePhysicalFile(tour.thumbnail_url);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -1907,6 +1981,9 @@ const deleteTourImage = catchAsync(async (req, res, next) => {
     await tour.update({ thumbnail_url: nextImage ? nextImage.image_url : null });
   }
 
+  // Dọn dẹp file ảnh vật lý trên ổ đĩa tránh rác file
+  deletePhysicalFile(imageUrl);
+
   res.status(200).json({
     status: 'success',
     message: 'Xóa ảnh thành công',
@@ -2002,7 +2079,11 @@ const updateBanner = catchAsync(async (req, res, next) => {
   };
 
   if (req.file) {
+    const oldImageUrl = banner.image_url;
     updateData.image_url = `/uploads/banners/${req.file.filename}`;
+    if (oldImageUrl) {
+      deletePhysicalFile(oldImageUrl);
+    }
   }
 
   await banner.update(updateData);
@@ -2025,7 +2106,13 @@ const deleteBanner = catchAsync(async (req, res, next) => {
     return next(new AppError('Không tìm thấy banner', HTTP_CODES.NOT_FOUND));
   }
 
+  const imageUrl = banner.image_url;
   await banner.destroy();
+
+  // Dọn dẹp file banner vật lý trên ổ đĩa
+  if (imageUrl) {
+    deletePhysicalFile(imageUrl);
+  }
 
   res.status(200).json({
     status: 'success',

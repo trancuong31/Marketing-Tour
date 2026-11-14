@@ -7,5 +7,6 @@
   "close": "关闭",
   "search": "搜索",
   "clearSearch": "清除搜索",
-  "goHome": "返回首页"
+  "goHome": "返回首页",
+  "scrollToTop": "返回顶部"
 }

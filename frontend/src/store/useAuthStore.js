@@ -28,6 +28,12 @@ const useAuthStore = create((set, get) => ({
     isLoading: false,
     isInitialized: false, // true sau khi initAuth hoàn tất
     error: null,
+    authModal: {
+        isOpen: false,
+        mode: 'login',
+    },
+    openAuthModal: (mode = 'login') => set({ authModal: { isOpen: true, mode } }),
+    closeAuthModal: () => set((state) => ({ authModal: { ...state.authModal, isOpen: false } })),
 
     /**
      * Set auth state + sync access token vào memory
