@@ -23,6 +23,12 @@ const TourDeparture = sequelize.define(
       allowNull: false,
       comment: 'Giá người lớn',
     },
+    original_price_adult: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Giá gốc người lớn trước khi giảm',
+    },
     price_child: {
       type: DataTypes.DECIMAL(15, 2),
       defaultValue: 0,

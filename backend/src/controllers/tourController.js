@@ -187,7 +187,7 @@ const getTours = catchAsync(async (req, res) => {
             {
                 model: TourDeparture,
                 as: 'departures',
-                attributes: ['id', 'tour_id', 'departure_date', 'price_adult', 'status'],
+                attributes: ['id', 'tour_id', 'departure_date', 'price_adult', 'original_price_adult', 'status'],
                 where: departureWhere,
                 required: isDepartureRequired,
                 order: [['price_adult', 'ASC']],
@@ -348,7 +348,7 @@ const getBannersByPosition = catchAsync(async (req, res) => {
                     {
                         model: TourDeparture,
                         as: 'departures',
-                        attributes: ['id', 'price_adult'],
+                        attributes: ['id', 'price_adult', 'original_price_adult'],
                         where: { status: 'open', departure_date: { [Op.gte]: formattedToday } },
                         required: false,
                         order: [['price_adult', 'ASC']]

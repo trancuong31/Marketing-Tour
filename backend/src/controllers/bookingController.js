@@ -294,6 +294,7 @@ const createBooking = catchAsync(async (req, res) => {
             tour_title_snapshot: tour.title,
             departure_date_snapshot: departure.departure_date,
             adult_price_snapshot: parseFloat(departure.price_adult),
+            original_adult_price_snapshot: departure.original_price_adult ? parseFloat(departure.original_price_adult) : null,
             child_price_snapshot: parseFloat(departure.price_child || 0),
             infant_price_snapshot: parseFloat(departure.price_infant || 0),
             pickup_location_snapshot: pickupRecord ? pickupRecord.location_name : null,
@@ -377,7 +378,7 @@ const getMyBookings = catchAsync(async (req, res) => {
       {
         model: TourDeparture,
         as: 'departure',
-        attributes: ['id', 'departure_date', 'price_adult'],
+        attributes: ['id', 'departure_date', 'price_adult', 'original_price_adult'],
       },
       { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
       { model: BookingOption, as: 'bookingOptions' },
@@ -413,6 +414,7 @@ const getMyBookings = catchAsync(async (req, res) => {
     tour_title_snapshot: b.tour_title_snapshot,
     departure_date_snapshot: b.departure_date_snapshot,
     adult_price_snapshot: b.adult_price_snapshot,
+    original_adult_price_snapshot: b.original_adult_price_snapshot,
     child_price_snapshot: b.child_price_snapshot,
     infant_price_snapshot: b.infant_price_snapshot,
     pickup_location_snapshot: b.pickup_location_snapshot,
@@ -424,6 +426,7 @@ const getMyBookings = catchAsync(async (req, res) => {
         id: b.departure.id,
         departure_date: b.departure.departure_date,
         price_adult: b.departure.price_adult,
+        original_price_adult: b.departure.original_price_adult || null,
       }
       : null,
     pickupLocation: b.pickupLocation
@@ -551,7 +554,7 @@ const lookupBooking = catchAsync(async (req, res, next) => {
       {
         model: TourDeparture,
         as: 'departure',
-        attributes: ['id', 'departure_date', 'price_adult'],
+        attributes: ['id', 'departure_date', 'price_adult', 'original_price_adult'],
       },
       { model: TourPickupLocation, as: 'pickupLocation', attributes: ['location_name'] },
       { model: BookingOption, as: 'bookingOptions' },
@@ -586,6 +589,7 @@ const lookupBooking = catchAsync(async (req, res, next) => {
     tour_title_snapshot: booking.tour_title_snapshot,
     departure_date_snapshot: booking.departure_date_snapshot,
     adult_price_snapshot: booking.adult_price_snapshot,
+    original_adult_price_snapshot: booking.original_adult_price_snapshot,
     child_price_snapshot: booking.child_price_snapshot,
     infant_price_snapshot: booking.infant_price_snapshot,
     pickup_location_snapshot: booking.pickup_location_snapshot,
@@ -597,6 +601,7 @@ const lookupBooking = catchAsync(async (req, res, next) => {
         id: booking.departure.id,
         departure_date: booking.departure.departure_date,
         price_adult: booking.departure.price_adult,
+        original_price_adult: booking.departure.original_price_adult || null,
       }
       : null,
     pickupLocation: booking.pickupLocation

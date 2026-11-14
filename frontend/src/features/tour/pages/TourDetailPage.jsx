@@ -665,9 +665,16 @@ const TourDetailPage = () => {
         ? t('tour.card.durationDaysNights', '{{days}} ngÃ y {{nights}} Ä‘Ãªm', { days: tour.duration_days, nights: tour.duration_nights })
         : tour.duration_days ? t('tour.card.durationDays', '{{days}} ngÃ y', { days: tour.duration_days }) : null;
 
-    // GiÃ¡ tháº¥p nháº¥t tá»« departures
-    const minPrice = departures.length > 0
-        ? Math.min(...departures.map(d => parseFloat(d.price_adult)))
+    // Giá thấp nhất từ departures
+    const cheapestDep = departures.length > 0
+        ? departures.reduce((min, d) => (!min || parseFloat(d.price_adult) < parseFloat(min.price_adult)) ? d : min, null)
+        : null;
+    const minPrice = cheapestDep ? parseFloat(cheapestDep.price_adult) : null;
+    const isPromotion = tour.tour_badge === 'promotion';
+    const originalPrice = isPromotion && cheapestDep?.original_price_adult ? parseFloat(cheapestDep.original_price_adult) : null;
+    const hasDiscount = Boolean(originalPrice && minPrice && originalPrice > minPrice);
+    const discountPercent = hasDiscount
+        ? Math.round(((originalPrice - minPrice) / originalPrice) * 100)
         : null;
     const categoryName = getCategoryDisplayName(tour.Category, t);
 
@@ -692,9 +699,21 @@ const TourDetailPage = () => {
                         </span>
                     )}
                     {minPrice && (
-                        <span className="flex items-center gap-1.5 text-sm">
+                        <span className="flex items-center gap-1.5 text-sm flex-wrap">
                             <Tag className="w-4 h-4 text-primary" />
-                            {t('tour.card.from', 'GiÃ¡ tá»«')} <span className="font-bold text-primary">{formatPrice(minPrice)}</span>{t('tour.detail.perPerson', '/ngÆ°á»i')}
+                            {t('tour.card.from', 'Giá từ')}{' '}
+                            {hasDiscount && (
+                                <span className="line-through text-text-muted text-xs font-normal">
+                                    {formatPrice(originalPrice)}
+                                </span>
+                            )}
+                            <span className="font-bold text-primary">{formatPrice(minPrice)}</span>
+                            {discountPercent && (
+                                <span className="text-xs font-bold text-error bg-error/10 px-1.5 py-0.5 rounded">
+                                    -{discountPercent}%
+                                </span>
+                            )}
+                            {t('tour.detail.perPerson', '/người')}
                         </span>
                     )}
                     {categoryName && (
@@ -721,10 +740,11 @@ const TourDetailPage = () => {
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
 
-                            {/* NhÃ£n giáº£m giÃ¡ / Badge (Náº¿u cÃ³) */}
+                            {/* Nhãn giảm giá / Badge (Nếu có) */}
                             {tour.tour_badge === 'promotion' ? (
-                                <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">
-                                    {t('tour.card.promotion', 'Tour Æ¯u ÄÃ£i')}
+                                <div className="absolute top-4 left-0 bg-[#e53935] text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide flex items-center gap-1.5">
+                                    <span>{t('tour.card.promotion', 'Tour Ưu Đãi')}</span>
+                                    {discountPercent ? <span>-{discountPercent}%</span> : null}
                                 </div>
                             ) : tour.tour_badge === 'featured' ? (
                                 <div className="absolute top-4 left-0 bg-primary text-white text-sm font-semibold px-4 py-1.5 shadow-md z-10 rounded-r-md tracking-wide">

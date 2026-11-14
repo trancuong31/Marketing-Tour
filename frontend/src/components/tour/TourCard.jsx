@@ -20,18 +20,28 @@ const formatDuration = (days, nights, t) => {
     return null;
 };
 
-/** Lấy giá thấp nhất từ departures */
-const getMinPrice = (tour) => {
+/** Lấy departure có giá thấp nhất từ departures */
+const getCheapestDeparture = (tour) => {
     const departures = tour.departures || [];
     if (departures.length === 0) return null;
-    return Math.min(...departures.map(d => parseFloat(d.price_adult)));
+    return departures.reduce((min, d) => {
+        const price = parseFloat(d.price_adult);
+        return (!min || price < parseFloat(min.price_adult)) ? d : min;
+    }, null);
 };
 
 const TourCard = ({ tour, compact = false }) => {
     const { t } = useTranslation();
     const thumbnail = getImageUrl(tour.thumbnail_url || tour.images?.[0]?.image_url) || '/placeholder-tour.svg';
     const duration = formatDuration(tour.duration_days, tour.duration_nights, t);
-    const minPrice = getMinPrice(tour);
+    const cheapestDep = getCheapestDeparture(tour);
+    const minPrice = cheapestDep ? parseFloat(cheapestDep.price_adult) : null;
+    const isPromotion = tour.tour_badge === 'promotion';
+    const originalPrice = isPromotion && cheapestDep?.original_price_adult ? parseFloat(cheapestDep.original_price_adult) : null;
+    const hasDiscount = Boolean(originalPrice && minPrice && originalPrice > minPrice);
+    const discountPercent = hasDiscount
+        ? Math.round(((originalPrice - minPrice) / originalPrice) * 100)
+        : null;
     const summary = truncateText(tour.summary, compact ? 90 : 159);
     const categoryName = getCategoryDisplayName(tour.Category, t);
     const title = tour.locale_content_status && tour.locale_content_status.title !== 'available'
@@ -46,8 +56,7 @@ const TourCard = ({ tour, compact = false }) => {
             onClick={(event) => {
                 if (!tour.slug) event.preventDefault();
             }}
-            className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-border/70 hover:border-primary/40 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-xl transition-all duration-300"
-        >
+className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-border/70 hover:border-primary/60 shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_16px_36px_-6px_rgba(30,111,191,0.20),0_6px_16px_-4px_rgba(30,111,191,0.10)] hover:-translate-y-1 transition-all duration-300"        >
             {/* Ảnh */}
             <div className={`relative overflow-hidden bg-surface-alt shrink-0 ${compact ? 'aspect-[4/3]' : 'aspect-[16/10]'}`}>
                 <img
@@ -67,8 +76,9 @@ const TourCard = ({ tour, compact = false }) => {
                 ) : null}
 
                 {tour.tour_badge === 'promotion' ? (
-                    <span className={`absolute top-3 left-3 bg-error text-white font-bold rounded-full shadow-lg ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}>
-                        {t('tour.card.promotion', 'Khuyến mãi')}
+                    <span className={`absolute top-3 left-3 bg-error text-white font-bold rounded-full shadow-lg flex items-center gap-1 ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'}`}>
+                        <span>{t('tour.card.promotion', 'Khuyến mãi')}</span>
+                        {discountPercent ? <span>-{discountPercent}%</span> : null}
                     </span>
                 ) : null}
 
@@ -114,10 +124,24 @@ const TourCard = ({ tour, compact = false }) => {
                 <div className="mt-4 pt-3 border-t border-border/40 flex items-end justify-end gap-2">
                     {minPrice ? (
                         <div className="text-right">
-                            <p className="text-xs text-text-muted">{t('tour.card.from', 'Giá từ')}</p>
-                            <span className={`font-extrabold text-primary ${compact ? 'text-base' : 'text-xl'}`}>
-                                {formatPrice(minPrice)}
-                            </span>
+                            <div className="flex items-center justify-end gap-1.5">
+                                <span className="text-xs text-text-muted">{t('tour.card.from', 'Giá từ')}</span>
+                                {hasDiscount && (
+                                    <span className={`text-text-muted line-through font-medium ${compact ? 'text-xs' : 'text-sm'}`}>
+                                        {formatPrice(originalPrice)}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-baseline justify-end gap-1.5">
+                                <span className={`font-extrabold text-primary ${compact ? 'text-base' : 'text-xl'}`}>
+                                    {formatPrice(minPrice)}
+                                </span>
+                                {discountPercent && (
+                                    <span className="text-xs font-bold text-error bg-error/10 px-1.5 py-0.5 rounded">
+                                        -{discountPercent}%
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     ) : (
                         <span className="text-sm font-semibold text-text-muted">{t('tour.card.contact', 'Liên hệ')}</span>

@@ -248,11 +248,15 @@ const mergeTranslationsByLanguage = (defaults, translations = []) =>
       : defaultTranslation;
   });
 
-const normalizeTourDeparturesPayload = (departures = []) =>
+const normalizeTourDeparturesPayload = (departures = [], isPromotion = false) =>
   departures.map(({ available_seats, status: _status, ...item }) => ({
     ...item,
     departure_date: normalizeDateOnly(item.departure_date),
     price_adult: normalizeMoneyValue(item.price_adult),
+    original_price_adult:
+      isPromotion && item.original_price_adult
+        ? normalizeMoneyValue(item.original_price_adult)
+        : null,
     price_child: normalizeMoneyValue(item.price_child),
     price_infant: normalizeMoneyValue(item.price_infant),
     capacity: normalizeIntegerValue(item.capacity ?? available_seats),
@@ -1412,6 +1416,7 @@ const createEmptyItinerary = (dayNumber = 1) => ({
 const createEmptyDeparture = () => ({
   departure_date: '',
   price_adult: '',
+  original_price_adult: '',
   price_child: 0,
   price_infant: 0,
   capacity: 20,
@@ -1678,6 +1683,8 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
     keyName: 'fieldId',
   });
   const todayDateOnly = getTodayDateOnly();
+  const tourBadge = watch('tour_badge');
+  const isPromotion = tourBadge === 'promotion';
 
   // Mặc định luôn có ít nhất 1 item trống
   useEffect(() => {
@@ -1786,16 +1793,50 @@ const DeparturesTab = ({ control, register, watch, setValue, errors }) => {
                   </p>
                 )}
               </div>
+              {isPromotion && (
+                <div>
+                  <label className="text-xs font-semibold text-text-secondary mb-1.5 flex items-center justify-between uppercase tracking-wider">
+                    <span>Giá gốc NL (VNĐ) *</span>
+                    <span className="text-[10px] text-error font-normal normal-case">
+                      (gạch ngang)
+                    </span>
+                  </label>
+                  <PriceInput
+                    control={control}
+                    name={`departures.${index}.original_price_adult`}
+                    rules={{
+                      required: isPromotion ? 'Bắt buộc nhập giá gốc' : false,
+                      min: { value: 1, message: '>0' },
+                      validate: (val) => {
+                        if (!isPromotion) return true;
+                        const adultPrice = Number(watch(`departures.${index}.price_adult`)) || 0;
+                        if (val && adultPrice && Number(val) < adultPrice) {
+                          return 'Giá gốc phải >= Giá KM';
+                        }
+                        return true;
+                      },
+                    }}
+                    error={errors.departures?.[index]?.original_price_adult}
+                    placeholder="5.000.000"
+                    disabled={isDeparted}
+                  />
+                  {errors.departures?.[index]?.original_price_adult && (
+                    <p className="text-error text-[10px] mt-1 font-medium">
+                      {errors.departures[index].original_price_adult.message}
+                    </p>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="text-xs font-semibold text-text-secondary mb-1.5 block uppercase tracking-wider">
-                  Giá NL (VNĐ) *
+                  {isPromotion ? 'Giá KM Người lớn (VNĐ) *' : 'Giá NL (VNĐ) *'}
                 </label>
                 <PriceInput
                   control={control}
                   name={`departures.${index}.price_adult`}
                   rules={{ required: 'Bắt buộc', min: { value: 1, message: '>0' } }}
                   error={errors.departures?.[index]?.price_adult}
-                  placeholder="3.500.000"
+                  placeholder={isPromotion ? '3.800.000' : '3.500.000'}
                   disabled={isDeparted}
                 />
                 {errors.departures?.[index]?.price_adult && (
@@ -2244,6 +2285,10 @@ const normalizeTourForDiff = (formData) => {
       id: dep.id ? Number(dep.id) : null,
       departure_date: String(dep.departure_date || '').trim(),
       price_adult: Number(dep.price_adult || 0),
+      original_price_adult:
+        formData.tour_badge === 'promotion' && dep.original_price_adult
+          ? Number(dep.original_price_adult)
+          : null,
       price_child: Number(dep.price_child || 0),
       price_infant: Number(dep.price_infant || 0),
       capacity: Number(dep.capacity || 0),
@@ -2527,6 +2572,7 @@ const TourManagementPage = () => {
                 id: d.id,
                 departure_date: normalizeDateOnly(d.departure_date),
                 price_adult: normalizeMoneyValue(d.price_adult),
+                original_price_adult: d.original_price_adult ? normalizeMoneyValue(d.original_price_adult) : '',
                 price_child: normalizeMoneyValue(d.price_child),
                 price_infant: normalizeMoneyValue(d.price_infant),
                 capacity: normalizeIntegerValue(d.capacity ?? d.available_seats),
@@ -2713,7 +2759,8 @@ const TourManagementPage = () => {
     setSubmitting(true);
     try {
       const fd = new FormData();
-      const normalizedDepartures = normalizeTourDeparturesPayload(data.departures || []);
+      const isPromotion = data.tour_badge === 'promotion';
+      const normalizedDepartures = normalizeTourDeparturesPayload(data.departures || [], isPromotion);
       const normalizedPickupLocations = normalizePickupLocationsPayload(
         data.pickup_locations || []
       );

@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               12.3.1-MariaDB - MariaDB Server
+-- Server version:               12.0.2-MariaDB - mariadb.org binary distribution
 -- Server OS:                    Win64
--- HeidiSQL Version:             12.14.0.7165
+-- HeidiSQL Version:             12.10.0.7000
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -47,27 +47,6 @@ INSERT INTO `banners` (`id`, `tour_id`, `title`, `image_url`, `target_link`, `po
 	(14, 8, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan', '/uploads/banners/banner-1774264639505-576996427.webp', '/tours/tour-kham-pha-sapa-chinh-phuc-fansipan1', 'hero', 1, '2026-04-29 15:29:10', '2026-08-03 02:43:33'),
 	(18, 15, 'Tour Đài Loan 5N4Đ: HCM - Cao Hùng - Đài Trung - Đài Bắc - Thủy Cung X-park', '/uploads/banners/banner-1774264639505-576996427.webp', '/tours/tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', 'hero', 1, '2026-05-09 11:28:22', '2026-08-03 02:43:30');
 
--- Dumping structure for table db_marketing_tour.booking_options
-DROP TABLE IF EXISTS `booking_options`;
-CREATE TABLE IF NOT EXISTS `booking_options` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `booking_id` int(11) NOT NULL,
-  `option_name` varchar(255) NOT NULL COMMENT 'Lưu cứng text tên option để tránh mất data khi admin xóa',
-  `price` decimal(15,2) NOT NULL COMMENT 'Giá option tại thời điểm khách đặt',
-  `quantity` int(11) NOT NULL DEFAULT 1 COMMENT 'Số lượng khách chọn',
-  `total` decimal(15,2) NOT NULL COMMENT 'Thành tiền của option này (price * quantity)',
-  PRIMARY KEY (`id`),
-  KEY `booking_id` (`booking_id`),
-  CONSTRAINT `fk_booking_tour` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.booking_options: ~3 rows (approximately)
-DELETE FROM `booking_options`;
-INSERT INTO `booking_options` (`id`, `booking_id`, `option_name`, `price`, `quantity`, `total`) VALUES
-	(3, 23, 'Lặn biển', 1000000.00, 1, 1000000.00),
-	(4, 32, 'Golf', 2000000.00, 15, 30000000.00),
-	(5, 32, 'Ăn tối BBQ', 600000.00, 15, 9000000.00);
-
 -- Dumping structure for table db_marketing_tour.bookings
 DROP TABLE IF EXISTS `bookings`;
 CREATE TABLE IF NOT EXISTS `bookings` (
@@ -94,6 +73,7 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   `tour_title_snapshot` varchar(500) DEFAULT NULL,
   `departure_date_snapshot` date DEFAULT NULL,
   `adult_price_snapshot` decimal(12,2) DEFAULT NULL,
+  `original_adult_price_snapshot` decimal(15,2) DEFAULT NULL COMMENT 'Snapshot giá gốc người lớn tại thời điểm đặt',
   `child_price_snapshot` decimal(12,2) DEFAULT NULL,
   `infant_price_snapshot` decimal(12,2) DEFAULT NULL,
   `pickup_location_snapshot` varchar(500) DEFAULT NULL,
@@ -120,31 +100,51 @@ CREATE TABLE IF NOT EXISTS `bookings` (
   CONSTRAINT `bk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.bookings: ~18 rows (approximately)
+-- Dumping data for table db_marketing_tour.bookings: ~21 rows (approximately)
 DELETE FROM `bookings`;
-INSERT INTO `bookings` (`id`, `user_id`, `tour_id`, `departure_id`, `pickup_location_id`, `booking_code`, `customer_name`, `customer_email`, `customer_phone`, `adult_qty`, `child_qty`, `infant_qty`, `customer_note`, `language`, `review_email_sent_at`, `departure_date`, `adult_count`, `child_count`, `infant_count`, `status`, `tour_title_snapshot`, `departure_date_snapshot`, `adult_price_snapshot`, `child_price_snapshot`, `infant_price_snapshot`, `pickup_location_snapshot`, `pickup_price_snapshot`, `total_price`, `admin_note`, `created_at`, `updated_at`) VALUES
-	(1, 2, 1, 1, 1, 'BK001', 'Nguyễn Văn A', 'a@gmail.com', '0911111111', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', '2026-05-01', 3500000.00, 2500000.00, 500000.00, NULL, NULL, 9500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(2, 3, 2, 3, 3, 'BK002', 'Trần Thị B', 'b@gmail.com', '0922222222', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'cancelled', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', '2026-05-03', 5500000.00, 4000000.00, 800000.00, NULL, NULL, 5500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(3, 2, 3, 5, 5, 'BK003', 'Lê Văn C', 'c@gmail.com', '0933333333', 2, 0, 1, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', '2026-05-05', 4500000.00, 3200000.00, 600000.00, NULL, NULL, 9600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(6, 3, 6, 11, 9, 'BK006', 'Đỗ Văn F', 'f@gmail.com', '0966666666', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', '2026-06-01', 4500000.00, 3200000.00, 600000.00, NULL, NULL, 9800000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(8, 3, 8, 15, 11, 'BK008', 'Trần H', 'h@gmail.com', '0988888888', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-05', 3500000.00, 2500000.00, 500000.00, NULL, NULL, 7000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(9, 2, 9, 17, 12, 'BK009', 'Lê I', 'i@gmail.com', '0999999999', 1, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', '2026-06-07', 3700000.00, 2700000.00, 500000.00, NULL, NULL, 6400000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(10, 3, 10, 18, 13, 'BK010', 'Phạm K', 'k@gmail.com', '0900000000', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', '2026-06-09', 5800000.00, 4200000.00, 800000.00, NULL, NULL, 11600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(11, 2, 11, 19, 14, 'BK011', 'Hoàng L', 'l@gmail.com', '0910000000', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', '2026-06-12', 6000000.00, 4500000.00, 900000.00, NULL, NULL, 13500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(12, 3, 1, 2, 2, 'BK012', 'User12', 'u12@gmail.com', '0911111122', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', '2026-05-10', 3600000.00, 2600000.00, 500000.00, NULL, NULL, 3600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(13, 2, 2, 4, 4, 'BK013', 'User13', 'u13@gmail.com', '0911111133', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', '2026-05-15', 5700000.00, 4200000.00, 800000.00, NULL, NULL, 11400000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(14, 3, 3, 6, 6, 'BK014', 'User14', 'u14@gmail.com', '0911111144', 1, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', '2026-05-20', 4600000.00, 3300000.00, 600000.00, NULL, NULL, 7900000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(16, 3, 5, 10, 8, 'BK016', 'User16', 'u16@gmail.com', '0911111166', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 3', '2026-05-28', 4900000.00, 3600000.00, 700000.00, NULL, NULL, 12000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(17, 2, 6, 12, 9, 'BK017', 'User17', 'u17@gmail.com', '0911111177', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', '2026-06-10', 4600000.00, 3300000.00, 600000.00, NULL, NULL, 9000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(18, 3, 7, 14, 10, 'BK018', 'User18', 'u18@gmail.com', '0911111188', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', '2026-06-18', 8200000.00, 6200000.00, 1200000.00, NULL, NULL, 8200000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(19, 2, 8, 16, 11, 'BK019', 'User19', 'u19@gmail.com', '0911111199', 3, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-20', 3600000.00, 2600000.00, 500000.00, NULL, NULL, 10800000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(20, 3, 9, 17, 12, 'BK020', 'User20', 'u20@gmail.com', '0911111200', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', '2026-06-07', 3700000.00, 2700000.00, 500000.00, NULL, NULL, 9100000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
-	(23, 7, 10, 18, 13, 'BKMOH0MID52C0FB6', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', '2026-06-09', 5800000.00, 4200000.00, 800000.00, NULL, NULL, 6800000.00, NULL, '2026-04-27 16:49:21', '2026-04-27 16:49:21'),
-	(24, 7, 7, 13, NULL, 'BKMOH101AS1BB547', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', '2026-06-03', 8000000.00, 6000000.00, 1200000.00, NULL, NULL, 8000000.00, NULL, '2026-04-27 16:59:52', '2026-04-27 16:59:52'),
-	(27, 7, 8, 15, 11, 'BKMOH6DVII2D0BAD', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, 'aaaaaaaaa', 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-05', 3500000.00, 2500000.00, 500000.00, NULL, NULL, 3500000.00, NULL, '2026-04-27 19:30:36', '2026-04-27 19:30:36'),
-	(31, 1, 11, 20, NULL, 'BKMOK4F63VBCD6FC', 'Quản Trị Viên', '1@gmail.com', '0901234567', 15, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'cancelled', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', '2026-06-25', 6200000.00, 4700000.00, 900000.00, NULL, NULL, 93000000.00, NULL, '2026-04-29 20:58:55', '2026-04-29 20:58:55'),
-	(32, NULL, 11, 20, 14, 'BKMONM62QE867C0E', 'Cường Trần', 'tranhungcuong31720@gmail.com', '0978818244', 15, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', '2026-06-25', 6200000.00, 4700000.00, 900000.00, NULL, NULL, 132000000.00, NULL, '2026-05-02 07:39:03', '2026-05-02 07:39:03'),
-	(44, NULL, 8, 16, 11, 'BKMQBSZDV7591722', 'Cường Trần', 'tranhungcuong31720@gmail.com', '0978818244', 2, 3, 3, NULL, 'vi', NULL, NULL, 1, 0, 0, 'cancelled', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-20', 3600000.00, 2600000.00, 500000.00, NULL, NULL, 16500000.00, NULL, '2026-06-13 10:35:58', '2026-06-13 10:35:58');
+INSERT INTO `bookings` (`id`, `user_id`, `tour_id`, `departure_id`, `pickup_location_id`, `booking_code`, `customer_name`, `customer_email`, `customer_phone`, `adult_qty`, `child_qty`, `infant_qty`, `customer_note`, `language`, `review_email_sent_at`, `departure_date`, `adult_count`, `child_count`, `infant_count`, `status`, `tour_title_snapshot`, `departure_date_snapshot`, `adult_price_snapshot`, `original_adult_price_snapshot`, `child_price_snapshot`, `infant_price_snapshot`, `pickup_location_snapshot`, `pickup_price_snapshot`, `total_price`, `admin_note`, `created_at`, `updated_at`) VALUES
+	(1, 2, 1, 1, 1, 'BK001', 'Nguyễn Văn A', 'a@gmail.com', '0911111111', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', '2026-05-01', 3500000.00, NULL, 2500000.00, 500000.00, NULL, NULL, 9500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(2, 3, 2, 3, 3, 'BK002', 'Trần Thị B', 'b@gmail.com', '0922222222', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'cancelled', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', '2026-05-03', 5500000.00, NULL, 4000000.00, 800000.00, NULL, NULL, 5500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(3, 2, 3, 5, 5, 'BK003', 'Lê Văn C', 'c@gmail.com', '0933333333', 2, 0, 1, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', '2026-05-05', 4500000.00, NULL, 3200000.00, 600000.00, NULL, NULL, 9600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(6, 3, 6, 11, 9, 'BK006', 'Đỗ Văn F', 'f@gmail.com', '0966666666', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', '2026-06-01', 4500000.00, NULL, 3200000.00, 600000.00, NULL, NULL, 9800000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(8, 3, 8, 15, 11, 'BK008', 'Trần H', 'h@gmail.com', '0988888888', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-05', 3500000.00, NULL, 2500000.00, 500000.00, NULL, NULL, 7000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(9, 2, 9, 17, 12, 'BK009', 'Lê I', 'i@gmail.com', '0999999999', 1, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', '2026-06-07', 3700000.00, NULL, 2700000.00, 500000.00, NULL, NULL, 6400000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(10, 3, 10, 18, 13, 'BK010', 'Phạm K', 'k@gmail.com', '0900000000', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', '2026-06-09', 5800000.00, NULL, 4200000.00, 800000.00, NULL, NULL, 11600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(11, 2, 11, 19, 14, 'BK011', 'Hoàng L', 'l@gmail.com', '0910000000', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', '2026-06-12', 6000000.00, NULL, 4500000.00, 900000.00, NULL, NULL, 13500000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(12, 3, 1, 2, 2, 'BK012', 'User12', 'u12@gmail.com', '0911111122', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', '2026-05-10', 3600000.00, NULL, 2600000.00, 500000.00, NULL, NULL, 3600000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(13, 2, 2, 4, 4, 'BK013', 'User13', 'u13@gmail.com', '0911111133', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', '2026-05-15', 5700000.00, NULL, 4200000.00, 800000.00, NULL, NULL, 11400000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(14, 3, 3, 6, 6, 'BK014', 'User14', 'u14@gmail.com', '0911111144', 1, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', '2026-05-20', 4600000.00, NULL, 3300000.00, 600000.00, NULL, NULL, 7900000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(16, 3, 5, 10, 8, 'BK016', 'User16', 'u16@gmail.com', '0911111166', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 3', '2026-05-28', 4900000.00, NULL, 3600000.00, 700000.00, NULL, NULL, 12000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(17, 2, 6, 12, 9, 'BK017', 'User17', 'u17@gmail.com', '0911111177', 2, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', '2026-06-10', 4600000.00, NULL, 3300000.00, 600000.00, NULL, NULL, 9000000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(18, 3, 7, 14, 10, 'BK018', 'User18', 'u18@gmail.com', '0911111188', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', '2026-06-18', 8200000.00, NULL, 6200000.00, 1200000.00, NULL, NULL, 8200000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(19, 2, 8, 16, 11, 'BK019', 'User19', 'u19@gmail.com', '0911111199', 3, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-20', 3600000.00, NULL, 2600000.00, 500000.00, NULL, NULL, 10800000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(20, 3, 9, 17, 12, 'BK020', 'User20', 'u20@gmail.com', '0911111200', 2, 1, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', '2026-06-07', 3700000.00, NULL, 2700000.00, 500000.00, NULL, NULL, 9100000.00, NULL, '2026-04-02 18:56:51', '2026-04-02 18:56:51'),
+	(23, 7, 10, 18, 13, 'BKMOH0MID52C0FB6', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', '2026-06-09', 5800000.00, NULL, 4200000.00, 800000.00, NULL, NULL, 6800000.00, NULL, '2026-04-27 16:49:21', '2026-04-27 16:49:21'),
+	(24, 7, 7, 13, NULL, 'BKMOH101AS1BB547', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', '2026-06-03', 8000000.00, NULL, 6000000.00, 1200000.00, NULL, NULL, 8000000.00, NULL, '2026-04-27 16:59:52', '2026-04-27 16:59:52'),
+	(27, 7, 8, 15, 11, 'BKMOH6DVII2D0BAD', 'minhtuyen', 'minhtuyenk201@gmail.com', '0000000000', 1, 0, 0, 'aaaaaaaaa', 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-05', 3500000.00, NULL, 2500000.00, 500000.00, NULL, NULL, 3500000.00, NULL, '2026-04-27 19:30:36', '2026-04-27 19:30:36'),
+	(32, NULL, 11, 20, 14, 'BKMONM62QE867C0E', 'Cường Trần', 'tranhungcuong31720@gmail.com', '0978818244', 15, 0, 0, NULL, 'vi', NULL, NULL, 1, 0, 0, 'approved', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', '2026-06-25', 6200000.00, NULL, 4700000.00, 900000.00, NULL, NULL, 132000000.00, NULL, '2026-05-02 07:39:03', '2026-05-02 07:39:03'),
+	(44, NULL, 8, 16, 11, 'BKMQBSZDV7591722', 'Cường Trần', 'tranhungcuong31720@gmail.com', '0978818244', 2, 3, 3, NULL, 'vi', NULL, NULL, 1, 0, 0, 'cancelled', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', '2026-06-20', 3600000.00, NULL, 2600000.00, 500000.00, NULL, NULL, 16500000.00, NULL, '2026-06-13 10:35:58', '2026-06-13 10:35:58');
+
+-- Dumping structure for table db_marketing_tour.booking_options
+DROP TABLE IF EXISTS `booking_options`;
+CREATE TABLE IF NOT EXISTS `booking_options` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `booking_id` int(11) NOT NULL,
+  `option_name` varchar(255) NOT NULL COMMENT 'Lưu cứng text tên option để tránh mất data khi admin xóa',
+  `price` decimal(15,2) NOT NULL COMMENT 'Giá option tại thời điểm khách đặt',
+  `quantity` int(11) NOT NULL DEFAULT 1 COMMENT 'Số lượng khách chọn',
+  `total` decimal(15,2) NOT NULL COMMENT 'Thành tiền của option này (price * quantity)',
+  PRIMARY KEY (`id`),
+  KEY `booking_id` (`booking_id`),
+  CONSTRAINT `fk_booking_tour` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.booking_options: ~3 rows (approximately)
+DELETE FROM `booking_options`;
+INSERT INTO `booking_options` (`id`, `booking_id`, `option_name`, `price`, `quantity`, `total`) VALUES
+	(3, 23, 'Lặn biển', 1000000.00, 1, 1000000.00),
+	(4, 32, 'Golf', 2000000.00, 15, 30000000.00),
+	(5, 32, 'Ăn tối BBQ', 600000.00, 15, 9000000.00);
 
 -- Dumping structure for table db_marketing_tour.categories
 DROP TABLE IF EXISTS `categories`;
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS `contact_settings` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.contact_settings: ~0 rows (approximately)
+-- Dumping data for table db_marketing_tour.contact_settings: ~1 rows (approximately)
 DELETE FROM `contact_settings`;
 INSERT INTO `contact_settings` (`id`, `configuration`, `updated_by`, `created_at`, `updated_at`) VALUES
 	(1, '{"general":{"heading":{"vi":"BẠN CẦN TRỢ GIÚP?","en":"NEED HELP?","zh":"需要帮助？"},"workingHours":{"vi":"7h30 → 21h hằng ngày","en":"Daily, 7:30 AM → 9:00 PM","zh":"每日 7:30 → 21:00"},"description":{"vi":"","en":"","zh":""}},"contacts":[{"id":"hotline","type":"phone","labels":{"vi":"Hotline","en":"Hotline","zh":"服务热线"},"displayValue":"1900 0000","destination":"19002045","phoneNumber":"","accountIdentifier":"","icon":"phone","enabled":true,"footerVisible":true,"floatingVisible":false,"footerOrder":1,"floatingOrder":4,"wechatAction":"none"},{"id":"email","type":"email","labels":{"vi":"Email","en":"Email","zh":"电子邮件"},"displayValue":"info@kynghituyetvoi.vn","destination":"","phoneNumber":"","accountIdentifier":"","icon":"mail","enabled":true,"footerVisible":true,"floatingVisible":false,"footerOrder":2,"floatingOrder":5,"wechatAction":"none"},{"id":"facebook","type":"facebook","labels":{"vi":"Facebook","en":"Facebook","zh":"Facebook"},"displayValue":"Facebook","destination":"","phoneNumber":"","accountIdentifier":"","icon":"facebook","enabled":true,"footerVisible":true,"floatingVisible":false,"footerOrder":3,"floatingOrder":6,"wechatAction":"none"},{"id":"zalo","type":"zalo","labels":{"vi":"Zalo","en":"Zalo","zh":"Zalo"},"displayValue":"Zalo","destination":"https://zalo.me/0987654321","phoneNumber":"0987654321","accountIdentifier":"","icon":"zalo","enabled":true,"footerVisible":true,"floatingVisible":true,"footerOrder":4,"floatingOrder":2,"wechatAction":"none"},{"id":"wechat","type":"wechat","labels":{"vi":"Chat WeChat","en":"Chat WeChat","zh":"微信联系"},"displayValue":"WeChat","destination":"","phoneNumber":"","accountIdentifier":"","icon":"wechat","enabled":true,"footerVisible":true,"floatingVisible":true,"footerOrder":5,"floatingOrder":1,"wechatAction":"none"},{"id":"quick_call","type":"phone","labels":{"vi":"Gọi ngay","en":"Call now","zh":"立即致电"},"displayValue":"0987654321","destination":"0987654321","phoneNumber":"0987654321","accountIdentifier":"","icon":"phone","enabled":true,"footerVisible":false,"floatingVisible":true,"footerOrder":6,"floatingOrder":3,"wechatAction":"none"}]}', NULL, '2026-11-08 13:34:58', '2026-11-08 13:34:58');
@@ -218,55 +218,13 @@ CREATE TABLE IF NOT EXISTS `footer_links` (
 
 -- Dumping data for table db_marketing_tour.footer_links: ~6 rows (approximately)
 DELETE FROM `footer_links`;
-INSERT INTO `footer_links` (`id`, `title`, `url`, `link_type`, `column_position`, `sort_order`, `is_active`) VALUES
-	(1, 'Về Chúng Tôi', '/guides/ve-chung-toi', 'internal', 1, 1, 1),
-	(2, 'Blog Du Lịch', '/guides/blog-du-lich', 'internal', 1, 2, 1),
-	(3, 'Câu Hỏi Thường Gặp', '/guides/cau-hoi-thuong-gap', 'internal', 2, 1, 1),
-	(4, 'Hướng Dẫn Thanh Toán', '/guides/huong-dan-thanh-toan', 'internal', 2, 2, 1),
-	(5, 'Điều Khoản Sử Dụng', '/guides/dieu-khoan-su-dung', 'internal', 3, 1, 1),
-	(6, 'Chính Sách Bảo Mật', '/guides/chinh-sach-bao-mat', 'internal', 3, 2, 1);
-
--- Dumping structure for table db_marketing_tour.guide_translations
-DROP TABLE IF EXISTS `guide_translations`;
-CREATE TABLE IF NOT EXISTS `guide_translations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `guide_id` int(11) NOT NULL,
-  `language` varchar(10) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
-  `content` longtext NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `guide_translations_guide_id_language` (`guide_id`,`language`),
-  CONSTRAINT `fk_guide_translations_guide` FOREIGN KEY (`guide_id`) REFERENCES `guides` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.guide_translations: ~6 rows (approximately)
-DELETE FROM `guide_translations`;
-INSERT INTO `guide_translations` (`id`, `guide_id`, `language`, `title`, `slug`, `content`) VALUES
-	(1, 1, 'vi', 'Hướng dẫn đặt tour trên hệ thống', 'huong-dan-dat-tour', '<h2>Cách&nbsp;đặt&nbsp;tour</h2><p>Bước&nbsp;1:&nbsp;Chọn&nbsp;tour...&nbsp;Bước&nbsp;2:&nbsp;Điền&nbsp;thông&nbsp;tin...&nbsp;Bước&nbsp;3:&nbsp;Chờ&nbsp;admin&nbsp;liên&nbsp;hệ.1</p>'),
-	(2, 2, 'vi', 'Chính sách hoàn hủy tour', 'chinh-sach-hoan-huy', '<h2>Chính sách hủy</h2><p>Hủy trước 7 ngày hoàn 100% tiền. Hủy trước 3 ngày hoàn 50% tiền.</p>'),
-	(3, 1, 'en', 'How to Book a Tour on the System', 'how-to-book-a-tour-on-the-system', '<h2>How&nbsp;to&nbsp;book&nbsp;a&nbsp;tour</h2><p>Step&nbsp;1:&nbsp;Choose&nbsp;a&nbsp;tour...&nbsp;Step&nbsp;2:&nbsp;Enter&nbsp;your&nbsp;information...&nbsp;Step&nbsp;3:&nbsp;Wait&nbsp;for&nbsp;admin&nbsp;contact.1</p>'),
-	(4, 1, 'zh', '如何在系统上预订旅游', 'ru-he-zai-xi-tong-shang-yu-ding-lv-you', '<h2>如何预订旅游</h2><p>步骤&nbsp;1：选择旅游产品...&nbsp;步骤&nbsp;2：填写您的信息...&nbsp;步骤&nbsp;3：等待管理员联系。1</p>'),
-	(5, 2, 'en', 'Tour Cancellation and Refund Policy', 'tour-cancellation-and-refund-policy', '<h2>Cancellation&nbsp;Policy</h2><p>Cancel&nbsp;7&nbsp;days&nbsp;in&nbsp;advance&nbsp;for&nbsp;a&nbsp;100%&nbsp;refund.&nbsp;Cancel&nbsp;3&nbsp;days&nbsp;in&nbsp;advance&nbsp;for&nbsp;a&nbsp;50%&nbsp;refund.</p>'),
-	(6, 2, 'zh', '旅游取消和退款政策', 'lv-you-qu-xiao-he-tui-kuan-zheng-ce', '<h2>取消政策</h2><p>提前&nbsp;7&nbsp;天取消可退还&nbsp;100%&nbsp;费用。提前&nbsp;3&nbsp;天取消可退还&nbsp;50%&nbsp;费用。</p>'),
-	(7, 3, 'vi', 'Về Chúng Tôi', 've-chung-toi', '<h1>Về Chúng Tôi</h1>\n            <p>Kỳ Nghỉ Tuyệt Vời đồng hành cùng khách hàng trong việc lựa chọn tour du lịch, lịch khởi hành và các dịch vụ phù hợp cho từng hành trình.</p>\n            <p>Bạn có thể xem thêm <a href="/guides/blog-du-lich">Blog Du Lịch</a>, <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a> hoặc <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>.</p>'),
-	(8, 3, 'en', 'About Us', 'about-us', '<h1>About Us</h1>\n                    <p>Ky Nghi Tuyet Voi helps travelers choose tours, departure dates, and services suited to every journey.</p>\n                    <p>Explore our <a href="/guides/blog-du-lich">Travel Blog</a>, <a href="/guides/cau-hoi-thuong-gap">Frequently Asked Questions</a>, and <a href="/guides/huong-dan-thanh-toan">Payment Guide</a>.</p>'),
-	(9, 3, 'zh', '关于我们', 'guan-yu-wo-men', '<h1>关于我们</h1>\n                    <p>美好假期为旅客提供旅游线路、出发日期和配套服务建议，陪伴您规划每一段旅程。</p>\n                    <p>欢迎了解我们的<a href="/guides/blog-du-lich">旅行博客</a>、<a href="/guides/cau-hoi-thuong-gap">常见问题</a>和<a href="/guides/huong-dan-thanh-toan">付款指南</a>。</p>'),
-	(10, 4, 'vi', 'Blog Du Lịch', 'blog-du-lich', '<h1>Blog Du Lịch</h1>\n            <p>Nơi tổng hợp kinh nghiệm du lịch, gợi ý điểm đến, lưu ý trước chuyến đi và các thông tin hữu ích cho khách hàng.</p>\n            <p>Tham khảo thêm <a href="/guides/ve-chung-toi">Về Chúng Tôi</a> và <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>'),
-	(11, 4, 'en', 'Travel Blog', 'travel-blog', '<h1>Travel Blog</h1><p>Travel tips, destination ideas, pre-trip reminders, and useful information for your next journey.</p><p>Learn more <a href="/guides/ve-chung-toi">About Us</a> and browse our <a href="/guides/cau-hoi-thuong-gap">Frequently Asked Questions</a>.</p>'),
-	(12, 4, 'zh', '旅行博客', 'lv-xing-bo-ke', '<h1>旅行博客</h1><p>这里汇集旅行经验、目的地推荐、出行前提示以及旅客实用信息。</p><p>了解<a href="/guides/ve-chung-toi">关于我们</a>，也可查看<a href="/guides/cau-hoi-thuong-gap">常见问题</a>。</p>'),
-	(13, 5, 'vi', 'Điều Khoản Sử Dụng', 'dieu-khoan-su-dung', '<h1>Điều Khoản Sử Dụng</h1>\n            <p>Khi sử dụng website và dịch vụ của Kỳ Nghỉ Tuyệt Vời, khách hàng đồng ý tuân thủ các điều khoản đặt tour, thanh toán và sử dụng thông tin được công bố.</p>\n            <p>Vui lòng đọc thêm <a href="/guides/chinh-sach-bao-mat">Chính Sách Bảo Mật</a> và <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>.</p>'),
-	(14, 5, 'en', 'Terms of Use', 'terms-of-use', '<h1>Terms of Use</h1><p>By using the Ky Nghi Tuyet Voi website and services, customers agree to follow the published terms for tour bookings, payments, and use of information.</p><p>Please also read our <a href="/guides/chinh-sach-bao-mat">Privacy Policy</a> and <a href="/guides/huong-dan-thanh-toan">Payment Guide</a>.</p>'),
-	(15, 5, 'zh', '使用条款', 'shi-yong-tiao-kuan', '<h1>使用条款</h1><p>使用美好假期网站及服务即表示您同意遵守已公布的旅游预订、付款和信息使用条款。</p><p>请同时阅读<a href="/guides/chinh-sach-bao-mat">隐私政策</a>和<a href="/guides/huong-dan-thanh-toan">付款指南</a>。</p>'),
-	(16, 6, 'vi', 'Câu Hỏi Thường Gặp', 'cau-hoi-thuong-gap', '<h1>Câu Hỏi Thường Gặp</h1>\n            <p>Trang này tổng hợp các câu hỏi thường gặp về đặt tour, lịch khởi hành, xác nhận đơn hàng, thanh toán và chính sách hỗ trợ.</p>\n            <p>Nếu bạn cần thông tin thanh toán, xem <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>. Nếu cần điều khoản dịch vụ, xem <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>'),
-	(17, 6, 'en', 'Frequently Asked Questions', 'frequently-asked-questions', '<h1>Frequently Asked Questions</h1><p>Answers to common questions about tour bookings, departure dates, order confirmations, payments, and customer support.</p><p>For payment information, see our <a href="/guides/huong-dan-thanh-toan">Payment Guide</a>. For service terms, see <a href="/guides/dieu-khoan-su-dung">Terms of Use</a>.</p>'),
-	(18, 6, 'zh', '常见问题', 'chang-jian-wen-ti', '<h1>常见问题</h1><p>本页汇总旅游预订、出发日期、订单确认、付款和客户支持等常见问题。</p><p>付款信息请查看<a href="/guides/huong-dan-thanh-toan">付款指南</a>；服务条款请查看<a href="/guides/dieu-khoan-su-dung">使用条款</a>。</p>'),
-	(19, 7, 'vi', 'Chính Sách Bảo Mật', 'chinh-sach-bao-mat', '<h1>Chính Sách Bảo Mật</h1>\n            <p>Kỳ Nghỉ Tuyệt Vời cam kết bảo vệ thông tin cá nhân của khách hàng và chỉ sử dụng dữ liệu trong phạm vi tư vấn, đặt tour, chăm sóc khách hàng và vận hành dịch vụ.</p>\n            <p>Vui lòng xem thêm <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>'),
-	(20, 7, 'en', 'Privacy Policy', 'privacy-policy', '<h1>Privacy Policy</h1><p>Ky Nghi Tuyet Voi is committed to protecting customers’ personal information and using it only for consultation, tour bookings, customer care, and service operations.</p><p>Please also read our <a href="/guides/dieu-khoan-su-dung">Terms of Use</a>.</p>'),
-	(21, 7, 'zh', '隐私政策', 'yin-si-zheng-ce', '<h1>隐私政策</h1><p>美好假期承诺保护客户个人信息，并仅将其用于咨询、旅游预订、客户服务和业务运营。</p><p>请同时阅读<a href="/guides/dieu-khoan-su-dung">使用条款</a>。</p>'),
-	(22, 8, 'vi', 'Hướng Dẫn Thanh Toán', 'huong-dan-thanh-toan', '<h1>Hướng Dẫn Thanh Toán</h1>\n            <p>Khách hàng có thể thanh toán theo hướng dẫn của nhân viên tư vấn hoặc theo thông tin được cung cấp trong quá trình đặt tour.</p>\n            <p>Sau khi thanh toán, vui lòng giữ lại chứng từ để đối chiếu khi cần. Xem thêm <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>'),
-	(23, 8, 'en', 'Payment Guide', 'payment-guide', '<h1>Payment Guide</h1><p>Customers can pay by following their travel consultant’s instructions or the payment information provided during booking.</p><p>Please keep your payment receipt for reference. See our <a href="/guides/cau-hoi-thuong-gap">Frequently Asked Questions</a> for more information.</p>'),
-	(24, 8, 'zh', '付款指南', 'fu-kuan-zhi-nan', '<h1>付款指南</h1><p>客户可按照顾问的指引，或按照预订过程中提供的付款信息完成付款。</p><p>请保留付款凭证以便核对。更多信息请查看<a href="/guides/cau-hoi-thuong-gap">常见问题</a>。</p>');
+INSERT INTO `footer_links` (`id`, `title`, `url`, `link_type`, `column_position`, `sort_order`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'Về Chúng Tôi', '/guides/ve-chung-toi', 'internal', 1, 1, 0, '2026-11-14 00:40:43', '2026-11-14 08:02:08'),
+	(2, 'Blog Du Lịch', '/guides/blog-du-lich', 'internal', 1, 2, 0, '2026-11-14 00:40:43', '2026-11-14 08:02:08'),
+	(3, 'Câu Hỏi Thường Gặp', '/guides/cau-hoi-thuong-gap', 'internal', 2, 1, 1, '2026-11-14 00:40:43', '2026-11-14 07:42:42'),
+	(4, 'Hướng Dẫn Thanh Toán', '/guides/huong-dan-thanh-toan', 'internal', 2, 2, 1, '2026-11-14 00:40:43', '2026-11-14 07:42:42'),
+	(5, 'Điều Khoản Sử Dụng', '/guides/dieu-khoan-su-dung', 'internal', 3, 1, 1, '2026-11-14 00:40:43', '2026-11-14 07:42:43'),
+	(6, 'Chính Sách Bảo Mật', '/guides/chinh-sach-bao-mat', 'internal', 3, 2, 1, '2026-11-14 00:40:43', '2026-11-14 07:42:44');
 
 -- Dumping structure for table db_marketing_tour.guides
 DROP TABLE IF EXISTS `guides`;
@@ -282,17 +240,59 @@ CREATE TABLE IF NOT EXISTS `guides` (
   UNIQUE KEY `slug_2` (`slug`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.guides: ~2 rows (approximately)
+-- Dumping data for table db_marketing_tour.guides: ~8 rows (approximately)
 DELETE FROM `guides`;
 INSERT INTO `guides` (`id`, `title`, `slug`, `content`, `is_active`, `updated_at`) VALUES
 	(1, 'Hướng dẫn đặt tour trên hệ thống', 'huong-dan-dat-tour', '<h2>Cách&nbsp;đặt&nbsp;tour</h2><p>Bước&nbsp;1:&nbsp;Chọn&nbsp;tour...&nbsp;Bước&nbsp;2:&nbsp;Điền&nbsp;thông&nbsp;tin...&nbsp;Bước&nbsp;3:&nbsp;Chờ&nbsp;admin&nbsp;liên&nbsp;hệ.1</p>', 1, '2026-03-02 13:42:13'),
 	(2, 'Chính sách hoàn hủy tour', 'chinh-sach-hoan-huy', '<h2>Chính sách hủy</h2><p>Hủy trước 7 ngày hoàn 100% tiền. Hủy trước 3 ngày hoàn 50% tiền.</p>', 1, '2026-03-02 09:21:47'),
-	(3, 'Về Chúng Tôi', 've-chung-toi', '<h1>Về Chúng Tôi</h1>\n            <p>Kỳ Nghỉ Tuyệt Vời đồng hành cùng khách hàng trong việc lựa chọn tour du lịch, lịch khởi hành và các dịch vụ phù hợp cho từng hành trình.</p>\n            <p>Bạn có thể xem thêm <a href="/guides/blog-du-lich">Blog Du Lịch</a>, <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a> hoặc <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>.</p>', 1, '2026-11-08 14:29:47'),
+	(3, 'Về Chúng Tôi', 've-chung-toi', '<h1>About&nbsp;Us&nbsp;1</h1><p>Ky&nbsp;Nghi&nbsp;Tuyet&nbsp;Voi&nbsp;helps&nbsp;travelers&nbsp;choose&nbsp;tours,&nbsp;departure&nbsp;dates,&nbsp;and&nbsp;services&nbsp;suited&nbsp;to&nbsp;every&nbsp;journey.</p><p>Explore&nbsp;our&nbsp;<a href="/guides/blog-du-lich" rel="noopener noreferrer" target="_blank">Travel&nbsp;Blog</a>,&nbsp;<a href="/guides/cau-hoi-thuong-gap" rel="noopener noreferrer" target="_blank">Frequently&nbsp;Asked&nbsp;Questions</a>,&nbsp;and&nbsp;<a href="/guides/huong-dan-thanh-toan" rel="noopener noreferrer" target="_blank">Payment&nbsp;Guide</a>.</p>', 1, '2026-11-14 08:03:31'),
 	(4, 'Blog Du Lịch', 'blog-du-lich', '<h1>Blog Du Lịch</h1>\n            <p>Nơi tổng hợp kinh nghiệm du lịch, gợi ý điểm đến, lưu ý trước chuyến đi và các thông tin hữu ích cho khách hàng.</p>\n            <p>Tham khảo thêm <a href="/guides/ve-chung-toi">Về Chúng Tôi</a> và <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>', 1, '2026-11-08 14:29:47'),
 	(5, 'Điều Khoản Sử Dụng', 'dieu-khoan-su-dung', '<h1>Điều Khoản Sử Dụng</h1>\n            <p>Khi sử dụng website và dịch vụ của Kỳ Nghỉ Tuyệt Vời, khách hàng đồng ý tuân thủ các điều khoản đặt tour, thanh toán và sử dụng thông tin được công bố.</p>\n            <p>Vui lòng đọc thêm <a href="/guides/chinh-sach-bao-mat">Chính Sách Bảo Mật</a> và <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>.</p>', 1, '2026-11-08 14:29:47'),
 	(6, 'Câu Hỏi Thường Gặp', 'cau-hoi-thuong-gap', '<h1>Câu Hỏi Thường Gặp</h1>\n            <p>Trang này tổng hợp các câu hỏi thường gặp về đặt tour, lịch khởi hành, xác nhận đơn hàng, thanh toán và chính sách hỗ trợ.</p>\n            <p>Nếu bạn cần thông tin thanh toán, xem <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>. Nếu cần điều khoản dịch vụ, xem <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>', 1, '2026-11-08 14:29:47'),
 	(7, 'Chính Sách Bảo Mật', 'chinh-sach-bao-mat', '<h1>Chính Sách Bảo Mật</h1>\n            <p>Kỳ Nghỉ Tuyệt Vời cam kết bảo vệ thông tin cá nhân của khách hàng và chỉ sử dụng dữ liệu trong phạm vi tư vấn, đặt tour, chăm sóc khách hàng và vận hành dịch vụ.</p>\n            <p>Vui lòng xem thêm <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>', 1, '2026-11-08 14:29:47'),
 	(8, 'Hướng Dẫn Thanh Toán', 'huong-dan-thanh-toan', '<h1>Hướng Dẫn Thanh Toán</h1>\n            <p>Khách hàng có thể thanh toán theo hướng dẫn của nhân viên tư vấn hoặc theo thông tin được cung cấp trong quá trình đặt tour.</p>\n            <p>Sau khi thanh toán, vui lòng giữ lại chứng từ để đối chiếu khi cần. Xem thêm <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>', 1, '2026-11-08 14:29:47');
+
+-- Dumping structure for table db_marketing_tour.guide_translations
+DROP TABLE IF EXISTS `guide_translations`;
+CREATE TABLE IF NOT EXISTS `guide_translations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `guide_id` int(11) NOT NULL,
+  `language` varchar(10) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `content` longtext NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `guide_translations_guide_id_language` (`guide_id`,`language`),
+  CONSTRAINT `fk_guide_translations_guide` FOREIGN KEY (`guide_id`) REFERENCES `guides` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.guide_translations: ~24 rows (approximately)
+DELETE FROM `guide_translations`;
+INSERT INTO `guide_translations` (`id`, `guide_id`, `language`, `title`, `slug`, `content`) VALUES
+	(1, 1, 'vi', 'Hướng dẫn đặt tour trên hệ thống', 'huong-dan-dat-tour', '<h2>Cách&nbsp;đặt&nbsp;tour</h2><p>Bước&nbsp;1:&nbsp;Chọn&nbsp;tour...&nbsp;Bước&nbsp;2:&nbsp;Điền&nbsp;thông&nbsp;tin...&nbsp;Bước&nbsp;3:&nbsp;Chờ&nbsp;admin&nbsp;liên&nbsp;hệ.1</p>'),
+	(2, 2, 'vi', 'Chính sách hoàn hủy tour', 'chinh-sach-hoan-huy', '<h2>Chính sách hủy</h2><p>Hủy trước 7 ngày hoàn 100% tiền. Hủy trước 3 ngày hoàn 50% tiền.</p>'),
+	(3, 1, 'en', 'How to Book a Tour on the System', 'how-to-book-a-tour-on-the-system', '<h2>How&nbsp;to&nbsp;book&nbsp;a&nbsp;tour</h2><p>Step&nbsp;1:&nbsp;Choose&nbsp;a&nbsp;tour...&nbsp;Step&nbsp;2:&nbsp;Enter&nbsp;your&nbsp;information...&nbsp;Step&nbsp;3:&nbsp;Wait&nbsp;for&nbsp;admin&nbsp;contact.1</p>'),
+	(4, 1, 'zh', '如何在系统上预订旅游', 'ru-he-zai-xi-tong-shang-yu-ding-lv-you', '<h2>如何预订旅游</h2><p>步骤&nbsp;1：选择旅游产品...&nbsp;步骤&nbsp;2：填写您的信息...&nbsp;步骤&nbsp;3：等待管理员联系。1</p>'),
+	(5, 2, 'en', 'Tour Cancellation and Refund Policy', 'tour-cancellation-and-refund-policy', '<h2>Cancellation&nbsp;Policy</h2><p>Cancel&nbsp;7&nbsp;days&nbsp;in&nbsp;advance&nbsp;for&nbsp;a&nbsp;100%&nbsp;refund.&nbsp;Cancel&nbsp;3&nbsp;days&nbsp;in&nbsp;advance&nbsp;for&nbsp;a&nbsp;50%&nbsp;refund.</p>'),
+	(6, 2, 'zh', '旅游取消和退款政策', 'lv-you-qu-xiao-he-tui-kuan-zheng-ce', '<h2>取消政策</h2><p>提前&nbsp;7&nbsp;天取消可退还&nbsp;100%&nbsp;费用。提前&nbsp;3&nbsp;天取消可退还&nbsp;50%&nbsp;费用。</p>'),
+	(7, 3, 'vi', 'Về Chúng Tôi', 've-chung-toi', '<h1>About&nbsp;Us&nbsp;1</h1><p>Ky&nbsp;Nghi&nbsp;Tuyet&nbsp;Voi&nbsp;helps&nbsp;travelers&nbsp;choose&nbsp;tours,&nbsp;departure&nbsp;dates,&nbsp;and&nbsp;services&nbsp;suited&nbsp;to&nbsp;every&nbsp;journey.</p><p>Explore&nbsp;our&nbsp;<a href="/guides/blog-du-lich" rel="noopener noreferrer" target="_blank">Travel&nbsp;Blog</a>,&nbsp;<a href="/guides/cau-hoi-thuong-gap" rel="noopener noreferrer" target="_blank">Frequently&nbsp;Asked&nbsp;Questions</a>,&nbsp;and&nbsp;<a href="/guides/huong-dan-thanh-toan" rel="noopener noreferrer" target="_blank">Payment&nbsp;Guide</a>.</p>'),
+	(8, 3, 'en', 'About Us', 'about-us', '<h1>关于我们</h1><p>美好假期为旅客提供旅游线路、出发日期和配套服务建议，陪伴您规划每一段旅程。</p><p>欢迎了解我们的<a href="/guides/blog-du-lich" rel="noopener noreferrer" target="_blank">旅行博客</a>、<a href="/guides/cau-hoi-thuong-gap" rel="noopener noreferrer" target="_blank">常见问题</a>和<a href="/guides/huong-dan-thanh-toan" rel="noopener noreferrer" target="_blank">付款指南</a>。</p>'),
+	(9, 3, 'zh', '关于我们', '', '<h1>关于我们</h1><p>美好假期为旅客提供旅游线路、出发日期和配套服务建议，陪伴您规划每一段旅程。</p><p>欢迎了解我们的<a href="/guides/blog-du-lich" rel="noopener noreferrer" target="_blank">旅行博客</a>、<a href="/guides/cau-hoi-thuong-gap" rel="noopener noreferrer" target="_blank">常见问题</a>和<a href="/guides/huong-dan-thanh-toan" rel="noopener noreferrer" target="_blank">付款指南</a>。</p>'),
+	(10, 4, 'vi', 'Blog Du Lịch', 'blog-du-lich', '<h1>Blog Du Lịch</h1>\n            <p>Nơi tổng hợp kinh nghiệm du lịch, gợi ý điểm đến, lưu ý trước chuyến đi và các thông tin hữu ích cho khách hàng.</p>\n            <p>Tham khảo thêm <a href="/guides/ve-chung-toi">Về Chúng Tôi</a> và <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>'),
+	(11, 4, 'en', 'Travel Blog', 'travel-blog', '<h1>Travel Blog</h1><p>Travel tips, destination ideas, pre-trip reminders, and useful information for your next journey.</p><p>Learn more <a href="/guides/ve-chung-toi">About Us</a> and browse our <a href="/guides/cau-hoi-thuong-gap">Frequently Asked Questions</a>.</p>'),
+	(12, 4, 'zh', '旅行博客', 'lv-xing-bo-ke', '<h1>旅行博客</h1><p>这里汇集旅行经验、目的地推荐、出行前提示以及旅客实用信息。</p><p>了解<a href="/guides/ve-chung-toi">关于我们</a>，也可查看<a href="/guides/cau-hoi-thuong-gap">常见问题</a>。</p>'),
+	(13, 5, 'vi', 'Điều Khoản Sử Dụng', 'dieu-khoan-su-dung', '<h1>Điều Khoản Sử Dụng</h1>\n            <p>Khi sử dụng website và dịch vụ của Kỳ Nghỉ Tuyệt Vời, khách hàng đồng ý tuân thủ các điều khoản đặt tour, thanh toán và sử dụng thông tin được công bố.</p>\n            <p>Vui lòng đọc thêm <a href="/guides/chinh-sach-bao-mat">Chính Sách Bảo Mật</a> và <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>.</p>'),
+	(14, 5, 'en', 'Terms of Use', 'terms-of-use', '<h1>Terms of Use</h1><p>By using the Ky Nghi Tuyet Voi website and services, customers agree to follow the published terms for tour bookings, payments, and use of information.</p><p>Please also read our <a href="/guides/chinh-sach-bao-mat">Privacy Policy</a> and <a href="/guides/huong-dan-thanh-toan">Payment Guide</a>.</p>'),
+	(15, 5, 'zh', '使用条款', 'shi-yong-tiao-kuan', '<h1>使用条款</h1><p>使用美好假期网站及服务即表示您同意遵守已公布的旅游预订、付款和信息使用条款。</p><p>请同时阅读<a href="/guides/chinh-sach-bao-mat">隐私政策</a>和<a href="/guides/huong-dan-thanh-toan">付款指南</a>。</p>'),
+	(16, 6, 'vi', 'Câu Hỏi Thường Gặp', 'cau-hoi-thuong-gap', '<h1>Câu Hỏi Thường Gặp</h1>\n            <p>Trang này tổng hợp các câu hỏi thường gặp về đặt tour, lịch khởi hành, xác nhận đơn hàng, thanh toán và chính sách hỗ trợ.</p>\n            <p>Nếu bạn cần thông tin thanh toán, xem <a href="/guides/huong-dan-thanh-toan">Hướng Dẫn Thanh Toán</a>. Nếu cần điều khoản dịch vụ, xem <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>'),
+	(17, 6, 'en', 'Frequently Asked Questions', 'frequently-asked-questions', '<h1>Frequently Asked Questions</h1><p>Answers to common questions about tour bookings, departure dates, order confirmations, payments, and customer support.</p><p>For payment information, see our <a href="/guides/huong-dan-thanh-toan">Payment Guide</a>. For service terms, see <a href="/guides/dieu-khoan-su-dung">Terms of Use</a>.</p>'),
+	(18, 6, 'zh', '常见问题', 'chang-jian-wen-ti', '<h1>常见问题</h1><p>本页汇总旅游预订、出发日期、订单确认、付款和客户支持等常见问题。</p><p>付款信息请查看<a href="/guides/huong-dan-thanh-toan">付款指南</a>；服务条款请查看<a href="/guides/dieu-khoan-su-dung">使用条款</a>。</p>'),
+	(19, 7, 'vi', 'Chính Sách Bảo Mật', 'chinh-sach-bao-mat', '<h1>Chính Sách Bảo Mật</h1>\n            <p>Kỳ Nghỉ Tuyệt Vời cam kết bảo vệ thông tin cá nhân của khách hàng và chỉ sử dụng dữ liệu trong phạm vi tư vấn, đặt tour, chăm sóc khách hàng và vận hành dịch vụ.</p>\n            <p>Vui lòng xem thêm <a href="/guides/dieu-khoan-su-dung">Điều Khoản Sử Dụng</a>.</p>'),
+	(20, 7, 'en', 'Privacy Policy', 'privacy-policy', '<h1>Privacy Policy</h1><p>Ky Nghi Tuyet Voi is committed to protecting customers’ personal information and using it only for consultation, tour bookings, customer care, and service operations.</p><p>Please also read our <a href="/guides/dieu-khoan-su-dung">Terms of Use</a>.</p>'),
+	(21, 7, 'zh', '隐私政策', 'yin-si-zheng-ce', '<h1>隐私政策</h1><p>美好假期承诺保护客户个人信息，并仅将其用于咨询、旅游预订、客户服务和业务运营。</p><p>请同时阅读<a href="/guides/dieu-khoan-su-dung">使用条款</a>。</p>'),
+	(22, 8, 'vi', 'Hướng Dẫn Thanh Toán', 'huong-dan-thanh-toan', '<h1>Hướng Dẫn Thanh Toán</h1>\n            <p>Khách hàng có thể thanh toán theo hướng dẫn của nhân viên tư vấn hoặc theo thông tin được cung cấp trong quá trình đặt tour.</p>\n            <p>Sau khi thanh toán, vui lòng giữ lại chứng từ để đối chiếu khi cần. Xem thêm <a href="/guides/cau-hoi-thuong-gap">Câu Hỏi Thường Gặp</a>.</p>'),
+	(23, 8, 'en', 'Payment Guide', 'payment-guide', '<h1>Payment Guide</h1><p>Customers can pay by following their travel consultant’s instructions or the payment information provided during booking.</p><p>Please keep your payment receipt for reference. See our <a href="/guides/cau-hoi-thuong-gap">Frequently Asked Questions</a> for more information.</p>'),
+	(24, 8, 'zh', '付款指南', 'fu-kuan-zhi-nan', '<h1>付款指南</h1><p>客户可按照顾问的指引，或按照预订过程中提供的付款信息完成付款。</p><p>请保留付款凭证以便核对。更多信息请查看<a href="/guides/cau-hoi-thuong-gap">常见问题</a>。</p>');
 
 -- Dumping structure for table db_marketing_tour.notifications
 DROP TABLE IF EXISTS `notifications`;
@@ -363,7 +363,7 @@ CREATE TABLE IF NOT EXISTS `otps` (
   KEY `idx_expired_at` (`expired_at`)
 ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.otps: ~0 rows (approximately)
+-- Dumping data for table db_marketing_tour.otps: ~1 rows (approximately)
 DELETE FROM `otps`;
 INSERT INTO `otps` (`id`, `email`, `otp_code`, `type`, `attempts`, `expired_at`, `created_at`) VALUES
 	(17, 'user_1788947911660@example.com', '380409', 'register', 0, '2026-09-09 17:03:32', '2026-09-09 16:58:32');
@@ -383,305 +383,6 @@ DELETE FROM `roles`;
 INSERT INTO `roles` (`id`, `role_name`) VALUES
 	(1, 'ADMIN'),
 	(2, 'CUSTOMER');
-
--- Dumping structure for table db_marketing_tour.tour_departures
-DROP TABLE IF EXISTS `tour_departures`;
-CREATE TABLE IF NOT EXISTS `tour_departures` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `departure_date` date NOT NULL COMMENT 'Ngày khởi hành',
-  `price_adult` decimal(15,2) NOT NULL COMMENT 'Giá người lớn',
-  `price_child` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá trẻ em',
-  `price_infant` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá em bé/trẻ nhỏ',
-  `capacity` int(11) NOT NULL DEFAULT 0 COMMENT 'Tổng số chỗ có thể bán',
-  `available_seats` int(11) NOT NULL DEFAULT 0 COMMENT 'Số chỗ còn có thể bán',
-  `status` enum('open','full','cancelled') DEFAULT 'open' COMMENT 'Trạng thái mở bán',
-  `flight` varchar(255) DEFAULT NULL COMMENT 'Chặng bay / thông tin chuyến bay',
-  `flight_outbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng đi',
-  `flight_inbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng về',
-  PRIMARY KEY (`id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `tour_d` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_departures: ~19 rows (approximately)
-DELETE FROM `tour_departures`;
-INSERT INTO `tour_departures` (`id`, `tour_id`, `departure_date`, `price_adult`, `price_child`, `price_infant`, `capacity`, `available_seats`, `status`, `flight`, `flight_outbound`, `flight_inbound`) VALUES
-	(1, 1, '2026-12-01', 3500000.00, 2500000.00, 500000.00, 23, 20, 'open', NULL, NULL, NULL),
-	(2, 1, '2026-12-10', 3600000.00, 2600000.00, 500000.00, 16, 15, 'open', NULL, NULL, NULL),
-	(3, 2, '2026-12-03', 5500000.00, 4000000.00, 800000.00, 26, 26, 'open', NULL, NULL, NULL),
-	(4, 2, '2026-12-15', 5700000.00, 4200000.00, 800000.00, 12, 10, 'full', NULL, NULL, NULL),
-	(5, 3, '2026-12-05', 4500000.00, 3200000.00, 600000.00, 33, 30, 'open', NULL, NULL, NULL),
-	(6, 3, '2026-12-20', 4600000.00, 3300000.00, 600000.00, 7, 5, 'open', NULL, NULL, NULL),
-	(7, 4, '2026-12-07', 7000000.00, 5000000.00, 1000000.00, 14, 14, 'open', NULL, NULL, NULL),
-	(8, 4, '2026-12-25', 7200000.00, 5200000.00, 1000000.00, 0, 0, 'full', NULL, NULL, NULL),
-	(9, 5, '2026-12-08', 4800000.00, 3500000.00, 700000.00, 21, 21, 'open', NULL, NULL, NULL),
-	(10, 5, '2026-12-28', 4900000.00, 3600000.00, 700000.00, 9, 6, 'open', NULL, NULL, NULL),
-	(11, 6, '2027-01-01', 4500000.00, 3200000.00, 600000.00, 23, 20, 'open', NULL, NULL, NULL),
-	(12, 6, '2027-01-10', 4600000.00, 3300000.00, 600000.00, 12, 10, 'open', NULL, NULL, NULL),
-	(13, 7, '2027-01-03', 8000000.00, 6000000.00, 1200000.00, 16, 15, 'open', NULL, NULL, NULL),
-	(14, 7, '2027-01-18', 8200000.00, 6200000.00, 1200000.00, 1, 0, 'full', NULL, NULL, NULL),
-	(15, 8, '2027-01-05', 3500000.00, 2500000.00, 500000.00, 28, 25, 'open', NULL, NULL, NULL),
-	(16, 8, '2027-01-20', 3600000.00, 2600000.00, 500000.00, 11, 8, 'open', NULL, NULL, NULL),
-	(17, 9, '2027-01-07', 3700000.00, 2700000.00, 500000.00, 35, 30, 'open', NULL, NULL, NULL),
-	(18, 10, '2027-01-09', 5800000.00, 4200000.00, 800000.00, 15, 12, 'open', NULL, NULL, NULL),
-	(19, 11, '2027-01-12', 6000000.00, 4500000.00, 900000.00, 23, 20, 'open', NULL, NULL, NULL),
-	(20, 11, '2027-01-25', 6200000.00, 4700000.00, 900000.00, 15, 0, 'full', NULL, NULL, NULL),
-	(62, 13, '2026-11-15', 24999999.00, 1000000.00, 500000.00, 10, 10, 'open', NULL, NULL, NULL),
-	(63, 13, '2026-11-10', 400000000.00, 2000000.00, 400000.00, 20, 20, 'open', NULL, NULL, NULL),
-	(64, 15, '2026-12-01', 3500000.00, 200000.00, 100000.00, 20, 20, 'open', 'VN 156 DADHAN HK25 06:35 08:00', NULL, NULL),
-	(65, 15, '2027-02-16', 400000.00, 1000000.00, 200000.00, 20, 20, 'open', NULL, NULL, NULL);
-
--- Dumping structure for table db_marketing_tour.tour_images
-DROP TABLE IF EXISTS `tour_images`;
-CREATE TABLE IF NOT EXISTS `tour_images` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `image_url` text NOT NULL,
-  `sort_order` int(11) DEFAULT 0,
-  PRIMARY KEY (`id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `fk_tour_images` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_images: ~15 rows (approximately)
-DELETE FROM `tour_images`;
-INSERT INTO `tour_images` (`id`, `tour_id`, `image_url`, `sort_order`) VALUES
-	(1, 1, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(2, 1, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(3, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(4, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(5, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(6, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(7, 4, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(8, 4, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(9, 5, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(10, 5, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(11, 6, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(12, 6, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(13, 7, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(14, 7, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(15, 8, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(16, 8, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(17, 9, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(18, 10, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(19, 11, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(20, 11, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
-	(32, 15, '/uploads/banners/banner-1774264639505-576996427.webp', 0),
-	(33, 15, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
-	(34, 15, '/uploads/banners/banner-1774264639505-576996427.webp', 2);
-
--- Dumping structure for table db_marketing_tour.tour_itineraries
-DROP TABLE IF EXISTS `tour_itineraries`;
-CREATE TABLE IF NOT EXISTS `tour_itineraries` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `day_number` int(11) NOT NULL COMMENT 'Ngày thứ mấy (1, 2, 3...)',
-  `title` text NOT NULL COMMENT 'Tiêu đề (VD: Ngày 1: Đón khách - Tham quan)',
-  `content` longtext NOT NULL COMMENT 'Chi tiết các hoạt động trong ngày',
-  PRIMARY KEY (`id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `fk_tour_it` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_itineraries: ~25 rows (approximately)
-DELETE FROM `tour_itineraries`;
-INSERT INTO `tour_itineraries` (`id`, `tour_id`, `day_number`, `title`, `content`) VALUES
-	(1, 1, 1, 'Ngày 1: Hà Nội - Sapa', 'Di chuyển, nhận phòng, tham quan bản Cát Cát'),
-	(2, 1, 2, 'Ngày 2: Fansipan', 'Chinh phục Fansipan bằng cáp treo'),
-	(3, 2, 1, 'Ngày 1: TP.HCM - Phú Quốc', 'Bay và nhận khách sạn'),
-	(4, 2, 2, 'Ngày 2: Hòn Thơm', 'Đi cáp treo và vui chơi'),
-	(5, 3, 1, 'Ngày 1: Đà Nẵng', 'Tham quan biển Mỹ Khê'),
-	(6, 3, 2, 'Ngày 2: Bà Nà Hills', 'Checkin Cầu Vàng'),
-	(7, 4, 1, 'Ngày 1: Quốc tế', 'Bay đi nước ngoài'),
-	(8, 4, 2, 'Ngày 2: City tour', 'Tham quan trung tâm'),
-	(9, 5, 1, 'Ngày 1: Hội An', 'Tham quan phố cổ'),
-	(10, 5, 2, 'Ngày 2: Biển', 'Tắm biển'),
-	(11, 6, 1, 'Ngày 1: Check-in', 'Nhận phòng'),
-	(12, 6, 2, 'Ngày 2: Tham quan', 'Đi tour'),
-	(13, 7, 1, 'Ngày 1: Khởi hành', 'Bay quốc tế'),
-	(14, 7, 2, 'Ngày 2: City', 'Tham quan'),
-	(15, 8, 1, 'Ngày 1: Sapa', 'Nhận phòng'),
-	(16, 8, 2, 'Ngày 2: Fansipan', 'Leo núi'),
-	(17, 9, 1, 'Ngày 1: Di chuyển', 'Check-in'),
-	(18, 10, 1, 'Ngày 1: Phú Quốc', 'Tắm biển'),
-	(19, 11, 1, 'Ngày 1: Resort', 'Nghỉ dưỡng'),
-	(20, 11, 2, 'Ngày 2: Vui chơi', 'VinWonders'),
-	(115, 13, 1, 'Đón khách ăn tối', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30&nbsp;Quý&nbsp;khách&nbsp;tập&nbsp;trung&nbsp;tại&nbsp;Ga&nbsp;Quốc&nbsp;tế&nbsp;Sân&nbsp;bay&nbsp;Tân&nbsp;Sơn&nbsp;Nhất&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;hàng&nbsp;không&nbsp;khởi&nbsp;hành&nbsp;đi&nbsp;Malaysia.&nbsp;Chuyến&nbsp;bay:&nbsp;</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679&nbsp;SGN-KUL&nbsp;15:50&nbsp;-&nbsp;18:50.</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Tới&nbsp;Sân&nbsp;bay&nbsp;Quốc&nbsp;tế&nbsp;Kuala&nbsp;Lumpur,&nbsp;Quý&nbsp;khách&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;nhập&nbsp;cảnh&nbsp;Malaysia.&nbsp;Đoàn&nbsp;di&nbsp;chuyển&nbsp;đến&nbsp;nhà&nbsp;hàng&nbsp;dùng&nbsp;bữa&nbsp;tối.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sau&nbsp;bữa&nbsp;tối,&nbsp;đoàn&nbsp;trở&nbsp;về&nbsp;khách&nbsp;sạn&nbsp;nhận&nbsp;phòng&nbsp;nghỉ&nbsp;ngơi.</span></p>'),
-	(116, 13, 2, 'Tham quan', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sáng:&nbsp;Quý&nbsp;khách&nbsp;dùng&nbsp;điểm&nbsp;tâm&nbsp;tại&nbsp;khách&nbsp;sạn.&nbsp;Đoàn&nbsp;tham&nbsp;quan</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Khu&nbsp;Putrajaya</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">:&nbsp;Trung&nbsp;tâm&nbsp;hành&nbsp;chính&nbsp;mới&nbsp;của&nbsp;Malaysia&nbsp;&nbsp;với&nbsp;những&nbsp;địa&nbsp;danh&nbsp;du&nbsp;lịch&nbsp;nổi&nbsp;tiếng&nbsp;như:&nbsp;Nhà&nbsp;thờ&nbsp;Hồi&nbsp;giáo&nbsp;Putra,&nbsp;Văn&nbsp;phòng&nbsp;Thủ&nbsp;tướng,&nbsp;Trung&nbsp;tâm&nbsp;hội&nbsp;nghị&nbsp;(chụp&nbsp;hình&nbsp;bên&nbsp;ngoài).</span></p>'),
-	(117, 13, 3, 'Chuẩn bị về', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sáng:&nbsp;Quý&nbsp;khách&nbsp;dùng&nbsp;điểm&nbsp;tâm&nbsp;sáng&nbsp;tại&nbsp;khách&nbsp;sạn&nbsp;và&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;trả&nbsp;phòng.&nbsp;Đoàn&nbsp;tham&nbsp;quan</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Tháp&nbsp;Đôi&nbsp;Petronas</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">:&nbsp;Biểu&nbsp;tượng&nbsp;hiện&nbsp;đại&nbsp;của&nbsp;Kuala&nbsp;Lumpur,&nbsp;nổi&nbsp;bật&nbsp;với&nbsp;kiến&nbsp;trúc&nbsp;tinh&nbsp;xảo&nbsp;và&nbsp;tầm&nbsp;nhìn&nbsp;toàn&nbsp;cảnh&nbsp;thành&nbsp;phố.&nbsp;Đây&nbsp;là&nbsp;niềm&nbsp;tự&nbsp;hào&nbsp;của&nbsp;người&nbsp;dân&nbsp;Malaysia&nbsp;được&nbsp;hoàn&nbsp;thành&nbsp;năm&nbsp;1998&nbsp;với&nbsp;tổng&nbsp;chiều&nbsp;cao&nbsp;452m&nbsp;và&nbsp;88&nbsp;tầng.</span></p>'),
-	(122, 15, 1, 'đón khách', '<p><img src="/uploads/guides/guide-1794122788026-678769212.jpg">22:30:&nbsp;Quý&nbsp;khách&nbsp;tập&nbsp;trung&nbsp;tại&nbsp;sân&nbsp;bay&nbsp;Quốc&nbsp;tế&nbsp;Tân&nbsp;Sơn&nbsp;Nhất,&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;chuyến&nbsp;bay&nbsp;đi&nbsp;Đài&nbsp;Bắc,&nbsp;chuyến&nbsp;bay&nbsp;dự&nbsp;kiến:&nbsp;BR382&nbsp;SGNTPE&nbsp;01:55</p>'),
-	(123, 15, 2, 'Tham quan Đài Bắc- Cao Hùng', '<p>Đoàn&nbsp;đáp&nbsp;sân&nbsp;bay&nbsp;quốc&nbsp;tế&nbsp;Đào&nbsp;Viên,&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;nhập&nbsp;cảnh.&nbsp;Xe&nbsp;và&nbsp;HDV&nbsp;đón&nbsp;đoàn,&nbsp;di&nbsp;chuyển&nbsp;đi&nbsp;dùng&nbsp;bữa&nbsp;sáng.</p><p>Khởi&nbsp;hành&nbsp;đi&nbsp;Cao&nbsp;Hùng,&nbsp;trên&nbsp;đường&nbsp;tham&nbsp;quan:</p><p>Bảo&nbsp;tàng&nbsp;Kỳ&nbsp;Mỹ&nbsp;(Chimei&nbsp;Museum)&nbsp;-&nbsp;Một&nbsp;trong&nbsp;những&nbsp;bảo&nbsp;tàng&nbsp;đắt&nbsp;giá&nbsp;nhất&nbsp;thế&nbsp;giới,&nbsp;sở&nbsp;hữu&nbsp;bộ&nbsp;sưu&nbsp;tập&nbsp;nghệ&nbsp;thuật&nbsp;&amp;&nbsp;lịch&nbsp;sử&nbsp;độc&nbsp;đáo.&nbsp;Kiến&nbsp;trúc&nbsp;ấn&nbsp;tượng&nbsp;kết&nbsp;hợp&nbsp;không&nbsp;gian&nbsp;trưng&nbsp;bày&nbsp;đẳng&nbsp;cấp&nbsp;mang&nbsp;đến&nbsp;trải&nbsp;nghiệm&nbsp;đặc&nbsp;sắc&nbsp;(Đã&nbsp;bao&nbsp;gồm&nbsp;vé&nbsp;vào&nbsp;cửa).</p>');
-
--- Dumping structure for table db_marketing_tour.tour_itinerary_translations
-DROP TABLE IF EXISTS `tour_itinerary_translations`;
-CREATE TABLE IF NOT EXISTS `tour_itinerary_translations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `itinerary_id` int(11) NOT NULL,
-  `language` varchar(10) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `content` longtext NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `tour_itinerary_translations_itinerary_id_language` (`itinerary_id`,`language`),
-  CONSTRAINT `fk_tour_itinerary_translations_itinerary` FOREIGN KEY (`itinerary_id`) REFERENCES `tour_itineraries` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=120 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_itinerary_translations: ~39 rows (approximately)
-DELETE FROM `tour_itinerary_translations`;
-INSERT INTO `tour_itinerary_translations` (`id`, `itinerary_id`, `language`, `title`, `content`) VALUES
-	(1, 1, 'vi', 'Ngày 1: Hà Nội - Sapa', 'Di chuyển, nhận phòng, tham quan bản Cát Cát'),
-	(2, 2, 'vi', 'Ngày 2: Fansipan', 'Chinh phục Fansipan bằng cáp treo'),
-	(3, 3, 'vi', 'Ngày 1: TP.HCM - Phú Quốc', 'Bay và nhận khách sạn'),
-	(4, 4, 'vi', 'Ngày 2: Hòn Thơm', 'Đi cáp treo và vui chơi'),
-	(5, 5, 'vi', 'Ngày 1: Đà Nẵng', 'Tham quan biển Mỹ Khê'),
-	(6, 6, 'vi', 'Ngày 2: Bà Nà Hills', 'Checkin Cầu Vàng'),
-	(7, 7, 'vi', 'Ngày 1: Quốc tế', 'Bay đi nước ngoài'),
-	(8, 8, 'vi', 'Ngày 2: City tour', 'Tham quan trung tâm'),
-	(9, 9, 'vi', 'Ngày 1: Hội An', 'Tham quan phố cổ'),
-	(10, 10, 'vi', 'Ngày 2: Biển', 'Tắm biển'),
-	(11, 11, 'vi', 'Ngày 1: Check-in', 'Nhận phòng'),
-	(12, 12, 'vi', 'Ngày 2: Tham quan', 'Đi tour'),
-	(13, 13, 'vi', 'Ngày 1: Khởi hành', 'Bay quốc tế'),
-	(14, 14, 'vi', 'Ngày 2: City', 'Tham quan'),
-	(15, 15, 'vi', 'Ngày 1: Sapa', 'Nhận phòng'),
-	(16, 16, 'vi', 'Ngày 2: Fansipan', 'Leo núi'),
-	(17, 17, 'vi', 'Ngày 1: Di chuyển', 'Check-in'),
-	(18, 18, 'vi', 'Ngày 1: Phú Quốc', 'Tắm biển'),
-	(19, 19, 'vi', 'Ngày 1: Resort', 'Nghỉ dưỡng'),
-	(20, 20, 'vi', 'Ngày 2: Vui chơi', 'VinWonders'),
-	(102, 115, 'en', 'Welcoming guests for dinner', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30 You gather at the International Terminal Tan Son Nhat Airport to check-in for airline departure to Malaysia. Flight:</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679 SGN-KUL 15:50 - 18:50.</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Arrive at Kuala Lumpur International Airport, you go through Malaysia entry procedures. The group moved to the restaurant for dinner.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">After dinner, the group returned to the hotel to check-in to rest.</span></p>'),
-	(103, 115, 'zh', '招待客人共进晚餐', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30 您在新山一机场国际航站楼集合，办理登机手续，搭乘飞往马来西亚的航班。 航班：</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679 SGN-KUL 15:50 - 18:50。</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">到达吉隆坡国际机场，办理马来西亚入境手续。 一行人前往餐厅用晚餐。</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">晚餐后，一行人返回酒店入住休息。</span></p>'),
-	(104, 116, 'en', 'Sightseeing', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Morning: You have breakfast at the hotel. Group visit</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Putrajaya Area</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">: The new administrative centre of Malaysia  with famous tourist landmarks such as: Putra Mosque, Prime Minister\'s Office, Conference Centre (exterior photography).</span></p>'),
-	(105, 116, 'zh', '观光', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">早上：您在酒店享用早餐。 团体参观</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">布城地区</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">：马来西亚的新行政中心，拥有著名的旅游地标，例如：布特拉清真寺、总理办公室、会议中心（外观摄影）。</span></p>'),
-	(106, 117, 'en', 'Prepare to return', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Morning: You have breakfast at the hotel and check-out procedures. Group visit</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Petronas Twin Towers</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">: The modern icon of Kuala Lumpur, distinguished with its exquisite architecture and panoramic views of the city. This is the pride of Malaysians completed in 1998 with a total height of 452m and 88 storeys.</span></p>'),
-	(107, 117, 'zh', '准备返回', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">早上：您在酒店享用早餐并办理退房手续。 团体参观</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">双子塔</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">：吉隆坡的现代标志，以其精致的建筑和城市全景而闻名。 这是马来西亚人的骄傲，于 1998 年竣工，总高度 452m，88 层。</span></p>'),
-	(116, 122, 'en', 'welcome guests', '<p>22:30: You gather at Tan Son Nhat International Airport, check-in for a flight to Taipei, scheduled flight: BR382 SGNTPE 01:55</p>'),
-	(117, 122, 'zh', '欢迎客人', '<p>22:30：您在新山一国际机场集合，办理飞往台北的航班登机手续，预定航班：BR382 SNTPE 01:55</p>'),
-	(118, 123, 'en', 'Visit Taipei - Kaohsiung', '<p>The group arrived at Taoyuan international airport, went through immigration procedures. Car and guide pick up the group, move to have breakfast.</p><p>Depart to Kao Hung, on the way visit:</p><p>Ky Museum America (Chimei Museum) - One of the most valuable museums in the world, possessing a unique collection of art & history. Impressive architecture combined with classy display space brings a unique experience (Admission tickets included).</p>'),
-	(119, 123, 'zh', '游览台北 - 高雄', '<p>一行人抵达桃园国际机场，办理出入境手续。 汽车和导游接团，前往享用早餐。</p><p>出发前往高雄，途中参观：</p><p>美国凯博物馆（奇美博物馆）- 世界上最有价值的博物馆之一，拥有独特的艺术和历史收藏。 令人印象深刻的建筑与优雅的展示空间相结合，带来独特的体验（包括门票）。</p>');
-
--- Dumping structure for table db_marketing_tour.tour_options
-DROP TABLE IF EXISTS `tour_options`;
-CREATE TABLE IF NOT EXISTS `tour_options` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `option_name` varchar(255) NOT NULL COMMENT 'Tên option (VD: Yêu cầu giường đôi, Phụ thu phòng đơn)',
-  `price` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá cộng thêm (có thể = 0)',
-  `charge_type` enum('per_person','per_booking','quantity') DEFAULT 'quantity' COMMENT 'Cách tính: theo người, theo đơn, hoặc tự chọn số lượng',
-  PRIMARY KEY (`id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `fk_tour_op` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_options: ~18 rows (approximately)
-DELETE FROM `tour_options`;
-INSERT INTO `tour_options` (`id`, `tour_id`, `option_name`, `price`, `charge_type`) VALUES
-	(1, 1, 'Phòng đơn', 500000.00, 'per_person'),
-	(2, 1, 'Ăn VIP', 300000.00, 'per_person'),
-	(3, 2, 'Xe đưa đón sân bay', 200000.00, 'per_booking'),
-	(4, 2, 'Tour cano', 700000.00, 'per_person'),
-	(5, 3, 'Buffet tối', 400000.00, 'per_person'),
-	(6, 3, 'Xe riêng', 1000000.00, 'per_booking'),
-	(7, 4, 'Visa', 2000000.00, 'per_person'),
-	(8, 4, 'Bảo hiểm', 300000.00, 'per_person'),
-	(9, 5, 'Ăn hải sản', 500000.00, 'per_person'),
-	(10, 5, 'Thuê xe máy', 150000.00, 'quantity'),
-	(11, 6, 'Spa', 600000.00, 'per_person'),
-	(12, 6, 'Massage', 500000.00, 'per_person'),
-	(13, 7, 'Guide riêng', 2000000.00, 'per_booking'),
-	(14, 7, 'VIP lounge', 800000.00, 'per_person'),
-	(15, 8, 'Leo Fansipan', 800000.00, 'per_person'),
-	(16, 8, 'Xe jeep', 300000.00, 'quantity'),
-	(17, 9, 'Thuê đồ trekking', 200000.00, 'quantity'),
-	(18, 10, 'Lặn biển', 1000000.00, 'per_person'),
-	(19, 11, 'Golf', 2000000.00, 'per_person'),
-	(20, 11, 'Ăn tối BBQ', 600000.00, 'per_person'),
-	(28, 13, 'Phòng đôi', 1000000.00, 'per_person');
-
--- Dumping structure for table db_marketing_tour.tour_pickup_locations
-DROP TABLE IF EXISTS `tour_pickup_locations`;
-CREATE TABLE IF NOT EXISTS `tour_pickup_locations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `location_name` varchar(255) NOT NULL COMMENT 'Tên điểm đón hoặc khu vực',
-  `pickup_time` time DEFAULT NULL COMMENT 'Giờ đón dự kiến',
-  `surcharge_amount` decimal(15,2) DEFAULT 0.00 COMMENT 'Phí phụ thu nếu có (mặc định 0)',
-  PRIMARY KEY (`id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `fk_piclkup_location` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_pickup_locations: ~19 rows (approximately)
-DELETE FROM `tour_pickup_locations`;
-INSERT INTO `tour_pickup_locations` (`id`, `tour_id`, `location_name`, `pickup_time`, `surcharge_amount`) VALUES
-	(1, 1, 'Hà Nội', '06:00:00', 0.00),
-	(2, 1, 'Sân bay Nội Bài', '07:00:00', 100000.00),
-	(3, 2, 'TP.HCM', '05:00:00', 0.00),
-	(4, 2, 'Sân bay Tân Sơn Nhất', '06:00:00', 100000.00),
-	(5, 3, 'Đà Nẵng', '06:30:00', 0.00),
-	(6, 3, 'Khách sạn', '07:00:00', 50000.00),
-	(7, 4, 'Hà Nội', '08:00:00', 0.00),
-	(8, 5, 'Hội An', '06:00:00', 0.00),
-	(9, 6, 'Đà Nẵng', '06:00:00', 0.00),
-	(10, 7, 'TP.HCM', '05:30:00', 0.00),
-	(11, 8, 'Hà Nội', '06:00:00', 0.00),
-	(12, 9, 'Sapa', '07:00:00', 0.00),
-	(13, 10, 'Phú Quốc', '06:00:00', 0.00),
-	(14, 11, 'Phú Quốc', '06:30:00', 0.00),
-	(15, 2, 'Quận 1', '05:30:00', 50000.00),
-	(16, 3, 'Quận Hải Châu', '06:00:00', 0.00),
-	(17, 4, 'Quận Ba Đình', '06:00:00', 0.00),
-	(18, 5, 'Biển An Bàng', '07:00:00', 0.00),
-	(19, 6, 'Ngũ Hành Sơn', '06:00:00', 0.00),
-	(20, 7, 'Quận 7', '05:30:00', 0.00),
-	(71, 13, 'Hà Nội', '19:05:00', 0.00),
-	(72, 13, 'Bắc Giang', '21:05:00', 200000.00),
-	(73, 13, 'Sài Gòn', '09:50:00', 100000.00),
-	(76, 15, 'Hà Nội', '21:28:00', 0.00);
-
--- Dumping structure for table db_marketing_tour.tour_translations
-DROP TABLE IF EXISTS `tour_translations`;
-CREATE TABLE IF NOT EXISTS `tour_translations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tour_id` int(11) NOT NULL,
-  `language` varchar(10) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `slug` varchar(255) NOT NULL,
-  `summary` text DEFAULT NULL,
-  `highlights` text DEFAULT NULL,
-  `price_includes` text DEFAULT NULL,
-  `price_excludes` text DEFAULT NULL,
-  `terms_and_notes` text DEFAULT NULL,
-  `cancellation_policy` text DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `tour_translations_tour_id_language` (`tour_id`,`language`),
-  CONSTRAINT `fk_tour_translations_tour` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.tour_translations: ~18 rows (approximately)
-DELETE FROM `tour_translations`;
-INSERT INTO `tour_translations` (`id`, `tour_id`, `language`, `title`, `slug`, `summary`, `highlights`, `price_includes`, `price_excludes`, `terms_and_notes`, `cancellation_policy`) VALUES
-	(1, 1, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', 'tour-kham-pha-sapa-chinh-phuc-fansipan', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
-	(2, 2, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', 'nghi-duong-phu-quoc-hon-thom', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
-	(3, 3, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
-	(4, 4, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 2', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na1', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
-	(5, 5, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 3', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na2', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
-	(6, 6, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na3', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
-	(7, 7, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na4', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
-	(8, 8, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', 'tour-kham-pha-sapa-chinh-phuc-fansipan1', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
-	(9, 9, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', 'tour-kham-pha-sapa-chinh-phuc-fansipan2', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
-	(10, 10, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', 'nghi-duong-phu-quoc-hon-thom1', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
-	(11, 11, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', 'nghi-duong-phu-quoc-hon-thom2', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
-	(14, 13, 'en', 'Malaysia - Singapore 5D4N Tour: Explore Southeast Asian Culture', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', 'Explore Gardens by the Bay: Singapore\'s iconic ecological garden.', 'Deposit 50% of the Tour amount immediately after registering for the tour. \nCancel after registration, deposit will be lost 50% of total tour value.\nCancel tour 10 – 15 days before departure will be penalized 80% of total contract value.\nCancel tour 9 The day before the departure date will be penalized 100% of the contract value.\nIn cases of arriving late and missing the trip, you will not refund the tour money.\nIn case p If you are refused to get a Chinese visa, please pay a non-refundable fee of 3,500,000 VND/person/set of rejected Chinese visa medicine (this cost includes costs that the company has paid such as translation, letters of guarantee, visa application fees, airline ticket deposits, services booking fees overseas...)', '<p><strong>Transportation</strong></p><p>-&nbsp;Round-trip&nbsp;airline&nbsp;ticket&nbsp;by&nbsp;Vietnam&nbsp;Airline&nbsp;(23kg&nbsp;checked&nbsp;luggage&nbsp;+&nbsp;10kg&nbsp;hand-carried).</p><p>-&nbsp;Air-conditioned&nbsp;vehicles&nbsp;serve&nbsp;during&nbsp;the&nbsp;route.</p><p>-&nbsp;Airport&nbsp;security&nbsp;fees,&nbsp;aviation&nbsp;insurance,&nbsp;airport&nbsp;taxes&nbsp;in&nbsp;2&nbsp;countries&nbsp;(according&nbsp;to&nbsp;rules&nbsp;y&nbsp;determined&nbsp;at&nbsp;the&nbsp;time&nbsp;of&nbsp;ticket&nbsp;issuance).</p><p><strong>Accommodation</strong></p><p>-&nbsp;Standard&nbsp;3-4*&nbsp;local&nbsp;hotel&nbsp;(2&nbsp;guests/room;&nbsp;Male/female&nbsp;individual&nbsp;customers&nbsp;can&nbsp;arrange&nbsp;suitable&nbsp;rooms).</p><p><strong>Other&nbsp;services</strong></p><p>-&nbsp;Sightseeing&nbsp;tickets&nbsp;in&nbsp;the&nbsp;program.&nbsp;</p><p>-&nbsp;Meals&nbsp;according&nbsp;to&nbsp;the&nbsp;program.&nbsp;(ensure&nbsp;equivalent&nbsp;quantity&nbsp;&amp;&nbsp;quality&nbsp;if&nbsp;adjustable).</p><p>-&nbsp;Spring&nbsp;water&nbsp;01&nbsp;bottle/person/day.</p><p>-&nbsp;International&nbsp;travel&nbsp;insurance.&nbsp;</p><p>-&nbsp;Group&nbsp;leader&nbsp;and&nbsp;local&nbsp;guide&nbsp;serve&nbsp;during&nbsp;the&nbsp;journey.</p><p>-&nbsp;Gifted&nbsp;tourist&nbsp;hats.&nbsp;</p><p>-&nbsp;VAT.</p>', '<p>-&nbsp;Single&nbsp;room&nbsp;surcharge&nbsp;(if&nbsp;any):&nbsp;4,300,000&nbsp;VND/person/tour&nbsp;–&nbsp;4,800,000&nbsp;VND/person/tour.&nbsp;</p><p>-&nbsp;Tips&nbsp;for&nbsp;driver&nbsp;and&nbsp;guide:&nbsp;25&nbsp;USD/person/tour.</p><p>-&nbsp;Surcharge&nbsp;for&nbsp;customers&nbsp;of&nbsp;foreign&nbsp;nationality:&nbsp;660,000&nbsp;VND/person.</p><p>-&nbsp;Visa&nbsp;to&nbsp;re-enter&nbsp;Vietnam&nbsp;o&nbsp;foreign&nbsp;national&nbsp;guests&nbsp;according&nbsp;to&nbsp;current&nbsp;regulations&nbsp;(if&nbsp;any).</p><p>-&nbsp;Personal&nbsp;expenses:&nbsp;excess&nbsp;luggage,&nbsp;telephone,&nbsp;laundry,&nbsp;sightseeing,&nbsp;spending&nbsp;outside&nbsp;the&nbsp;program.</p>', '<p>Children&nbsp;policy</p><p><strong>1.&nbsp;General&nbsp;rules:</strong></p><p>-&nbsp;Each&nbsp;02&nbsp;adults&nbsp;can&nbsp;accompany&nbsp;01&nbsp;child.</p><p>-&nbsp;From&nbsp;the&nbsp;2nd&nbsp;child&nbsp;onwards,&nbsp;applicable&nbsp;Use&nbsp;the&nbsp;price&nbsp;according&nbsp;to&nbsp;the&nbsp;regulations&nbsp;for&nbsp;each&nbsp;age&nbsp;group&nbsp;(stated&nbsp;below).</p><p>-&nbsp;Children&nbsp;sleep&nbsp;in&nbsp;the&nbsp;bed&nbsp;with&nbsp;their&nbsp;parents.&nbsp;→&nbsp;If&nbsp;a&nbsp;own&nbsp;bed&nbsp;is&nbsp;needed:&nbsp;Charged&nbsp;as&nbsp;an&nbsp;adult.</p><p>-&nbsp;Expenses&nbsp;outside&nbsp;the&nbsp;program&nbsp;(if&nbsp;any)&nbsp;are&nbsp;paid&nbsp;by&nbsp;the&nbsp;family.</p><p><strong>2.&nbsp;Regulations&nbsp;by&nbsp;age:</strong></p><p>-&nbsp;Children&nbsp;under&nbsp;2&nbsp;years&nbsp;old:&nbsp;Prices&nbsp;as&nbsp;on&nbsp;the&nbsp;website,&nbsp;included&nbsp;airline&nbsp;tickets,&nbsp;no&nbsp;seats&nbsp;alone,&nbsp;sleeping&nbsp;with&nbsp;parents.</p><p>-&nbsp;Children&nbsp;from&nbsp;2&nbsp;-&nbsp;10&nbsp;years&nbsp;old:&nbsp;Prices&nbsp;as&nbsp;on&nbsp;the&nbsp;website,&nbsp;includes&nbsp;full&nbsp;services&nbsp;in&nbsp;the&nbsp;program.&nbsp;Sleeping&nbsp;with&nbsp;parents.&nbsp;From&nbsp;2nd&nbsp;child&nbsp;onwards:&nbsp;charged&nbsp;100%&nbsp;of&nbsp;adult&nbsp;price.</p><p>-&nbsp;Children&nbsp;from&nbsp;11&nbsp;years&nbsp;old&nbsp;and&nbsp;over:&nbsp;charged&nbsp;as&nbsp;adults.</p><p>-&nbsp;In&nbsp;case&nbsp;there&nbsp;is&nbsp;only&nbsp;1&nbsp;guest&nbsp;(adult)&nbsp;traveling&nbsp;with&nbsp;1&nbsp;child&nbsp;(under&nbsp;12&nbsp;years&nbsp;old),&nbsp;the&nbsp;child&nbsp;is&nbsp;charged&nbsp;the&nbsp;adult&nbsp;ticket&nbsp;price&nbsp;large&nbsp;to&nbsp;ensure&nbsp;services&nbsp;according&nbsp;to&nbsp;regulations.</p><p><strong>ID&nbsp;documents&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour</strong></p><p>-&nbsp;Household&nbsp;Original&nbsp;passport&nbsp;and&nbsp;necessary&nbsp;documents.</p><p>-&nbsp;Children&nbsp;under&nbsp;14&nbsp;years&nbsp;old&nbsp;are&nbsp;required&nbsp;to&nbsp;bring&nbsp;birth&nbsp;certificate.&nbsp;</p><p>-&nbsp;Children&nbsp;need&nbsp;to&nbsp;be&nbsp;accompanied&nbsp;by&nbsp;parents&nbsp;or&nbsp;relatives&nbsp;over&nbsp;18&nbsp;years&nbsp;old;&nbsp;In&nbsp;case&nbsp;of&nbsp;traveling&nbsp;with&nbsp;relatives,&nbsp;a&nbsp;valid&nbsp;authorization&nbsp;is&nbsp;required.</p><p>Cancellation&nbsp;&amp;&nbsp;change&nbsp;policy</p><p>-&nbsp;From&nbsp;the&nbsp;time&nbsp;of&nbsp;posting&nbsp;Signed&nbsp;up&nbsp;to&nbsp;30&nbsp;days&nbsp;of&nbsp;departure:&nbsp;Cancellation&nbsp;fee&nbsp;50%&nbsp;of&nbsp;deposit.</p><p>-&nbsp;From&nbsp;15&nbsp;before&nbsp;departure&nbsp;date:&nbsp;Cancellation&nbsp;fee&nbsp;70%&nbsp;of&nbsp;total&nbsp;tour&nbsp;price.&nbsp;</p><p>-&nbsp;After&nbsp;the&nbsp;above&nbsp;time:&nbsp;Cancellation&nbsp;fee&nbsp;100%&nbsp;of&nbsp;total&nbsp;tour&nbsp;price.</p><p>-&nbsp;Tour&nbsp;cancellation/change&nbsp;time&nbsp;is&nbsp;recorded&nbsp;in&nbsp;business&nbsp;hours&nbsp;and&nbsp;calculated&nbsp;on&nbsp;business&nbsp;day&nbsp;(excluding&nbsp;Saturday,&nbsp;Sunday&nbsp;and&nbsp;Holidays/Tet).&nbsp;Requests&nbsp;submitted&nbsp;outside&nbsp;business&nbsp;hours&nbsp;will&nbsp;be&nbsp;counted&nbsp;from&nbsp;the&nbsp;beginning&nbsp;of&nbsp;business&nbsp;hours&nbsp;of&nbsp;the&nbsp;next&nbsp;day.</p><p>-&nbsp;Please&nbsp;send&nbsp;a&nbsp;cancellation&nbsp;request&nbsp;via&nbsp;email&nbsp;or&nbsp;the&nbsp;company&#39;s&nbsp;official&nbsp;contact&nbsp;channel&nbsp;to&nbsp;be&nbsp;recorded.&nbsp;Telephone&nbsp;notification&nbsp;will&nbsp;not&nbsp;be&nbsp;considered&nbsp;a&nbsp;basis&nbsp;for&nbsp;cancellation&nbsp;policy.</p><p>Visa&nbsp;Information</p><p>-&nbsp;Visa&nbsp;exemption&nbsp;for&nbsp;The&nbsp;customer&nbsp;holds&nbsp;Vietnamese&nbsp;nationality.</p><p>-&nbsp;Passport&nbsp;intact&nbsp;and&nbsp;still&nbsp;valid&nbsp;6&nbsp;months&nbsp;from&nbsp;the&nbsp;end&nbsp;date&nbsp;of&nbsp;the&nbsp;tour.&nbsp;</p><p><strong>Note&nbsp;about&nbsp;residency&nbsp;status</strong></p><p>-&nbsp;You&nbsp;hold&nbsp;dual&nbsp;nationality,&nbsp;Travel&nbsp;Document&nbsp;or&nbsp;residency&nbsp;status&nbsp;please&nbsp;inform&nbsp;when&nbsp;registering&nbsp;and&nbsp;provide&nbsp;full&nbsp;relevant&nbsp;documents.</p><p>-&nbsp;Guests&nbsp;only&nbsp;have&nbsp;a&nbsp;green&nbsp;card&nbsp;but&nbsp;not&nbsp;A&nbsp;valid&nbsp;Vietnamese&nbsp;passport&nbsp;will&nbsp;not&nbsp;be&nbsp;eligible&nbsp;to&nbsp;register&nbsp;for&nbsp;a&nbsp;tour&nbsp;to&nbsp;a&nbsp;third&nbsp;country.</p><p>-&nbsp;Guests&nbsp;are&nbsp;overseas&nbsp;Vietnamese&nbsp;or&nbsp;nationals&nbsp;c&nbsp;foreign&nbsp;nationals&nbsp;with&nbsp;visas&nbsp;to&nbsp;enter&nbsp;Vietnam&nbsp;need&nbsp;to&nbsp;bring&nbsp;with&nbsp;them&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour.</p><p>-&nbsp;In&nbsp;case&nbsp;of&nbsp;using&nbsp;ABTC&nbsp;(APEC),&nbsp;h&nbsp;For&nbsp;official,&nbsp;diplomatic&nbsp;passports&nbsp;or&nbsp;self-applying&nbsp;a&nbsp;visa,&nbsp;please&nbsp;notify&nbsp;in&nbsp;advance&nbsp;to&nbsp;receive&nbsp;appropriate&nbsp;advice.</p><p>Conditions&nbsp;for&nbsp;participation&nbsp;in&nbsp;the&nbsp;tour&nbsp;r</p><p><strong>Age&nbsp;and&nbsp;health:</strong></p><p>-&nbsp;Tour&nbsp;applies&nbsp;to&nbsp;guests&nbsp;under&nbsp;70&nbsp;years&nbsp;old.</p><p>-&nbsp;Guests&nbsp;from&nbsp;70&nbsp;years&nbsp;old&nbsp;and&nbsp;above&nbsp;You&nbsp;need&nbsp;to&nbsp;pay&nbsp;an&nbsp;additional&nbsp;premium&nbsp;insurance&nbsp;according&nbsp;to&nbsp;regulations.</p><p>-&nbsp;From&nbsp;75&nbsp;years&nbsp;old&nbsp;or&nbsp;older,&nbsp;you&nbsp;need&nbsp;to&nbsp;provide&nbsp;a&nbsp;certificate&nbsp;of&nbsp;good&nbsp;health&nbsp;due&nbsp;to&nbsp;An&nbsp;authorized&nbsp;medical&nbsp;facility&nbsp;and&nbsp;a&nbsp;relative&nbsp;under&nbsp;60&nbsp;years&nbsp;old&nbsp;accompanying.</p><p>-&nbsp;Pregnant&nbsp;guests&nbsp;please&nbsp;inform&nbsp;when&nbsp;registering;&nbsp;Need&nbsp;to&nbsp;consult&nbsp;a&nbsp;doctor&nbsp;before&nbsp;joining&nbsp;the&nbsp;tour.</p><p>-&nbsp;Do&nbsp;not&nbsp;accept&nbsp;pregnant&nbsp;customers&nbsp;of&nbsp;5&nbsp;months&nbsp;or&nbsp;more&nbsp;for&nbsp;safety&nbsp;reasons.</p><p>-&nbsp;You&nbsp;need&nbsp;to&nbsp;ensure&nbsp;your&nbsp;health&nbsp;be&nbsp;fit&nbsp;to&nbsp;participate&nbsp;in&nbsp;the&nbsp;activities&nbsp;in&nbsp;the&nbsp;tour.</p><p>-&nbsp;If&nbsp;you&nbsp;have&nbsp;special&nbsp;health&nbsp;conditions,&nbsp;please&nbsp;inform&nbsp;the&nbsp;consultant&nbsp;before&nbsp;booking&nbsp;the&nbsp;tour.&nbsp;You&nbsp;may&nbsp;be&nbsp;required&nbsp;to&nbsp;provide&nbsp;a&nbsp;health&nbsp;certificate&nbsp;or&nbsp;sign&nbsp;a&nbsp;commitment&nbsp;in&nbsp;some&nbsp;necessary&nbsp;cases.</p><p><strong>Regulations&nbsp;by&nbsp;group:&nbsp;&lt;&nbsp;/strong&gt;</strong></p><p><strong>-&nbsp;The&nbsp;program&nbsp;can&nbsp;adjust&nbsp;the&nbsp;order&nbsp;of&nbsp;tours&nbsp;according&nbsp;to&nbsp;the&nbsp;actual&nbsp;situation&nbsp;but&nbsp;still&nbsp;ensures&nbsp;full&nbsp;points.</strong></p><p><strong>-&nbsp;Tour&nbsp;departs&nbsp;when&nbsp;enough&nbsp;15&nbsp;adult&nbsp;customers,&nbsp;if&nbsp;the&nbsp;number&nbsp;is&nbsp;not&nbsp;sufficient,&nbsp;the&nbsp;company&nbsp;will&nbsp;notify&nbsp;and&nbsp;re-arrange&nbsp;the&nbsp;departure&nbsp;date&nbsp;or&nbsp;refund.</strong></p><p><strong>-&nbsp;Due&nbsp;to&nbsp;the&nbsp;nature&nbsp;of&nbsp;joint&nbsp;tours,&nbsp;You&nbsp;need&nbsp;to&nbsp;follow&nbsp;the&nbsp;group&nbsp;throughout&nbsp;the&nbsp;journey&nbsp;and&nbsp;return&nbsp;on&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;tour.</strong></p><p><strong>-&nbsp;The&nbsp;services&nbsp;in&nbsp;the&nbsp;program&nbsp;have&nbsp;been&nbsp;arranged&nbsp;in&nbsp;advance&nbsp;by&nbsp;the&nbsp;group;&nbsp;In&nbsp;case&nbsp;of&nbsp;non-use&nbsp;for&nbsp;personal&nbsp;reasons,&nbsp;there&nbsp;will&nbsp;be&nbsp;no&nbsp;refund.</strong></p><p><strong>Exit&nbsp;and&nbsp;exit:</strong></p><p><strong>-&nbsp;You&nbsp;need&nbsp;to&nbsp;ensure&nbsp;your&nbsp;personal&nbsp;documents&nbsp;are&nbsp;valid&nbsp;according&nbsp;to&nbsp;import/exit&nbsp;regulations,&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour.&nbsp;In&nbsp;case&nbsp;of&nbsp;not&nbsp;being&nbsp;allowed&nbsp;to&nbsp;exit/enter&nbsp;the&nbsp;country,&nbsp;the&nbsp;trip&nbsp;cannot&nbsp;be&nbsp;performed&nbsp;due&nbsp;to&nbsp;disapproval&nbsp;by&nbsp;the&nbsp;authorities&nbsp;(for&nbsp;any&nbsp;reason),&nbsp;the&nbsp;tour&nbsp;cost&nbsp;will&nbsp;not&nbsp;be&nbsp;refundable.&nbsp;The&nbsp;company&nbsp;will&nbsp;support&nbsp;guidance&nbsp;to&nbsp;the&nbsp;extent&nbsp;possible&nbsp;to&nbsp;solve&nbsp;for&nbsp;you.&nbsp;Any&nbsp;incurred&nbsp;costs&nbsp;you&nbsp;must&nbsp;actively&nbsp;arrange.</strong></p><p><strong>-&nbsp;For&nbsp;customers&nbsp;with&nbsp;significant&nbsp;changes&nbsp;in&nbsp;characteristics&nbsp;facial&nbsp;deformation,&nbsp;for&nbsp;example,&nbsp;cosmetic&nbsp;surgery,&nbsp;please&nbsp;renew&nbsp;your&nbsp;passport&nbsp;according&nbsp;to&nbsp;regulations&nbsp;before&nbsp;departure.&nbsp;In&nbsp;case&nbsp;the&nbsp;passport&nbsp;no&nbsp;longer&nbsp;suits&nbsp;the&nbsp;current&nbsp;appearance&nbsp;and&nbsp;problems&nbsp;arise&nbsp;when&nbsp;exiting&nbsp;the&nbsp;entry,&nbsp;you&nbsp;please&nbsp;bear&nbsp;your&nbsp;responsibility.&nbsp;Service&nbsp;cancellation&nbsp;costs&nbsp;(if&nbsp;any)&nbsp;will&nbsp;be&nbsp;applied&nbsp;according&nbsp;to&nbsp;regulations.</strong></p><p><strong>-&nbsp;For&nbsp;customers&nbsp;who&nbsp;have&nbsp;transformed,&nbsp;the&nbsp;information&nbsp;on&nbsp;the&nbsp;Passport&nbsp;and&nbsp;CCCD&nbsp;must&nbsp;be&nbsp;consistent&nbsp;and&nbsp;match.&nbsp;The&nbsp;image&nbsp;on&nbsp;the&nbsp;passport&nbsp;needs&nbsp;to&nbsp;be&nbsp;taken&nbsp;after&nbsp;gender&nbsp;transition/cosmetic&nbsp;surgery,&nbsp;ensuring&nbsp;clear&nbsp;identification&nbsp;according&nbsp;to&nbsp;the&nbsp;actual&nbsp;status&nbsp;Yes,&nbsp;the&nbsp;same&nbsp;as&nbsp;the&nbsp;passport&nbsp;currently&nbsp;in&nbsp;use.</strong></p><p><strong>Force&nbsp;majeure:</strong></p><p><strong>-&nbsp;Flight&nbsp;times&nbsp;may&nbsp;change&nbsp;according&nbsp;to&nbsp;the&nbsp;dry&nbsp;cargo&nbsp;carrier&nbsp;ng.</strong></p><p><strong>-&nbsp;In&nbsp;situations&nbsp;beyond&nbsp;control&nbsp;such&nbsp;as&nbsp;weather,&nbsp;natural&nbsp;disasters,&nbsp;epidemics,&nbsp;security&nbsp;incidents,&nbsp;war,&nbsp;airports&nbsp;y&nbsp;closure&nbsp;or&nbsp;change&nbsp;from&nbsp;transportation&nbsp;unit,&nbsp;…&nbsp;the&nbsp;schedule&nbsp;may&nbsp;be&nbsp;adjusted&nbsp;to&nbsp;ensure&nbsp;your&nbsp;safety&nbsp;and&nbsp;benefits.&nbsp;The&nbsp;company&nbsp;will&nbsp;make&nbsp;maximum&nbsp;efforts&nbsp;to&nbsp;support&nbsp;and&nbsp;coordinate&nbsp;with&nbsp;customers&nbsp;to&nbsp;handle&nbsp;arising&nbsp;issues.&nbsp;However,&nbsp;related&nbsp;expenses&nbsp;such&nbsp;as&nbsp;food,&nbsp;travel,&nbsp;stay,&nbsp;changing/rebooking&nbsp;tickets...&nbsp;(if&nbsp;any),&nbsp;please&nbsp;pay&nbsp;according&nbsp;to&nbsp;actuality.&nbsp;The&nbsp;company&nbsp;will&nbsp;accompany&nbsp;and&nbsp;support&nbsp;so&nbsp;that&nbsp;you&nbsp;have&nbsp;the&nbsp;most&nbsp;suitable&nbsp;and&nbsp;convenient&nbsp;plan.</strong></p><p><strong>Instructor</strong></p><p><strong>-&nbsp;Guide&nbsp;Guide&nbsp;(HDV)&nbsp;The&nbsp;will&nbsp;contact&nbsp;you&nbsp;approximately&nbsp;2&nbsp;days&nbsp;before&nbsp;departure&nbsp;to&nbsp;arrange&nbsp;a&nbsp;pickup&nbsp;time&nbsp;and&nbsp;provide&nbsp;the&nbsp;necessary&nbsp;information&nbsp;for&nbsp;transfer.</strong></p>', '<p>None</p>'),
-	(15, 13, 'zh', '马来西亚-新加坡5天4夜游：探索东南亚文化', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', '探索滨海湾花园：新加坡标志性的生态花园。', '<p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">探索滨海湾花园：新加坡标志性的生态花园。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">参观滨海湾金沙和鱼尾狮公园：狮子岛图标。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">参观神秘的黑风洞并征服 272 个彩色楼梯。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">体验云顶高原：云端娱乐之城。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">报到布特拉清真寺和吉隆坡独立广场。</span></p>', '<p><strong>交通</strong></p><p>-越南航空公司往返机票（23公斤托运行李+10公斤手提行李）。 </p><p>- 沿途提供空调车辆。</p><p>- 2 个国家的机场安检费、航空保险、机场税（根据规定） y 在出票时确定）。</p><p><strong>住宿</strong></p><p>- 标准 3-4* 当地酒店（2 位客人/房间；男/女个人客户可安排合适的房间）。</p><p><strong>其他服务</strong></p><p>- 计划内的观光门票。 </p><p>- 根据计划膳食。 （如果可调节，请确保同等数量和质量）。</p><p>- 矿泉水 01 瓶/人/天。</p><p>- 国际旅行保险。 </p><p>- 团队领队和当地导游在旅途中提供服务。</p><p>- 赠送游客帽子。 </p><p>- 增值税。</p>', '<p>- 单间附加费（如有）：4,300,000 越南盾/人/旅游 – 4,800,000 越南盾/人/旅游。 </p><p>- 司机和导游小费：25 美元/人/团。</p><p>- 外籍游客附加费：660,000 越南盾/人。</p><p>- 根据外籍游客重新进入越南的签证遵守现行规定（如果有）。</p><p>- 个人费用：超重行李、电话、洗衣、观光、计划外的支出。</p>', '<p>儿童政策</p><p><strong>1. 一般规则：</strong></p><p>- 每 02 名成人可陪同 01 名儿童。</p><p>- 从第二个儿童开始，适用。遵守每个年龄段的规定（如下所述）。</p><p>- 孩子们与父母一起睡在床上。 → 如果需要自己的床：按成人收费。</p><p>- 计划外的费用（如有）由家庭支付。</p><p><strong>2. 按年龄划分的规定：</strong></p><p>- 2 岁以下儿童：以网站上显示的价格为准，包括机票、不单独座位、与父母同睡。</p><p>- 2 - 10 岁儿童：以网站上显示的价格为准，包括计划中的全套服务。 和父母一起睡觉。 第 2 个儿童起：按成人价格的 100% 收费。</p><p>- 11 岁及以上儿童：按成人收费。</p><p>- 如果只有 1 名客人（成人）与 1 名儿童（12 岁以下）一起旅行），儿童按成人票价收取较高费用，以确保服务按规定进行。</p><p><strong>参团时的身份证件</strong></p><p>-家庭护照原件和必要文件。</p><p>- 14 岁以下儿童需携带出生证明。 </p><p>-儿童需要由父母或年满18岁的亲戚陪同； 如果与亲戚一起旅行，则需要有效授权。</p><p>取消和更改政策</p><p>- 自发布签名之日起至出发前 30 天：取消费用押金的 50%。</p><p>- 出发日期前 15 点起：取消费用为旅游总价的 70%。 </p><p>- 在上述时间之后：取消费用为旅游总价的 100%。</p><p>- 旅游取消/更改时间按营业时间记录，并在工作日计算（不包括星期六、星期日和节假日/春节）。 营业时间外提交的请求将从次日营业时间开始计算。</p><p>- 请通过电子邮件或公司官方联系渠道发送取消请求以进行记录。 电话通知不会被视为取消政策的依据。</p><p>签证信息</p><p>-持有越南国籍的客户可免签证。</p><p>-护照完好无损，且自旅行结束之日起 6 个月内仍然有效。 </p><p><strong>有关居住身份的说明</strong></p><p>-您拥有双重国籍、旅行证件或居住身份请在注册时告知，并提供完整的相关文件。</p><p>- 客人只有绿卡，但没有有效的越南护照，将没有资格报名参加第三国旅游。</p><p>- 客人是海外越南人或国民c 持有越南签证的外国人参加旅游时需要携带。</p><p>- 如果使用 ABTC (APEC)，h 适用于官方、外交护照或自行申请护照签证，请提前通知以获得适当的建议。</p><p>参加旅游的条件</p><p><strong>年龄和健康状况：</strong></p><p>-旅游适用于70岁以下的游客。</p><p>-70岁及以上的游客您需要按照规定缴纳额外的保险费。</p><p>- 75岁或以上，您需要提供在授权医疗机构的健康状况证明和60岁以下的亲属老伴。</p><p>- 怀孕客人请在登记时告知； 参加行程前需咨询医生。</p><p>-出于安全考虑，请勿接待怀孕5个月或以上的游客。</p><p>-您需要确保自己的健康状况适合参加行程中的活动。</p><p>-如果您有特殊的健康状况，请在预订旅游之前告知顾问。 某些必要情况下，您可能需要提供健康证明或签署承诺书。</p><p><strong>按群体规定：< /strong></p><p>- 程序可根据实际情况调整行程顺序，但仍能保证满分。</p><p>- 当达到 15 名成年顾客时，如人数不足，行程将出发，公司将通知并重新安排出发日期或退款。</p><p>- 由于联合旅游的性质，您需要全程跟随团队，并在行程结束时返回。</p><p>- 项目中的服务已由团队提前安排； 如因个人原因未使用，将不予退款。</p><p><strong>退出与退出：</strong></p><p>-您在参团时，需要根据进出境规定确保您的个人证件有效。 如果不被允许出/入境，由于当局不批准（出于任何原因）而无法进行旅行，旅游费用将不予退还。 公司将在可能的范围内支持指导，为您解决问题。 任何产生的费用您必须积极安排。</p><p>-对于面部变形特征发生重大变化的顾客，例如整容手术，请在出发前按规定更新护照。 如果护照不再符合现在的外观，并在出境时出现问题，请您自行承担责任。 取消服务费用（如有）将按照规定收取。</p><p>- 对于已转换的客户，护照和 CCCD 上的信息必须一致且匹配。 护照上的图像需要在变性/整容手术后拍摄，确保根据实际状况清晰识别是的，与当前使用的护照相同。</p><p><strong>不可抗力：</strong></p><p>-航班时间可能会根据干货承运商的情况而变化。</p><p>- 无法控制的情况，例如天气、自然灾害、流行病、安全事件、战争、机场如果运输单位关闭或发生变化，……时间表可能会进行调整，以确保您的安全和利益。 公司将尽最大努力支持并与客户协调处理出现的问题。 但相关费用如餐饮、交通、住宿、改签/重新预订机票……（如有），请按实际支付。 公司将全程陪同和支持，以便您拥有最合适、最方便的计划。</p><p>教练</p><p>- 导游指南 (HDV)我们将在出发前大约 2 天与您联系，安排接机时间并提供转机所需的信息。</p>', '<p>无</p>'),
-	(16, 15, 'en', 'Taiwan Tour 5D4D: HCM - Kaohsiung - Taichung - Taipei - X-park Aquarium', 'tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', 'Taiwan Tour 5D4D: HCM - Kaohsiung - Taichung - Taipei - X-park Aquarium', 'Check-in Taipei 101 Tower: Taiwan symbol, free shopping.\r\nCruise in real-life paradise on earth – Sun Moon Lake\r\nGiving away "Thien Dang lamp" at Shifen ancient town.\r\nFree tickets to visit the Chimei Museum - A convergence of Taiwanese art and history.\r\nAdmire "Fo Guang Shan Temple" - the Buddhist Capital of Taiwan.', '<p>Transportation:</p><p></p><p>- Round-trip airline ticket by Eva Air (23kg checked luggage + handbags 7kg hand)</p><p></p><p>- Air-conditioned vehicles serve during the route.</p><p></p><p>- Airport security fee, b Airline insurance, 2 country airport taxes (according to regulations at the time of ticket issuance)</p><p></p><p>Accommodation:</p><p></p><p>- 3* local standard hotel (2 guests/room; single men/women with maximum to arrange rooms)</p><p></p><p>Others:</p><p></p><p>- Visa to enter Taiwan according to the program.</p><p></p><p>- Sightseeing tickets according to the programme: Free Thien Dang lighting + cake making class Pineapple Virgo Kobo Pineapple Cake DIY.</p><p></p><p>- Meals according to program: Complimentary Buff et hotpot, free Noodles-Beef Steak meal, free Hong Kong hydrothermal steamed meal, free cup of traditional milk tea. (ensure equivalent quantity & quality if adjustable)</p><p></p><p>- Spring water 01 bottle/person/day.</p><p></p><p>- International travel insurance during the route. </p><p></p><p>- Group leader and local guide serve during the journey.</p><p></p><p>- VAT. </p>', '<p>Transportation:</p><p></p><p>- Round-trip airline ticket by Eva Air (23kg checked luggage + handbags 7kg hand)</p><p></p><p>- Air-conditioned vehicles serve during the route.</p><p></p><p>- Airport security fee, b Airline insurance, 2 country airport taxes (according to regulations at the time of ticket issuance)</p><p></p><p>Accommodation:</p><p></p><p>- 3* local standard hotel (2 guests/room; single men/women with maximum to arrange rooms)</p><p></p><p>Others:</p><p></p><p>- Visa to enter Taiwan according to the program.</p><p></p><p>- Sightseeing tickets according to the programme: Free Thien Dang lighting + cake making class Pineapple Virgo Kobo Pineapple Cake DIY.</p><p></p><p>- Meals according to program: Complimentary Buff et hotpot, free Noodles-Beef Steak meal, free Hong Kong hydrothermal steamed meal, free cup of traditional milk tea. (ensure equivalent quantity & quality if adjustable)</p><p></p><p>- Spring water 01 bottle/person/day.</p><p></p><p>- International travel insurance during the route. </p><p></p><p>- Group leader and local guide serve during the journey.</p><p></p><p>- VAT. </p>', '<p>Children policy</p><p><strong>1. General rules:</strong></p><p>- Each 02 adults can accompany 01 child.</p><p>- From the 2nd child onwards, applicable Use the price according to the regulations for each age group (stated below).</p><p>- Children sleep in the bed with their parents. If a own bed is needed: Charged as an adult</p><p>- Expenses outside the program (if any) must be paid by the family.</p><p><strong>2. Regulations by age:</strong></p><p>- Children under 2 years old: Prices as on the website, included airline tickets, no seats private, sleep with parents.</p><p>- Children from 2 - 11 years old: Price as on the website, includes full services in the program. Sleeping with parents. From 2nd child onwards: charged 100% of adult price.</p><p>- Children 12 years old and older: charged as adults.</p ><p>- In case there is only 1 guest (adult) traveling with 1 child (under 12 years old), the child is charged adult ticket price n to ensure services according to regulations.</p><p><strong>ID documents when joining the tour</strong></p><p>- Household show originals and necessary documents</p><p>- Children need to be accompanied by parents or relatives over 18 years old; In case of traveling with relatives, a valid authorization is required.</p>', '<p>Cancellation & change policy</p><p>- Cancel from the time of registration up to 22 days: Cancellation fee is 2,000,000 VND</p><p>- Cancel before 15-21 days of departure: cancellation fee is 50% of the tour price.</p><p>- Cancel before 7-14 days of departure: cancellation fee is 70% of the tour price.</p><p>- After the above time: 100% of the total tour price.</p><p>- School In case you are refused to issue a visa, a 100% deposit will be refunded (except in some cases of intentional or non-cooperation leading to rejection of visa, cancellation fee: 2,000.0 00 VND/pax).</p><p>- Tour cancellation/change time is recorded during business hours and calculated on business days (excluding Saturday, Sunday and Holidays/Tet). Requests submitted outside business hours will be counted from the beginning of business hours of the next day.</p><p>- Please send a cancellation request via email or the company\'s official contact channel to be recorded. Telephone notification will not be considered a basis for applying cancellation policy.</p><p>- If you cancel the tour after the visa has been issued, the company will perform visa cancellation procedures according to The regulations.</p><p>Visa information</p><p><strong>TAIWAN QUAN HONG VISA</strong> (CLEAR SCAN RECORDS OR PHOTOS)</p><p>To best prepare for applying for the Kuan Hong import visa entering Taiwan, the company would like to send you the basic information to prepare as follows: In addition, the company will update the necessary procedures for You if there are any changes from the consulate.</p><p><strong>Visa application:</strong></p><p>- Passport valid over 6 months from the end date of the tour. Scan/Photograph clearly, no shadows, no glare, showing full information.</p><p>- If the passport does not have the place of birth entry h then Scan/Take additional name of place of birth or 2-sided citizenship identification</p><p>- Photo of card with white background taken latest send soft file (clearly seeing forehead, ears, eyebrows, no wearing glasses, no earrings, don\'t g smiles with teeth, does not match passport photo)</p><p>- Information for Taiwan visa application form according to form</p>'),
-	(17, 15, 'zh', '台湾游5天4天：胡志明市 - 高雄 - 台中 - 台北 - X-park水族馆', 'tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', '台湾游5天4天：胡志明市 - 高雄 - 台中 - 台北 - X-park水族馆', '入住台北101大楼：台湾象征，自由购物。\r\n游船畅游现实中的人间天堂——日月潭\r\n在十分古镇赠送“天登灯”。\r\n免费门票参观奇美博物馆 - 台湾艺术与历史的融合。\r\n欣赏台湾佛教之都“佛光山寺”。', '<p>交通：</p><p></p><p>-长荣航空往返机票（23公斤托运行李+手提包） 7公斤手）</p><p></p><p>- 途中提供空调车辆。</p><p></p><p>- 机场安检费、b 航空公司保险、2 个国家机场税（根据出票时的规定）住宿：</p><p></p><p>住宿：</p><p></p><p>- 3*当地标准酒店（2人/间；单身男女，最多可安排房间）</p><p></p><p>其他：</p><p></p><p>- 根据台湾签证入境</p><p></p><p>- 项目中的观光门票：免费 Thien Dang 灯光 + 蛋糕制作课程 菠萝处女座 Kobo 菠萝蛋糕 DIY。</p><p></p><p>- 项目中的餐食：免费 Buff火锅，免费面牛排餐，免费港式热液蒸餐，免费一杯传统奶茶。 （如果可调节，请确保同等数量和质量）</p><p></p><p>- 泉水 01 瓶/人/天。</p><p></p><p>- 途中国际旅行保险。 </p><p></p><p>- 团体领队和当地导游在旅途中提供服务。</p><p></p><p>- 增值税。 </p>', '<p>交通：</p><p></p><p>-长荣航空往返机票（23公斤托运行李+手提包） 7公斤手）</p><p></p><p>- 途中提供空调车辆。</p><p></p><p>- 机场安检费、b 航空公司保险、2 个国家机场税（根据出票时的规定）住宿：</p><p></p><p>住宿：</p><p></p><p>- 3*当地标准酒店（2人/间；单身男女，最多可安排房间）</p><p></p><p>其他：</p><p></p><p>- 根据台湾签证入境</p><p></p><p>- 项目中的观光门票：免费 Thien Dang 灯光 + 蛋糕制作课程 菠萝处女座 Kobo 菠萝蛋糕 DIY。</p><p></p><p>- 项目中的餐食：免费 Buff火锅，免费面牛排餐，免费港式热液蒸餐，免费一杯传统奶茶。 （如果可调节，请确保同等数量和质量）</p><p></p><p>- 泉水 01 瓶/人/天。</p><p></p><p>- 途中国际旅行保险。 </p><p></p><p>- 团体领队和当地导游在旅途中提供服务。</p><p></p><p>- 增值税。 </p>', '<p>儿童政策</p><p><strong>1. 一般规则：</strong></p><p>- 每 02 名成人可陪同 01 名儿童。</p><p>- 从第二个儿童开始，适用。遵守每个年龄段的规定（如下所述）。</p><p>- 孩子们与父母一起睡在床上。 如果需要自己的床：按成人收费</p><p>-计划外的费用（如有）必须由家庭支付。</p><p><strong>2. 按年龄划分的规定：</strong></p><p>- 2 岁以下儿童：网站上显示的价格，包括机票、无私人座位、与父母同睡。</p><p>- 2 - 11 岁儿童：网站上显示的价格，包括计划中的全套服务。 和父母一起睡觉。 第 2 个儿童起：按成人价格的 100% 收费。</p><p>- 12 岁及以上儿童：按成人收费。</p><p>- 如果只有 1 名客人（成人）与 1 名儿童（12 岁以下）一起旅行），儿童按成人票价购买，以确保按规定提供服务。</p><p><strong>参团时携带身份证件</strong></p><p>- 家庭出示原件及必要文件</p><p>-儿童需由父母或年满18岁的亲属陪同； 如果与亲戚一起旅行，则需要有效的授权。</p>', '<p>取消和更改政策</p><p>-从注册之日起 22 天内取消：取消费为 2,000,000 越南盾</p><p>- 在出发前 15-21 天取消：取消费为旅游团费的 50%价格。</p><p>- 出发前 7-14 天取消：取消费用为旅游价格的 70%。</p><p>- 在上述时间之后：旅游总价格的 100%。</p><p>- 学校如果您被拒绝签发签证，将退还 100% 的押金（除非某些故意或不合作导致签证被拒绝的情况，取消费：2,000.0 00 越南盾/人）。</p><p>- 旅行取消/更改时间在营业时间内记录并按工作日计算（不包括星期六、星期日和节假日/春节）。 营业时间外提交的请求将从次日营业时间开始计算。</p><p>- 请通过电子邮件或公司官方联系渠道发送取消请求以进行记录。 电话通知将不被视为申请取消政策的依据。</p><p>- 如果您在签证签发后取消旅行，公司将按照以下规定办理签证取消程序规定。</p><p>签证信息</p><p><strong>台湾全洪签证</strong>（清除扫描记录或照片）</p><p>为做好申请全洪进口签证进入台湾的最佳准备，本公司希望向您发送需要准备的基本信息如下：此外，如果有的话，公司将为您更新必要的程序领事馆的任何变更。</p><p><strong>签证申请：</strong></p><p>- 护照自旅行结束之日起 6 个月内有效。 扫描/拍照清晰，无阴影，无眩光，显示完整信息。</p><p>- 如果护照上没有出生地条目h 然后扫描/拍摄额外的出生地姓名或双面公民身份证明</p><p>-最近拍摄的白底卡片照片发送软文件（清楚地看到额头、耳朵、眉毛，不戴眼镜、不戴耳环，不要g微笑时有牙齿，与护照照片不符）</p><p>-台湾签证申请表信息根据表格</p>'),
-	(18, 1, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 3', 'sapa-discovery-tour-conquer-fansipan-peak-3', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
-	(19, 1, 'zh', '沙巴探索之旅 - 征服番西邦峰 3', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-3', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL),
-	(20, 8, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 1', 'sapa-discovery-tour-conquer-fansipan-peak-1', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
-	(21, 8, 'zh', '沙巴探索之旅 - 征服番西邦峰 1', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-1', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL),
-	(22, 9, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 2', 'sapa-discovery-tour-conquer-fansipan-peak-2', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
-	(23, 9, 'zh', '沙巴探索之旅 - 征服番西邦峰 2', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-2', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL);
 
 -- Dumping structure for table db_marketing_tour.tours
 DROP TABLE IF EXISTS `tours`;
@@ -708,7 +409,7 @@ CREATE TABLE IF NOT EXISTS `tours` (
   CONSTRAINT `fk_tour_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.tours: ~9 rows (approximately)
+-- Dumping data for table db_marketing_tour.tours: ~12 rows (approximately)
 DELETE FROM `tours`;
 INSERT INTO `tours` (`id`, `category_id`, `title`, `slug`, `summary`, `highlights`, `price_includes`, `price_excludes`, `terms_and_notes`, `cancellation_policy`, `duration_days`, `duration_nights`, `thumbnail_url`, `tour_badge`, `status`) VALUES
 	(1, 2, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', 'tour-kham-pha-sapa-chinh-phuc-fansipan', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL, 3, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 'featured', 'active'),
@@ -722,8 +423,294 @@ INSERT INTO `tours` (`id`, `category_id`, `title`, `slug`, `summary`, `highlight
 	(9, 1, 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', 'tour-kham-pha-sapa-chinh-phuc-fansipan2', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL, 3, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 'featured', 'active'),
 	(10, 1, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', 'nghi-duong-phu-quoc-hon-thom1', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL, 4, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 'featured', 'active'),
 	(11, 1, 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', 'nghi-duong-phu-quoc-hon-thom2', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL, 4, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 'featured', 'active'),
-	(13, 2, 'Tour Malaysia - Singapore 5N4Đ: Khám Phá Văn Hóa Đông Nam Á', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', 'Khám phá Gardens by the Bay: Vườn sinh thái biểu tượng Singapore.', 'Vận chuyển\r\n- Vé máy bay khứ hồi theo hãng Vietnam Airline (23kg hành lý ký gửi + xách tay 10kg).\r\n- Xe máy lạnh phục vụ suốt tuyến.\r\n- Phí an ninh sân bay, bảo hiểm hàng không, thuế phi trường 2 nước (theo quy định tại thời điểm xuất vé).\r\nLưu trú\r\n- Khách sạn tiêu chuẩn 3-4* địa phương (2 khách/phòng; khách lẻ nam/nữ có thể bố trí phòng phù hợp).\r\nDịch vụ khác\r\n- Vé tham quan trong chương trình. \r\n- Các bữa ăn theo chương trình. (đảm bảo số lượng & chất lượng tương đương nếu có điều chỉnh).\r\n- Nước suối 01 chai/khách/ngày.\r\n- Bảo hiểm du lịch quốc tế. \r\n- Trưởng đoàn và HDV địa phương phục vụ suốt hành trình.\r\n- Tặng nón du lịch. \r\n- Thuế VAT.', '<p><strong>Vận&nbsp;chuyển</strong></p><p>-&nbsp;Vé&nbsp;máy&nbsp;bay&nbsp;khứ&nbsp;hồi&nbsp;theo&nbsp;hãng&nbsp;Vietnam&nbsp;Airline&nbsp;(23kg&nbsp;hành&nbsp;lý&nbsp;ký&nbsp;gửi&nbsp;+&nbsp;xách&nbsp;tay&nbsp;10kg).</p><p>-&nbsp;Xe&nbsp;máy&nbsp;lạnh&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;tuyến.</p><p>-&nbsp;Phí&nbsp;an&nbsp;ninh&nbsp;sân&nbsp;bay,&nbsp;bảo&nbsp;hiểm&nbsp;hàng&nbsp;không,&nbsp;thuế&nbsp;phi&nbsp;trường&nbsp;2&nbsp;nước&nbsp;(theo&nbsp;quy&nbsp;định&nbsp;tại&nbsp;thời&nbsp;điểm&nbsp;xuất&nbsp;vé).</p><p><strong>Lưu&nbsp;trú</strong></p><p>-&nbsp;Khách&nbsp;sạn&nbsp;tiêu&nbsp;chuẩn&nbsp;3-4*&nbsp;địa&nbsp;phương&nbsp;(2&nbsp;khách/phòng;&nbsp;khách&nbsp;lẻ&nbsp;nam/nữ&nbsp;có&nbsp;thể&nbsp;bố&nbsp;trí&nbsp;phòng&nbsp;phù&nbsp;hợp).</p><p><strong>Dịch&nbsp;vụ&nbsp;khác</strong></p><p>-&nbsp;Vé&nbsp;tham&nbsp;quan&nbsp;trong&nbsp;chương&nbsp;trình.&nbsp;</p><p>-&nbsp;Các&nbsp;bữa&nbsp;ăn&nbsp;theo&nbsp;chương&nbsp;trình.&nbsp;(đảm&nbsp;bảo&nbsp;số&nbsp;lượng&nbsp;&amp;&nbsp;chất&nbsp;lượng&nbsp;tương&nbsp;đương&nbsp;nếu&nbsp;có&nbsp;điều&nbsp;chỉnh).</p><p>-&nbsp;Nước&nbsp;suối&nbsp;01&nbsp;chai/khách/ngày.</p><p>-&nbsp;Bảo&nbsp;hiểm&nbsp;du&nbsp;lịch&nbsp;quốc&nbsp;tế.&nbsp;</p><p>-&nbsp;Trưởng&nbsp;đoàn&nbsp;và&nbsp;HDV&nbsp;địa&nbsp;phương&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;hành&nbsp;trình.</p><p>-&nbsp;Tặng&nbsp;nón&nbsp;du&nbsp;lịch.&nbsp;</p><p>-&nbsp;Thuế&nbsp;VAT.</p>', '<p>-&nbsp;Phụ&nbsp;thu&nbsp;phòng&nbsp;đơn&nbsp;(nếu&nbsp;có):&nbsp;4.300.000đ/khách/tour&nbsp;-&nbsp;4.800.000đ/khách/tour.&nbsp;</p><p>-&nbsp;Tips&nbsp;cho&nbsp;tài&nbsp;xế&nbsp;và&nbsp;hướng&nbsp;dẫn&nbsp;viên:&nbsp;25&nbsp;USD/khách/tour.</p><p>-&nbsp;Phụ&nbsp;thu&nbsp;đối&nbsp;với&nbsp;khách&nbsp;mang&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài:&nbsp;660.000đ/khách.</p><p>-&nbsp;Visa&nbsp;tái&nbsp;nhập&nbsp;Việt&nbsp;Nam&nbsp;cho&nbsp;khách&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài&nbsp;theo&nbsp;quy&nbsp;định&nbsp;hiện&nbsp;hành&nbsp;(nếu&nbsp;có).</p><p>-&nbsp;Chi&nbsp;phí&nbsp;cá&nbsp;nhân:&nbsp;hành&nbsp;lý&nbsp;quá&nbsp;cước,&nbsp;điện&nbsp;thoại,&nbsp;giặt&nbsp;ủi,&nbsp;tham&nbsp;quan,&nbsp;chi&nbsp;tiêu&nbsp;ngoài&nbsp;chương&nbsp;trình.</p>', '<p>Chính&nbsp;sách&nbsp;trẻ&nbsp;em</p><p><strong>1.&nbsp;Quy&nbsp;định&nbsp;chung:</strong></p><p>-&nbsp;Mỗi&nbsp;02&nbsp;người&nbsp;lớn&nbsp;được&nbsp;kèm&nbsp;01&nbsp;trẻ&nbsp;em.</p><p>-&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi,&nbsp;áp&nbsp;dụng&nbsp;mức&nbsp;giá&nbsp;theo&nbsp;quy&nbsp;định&nbsp;của&nbsp;từng&nbsp;nhóm&nbsp;tuổi&nbsp;(nêu&nbsp;bên&nbsp;dưới).</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;ngủ&nbsp;chung&nbsp;giường&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;→&nbsp;Nếu&nbsp;cần&nbsp;giường&nbsp;riêng:&nbsp;Tính&nbsp;như&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Chi&nbsp;phí&nbsp;ngoài&nbsp;chương&nbsp;trình&nbsp;(nếu&nbsp;có)&nbsp;gia&nbsp;đình&nbsp;tự&nbsp;chi&nbsp;trả.</p><p><strong>2.&nbsp;Quy&nbsp;định&nbsp;theo&nbsp;độ&nbsp;tuổi:</strong></p><p>-&nbsp;Trẻ&nbsp;dưới&nbsp;2&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;đã&nbsp;bao&nbsp;gồm&nbsp;vé&nbsp;máy&nbsp;bay,&nbsp;không&nbsp;có&nbsp;ghế&nbsp;riêng,&nbsp;ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;2&nbsp;-&nbsp;10&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;bao&nbsp;gồm&nbsp;đầy&nbsp;đủ&nbsp;dịch&nbsp;vụ&nbsp;trong&nbsp;chương&nbsp;trình.&nbsp;Ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi:&nbsp;tính&nbsp;100%&nbsp;giá&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;11&nbsp;tuổi&nbsp;trở&nbsp;lên:&nbsp;tính&nbsp;giá&nbsp;như&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trong&nbsp;trường&nbsp;hợp&nbsp;chỉ&nbsp;có&nbsp;1&nbsp;khách&nbsp;(người&nbsp;lớn)&nbsp;đi&nbsp;với&nbsp;1&nbsp;bé&nbsp;(dưới&nbsp;12&nbsp;tuổi),&nbsp;bé&nbsp;được&nbsp;tính&nbsp;giá&nbsp;vé&nbsp;người&nbsp;lớn&nbsp;để&nbsp;đảm&nbsp;bảo&nbsp;dịch&nbsp;vụ&nbsp;theo&nbsp;quy&nbsp;định.</p><p><strong>Giấy&nbsp;tờ&nbsp;tùy&nbsp;thân&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour</strong></p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;bản&nbsp;chính&nbsp;và&nbsp;các&nbsp;giấy&nbsp;tờ&nbsp;cần&nbsp;thiết.</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;dưới&nbsp;14&nbsp;tuổi&nbsp;bắt&nbsp;buộc&nbsp;mang&nbsp;theo&nbsp;giấy&nbsp;khai&nbsp;sinh.&nbsp;</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;cần&nbsp;có&nbsp;bố&nbsp;mẹ&nbsp;hoặc&nbsp;người&nbsp;thân&nbsp;trên&nbsp;18&nbsp;tuổi&nbsp;đi&nbsp;cùng;&nbsp;trường&nbsp;hợp&nbsp;đi&nbsp;cùng&nbsp;người&nbsp;thân&nbsp;cần&nbsp;có&nbsp;giấy&nbsp;ủy&nbsp;quyền&nbsp;hợp&nbsp;lệ.</p><p>Chính&nbsp;sách&nbsp;hủy&nbsp;&amp;&nbsp;thay&nbsp;đổi</p><p>-&nbsp;Từ&nbsp;thời&nbsp;điểm&nbsp;đăng&nbsp;ký&nbsp;đến&nbsp;trước&nbsp;30&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;Phí&nbsp;hủy&nbsp;50%&nbsp;tiền&nbsp;cọc.</p><p>-&nbsp;Từ&nbsp;15&nbsp;trước&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;Phí&nbsp;hủy&nbsp;70%&nbsp;tổng&nbsp;giá&nbsp;tour.&nbsp;</p><p>-&nbsp;Sau&nbsp;thời&nbsp;gian&nbsp;trên:&nbsp;Phí&nbsp;hủy&nbsp;100%&nbsp;tổng&nbsp;giá&nbsp;tour.</p><p>-&nbsp;Thời&nbsp;gian&nbsp;hủy/thay&nbsp;đổi&nbsp;tour&nbsp;được&nbsp;ghi&nbsp;nhận&nbsp;trong&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;và&nbsp;tính&nbsp;theo&nbsp;ngày&nbsp;làm&nbsp;việc&nbsp;(không&nbsp;bao&nbsp;gồm&nbsp;Thứ&nbsp;Bảy,&nbsp;Chủ&nbsp;Nhật&nbsp;và&nbsp;Lễ/Tết).&nbsp;Các&nbsp;yêu&nbsp;cầu&nbsp;gửi&nbsp;ngoài&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;sẽ&nbsp;được&nbsp;tính&nbsp;từ&nbsp;đầu&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;của&nbsp;ngày&nbsp;kế&nbsp;tiếp.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;lòng&nbsp;gửi&nbsp;yêu&nbsp;cầu&nbsp;hủy&nbsp;qua&nbsp;email&nbsp;hoặc&nbsp;kênh&nbsp;liên&nbsp;hệ&nbsp;chính&nbsp;thức&nbsp;của&nbsp;công&nbsp;ty&nbsp;để&nbsp;được&nbsp;ghi&nbsp;nhận.&nbsp;Thông&nbsp;báo&nbsp;qua&nbsp;điện&nbsp;thoại&nbsp;sẽ&nbsp;chưa&nbsp;được&nbsp;xem&nbsp;là&nbsp;căn&nbsp;cứ&nbsp;áp&nbsp;dụng&nbsp;chính&nbsp;sách&nbsp;hủy.</p><p>Thông&nbsp;tin&nbsp;Visa</p><p>-&nbsp;Miễn&nbsp;visa&nbsp;cho&nbsp;khách&nbsp;mang&nbsp;quốc&nbsp;tịch&nbsp;Việt&nbsp;Nam.</p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;nguyên&nbsp;vẹn&nbsp;và&nbsp;còn&nbsp;thời&nbsp;hạn&nbsp;sử&nbsp;dụng&nbsp;6&nbsp;tháng&nbsp;tính&nbsp;từ&nbsp;ngày&nbsp;kết&nbsp;thúc&nbsp;tour.&nbsp;</p><p><strong>Lưu&nbsp;ý&nbsp;về&nbsp;tình&nbsp;trạng&nbsp;cư&nbsp;trú</strong></p><p>-&nbsp;Quý&nbsp;khách&nbsp;mang&nbsp;2&nbsp;quốc&nbsp;tịch,&nbsp;Travel&nbsp;Document&nbsp;hoặc&nbsp;tình&nbsp;trạng&nbsp;cư&nbsp;trú&nbsp;đặc&nbsp;biệt&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;khi&nbsp;đăng&nbsp;ký&nbsp;và&nbsp;cung&nbsp;cấp&nbsp;đầy&nbsp;đủ&nbsp;giấy&nbsp;tờ&nbsp;liên&nbsp;quan.</p><p>-&nbsp;Khách&nbsp;chỉ&nbsp;có&nbsp;thẻ&nbsp;xanh&nbsp;nhưng&nbsp;không&nbsp;còn&nbsp;hộ&nbsp;chiếu&nbsp;Việt&nbsp;Nam&nbsp;còn&nbsp;hiệu&nbsp;lực&nbsp;sẽ&nbsp;không&nbsp;đủ&nbsp;điều&nbsp;kiện&nbsp;đăng&nbsp;ký&nbsp;tour&nbsp;sang&nbsp;nước&nbsp;thứ&nbsp;ba.</p><p>-&nbsp;Khách&nbsp;là&nbsp;Việt&nbsp;Kiều&nbsp;hoặc&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài&nbsp;có&nbsp;visa&nbsp;rời&nbsp;nhập&nbsp;cảnh&nbsp;Việt&nbsp;Nam&nbsp;cần&nbsp;mang&nbsp;theo&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.</p><p>-&nbsp;Trường&nbsp;hợp&nbsp;sử&nbsp;dụng&nbsp;ABTC&nbsp;(APEC),&nbsp;hộ&nbsp;chiếu&nbsp;công&nbsp;vụ,&nbsp;ngoại&nbsp;giao&nbsp;hoặc&nbsp;tự&nbsp;xin&nbsp;visa,&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;trước&nbsp;để&nbsp;được&nbsp;tư&nbsp;vấn&nbsp;phù&nbsp;hợp.</p><p>Điều&nbsp;kiện&nbsp;tham&nbsp;gia&nbsp;tour</p><p><strong>Độ&nbsp;tuổi&nbsp;và&nbsp;sức&nbsp;khỏe:</strong></p><p>-&nbsp;Tour&nbsp;áp&nbsp;dụng&nbsp;cho&nbsp;khách&nbsp;dưới&nbsp;70&nbsp;tuổi.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;từ&nbsp;70&nbsp;tuổi&nbsp;trở&nbsp;lên&nbsp;cần&nbsp;đóng&nbsp;thêm&nbsp;phí&nbsp;bảo&nbsp;hiểm&nbsp;cao&nbsp;cấp&nbsp;theo&nbsp;quy&nbsp;định.</p><p>-&nbsp;Từ&nbsp;75&nbsp;tuổi&nbsp;trở&nbsp;lên&nbsp;cần&nbsp;cung&nbsp;cấp&nbsp;giấy&nbsp;xác&nbsp;nhận&nbsp;đủ&nbsp;sức&nbsp;khỏe&nbsp;do&nbsp;cơ&nbsp;sở&nbsp;y&nbsp;tế&nbsp;có&nbsp;thẩm&nbsp;quyền&nbsp;cấp&nbsp;và&nbsp;có&nbsp;người&nbsp;thân&nbsp;dưới&nbsp;60&nbsp;tuổi&nbsp;đi&nbsp;cùng.</p><p>-&nbsp;Khách&nbsp;mang&nbsp;thai&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;khi&nbsp;đăng&nbsp;ký;&nbsp;cần&nbsp;có&nbsp;ý&nbsp;kiến&nbsp;bác&nbsp;sĩ&nbsp;trước&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.</p><p>-&nbsp;Không&nbsp;nhận&nbsp;khách&nbsp;mang&nbsp;thai&nbsp;từ&nbsp;5&nbsp;tháng&nbsp;trở&nbsp;lên&nbsp;vì&nbsp;lý&nbsp;do&nbsp;an&nbsp;toàn.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đảm&nbsp;bảo&nbsp;sức&nbsp;khỏe&nbsp;phù&nbsp;hợp&nbsp;để&nbsp;tham&nbsp;gia&nbsp;các&nbsp;hoạt&nbsp;động&nbsp;trong&nbsp;tour.</p><p>-&nbsp;Nếu&nbsp;có&nbsp;điều&nbsp;kiện&nbsp;sức&nbsp;khỏe&nbsp;đặc&nbsp;biệt,&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;cho&nbsp;nhân&nbsp;viên&nbsp;tư&nbsp;vấn&nbsp;trước&nbsp;khi&nbsp;đặt&nbsp;tour.&nbsp;Quý&nbsp;khách&nbsp;có&nbsp;thể&nbsp;được&nbsp;yêu&nbsp;cầu&nbsp;cung&nbsp;cấp&nbsp;chứng&nbsp;nhận&nbsp;sức&nbsp;khỏe&nbsp;hoặc&nbsp;ký&nbsp;cam&nbsp;kết&nbsp;trong&nbsp;một&nbsp;số&nbsp;trường&nbsp;hợp&nbsp;cần&nbsp;thiết.</p><p><strong>Quy&nbsp;định&nbsp;theo&nbsp;đoàn:&nbsp;</strong></p><p>-&nbsp;Chương&nbsp;trình&nbsp;có&nbsp;thể&nbsp;điều&nbsp;chỉnh&nbsp;thứ&nbsp;tự&nbsp;tham&nbsp;quan&nbsp;theo&nbsp;tình&nbsp;hình&nbsp;thực&nbsp;tế&nbsp;nhưng&nbsp;vẫn&nbsp;đảm&nbsp;bảo&nbsp;đầy&nbsp;đủ&nbsp;điểm.</p><p>-&nbsp;Tour&nbsp;khởi&nbsp;hành&nbsp;khi&nbsp;đủ&nbsp;15&nbsp;khách&nbsp;người&nbsp;lớn,&nbsp;nếu&nbsp;chưa&nbsp;đủ&nbsp;số&nbsp;lượng&nbsp;công&nbsp;ty&nbsp;sẽ&nbsp;thông&nbsp;báo&nbsp;và&nbsp;thỏa&nbsp;thuận&nbsp;lại&nbsp;ngày&nbsp;khởi&nbsp;hành&nbsp;hoặc&nbsp;hoàn&nbsp;tiền.</p><p>-&nbsp;Do&nbsp;tính&nbsp;chất&nbsp;tour&nbsp;ghép,&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đi&nbsp;theo&nbsp;đoàn&nbsp;suốt&nbsp;hành&nbsp;trình&nbsp;và&nbsp;về&nbsp;đúng&nbsp;ngày&nbsp;kết&nbsp;thúc&nbsp;tour.</p><p>-&nbsp;Các&nbsp;dịch&nbsp;vụ&nbsp;trong&nbsp;chương&nbsp;trình&nbsp;đã&nbsp;được&nbsp;sắp&nbsp;xếp&nbsp;trước&nbsp;theo&nbsp;đoàn;&nbsp;trường&nbsp;hợp&nbsp;không&nbsp;sử&nbsp;dụng&nbsp;vì&nbsp;lý&nbsp;do&nbsp;cá&nbsp;nhân&nbsp;sẽ&nbsp;không&nbsp;được&nbsp;hoàn&nbsp;lại&nbsp;tiền.</p><p><strong>Xuất&nbsp;nhập&nbsp;cảnh:</strong></p><p>-&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đảm&nbsp;bảo&nbsp;giấy&nbsp;tờ&nbsp;cá&nbsp;nhân&nbsp;hợp&nbsp;lệ&nbsp;theo&nbsp;quy&nbsp;định&nbsp;xuất/nhập&nbsp;cảnh,&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.&nbsp;Trường&nbsp;hợp&nbsp;không&nbsp;được&nbsp;xuất/nhập&nbsp;cảnh,&nbsp;không&nbsp;thực&nbsp;hiện&nbsp;được&nbsp;chuyến&nbsp;đi&nbsp;do&nbsp;cơ&nbsp;quan&nbsp;chức&nbsp;năng&nbsp;không&nbsp;chấp&nbsp;thuận&nbsp;(vì&nbsp;bất&nbsp;kỳ&nbsp;lý&nbsp;do&nbsp;gì),&nbsp;chi&nbsp;phí&nbsp;tour&nbsp;sẽ&nbsp;không&nbsp;được&nbsp;hoàn&nbsp;trả.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;hỗ&nbsp;trợ&nbsp;hướng&nbsp;dẫn&nbsp;trong&nbsp;phạm&nbsp;vi&nbsp;có&nbsp;thể&nbsp;để&nbsp;giải&nbsp;quyết&nbsp;cho&nbsp;Quý&nbsp;khách.&nbsp;Mọi&nbsp;chi&nbsp;phí&nbsp;phát&nbsp;sinh&nbsp;Quý&nbsp;khách&nbsp;tự&nbsp;chủ&nbsp;động&nbsp;sắp&nbsp;xếp.</p><p>-&nbsp;Đối&nbsp;với&nbsp;quý&nbsp;khách&nbsp;có&nbsp;thay&nbsp;đổi&nbsp;đáng&nbsp;kể&nbsp;về&nbsp;đặc&nbsp;điểm&nbsp;nhận&nbsp;dạng&nbsp;trên&nbsp;khuôn&nbsp;mặt,&nbsp;ví&nbsp;dụ:&nbsp;phẫu&nbsp;thuật&nbsp;thẩm&nbsp;mỹ,&nbsp;vui&nbsp;lòng&nbsp;làm&nbsp;lại&nbsp;hộ&nbsp;chiếu&nbsp;theo&nbsp;quy&nbsp;định&nbsp;trước&nbsp;khi&nbsp;khởi&nbsp;hành.&nbsp;Trường&nbsp;hợp&nbsp;sử&nbsp;dụng&nbsp;hộ&nbsp;chiếu&nbsp;không&nbsp;còn&nbsp;phù&nbsp;hợp&nbsp;với&nbsp;diện&nbsp;mạo&nbsp;hiện&nbsp;tại&nbsp;và&nbsp;phát&nbsp;sinh&nbsp;vấn&nbsp;đề&nbsp;khi&nbsp;xuất&nbsp;nhập&nbsp;cảnh,&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;long&nbsp;tự&nbsp;chịu&nbsp;trách&nbsp;nhiệm.&nbsp;Các&nbsp;chi&nbsp;phí&nbsp;hủy&nbsp;đổi&nbsp;dịch&nbsp;vụ&nbsp;(nếu&nbsp;có)&nbsp;sẽ&nbsp;được&nbsp;áp&nbsp;dụng&nbsp;theo&nbsp;quy&nbsp;định.</p><p>-&nbsp;Đối&nbsp;với&nbsp;khách&nbsp;đã&nbsp;chuyển&nbsp;giới,&nbsp;thông&nbsp;tin&nbsp;trên&nbsp;Hộ&nbsp;chiếu&nbsp;và&nbsp;CCCD&nbsp;phải&nbsp;thống&nbsp;nhất&nbsp;và&nbsp;trùng&nbsp;khớp.&nbsp;Hình&nbsp;ảnh&nbsp;trên&nbsp;hộ&nbsp;chiếu&nbsp;cần&nbsp;là&nbsp;hình&nbsp;chụp&nbsp;sau&nbsp;khi&nbsp;chuyển&nbsp;giới/phẫu&nbsp;thuật&nbsp;thẩm&nbsp;mỹ,&nbsp;đảm&nbsp;bảo&nbsp;nhận&nbsp;diện&nbsp;rõ&nbsp;ràng&nbsp;theo&nbsp;hiện&nbsp;trạng&nbsp;thực&nbsp;tế,&nbsp;giống&nbsp;với&nbsp;hộ&nbsp;chiếu&nbsp;hiện&nbsp;đang&nbsp;sử&nbsp;dụng.</p><p><strong>Bất&nbsp;khả&nbsp;kháng:</strong></p><p>-&nbsp;Giờ&nbsp;bay&nbsp;có&nbsp;thể&nbsp;thay&nbsp;đổi&nbsp;theo&nbsp;hãng&nbsp;hàng&nbsp;không.</p><p>-&nbsp;Trong&nbsp;các&nbsp;tình&nbsp;huống&nbsp;ngoài&nbsp;khả&nbsp;năng&nbsp;kiểm&nbsp;soát&nbsp;như&nbsp;thời&nbsp;tiết,&nbsp;thiên&nbsp;tai,&nbsp;dịch&nbsp;bệnh,&nbsp;sự&nbsp;cố&nbsp;an&nbsp;ninh,&nbsp;chiến&nbsp;tranh,&nbsp;sân&nbsp;bay&nbsp;đóng&nbsp;cửa&nbsp;hoặc&nbsp;thay&nbsp;đổi&nbsp;từ&nbsp;đơn&nbsp;vị&nbsp;vận&nbsp;chuyển,&nbsp;…&nbsp;lịch&nbsp;trình&nbsp;có&nbsp;thể&nbsp;được&nbsp;điều&nbsp;chỉnh&nbsp;để&nbsp;đảm&nbsp;bảo&nbsp;an&nbsp;toàn&nbsp;và&nbsp;quyền&nbsp;lợi&nbsp;cho&nbsp;Quý&nbsp;khách.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;nỗ&nbsp;lực&nbsp;tối&nbsp;đa&nbsp;để&nbsp;hỗ&nbsp;trợ&nbsp;và&nbsp;phối&nbsp;hợp&nbsp;cùng&nbsp;Quý&nbsp;khách&nbsp;xử&nbsp;lý&nbsp;phát&nbsp;sinh.&nbsp;Tuy&nbsp;nhiên,&nbsp;các&nbsp;chi&nbsp;phí&nbsp;liên&nbsp;quan&nbsp;như&nbsp;ăn&nbsp;uống,&nbsp;đi&nbsp;lại,&nbsp;lưu&nbsp;trú,&nbsp;đổi/đặt&nbsp;lại&nbsp;vé&nbsp;…&nbsp;(nếu&nbsp;có)&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;lòng&nbsp;thanh&nbsp;toán&nbsp;theo&nbsp;thực&nbsp;tế.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;đồng&nbsp;hành&nbsp;và&nbsp;hỗ&nbsp;trợ&nbsp;để&nbsp;Quý&nbsp;khách&nbsp;có&nbsp;phương&nbsp;án&nbsp;phù&nbsp;hợp&nbsp;và&nbsp;thuận&nbsp;tiện&nbsp;nhất.</p><p>Hướng&nbsp;dẫn&nbsp;viên</p><p>-&nbsp;Hướng&nbsp;Dẫn&nbsp;Viên&nbsp;(HDV)&nbsp;sẽ&nbsp;liên&nbsp;lạc&nbsp;với&nbsp;Quý&nbsp;Khách&nbsp;khoảng&nbsp;2&nbsp;ngày&nbsp;trước&nbsp;khi&nbsp;khởi&nbsp;hành&nbsp;để&nbsp;sắp&nbsp;xếp&nbsp;giờ&nbsp;đón&nbsp;và&nbsp;cung&nbsp;cấp&nbsp;các&nbsp;thông&nbsp;tin&nbsp;cần&nbsp;thiết&nbsp;cho&nbsp;chuyển&nbsp;đi.</p>', '<p>Không&nbsp;có</p>', 3, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 'promotion', 'active'),
-	(15, 2, 'Tour Đài Loan 5N4Đ: HCM - Cao Hùng - Đài Trung - Đài Bắc - Thủy Cung X-park', 'tour-dai-loan-5n4d-hcm-cao-hung-dai-trung-dai-bac-thuy-cung-x-park', 'Tour Đài Loan 5N4Đ: HCM - Cao Hùng - Đài Trung - Đài Bắc - Thủy Cung X-park', 'Check-in Tháp Taipei 101: Biểu tượng Đài Loan, tự do mua sắm.\r\nDu thuyền tại thiên đường hạ giới ngoài đời thực – Hồ Nhật Nguyệt\r\nTặng “đèn Thiên Đăng” tại điểm phố cổ Thập Phần.\r\nTặng vé tham quan Bảo tàng Kỳ Mỹ (Chimei Museum) - Nơi hội tụ của nghệ thuật và lịch sử Đài Loan.\r\nChiêm bái “Phật Quang Sơn Tự” – Kinh đô Phật Giáo của Đài Loan.', '<p>Vận&nbsp;Chuyển:</p><p></p><p>-&nbsp;Vé&nbsp;máy&nbsp;bay&nbsp;khứ&nbsp;hồi&nbsp;theo&nbsp;hãng&nbsp;Eva&nbsp;Air&nbsp;(23kg&nbsp;hành&nbsp;lý&nbsp;ký&nbsp;gửi&nbsp;+&nbsp;xách&nbsp;tay&nbsp;7kg)&nbsp;</p><p></p><p>-&nbsp;Xe&nbsp;máy&nbsp;lạnh&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;tuyến.</p><p></p><p>-&nbsp;Phí&nbsp;an&nbsp;ninh&nbsp;sân&nbsp;bay,&nbsp;bảo&nbsp;hiểm&nbsp;hàng&nbsp;không,&nbsp;thuế&nbsp;phi&nbsp;trường&nbsp;2&nbsp;nước&nbsp;(theo&nbsp;quy&nbsp;định&nbsp;tại&nbsp;thời&nbsp;điểm&nbsp;xuất&nbsp;vé)</p><p></p><p>Lưu&nbsp;Trú:</p><p></p><p>-&nbsp;Khách&nbsp;sạn&nbsp;tiêu&nbsp;chuẩn&nbsp;3*&nbsp;địa&nbsp;phương&nbsp;(2&nbsp;khách/phòng;&nbsp;khách&nbsp;lẻ&nbsp;nam/nữ&nbsp;có&nbsp;thể&nbsp;bố&nbsp;trí&nbsp;ghép&nbsp;phòng)</p><p></p><p>Khác:&nbsp;</p><p></p><p>-&nbsp;Visa&nbsp;nhập&nbsp;cảnh&nbsp;Đài&nbsp;Loan&nbsp;theo&nbsp;chương&nbsp;trình.</p><p></p><p>-&nbsp;Vé&nbsp;tham&nbsp;quan&nbsp;theo&nbsp;chương&nbsp;trình:&nbsp;Tặng&nbsp;thả&nbsp;đèn&nbsp;Thiên&nbsp;Đăng&nbsp;+&nbsp;lớp&nbsp;học&nbsp;làm&nbsp;bánh&nbsp;dứa&nbsp;Virgo&nbsp;Kobo&nbsp;Pineapple&nbsp;Cake&nbsp;DIY.</p><p></p><p>-&nbsp;Các&nbsp;bữa&nbsp;ăn&nbsp;theo&nbsp;chương&nbsp;trình:&nbsp;Tặng&nbsp;bữa&nbsp;Buffet&nbsp;lẩu,&nbsp;tặng&nbsp;bữa&nbsp;Mì-Bò&nbsp;Bít&nbsp;Tết,&nbsp;tặng&nbsp;bữa&nbsp;hấp&nbsp;thủy&nbsp;nhiệt&nbsp;Hongkong,&nbsp;tặng&nbsp;ly&nbsp;trà&nbsp;sữa&nbsp;truyền&nbsp;thống.&nbsp;(đảm&nbsp;bảo&nbsp;số&nbsp;lượng&nbsp;&amp;&nbsp;chất&nbsp;lượng&nbsp;tương&nbsp;đương&nbsp;nếu&nbsp;có&nbsp;điều&nbsp;chỉnh)</p><p></p><p>-&nbsp;Nước&nbsp;suối&nbsp;01&nbsp;chai/người/ngày.</p><p></p><p>-&nbsp;Bảo&nbsp;hiểm&nbsp;du&nbsp;lịch&nbsp;quốc&nbsp;tế&nbsp;suốt&nbsp;tuyến.&nbsp;</p><p></p><p>-&nbsp;Trưởng&nbsp;đoàn&nbsp;và&nbsp;HDV&nbsp;địa&nbsp;phương&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;hành&nbsp;trình.</p><p></p><p>-&nbsp;Thuế&nbsp;VAT.&nbsp;</p>', '<p>Vận&nbsp;Chuyển:</p><p></p><p>-&nbsp;Vé&nbsp;máy&nbsp;bay&nbsp;khứ&nbsp;hồi&nbsp;theo&nbsp;hãng&nbsp;Eva&nbsp;Air&nbsp;(23kg&nbsp;hành&nbsp;lý&nbsp;ký&nbsp;gửi&nbsp;+&nbsp;xách&nbsp;tay&nbsp;7kg)&nbsp;</p><p></p><p>-&nbsp;Xe&nbsp;máy&nbsp;lạnh&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;tuyến.</p><p></p><p>-&nbsp;Phí&nbsp;an&nbsp;ninh&nbsp;sân&nbsp;bay,&nbsp;bảo&nbsp;hiểm&nbsp;hàng&nbsp;không,&nbsp;thuế&nbsp;phi&nbsp;trường&nbsp;2&nbsp;nước&nbsp;(theo&nbsp;quy&nbsp;định&nbsp;tại&nbsp;thời&nbsp;điểm&nbsp;xuất&nbsp;vé)</p><p></p><p>Lưu&nbsp;Trú:</p><p></p><p>-&nbsp;Khách&nbsp;sạn&nbsp;tiêu&nbsp;chuẩn&nbsp;3*&nbsp;địa&nbsp;phương&nbsp;(2&nbsp;khách/phòng;&nbsp;khách&nbsp;lẻ&nbsp;nam/nữ&nbsp;có&nbsp;thể&nbsp;bố&nbsp;trí&nbsp;ghép&nbsp;phòng)</p><p></p><p>Khác:&nbsp;</p><p></p><p>-&nbsp;Visa&nbsp;nhập&nbsp;cảnh&nbsp;Đài&nbsp;Loan&nbsp;theo&nbsp;chương&nbsp;trình.</p><p></p><p>-&nbsp;Vé&nbsp;tham&nbsp;quan&nbsp;theo&nbsp;chương&nbsp;trình:&nbsp;Tặng&nbsp;thả&nbsp;đèn&nbsp;Thiên&nbsp;Đăng&nbsp;+&nbsp;lớp&nbsp;học&nbsp;làm&nbsp;bánh&nbsp;dứa&nbsp;Virgo&nbsp;Kobo&nbsp;Pineapple&nbsp;Cake&nbsp;DIY.</p><p></p><p>-&nbsp;Các&nbsp;bữa&nbsp;ăn&nbsp;theo&nbsp;chương&nbsp;trình:&nbsp;Tặng&nbsp;bữa&nbsp;Buffet&nbsp;lẩu,&nbsp;tặng&nbsp;bữa&nbsp;Mì-Bò&nbsp;Bít&nbsp;Tết,&nbsp;tặng&nbsp;bữa&nbsp;hấp&nbsp;thủy&nbsp;nhiệt&nbsp;Hongkong,&nbsp;tặng&nbsp;ly&nbsp;trà&nbsp;sữa&nbsp;truyền&nbsp;thống.&nbsp;(đảm&nbsp;bảo&nbsp;số&nbsp;lượng&nbsp;&amp;&nbsp;chất&nbsp;lượng&nbsp;tương&nbsp;đương&nbsp;nếu&nbsp;có&nbsp;điều&nbsp;chỉnh)</p><p></p><p>-&nbsp;Nước&nbsp;suối&nbsp;01&nbsp;chai/người/ngày.</p><p></p><p>-&nbsp;Bảo&nbsp;hiểm&nbsp;du&nbsp;lịch&nbsp;quốc&nbsp;tế&nbsp;suốt&nbsp;tuyến.&nbsp;</p><p></p><p>-&nbsp;Trưởng&nbsp;đoàn&nbsp;và&nbsp;HDV&nbsp;địa&nbsp;phương&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;hành&nbsp;trình.</p><p></p><p>-&nbsp;Thuế&nbsp;VAT.&nbsp;</p>', '<p>Chính&nbsp;sách&nbsp;trẻ&nbsp;em</p><p><strong>1.&nbsp;Quy&nbsp;định&nbsp;chung:</strong></p><p>-&nbsp;Mỗi&nbsp;02&nbsp;người&nbsp;lớn&nbsp;được&nbsp;kèm&nbsp;01&nbsp;trẻ&nbsp;em.</p><p>-&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi,&nbsp;áp&nbsp;dụng&nbsp;mức&nbsp;giá&nbsp;theo&nbsp;quy&nbsp;định&nbsp;của&nbsp;từng&nbsp;nhóm&nbsp;tuổi&nbsp;(nêu&nbsp;bên&nbsp;dưới).</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;ngủ&nbsp;chung&nbsp;giường&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;Nếu&nbsp;cần&nbsp;giường&nbsp;riêng:&nbsp;Tính&nbsp;như&nbsp;người&nbsp;lớn</p><p>-&nbsp;Chi&nbsp;phí&nbsp;ngoài&nbsp;chương&nbsp;trình&nbsp;(nếu&nbsp;có)&nbsp;gia&nbsp;đình&nbsp;tự&nbsp;chi&nbsp;trả.</p><p><strong>2.&nbsp;Quy&nbsp;định&nbsp;theo&nbsp;độ&nbsp;tuổi:</strong></p><p>-&nbsp;Trẻ&nbsp;dưới&nbsp;2&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;đã&nbsp;bao&nbsp;gồm&nbsp;vé&nbsp;máy&nbsp;bay,&nbsp;không&nbsp;có&nbsp;ghế&nbsp;riêng,&nbsp;ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;2&nbsp;-&nbsp;11&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;bao&nbsp;gồm&nbsp;đầy&nbsp;đủ&nbsp;dịch&nbsp;vụ&nbsp;trong&nbsp;chương&nbsp;trình.&nbsp;Ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi:&nbsp;tính&nbsp;100%&nbsp;giá&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;12&nbsp;tuổi&nbsp;trở&nbsp;lên:&nbsp;tính&nbsp;giá&nbsp;như&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trong&nbsp;trường&nbsp;hợp&nbsp;chỉ&nbsp;có&nbsp;1&nbsp;khách&nbsp;(người&nbsp;lớn)&nbsp;đi&nbsp;với&nbsp;1&nbsp;bé&nbsp;(dưới&nbsp;12&nbsp;tuổi),&nbsp;bé&nbsp;được&nbsp;tính&nbsp;giá&nbsp;vé&nbsp;người&nbsp;lớn&nbsp;để&nbsp;đảm&nbsp;bảo&nbsp;dịch&nbsp;vụ&nbsp;theo&nbsp;quy&nbsp;định.</p><p><strong>Giấy&nbsp;tờ&nbsp;tùy&nbsp;thân&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour</strong></p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;bản&nbsp;chính&nbsp;và&nbsp;các&nbsp;giấy&nbsp;tờ&nbsp;cần&nbsp;thiết</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;cần&nbsp;có&nbsp;bố&nbsp;mẹ&nbsp;hoặc&nbsp;người&nbsp;thân&nbsp;trên&nbsp;18&nbsp;tuổi&nbsp;đi&nbsp;cùng;&nbsp;trường&nbsp;hợp&nbsp;đi&nbsp;cùng&nbsp;người&nbsp;thân&nbsp;cần&nbsp;có&nbsp;giấy&nbsp;ủy&nbsp;quyền&nbsp;hợp&nbsp;lệ.</p>', '<p>Chính&nbsp;sách&nbsp;hủy&nbsp;&amp;&nbsp;thay&nbsp;đổi</p><p>-&nbsp;Huỷ&nbsp;từ&nbsp;thời&nbsp;điểm&nbsp;đăng&nbsp;ký&nbsp;đến&nbsp;trước&nbsp;22&nbsp;ngày:&nbsp;Phí&nbsp;hủy&nbsp;là&nbsp;2.000.000&nbsp;VNĐ</p><p>-&nbsp;Hủy&nbsp;trước&nbsp;15&nbsp;-21&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;phí&nbsp;hủy&nbsp;là&nbsp;50%&nbsp;trên&nbsp;giá&nbsp;tour.</p><p>-&nbsp;Hủy&nbsp;trước&nbsp;7-14&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;phí&nbsp;hủy&nbsp;là&nbsp;70%&nbsp;trên&nbsp;giá&nbsp;tour.</p><p>-&nbsp;Sau&nbsp;thời&nbsp;gian&nbsp;trên:&nbsp;100%&nbsp;tổng&nbsp;giá&nbsp;tour.</p><p>-&nbsp;Trường&nbsp;hợp&nbsp;Quý&nbsp;khách&nbsp;bị&nbsp;từ&nbsp;chối&nbsp;cấp&nbsp;visa,&nbsp;sẽ&nbsp;được&nbsp;hoàn&nbsp;cọc&nbsp;100%&nbsp;(trừ&nbsp;một&nbsp;số&nbsp;trường&nbsp;hợp&nbsp;cố&nbsp;ý&nbsp;hoặc&nbsp;không&nbsp;hợp&nbsp;tác&nbsp;dẫn&nbsp;tới&nbsp;bị&nbsp;từ&nbsp;chối&nbsp;visa,&nbsp;áp&nbsp;dụng&nbsp;phí&nbsp;hủy:&nbsp;2.000.000&nbsp;VNĐ/khách).</p><p>-&nbsp;Thời&nbsp;gian&nbsp;hủy/thay&nbsp;đổi&nbsp;tour&nbsp;được&nbsp;ghi&nbsp;nhận&nbsp;trong&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;và&nbsp;tính&nbsp;theo&nbsp;ngày&nbsp;làm&nbsp;việc&nbsp;(không&nbsp;bao&nbsp;gồm&nbsp;Thứ&nbsp;Bảy,&nbsp;Chủ&nbsp;Nhật&nbsp;và&nbsp;Lễ/Tết).&nbsp;Các&nbsp;yêu&nbsp;cầu&nbsp;gửi&nbsp;ngoài&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;sẽ&nbsp;được&nbsp;tính&nbsp;từ&nbsp;đầu&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;của&nbsp;ngày&nbsp;kế&nbsp;tiếp.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;lòng&nbsp;gửi&nbsp;yêu&nbsp;cầu&nbsp;hủy&nbsp;qua&nbsp;email&nbsp;hoặc&nbsp;kênh&nbsp;liên&nbsp;hệ&nbsp;chính&nbsp;thức&nbsp;của&nbsp;công&nbsp;ty&nbsp;để&nbsp;được&nbsp;ghi&nbsp;nhận.&nbsp;Thông&nbsp;báo&nbsp;qua&nbsp;điện&nbsp;thoại&nbsp;sẽ&nbsp;chưa&nbsp;được&nbsp;xem&nbsp;là&nbsp;căn&nbsp;cứ&nbsp;áp&nbsp;dụng&nbsp;chính&nbsp;sách&nbsp;hủy.</p><p>-&nbsp;Nếu&nbsp;Quý&nbsp;khách&nbsp;hủy&nbsp;tour&nbsp;sau&nbsp;khi&nbsp;visa&nbsp;đã&nbsp;được&nbsp;cấp,&nbsp;công&nbsp;ty&nbsp;sẽ&nbsp;thực&nbsp;hiện&nbsp;thủ&nbsp;tục&nbsp;hủy&nbsp;visa&nbsp;theo&nbsp;quy&nbsp;định.</p><p>Thông&nbsp;tin&nbsp;Visa</p><p><strong>VISA&nbsp;ĐÀI&nbsp;LOAN&nbsp;QUAN&nbsp;HỒNG</strong>&nbsp;(HỒ&nbsp;SƠ&nbsp;SCAN&nbsp;RÕ&nbsp;HOẶC&nbsp;CHỤP&nbsp;HÌNH)</p><p>Để&nbsp;chuẩn&nbsp;bị&nbsp;tốt&nbsp;nhất&nbsp;cho&nbsp;việc&nbsp;xin&nbsp;visa&nbsp;Quan&nbsp;Hồng&nbsp;nhập&nbsp;cảnh&nbsp;vào&nbsp;Đài&nbsp;Loan,&nbsp;công&nbsp;ty&nbsp;xin&nbsp;gửi&nbsp;Quý&nbsp;Khách&nbsp;những&nbsp;thông&nbsp;tin&nbsp;hồ&nbsp;sơ&nbsp;cơ&nbsp;bản&nbsp;để&nbsp;chuẩn&nbsp;bị&nbsp;như&nbsp;sau:&nbsp;Ngoài&nbsp;ra,&nbsp;công&nbsp;ty&nbsp;sẽ&nbsp;cập&nbsp;nhật&nbsp;các&nbsp;thủ&nbsp;tục&nbsp;cần&nbsp;thiết&nbsp;cho&nbsp;quý&nbsp;khách&nbsp;nếu&nbsp;có&nbsp;bất&nbsp;cứ&nbsp;thay&nbsp;đổi&nbsp;nào&nbsp;từ&nbsp;phía&nbsp;lãnh&nbsp;sự&nbsp;quán.</p><p><strong>Hồ&nbsp;sơ&nbsp;xin&nbsp;visa:</strong></p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;còn&nbsp;hạn&nbsp;trên&nbsp;6&nbsp;tháng&nbsp;tính&nbsp;từ&nbsp;ngày&nbsp;kết&nbsp;thúc&nbsp;tour.&nbsp;Scan/Chụp&nbsp;rõ&nbsp;không&nbsp;bóng,&nbsp;không&nbsp;chói,&nbsp;thấy&nbsp;đầy&nbsp;đủ&nbsp;thông&nbsp;tin.</p><p>-&nbsp;Nếu&nbsp;hộ&nbsp;chiếu&nbsp;không&nbsp;có&nbsp;mục&nbsp;nơi&nbsp;sinh&nbsp;thì&nbsp;Scan/Chụp&nbsp;thêm&nbsp;bị&nbsp;chú&nbsp;nơi&nbsp;sinh&nbsp;hoặc&nbsp;căn&nbsp;cước&nbsp;công&nbsp;dân&nbsp;gốc&nbsp;2&nbsp;mặt</p><p>-&nbsp;Hình&nbsp;thẻ&nbsp;nền&nbsp;trắng&nbsp;chụp&nbsp;mới&nbsp;nhất&nbsp;gửi&nbsp;File&nbsp;mềm&nbsp;(thấy&nbsp;rõ&nbsp;ngũ&nbsp;quan&nbsp;trán,&nbsp;tai,&nbsp;chân&nbsp;mày,&nbsp;không&nbsp;đeo&nbsp;kính,&nbsp;không&nbsp;đeo&nbsp;bông&nbsp;tai,&nbsp;không&nbsp;cười&nbsp;nhe&nbsp;răng,&nbsp;không&nbsp;trùng&nbsp;hình&nbsp;hộ&nbsp;chiếu)</p><p>-&nbsp;Thông&nbsp;tin&nbsp;khai&nbsp;form&nbsp;xin&nbsp;visa&nbsp;Đài&nbsp;Loan&nbsp;theo&nbsp;mẫu</p>', 2, 1, '/uploads/banners/banner-1774264639505-576996427.webp', 'featured', 'active');
+	(13, 2, 'Tour Malaysia - Singapore 5N4Đ: Khám Phá Văn Hóa Đông Nam Á', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', 'Khám phá Gardens by the Bay: Vườn sinh thái biểu tượng Singapore.', 'Vận chuyển\r\n- Vé máy bay khứ hồi theo hãng Vietnam Airline (23kg hành lý ký gửi + xách tay 10kg).\r\n- Xe máy lạnh phục vụ suốt tuyến.\r\n- Phí an ninh sân bay, bảo hiểm hàng không, thuế phi trường 2 nước (theo quy định tại thời điểm xuất vé).\r\nLưu trú\r\n- Khách sạn tiêu chuẩn 3-4* địa phương (2 khách/phòng; khách lẻ nam/nữ có thể bố trí phòng phù hợp).\r\nDịch vụ khác\r\n- Vé tham quan trong chương trình. \r\n- Các bữa ăn theo chương trình. (đảm bảo số lượng & chất lượng tương đương nếu có điều chỉnh).\r\n- Nước suối 01 chai/khách/ngày.\r\n- Bảo hiểm du lịch quốc tế. \r\n- Trưởng đoàn và HDV địa phương phục vụ suốt hành trình.\r\n- Tặng nón du lịch. \r\n- Thuế VAT.', '<p><strong>Vận&nbsp;chuyển</strong></p><p>-&nbsp;Vé&nbsp;máy&nbsp;bay&nbsp;khứ&nbsp;hồi&nbsp;theo&nbsp;hãng&nbsp;Vietnam&nbsp;Airline&nbsp;(23kg&nbsp;hành&nbsp;lý&nbsp;ký&nbsp;gửi&nbsp;+&nbsp;xách&nbsp;tay&nbsp;10kg).</p><p>-&nbsp;Xe&nbsp;máy&nbsp;lạnh&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;tuyến.</p><p>-&nbsp;Phí&nbsp;an&nbsp;ninh&nbsp;sân&nbsp;bay,&nbsp;bảo&nbsp;hiểm&nbsp;hàng&nbsp;không,&nbsp;thuế&nbsp;phi&nbsp;trường&nbsp;2&nbsp;nước&nbsp;(theo&nbsp;quy&nbsp;định&nbsp;tại&nbsp;thời&nbsp;điểm&nbsp;xuất&nbsp;vé).</p><p><strong>Lưu&nbsp;trú</strong></p><p>-&nbsp;Khách&nbsp;sạn&nbsp;tiêu&nbsp;chuẩn&nbsp;3-4*&nbsp;địa&nbsp;phương&nbsp;(2&nbsp;khách/phòng;&nbsp;khách&nbsp;lẻ&nbsp;nam/nữ&nbsp;có&nbsp;thể&nbsp;bố&nbsp;trí&nbsp;phòng&nbsp;phù&nbsp;hợp).</p><p><strong>Dịch&nbsp;vụ&nbsp;khác</strong></p><p>-&nbsp;Vé&nbsp;tham&nbsp;quan&nbsp;trong&nbsp;chương&nbsp;trình.&nbsp;</p><p>-&nbsp;Các&nbsp;bữa&nbsp;ăn&nbsp;theo&nbsp;chương&nbsp;trình.&nbsp;(đảm&nbsp;bảo&nbsp;số&nbsp;lượng&nbsp;&amp;&nbsp;chất&nbsp;lượng&nbsp;tương&nbsp;đương&nbsp;nếu&nbsp;có&nbsp;điều&nbsp;chỉnh).</p><p>-&nbsp;Nước&nbsp;suối&nbsp;01&nbsp;chai/khách/ngày.</p><p>-&nbsp;Bảo&nbsp;hiểm&nbsp;du&nbsp;lịch&nbsp;quốc&nbsp;tế.&nbsp;</p><p>-&nbsp;Trưởng&nbsp;đoàn&nbsp;và&nbsp;HDV&nbsp;địa&nbsp;phương&nbsp;phục&nbsp;vụ&nbsp;suốt&nbsp;hành&nbsp;trình.</p><p>-&nbsp;Tặng&nbsp;nón&nbsp;du&nbsp;lịch.&nbsp;</p><p>-&nbsp;Thuế&nbsp;VAT.</p>', '<p>-&nbsp;Phụ&nbsp;thu&nbsp;phòng&nbsp;đơn&nbsp;(nếu&nbsp;có):&nbsp;4.300.000đ/khách/tour&nbsp;-&nbsp;4.800.000đ/khách/tour.&nbsp;</p><p>-&nbsp;Tips&nbsp;cho&nbsp;tài&nbsp;xế&nbsp;và&nbsp;hướng&nbsp;dẫn&nbsp;viên:&nbsp;25&nbsp;USD/khách/tour.</p><p>-&nbsp;Phụ&nbsp;thu&nbsp;đối&nbsp;với&nbsp;khách&nbsp;mang&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài:&nbsp;660.000đ/khách.</p><p>-&nbsp;Visa&nbsp;tái&nbsp;nhập&nbsp;Việt&nbsp;Nam&nbsp;cho&nbsp;khách&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài&nbsp;theo&nbsp;quy&nbsp;định&nbsp;hiện&nbsp;hành&nbsp;(nếu&nbsp;có).</p><p>-&nbsp;Chi&nbsp;phí&nbsp;cá&nbsp;nhân:&nbsp;hành&nbsp;lý&nbsp;quá&nbsp;cước,&nbsp;điện&nbsp;thoại,&nbsp;giặt&nbsp;ủi,&nbsp;tham&nbsp;quan,&nbsp;chi&nbsp;tiêu&nbsp;ngoài&nbsp;chương&nbsp;trình.</p>', '<p>Chính&nbsp;sách&nbsp;trẻ&nbsp;em</p><p><strong>1.&nbsp;Quy&nbsp;định&nbsp;chung:</strong></p><p>-&nbsp;Mỗi&nbsp;02&nbsp;người&nbsp;lớn&nbsp;được&nbsp;kèm&nbsp;01&nbsp;trẻ&nbsp;em.</p><p>-&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi,&nbsp;áp&nbsp;dụng&nbsp;mức&nbsp;giá&nbsp;theo&nbsp;quy&nbsp;định&nbsp;của&nbsp;từng&nbsp;nhóm&nbsp;tuổi&nbsp;(nêu&nbsp;bên&nbsp;dưới).</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;ngủ&nbsp;chung&nbsp;giường&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;→&nbsp;Nếu&nbsp;cần&nbsp;giường&nbsp;riêng:&nbsp;Tính&nbsp;như&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Chi&nbsp;phí&nbsp;ngoài&nbsp;chương&nbsp;trình&nbsp;(nếu&nbsp;có)&nbsp;gia&nbsp;đình&nbsp;tự&nbsp;chi&nbsp;trả.</p><p><strong>2.&nbsp;Quy&nbsp;định&nbsp;theo&nbsp;độ&nbsp;tuổi:</strong></p><p>-&nbsp;Trẻ&nbsp;dưới&nbsp;2&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;đã&nbsp;bao&nbsp;gồm&nbsp;vé&nbsp;máy&nbsp;bay,&nbsp;không&nbsp;có&nbsp;ghế&nbsp;riêng,&nbsp;ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;2&nbsp;-&nbsp;10&nbsp;tuổi:&nbsp;Giá&nbsp;như&nbsp;trên&nbsp;website,&nbsp;bao&nbsp;gồm&nbsp;đầy&nbsp;đủ&nbsp;dịch&nbsp;vụ&nbsp;trong&nbsp;chương&nbsp;trình.&nbsp;Ngủ&nbsp;chung&nbsp;với&nbsp;bố&nbsp;mẹ.&nbsp;Từ&nbsp;trẻ&nbsp;thứ&nbsp;02&nbsp;trở&nbsp;đi:&nbsp;tính&nbsp;100%&nbsp;giá&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trẻ&nbsp;từ&nbsp;11&nbsp;tuổi&nbsp;trở&nbsp;lên:&nbsp;tính&nbsp;giá&nbsp;như&nbsp;người&nbsp;lớn.</p><p>-&nbsp;Trong&nbsp;trường&nbsp;hợp&nbsp;chỉ&nbsp;có&nbsp;1&nbsp;khách&nbsp;(người&nbsp;lớn)&nbsp;đi&nbsp;với&nbsp;1&nbsp;bé&nbsp;(dưới&nbsp;12&nbsp;tuổi),&nbsp;bé&nbsp;được&nbsp;tính&nbsp;giá&nbsp;vé&nbsp;người&nbsp;lớn&nbsp;để&nbsp;đảm&nbsp;bảo&nbsp;dịch&nbsp;vụ&nbsp;theo&nbsp;quy&nbsp;định.</p><p><strong>Giấy&nbsp;tờ&nbsp;tùy&nbsp;thân&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour</strong></p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;bản&nbsp;chính&nbsp;và&nbsp;các&nbsp;giấy&nbsp;tờ&nbsp;cần&nbsp;thiết.</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;dưới&nbsp;14&nbsp;tuổi&nbsp;bắt&nbsp;buộc&nbsp;mang&nbsp;theo&nbsp;giấy&nbsp;khai&nbsp;sinh.&nbsp;</p><p>-&nbsp;Trẻ&nbsp;em&nbsp;cần&nbsp;có&nbsp;bố&nbsp;mẹ&nbsp;hoặc&nbsp;người&nbsp;thân&nbsp;trên&nbsp;18&nbsp;tuổi&nbsp;đi&nbsp;cùng;&nbsp;trường&nbsp;hợp&nbsp;đi&nbsp;cùng&nbsp;người&nbsp;thân&nbsp;cần&nbsp;có&nbsp;giấy&nbsp;ủy&nbsp;quyền&nbsp;hợp&nbsp;lệ.</p><p>Chính&nbsp;sách&nbsp;hủy&nbsp;&amp;&nbsp;thay&nbsp;đổi</p><p>-&nbsp;Từ&nbsp;thời&nbsp;điểm&nbsp;đăng&nbsp;ký&nbsp;đến&nbsp;trước&nbsp;30&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;Phí&nbsp;hủy&nbsp;50%&nbsp;tiền&nbsp;cọc.</p><p>-&nbsp;Từ&nbsp;15&nbsp;trước&nbsp;ngày&nbsp;khởi&nbsp;hành:&nbsp;Phí&nbsp;hủy&nbsp;70%&nbsp;tổng&nbsp;giá&nbsp;tour.&nbsp;</p><p>-&nbsp;Sau&nbsp;thời&nbsp;gian&nbsp;trên:&nbsp;Phí&nbsp;hủy&nbsp;100%&nbsp;tổng&nbsp;giá&nbsp;tour.</p><p>-&nbsp;Thời&nbsp;gian&nbsp;hủy/thay&nbsp;đổi&nbsp;tour&nbsp;được&nbsp;ghi&nbsp;nhận&nbsp;trong&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;và&nbsp;tính&nbsp;theo&nbsp;ngày&nbsp;làm&nbsp;việc&nbsp;(không&nbsp;bao&nbsp;gồm&nbsp;Thứ&nbsp;Bảy,&nbsp;Chủ&nbsp;Nhật&nbsp;và&nbsp;Lễ/Tết).&nbsp;Các&nbsp;yêu&nbsp;cầu&nbsp;gửi&nbsp;ngoài&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;sẽ&nbsp;được&nbsp;tính&nbsp;từ&nbsp;đầu&nbsp;giờ&nbsp;làm&nbsp;việc&nbsp;của&nbsp;ngày&nbsp;kế&nbsp;tiếp.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;lòng&nbsp;gửi&nbsp;yêu&nbsp;cầu&nbsp;hủy&nbsp;qua&nbsp;email&nbsp;hoặc&nbsp;kênh&nbsp;liên&nbsp;hệ&nbsp;chính&nbsp;thức&nbsp;của&nbsp;công&nbsp;ty&nbsp;để&nbsp;được&nbsp;ghi&nbsp;nhận.&nbsp;Thông&nbsp;báo&nbsp;qua&nbsp;điện&nbsp;thoại&nbsp;sẽ&nbsp;chưa&nbsp;được&nbsp;xem&nbsp;là&nbsp;căn&nbsp;cứ&nbsp;áp&nbsp;dụng&nbsp;chính&nbsp;sách&nbsp;hủy.</p><p>Thông&nbsp;tin&nbsp;Visa</p><p>-&nbsp;Miễn&nbsp;visa&nbsp;cho&nbsp;khách&nbsp;mang&nbsp;quốc&nbsp;tịch&nbsp;Việt&nbsp;Nam.</p><p>-&nbsp;Hộ&nbsp;chiếu&nbsp;nguyên&nbsp;vẹn&nbsp;và&nbsp;còn&nbsp;thời&nbsp;hạn&nbsp;sử&nbsp;dụng&nbsp;6&nbsp;tháng&nbsp;tính&nbsp;từ&nbsp;ngày&nbsp;kết&nbsp;thúc&nbsp;tour.&nbsp;</p><p><strong>Lưu&nbsp;ý&nbsp;về&nbsp;tình&nbsp;trạng&nbsp;cư&nbsp;trú</strong></p><p>-&nbsp;Quý&nbsp;khách&nbsp;mang&nbsp;2&nbsp;quốc&nbsp;tịch,&nbsp;Travel&nbsp;Document&nbsp;hoặc&nbsp;tình&nbsp;trạng&nbsp;cư&nbsp;trú&nbsp;đặc&nbsp;biệt&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;khi&nbsp;đăng&nbsp;ký&nbsp;và&nbsp;cung&nbsp;cấp&nbsp;đầy&nbsp;đủ&nbsp;giấy&nbsp;tờ&nbsp;liên&nbsp;quan.</p><p>-&nbsp;Khách&nbsp;chỉ&nbsp;có&nbsp;thẻ&nbsp;xanh&nbsp;nhưng&nbsp;không&nbsp;còn&nbsp;hộ&nbsp;chiếu&nbsp;Việt&nbsp;Nam&nbsp;còn&nbsp;hiệu&nbsp;lực&nbsp;sẽ&nbsp;không&nbsp;đủ&nbsp;điều&nbsp;kiện&nbsp;đăng&nbsp;ký&nbsp;tour&nbsp;sang&nbsp;nước&nbsp;thứ&nbsp;ba.</p><p>-&nbsp;Khách&nbsp;là&nbsp;Việt&nbsp;Kiều&nbsp;hoặc&nbsp;quốc&nbsp;tịch&nbsp;nước&nbsp;ngoài&nbsp;có&nbsp;visa&nbsp;rời&nbsp;nhập&nbsp;cảnh&nbsp;Việt&nbsp;Nam&nbsp;cần&nbsp;mang&nbsp;theo&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.</p><p>-&nbsp;Trường&nbsp;hợp&nbsp;sử&nbsp;dụng&nbsp;ABTC&nbsp;(APEC),&nbsp;hộ&nbsp;chiếu&nbsp;công&nbsp;vụ,&nbsp;ngoại&nbsp;giao&nbsp;hoặc&nbsp;tự&nbsp;xin&nbsp;visa,&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;trước&nbsp;để&nbsp;được&nbsp;tư&nbsp;vấn&nbsp;phù&nbsp;hợp.</p><p>Điều&nbsp;kiện&nbsp;tham&nbsp;gia&nbsp;tour</p><p><strong>Độ&nbsp;tuổi&nbsp;và&nbsp;sức&nbsp;khỏe:</strong></p><p>-&nbsp;Tour&nbsp;áp&nbsp;dụng&nbsp;cho&nbsp;khách&nbsp;dưới&nbsp;70&nbsp;tuổi.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;từ&nbsp;70&nbsp;tuổi&nbsp;trở&nbsp;lên&nbsp;cần&nbsp;đóng&nbsp;thêm&nbsp;phí&nbsp;bảo&nbsp;hiểm&nbsp;cao&nbsp;cấp&nbsp;theo&nbsp;quy&nbsp;định.</p><p>-&nbsp;Từ&nbsp;75&nbsp;tuổi&nbsp;trở&nbsp;lên&nbsp;cần&nbsp;cung&nbsp;cấp&nbsp;giấy&nbsp;xác&nbsp;nhận&nbsp;đủ&nbsp;sức&nbsp;khỏe&nbsp;do&nbsp;cơ&nbsp;sở&nbsp;y&nbsp;tế&nbsp;có&nbsp;thẩm&nbsp;quyền&nbsp;cấp&nbsp;và&nbsp;có&nbsp;người&nbsp;thân&nbsp;dưới&nbsp;60&nbsp;tuổi&nbsp;đi&nbsp;cùng.</p><p>-&nbsp;Khách&nbsp;mang&nbsp;thai&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;khi&nbsp;đăng&nbsp;ký;&nbsp;cần&nbsp;có&nbsp;ý&nbsp;kiến&nbsp;bác&nbsp;sĩ&nbsp;trước&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.</p><p>-&nbsp;Không&nbsp;nhận&nbsp;khách&nbsp;mang&nbsp;thai&nbsp;từ&nbsp;5&nbsp;tháng&nbsp;trở&nbsp;lên&nbsp;vì&nbsp;lý&nbsp;do&nbsp;an&nbsp;toàn.</p><p>-&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đảm&nbsp;bảo&nbsp;sức&nbsp;khỏe&nbsp;phù&nbsp;hợp&nbsp;để&nbsp;tham&nbsp;gia&nbsp;các&nbsp;hoạt&nbsp;động&nbsp;trong&nbsp;tour.</p><p>-&nbsp;Nếu&nbsp;có&nbsp;điều&nbsp;kiện&nbsp;sức&nbsp;khỏe&nbsp;đặc&nbsp;biệt,&nbsp;vui&nbsp;lòng&nbsp;thông&nbsp;báo&nbsp;cho&nbsp;nhân&nbsp;viên&nbsp;tư&nbsp;vấn&nbsp;trước&nbsp;khi&nbsp;đặt&nbsp;tour.&nbsp;Quý&nbsp;khách&nbsp;có&nbsp;thể&nbsp;được&nbsp;yêu&nbsp;cầu&nbsp;cung&nbsp;cấp&nbsp;chứng&nbsp;nhận&nbsp;sức&nbsp;khỏe&nbsp;hoặc&nbsp;ký&nbsp;cam&nbsp;kết&nbsp;trong&nbsp;một&nbsp;số&nbsp;trường&nbsp;hợp&nbsp;cần&nbsp;thiết.</p><p><strong>Quy&nbsp;định&nbsp;theo&nbsp;đoàn:&nbsp;</strong></p><p>-&nbsp;Chương&nbsp;trình&nbsp;có&nbsp;thể&nbsp;điều&nbsp;chỉnh&nbsp;thứ&nbsp;tự&nbsp;tham&nbsp;quan&nbsp;theo&nbsp;tình&nbsp;hình&nbsp;thực&nbsp;tế&nbsp;nhưng&nbsp;vẫn&nbsp;đảm&nbsp;bảo&nbsp;đầy&nbsp;đủ&nbsp;điểm.</p><p>-&nbsp;Tour&nbsp;khởi&nbsp;hành&nbsp;khi&nbsp;đủ&nbsp;15&nbsp;khách&nbsp;người&nbsp;lớn,&nbsp;nếu&nbsp;chưa&nbsp;đủ&nbsp;số&nbsp;lượng&nbsp;công&nbsp;ty&nbsp;sẽ&nbsp;thông&nbsp;báo&nbsp;và&nbsp;thỏa&nbsp;thuận&nbsp;lại&nbsp;ngày&nbsp;khởi&nbsp;hành&nbsp;hoặc&nbsp;hoàn&nbsp;tiền.</p><p>-&nbsp;Do&nbsp;tính&nbsp;chất&nbsp;tour&nbsp;ghép,&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đi&nbsp;theo&nbsp;đoàn&nbsp;suốt&nbsp;hành&nbsp;trình&nbsp;và&nbsp;về&nbsp;đúng&nbsp;ngày&nbsp;kết&nbsp;thúc&nbsp;tour.</p><p>-&nbsp;Các&nbsp;dịch&nbsp;vụ&nbsp;trong&nbsp;chương&nbsp;trình&nbsp;đã&nbsp;được&nbsp;sắp&nbsp;xếp&nbsp;trước&nbsp;theo&nbsp;đoàn;&nbsp;trường&nbsp;hợp&nbsp;không&nbsp;sử&nbsp;dụng&nbsp;vì&nbsp;lý&nbsp;do&nbsp;cá&nbsp;nhân&nbsp;sẽ&nbsp;không&nbsp;được&nbsp;hoàn&nbsp;lại&nbsp;tiền.</p><p><strong>Xuất&nbsp;nhập&nbsp;cảnh:</strong></p><p>-&nbsp;Quý&nbsp;khách&nbsp;cần&nbsp;đảm&nbsp;bảo&nbsp;giấy&nbsp;tờ&nbsp;cá&nbsp;nhân&nbsp;hợp&nbsp;lệ&nbsp;theo&nbsp;quy&nbsp;định&nbsp;xuất/nhập&nbsp;cảnh,&nbsp;khi&nbsp;tham&nbsp;gia&nbsp;tour.&nbsp;Trường&nbsp;hợp&nbsp;không&nbsp;được&nbsp;xuất/nhập&nbsp;cảnh,&nbsp;không&nbsp;thực&nbsp;hiện&nbsp;được&nbsp;chuyến&nbsp;đi&nbsp;do&nbsp;cơ&nbsp;quan&nbsp;chức&nbsp;năng&nbsp;không&nbsp;chấp&nbsp;thuận&nbsp;(vì&nbsp;bất&nbsp;kỳ&nbsp;lý&nbsp;do&nbsp;gì),&nbsp;chi&nbsp;phí&nbsp;tour&nbsp;sẽ&nbsp;không&nbsp;được&nbsp;hoàn&nbsp;trả.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;hỗ&nbsp;trợ&nbsp;hướng&nbsp;dẫn&nbsp;trong&nbsp;phạm&nbsp;vi&nbsp;có&nbsp;thể&nbsp;để&nbsp;giải&nbsp;quyết&nbsp;cho&nbsp;Quý&nbsp;khách.&nbsp;Mọi&nbsp;chi&nbsp;phí&nbsp;phát&nbsp;sinh&nbsp;Quý&nbsp;khách&nbsp;tự&nbsp;chủ&nbsp;động&nbsp;sắp&nbsp;xếp.</p><p>-&nbsp;Đối&nbsp;với&nbsp;quý&nbsp;khách&nbsp;có&nbsp;thay&nbsp;đổi&nbsp;đáng&nbsp;kể&nbsp;về&nbsp;đặc&nbsp;điểm&nbsp;nhận&nbsp;dạng&nbsp;trên&nbsp;khuôn&nbsp;mặt,&nbsp;ví&nbsp;dụ:&nbsp;phẫu&nbsp;thuật&nbsp;thẩm&nbsp;mỹ,&nbsp;vui&nbsp;lòng&nbsp;làm&nbsp;lại&nbsp;hộ&nbsp;chiếu&nbsp;theo&nbsp;quy&nbsp;định&nbsp;trước&nbsp;khi&nbsp;khởi&nbsp;hành.&nbsp;Trường&nbsp;hợp&nbsp;sử&nbsp;dụng&nbsp;hộ&nbsp;chiếu&nbsp;không&nbsp;còn&nbsp;phù&nbsp;hợp&nbsp;với&nbsp;diện&nbsp;mạo&nbsp;hiện&nbsp;tại&nbsp;và&nbsp;phát&nbsp;sinh&nbsp;vấn&nbsp;đề&nbsp;khi&nbsp;xuất&nbsp;nhập&nbsp;cảnh,&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;long&nbsp;tự&nbsp;chịu&nbsp;trách&nbsp;nhiệm.&nbsp;Các&nbsp;chi&nbsp;phí&nbsp;hủy&nbsp;đổi&nbsp;dịch&nbsp;vụ&nbsp;(nếu&nbsp;có)&nbsp;sẽ&nbsp;được&nbsp;áp&nbsp;dụng&nbsp;theo&nbsp;quy&nbsp;định.</p><p>-&nbsp;Đối&nbsp;với&nbsp;khách&nbsp;đã&nbsp;chuyển&nbsp;giới,&nbsp;thông&nbsp;tin&nbsp;trên&nbsp;Hộ&nbsp;chiếu&nbsp;và&nbsp;CCCD&nbsp;phải&nbsp;thống&nbsp;nhất&nbsp;và&nbsp;trùng&nbsp;khớp.&nbsp;Hình&nbsp;ảnh&nbsp;trên&nbsp;hộ&nbsp;chiếu&nbsp;cần&nbsp;là&nbsp;hình&nbsp;chụp&nbsp;sau&nbsp;khi&nbsp;chuyển&nbsp;giới/phẫu&nbsp;thuật&nbsp;thẩm&nbsp;mỹ,&nbsp;đảm&nbsp;bảo&nbsp;nhận&nbsp;diện&nbsp;rõ&nbsp;ràng&nbsp;theo&nbsp;hiện&nbsp;trạng&nbsp;thực&nbsp;tế,&nbsp;giống&nbsp;với&nbsp;hộ&nbsp;chiếu&nbsp;hiện&nbsp;đang&nbsp;sử&nbsp;dụng.</p><p><strong>Bất&nbsp;khả&nbsp;kháng:</strong></p><p>-&nbsp;Giờ&nbsp;bay&nbsp;có&nbsp;thể&nbsp;thay&nbsp;đổi&nbsp;theo&nbsp;hãng&nbsp;hàng&nbsp;không.</p><p>-&nbsp;Trong&nbsp;các&nbsp;tình&nbsp;huống&nbsp;ngoài&nbsp;khả&nbsp;năng&nbsp;kiểm&nbsp;soát&nbsp;như&nbsp;thời&nbsp;tiết,&nbsp;thiên&nbsp;tai,&nbsp;dịch&nbsp;bệnh,&nbsp;sự&nbsp;cố&nbsp;an&nbsp;ninh,&nbsp;chiến&nbsp;tranh,&nbsp;sân&nbsp;bay&nbsp;đóng&nbsp;cửa&nbsp;hoặc&nbsp;thay&nbsp;đổi&nbsp;từ&nbsp;đơn&nbsp;vị&nbsp;vận&nbsp;chuyển,&nbsp;…&nbsp;lịch&nbsp;trình&nbsp;có&nbsp;thể&nbsp;được&nbsp;điều&nbsp;chỉnh&nbsp;để&nbsp;đảm&nbsp;bảo&nbsp;an&nbsp;toàn&nbsp;và&nbsp;quyền&nbsp;lợi&nbsp;cho&nbsp;Quý&nbsp;khách.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;nỗ&nbsp;lực&nbsp;tối&nbsp;đa&nbsp;để&nbsp;hỗ&nbsp;trợ&nbsp;và&nbsp;phối&nbsp;hợp&nbsp;cùng&nbsp;Quý&nbsp;khách&nbsp;xử&nbsp;lý&nbsp;phát&nbsp;sinh.&nbsp;Tuy&nbsp;nhiên,&nbsp;các&nbsp;chi&nbsp;phí&nbsp;liên&nbsp;quan&nbsp;như&nbsp;ăn&nbsp;uống,&nbsp;đi&nbsp;lại,&nbsp;lưu&nbsp;trú,&nbsp;đổi/đặt&nbsp;lại&nbsp;vé&nbsp;…&nbsp;(nếu&nbsp;có)&nbsp;Quý&nbsp;khách&nbsp;vui&nbsp;lòng&nbsp;thanh&nbsp;toán&nbsp;theo&nbsp;thực&nbsp;tế.&nbsp;Công&nbsp;ty&nbsp;sẽ&nbsp;đồng&nbsp;hành&nbsp;và&nbsp;hỗ&nbsp;trợ&nbsp;để&nbsp;Quý&nbsp;khách&nbsp;có&nbsp;phương&nbsp;án&nbsp;phù&nbsp;hợp&nbsp;và&nbsp;thuận&nbsp;tiện&nbsp;nhất.</p><p>Hướng&nbsp;dẫn&nbsp;viên</p><p>-&nbsp;Hướng&nbsp;Dẫn&nbsp;Viên&nbsp;(HDV)&nbsp;sẽ&nbsp;liên&nbsp;lạc&nbsp;với&nbsp;Quý&nbsp;Khách&nbsp;khoảng&nbsp;2&nbsp;ngày&nbsp;trước&nbsp;khi&nbsp;khởi&nbsp;hành&nbsp;để&nbsp;sắp&nbsp;xếp&nbsp;giờ&nbsp;đón&nbsp;và&nbsp;cung&nbsp;cấp&nbsp;các&nbsp;thông&nbsp;tin&nbsp;cần&nbsp;thiết&nbsp;cho&nbsp;chuyển&nbsp;đi.</p>', '<p>Không&nbsp;có</p>', 3, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 'promotion', 'active');
+
+-- Dumping structure for table db_marketing_tour.tour_departures
+DROP TABLE IF EXISTS `tour_departures`;
+CREATE TABLE IF NOT EXISTS `tour_departures` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `departure_date` date NOT NULL COMMENT 'Ngày khởi hành',
+  `price_adult` decimal(15,2) NOT NULL COMMENT 'Giá người lớn',
+  `original_price_adult` decimal(15,2) DEFAULT NULL COMMENT 'Giá gốc người lớn trước khi giảm',
+  `price_child` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá trẻ em',
+  `price_infant` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá em bé/trẻ nhỏ',
+  `capacity` int(11) NOT NULL DEFAULT 0 COMMENT 'Tổng số chỗ có thể bán',
+  `available_seats` int(11) NOT NULL DEFAULT 0 COMMENT 'Số chỗ còn có thể bán',
+  `status` enum('open','full','cancelled') DEFAULT 'open' COMMENT 'Trạng thái mở bán',
+  `flight` varchar(255) DEFAULT NULL COMMENT 'Chặng bay / thông tin chuyến bay',
+  `flight_outbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng đi',
+  `flight_inbound` text DEFAULT NULL COMMENT 'Thông tin chuyến bay chặng về',
+  PRIMARY KEY (`id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `tour_d` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_departures: ~22 rows (approximately)
+DELETE FROM `tour_departures`;
+INSERT INTO `tour_departures` (`id`, `tour_id`, `departure_date`, `price_adult`, `original_price_adult`, `price_child`, `price_infant`, `capacity`, `available_seats`, `status`, `flight`, `flight_outbound`, `flight_inbound`) VALUES
+	(1, 1, '2026-12-01', 3500000.00, 10000000.00, 2500000.00, 500000.00, 23, 20, 'open', NULL, NULL, NULL),
+	(2, 1, '2026-12-10', 3600000.00, 10000000.00, 2600000.00, 500000.00, 16, 15, 'open', NULL, NULL, NULL),
+	(3, 2, '2026-12-03', 5500000.00, 10000000.00, 4000000.00, 800000.00, 26, 26, 'open', NULL, NULL, NULL),
+	(4, 2, '2026-12-15', 5700000.00, 10000000.00, 4200000.00, 800000.00, 12, 10, 'full', NULL, NULL, NULL),
+	(5, 3, '2026-12-05', 4500000.00, 10000000.00, 3200000.00, 600000.00, 33, 30, 'open', NULL, NULL, NULL),
+	(6, 3, '2026-12-20', 4600000.00, 10000000.00, 3300000.00, 600000.00, 7, 5, 'open', NULL, NULL, NULL),
+	(7, 4, '2026-12-07', 7000000.00, 10000000.00, 5000000.00, 1000000.00, 14, 14, 'open', NULL, NULL, NULL),
+	(8, 4, '2026-12-25', 7200000.00, 10000000.00, 5200000.00, 1000000.00, 0, 0, 'full', NULL, NULL, NULL),
+	(9, 5, '2026-12-08', 4800000.00, 10000000.00, 3500000.00, 700000.00, 21, 21, 'open', NULL, NULL, NULL),
+	(10, 5, '2026-12-28', 4900000.00, 10000000.00, 3600000.00, 700000.00, 9, 6, 'open', NULL, NULL, NULL),
+	(11, 6, '2027-01-01', 4500000.00, 10000000.00, 3200000.00, 600000.00, 23, 20, 'open', NULL, NULL, NULL),
+	(12, 6, '2027-01-10', 4600000.00, 10000000.00, 3300000.00, 600000.00, 12, 10, 'open', NULL, NULL, NULL),
+	(13, 7, '2027-01-03', 8000000.00, 10000000.00, 6000000.00, 1200000.00, 16, 15, 'open', NULL, NULL, NULL),
+	(14, 7, '2027-01-18', 8200000.00, 10000000.00, 6200000.00, 1200000.00, 1, 0, 'full', NULL, NULL, NULL),
+	(15, 8, '2027-01-05', 3500000.00, 10000000.00, 2500000.00, 500000.00, 28, 25, 'open', NULL, NULL, NULL),
+	(16, 8, '2027-01-20', 3600000.00, 10000000.00, 2600000.00, 500000.00, 11, 8, 'open', NULL, NULL, NULL),
+	(17, 9, '2027-01-07', 3700000.00, 10000000.00, 2700000.00, 500000.00, 35, 30, 'open', NULL, NULL, NULL),
+	(18, 10, '2027-01-09', 5800000.00, 10000000.00, 4200000.00, 800000.00, 15, 12, 'open', NULL, NULL, NULL),
+	(19, 11, '2027-01-12', 6000000.00, 10000000.00, 4500000.00, 900000.00, 23, 20, 'open', NULL, NULL, NULL),
+	(20, 11, '2027-01-25', 6200000.00, 10000000.00, 4700000.00, 900000.00, 15, 0, 'full', NULL, NULL, NULL),
+	(62, 13, '2026-11-15', 10000000.00, 20000000.00, 1000000.00, 500000.00, 10, 10, 'open', NULL, NULL, NULL),
+	(63, 13, '2026-11-10', 400000000.00, 400000000.00, 2000000.00, 400000.00, 200, 200, 'open', NULL, NULL, NULL);
+
+-- Dumping structure for table db_marketing_tour.tour_images
+DROP TABLE IF EXISTS `tour_images`;
+CREATE TABLE IF NOT EXISTS `tour_images` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `image_url` text NOT NULL,
+  `sort_order` int(11) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `fk_tour_images` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_images: ~21 rows (approximately)
+DELETE FROM `tour_images`;
+INSERT INTO `tour_images` (`id`, `tour_id`, `image_url`, `sort_order`) VALUES
+	(1, 1, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(2, 1, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(3, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(4, 2, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(5, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(6, 3, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(7, 4, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(8, 4, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(9, 5, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(10, 5, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(11, 6, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(12, 6, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(13, 7, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(14, 7, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(15, 8, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(16, 8, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(17, 9, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(18, 10, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(19, 11, '/uploads/banners/banner-1774264639505-576996427.webp', 1),
+	(20, 11, '/uploads/banners/banner-1774264639505-576996427.webp', 2),
+	(40, 13, '/uploads/tours/tour-1794625493380-521819701.JPEG', 0);
+
+-- Dumping structure for table db_marketing_tour.tour_itineraries
+DROP TABLE IF EXISTS `tour_itineraries`;
+CREATE TABLE IF NOT EXISTS `tour_itineraries` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `day_number` int(11) NOT NULL COMMENT 'Ngày thứ mấy (1, 2, 3...)',
+  `title` text NOT NULL COMMENT 'Tiêu đề (VD: Ngày 1: Đón khách - Tham quan)',
+  `content` longtext NOT NULL COMMENT 'Chi tiết các hoạt động trong ngày',
+  PRIMARY KEY (`id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `fk_tour_it` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_itineraries: ~23 rows (approximately)
+DELETE FROM `tour_itineraries`;
+INSERT INTO `tour_itineraries` (`id`, `tour_id`, `day_number`, `title`, `content`) VALUES
+	(1, 1, 1, 'Ngày 1: Hà Nội - Sapa', 'Di chuyển, nhận phòng, tham quan bản Cát Cát'),
+	(2, 1, 2, 'Ngày 2: Fansipan', 'Chinh phục Fansipan bằng cáp treo'),
+	(3, 2, 1, 'Ngày 1: TP.HCM - Phú Quốc', 'Bay và nhận khách sạn'),
+	(4, 2, 2, 'Ngày 2: Hòn Thơm', 'Đi cáp treo và vui chơi'),
+	(5, 3, 1, 'Ngày 1: Đà Nẵng', 'Tham quan biển Mỹ Khê'),
+	(6, 3, 2, 'Ngày 2: Bà Nà Hills', 'Checkin Cầu Vàng'),
+	(7, 4, 1, 'Ngày 1: Quốc tế', 'Bay đi nước ngoài'),
+	(8, 4, 2, 'Ngày 2: City tour', 'Tham quan trung tâm'),
+	(9, 5, 1, 'Ngày 1: Hội An', 'Tham quan phố cổ'),
+	(10, 5, 2, 'Ngày 2: Biển', 'Tắm biển'),
+	(11, 6, 1, 'Ngày 1: Check-in', 'Nhận phòng'),
+	(12, 6, 2, 'Ngày 2: Tham quan', 'Đi tour'),
+	(13, 7, 1, 'Ngày 1: Khởi hành', 'Bay quốc tế'),
+	(14, 7, 2, 'Ngày 2: City', 'Tham quan'),
+	(15, 8, 1, 'Ngày 1: Sapa', 'Nhận phòng'),
+	(16, 8, 2, 'Ngày 2: Fansipan', 'Leo núi'),
+	(17, 9, 1, 'Ngày 1: Di chuyển', 'Check-in'),
+	(18, 10, 1, 'Ngày 1: Phú Quốc', 'Tắm biển'),
+	(19, 11, 1, 'Ngày 1: Resort', 'Nghỉ dưỡng'),
+	(20, 11, 2, 'Ngày 2: Vui chơi', 'VinWonders'),
+	(148, 13, 1, 'Đón khách ăn tối', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30&nbsp;Quý&nbsp;khách&nbsp;tập&nbsp;trung&nbsp;tại&nbsp;Ga&nbsp;Quốc&nbsp;tế&nbsp;Sân&nbsp;bay&nbsp;Tân&nbsp;Sơn&nbsp;Nhất&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;hàng&nbsp;không&nbsp;khởi&nbsp;hành&nbsp;đi&nbsp;Malaysia.&nbsp;Chuyến&nbsp;bay:&nbsp;</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679&nbsp;SGN-KUL&nbsp;15:50&nbsp;-&nbsp;18:50.</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Tới&nbsp;Sân&nbsp;bay&nbsp;Quốc&nbsp;tế&nbsp;Kuala&nbsp;Lumpur,&nbsp;Quý&nbsp;khách&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;nhập&nbsp;cảnh&nbsp;Malaysia.&nbsp;Đoàn&nbsp;di&nbsp;chuyển&nbsp;đến&nbsp;nhà&nbsp;hàng&nbsp;dùng&nbsp;bữa&nbsp;tối.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sau&nbsp;bữa&nbsp;tối,&nbsp;đoàn&nbsp;trở&nbsp;về&nbsp;khách&nbsp;sạn&nbsp;nhận&nbsp;phòng&nbsp;nghỉ&nbsp;ngơi.</span></p>'),
+	(149, 13, 2, 'Tham quan', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sáng:&nbsp;Quý&nbsp;khách&nbsp;dùng&nbsp;điểm&nbsp;tâm&nbsp;tại&nbsp;khách&nbsp;sạn.&nbsp;Đoàn&nbsp;tham&nbsp;quan</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Khu&nbsp;Putrajaya</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">:&nbsp;Trung&nbsp;tâm&nbsp;hành&nbsp;chính&nbsp;mới&nbsp;của&nbsp;Malaysia&nbsp;&nbsp;với&nbsp;những&nbsp;địa&nbsp;danh&nbsp;du&nbsp;lịch&nbsp;nổi&nbsp;tiếng&nbsp;như:&nbsp;Nhà&nbsp;thờ&nbsp;Hồi&nbsp;giáo&nbsp;Putra,&nbsp;Văn&nbsp;phòng&nbsp;Thủ&nbsp;tướng,&nbsp;Trung&nbsp;tâm&nbsp;hội&nbsp;nghị&nbsp;(chụp&nbsp;hình&nbsp;bên&nbsp;ngoài).</span></p>'),
+	(150, 13, 3, 'Chuẩn bị về', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Sáng:&nbsp;Quý&nbsp;khách&nbsp;dùng&nbsp;điểm&nbsp;tâm&nbsp;sáng&nbsp;tại&nbsp;khách&nbsp;sạn&nbsp;và&nbsp;làm&nbsp;thủ&nbsp;tục&nbsp;trả&nbsp;phòng.&nbsp;Đoàn&nbsp;tham&nbsp;quan</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Tháp&nbsp;Đôi&nbsp;Petronas</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">:&nbsp;Biểu&nbsp;tượng&nbsp;hiện&nbsp;đại&nbsp;của&nbsp;Kuala&nbsp;Lumpur,&nbsp;nổi&nbsp;bật&nbsp;với&nbsp;kiến&nbsp;trúc&nbsp;tinh&nbsp;xảo&nbsp;và&nbsp;tầm&nbsp;nhìn&nbsp;toàn&nbsp;cảnh&nbsp;thành&nbsp;phố.&nbsp;Đây&nbsp;là&nbsp;niềm&nbsp;tự&nbsp;hào&nbsp;của&nbsp;người&nbsp;dân&nbsp;Malaysia&nbsp;được&nbsp;hoàn&nbsp;thành&nbsp;năm&nbsp;1998&nbsp;với&nbsp;tổng&nbsp;chiều&nbsp;cao&nbsp;452m&nbsp;và&nbsp;88&nbsp;tầng.</span></p>');
+
+-- Dumping structure for table db_marketing_tour.tour_itinerary_translations
+DROP TABLE IF EXISTS `tour_itinerary_translations`;
+CREATE TABLE IF NOT EXISTS `tour_itinerary_translations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `itinerary_id` int(11) NOT NULL,
+  `language` varchar(10) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `content` longtext NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tour_itinerary_translations_itinerary_id_language` (`itinerary_id`,`language`),
+  CONSTRAINT `fk_tour_itinerary_translations_itinerary` FOREIGN KEY (`itinerary_id`) REFERENCES `tour_itineraries` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=174 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_itinerary_translations: ~26 rows (approximately)
+DELETE FROM `tour_itinerary_translations`;
+INSERT INTO `tour_itinerary_translations` (`id`, `itinerary_id`, `language`, `title`, `content`) VALUES
+	(1, 1, 'vi', 'Ngày 1: Hà Nội - Sapa', 'Di chuyển, nhận phòng, tham quan bản Cát Cát'),
+	(2, 2, 'vi', 'Ngày 2: Fansipan', 'Chinh phục Fansipan bằng cáp treo'),
+	(3, 3, 'vi', 'Ngày 1: TP.HCM - Phú Quốc', 'Bay và nhận khách sạn'),
+	(4, 4, 'vi', 'Ngày 2: Hòn Thơm', 'Đi cáp treo và vui chơi'),
+	(5, 5, 'vi', 'Ngày 1: Đà Nẵng', 'Tham quan biển Mỹ Khê'),
+	(6, 6, 'vi', 'Ngày 2: Bà Nà Hills', 'Checkin Cầu Vàng'),
+	(7, 7, 'vi', 'Ngày 1: Quốc tế', 'Bay đi nước ngoài'),
+	(8, 8, 'vi', 'Ngày 2: City tour', 'Tham quan trung tâm'),
+	(9, 9, 'vi', 'Ngày 1: Hội An', 'Tham quan phố cổ'),
+	(10, 10, 'vi', 'Ngày 2: Biển', 'Tắm biển'),
+	(11, 11, 'vi', 'Ngày 1: Check-in', 'Nhận phòng'),
+	(12, 12, 'vi', 'Ngày 2: Tham quan', 'Đi tour'),
+	(13, 13, 'vi', 'Ngày 1: Khởi hành', 'Bay quốc tế'),
+	(14, 14, 'vi', 'Ngày 2: City', 'Tham quan'),
+	(15, 15, 'vi', 'Ngày 1: Sapa', 'Nhận phòng'),
+	(16, 16, 'vi', 'Ngày 2: Fansipan', 'Leo núi'),
+	(17, 17, 'vi', 'Ngày 1: Di chuyển', 'Check-in'),
+	(18, 18, 'vi', 'Ngày 1: Phú Quốc', 'Tắm biển'),
+	(19, 19, 'vi', 'Ngày 1: Resort', 'Nghỉ dưỡng'),
+	(20, 20, 'vi', 'Ngày 2: Vui chơi', 'VinWonders'),
+	(168, 148, 'en', 'Welcoming guests for dinner', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30 You gather at the International Terminal Tan Son Nhat Airport to check-in for airline departure to Malaysia. Flight:</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679 SGN-KUL 15:50 - 18:50.</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Arrive at Kuala Lumpur International Airport, you go through Malaysia entry procedures. The group moved to the restaurant for dinner.</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">After dinner, the group returned to the hotel to check-in to rest.</span></p>'),
+	(169, 148, 'zh', '招待客人共进晚餐', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">12:30 您在新山一机场国际航站楼集合，办理登机手续，搭乘飞往马来西亚的航班。 航班：</span><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">VN679 SGN-KUL 15:50 - 18:50。</strong></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">到达吉隆坡国际机场，办理马来西亚入境手续。 一行人前往餐厅用晚餐。</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">晚餐后，一行人返回酒店入住休息。</span></p>'),
+	(170, 149, 'en', 'Sightseeing', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Morning: You have breakfast at the hotel. Group visit</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Putrajaya Area</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">: The new administrative centre of Malaysia  with famous tourist landmarks such as: Putra Mosque, Prime Minister\'s Office, Conference Centre (exterior photography).</span></p>'),
+	(171, 149, 'zh', '观光', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">早上：您在酒店享用早餐。 团体参观</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">布城地区</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">：马来西亚的新行政中心，拥有著名的旅游地标，例如：布特拉清真寺、总理办公室、会议中心（外观摄影）。</span></p>'),
+	(172, 150, 'en', 'Prepare to return', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Morning: You have breakfast at the hotel and check-out procedures. Group visit</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">Petronas Twin Towers</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">: The modern icon of Kuala Lumpur, distinguished with its exquisite architecture and panoramic views of the city. This is the pride of Malaysians completed in 1998 with a total height of 452m and 88 storeys.</span></p>'),
+	(173, 150, 'zh', '准备返回', '<p><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">早上：您在酒店享用早餐并办理退房手续。 团体参观</span></p><p><strong style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">双子塔</strong><span style="background-color: rgb(255, 255, 255); color: rgb(63, 59, 59);">：吉隆坡的现代标志，以其精致的建筑和城市全景而闻名。 这是马来西亚人的骄傲，于 1998 年竣工，总高度 452m，88 层。</span></p>');
+
+-- Dumping structure for table db_marketing_tour.tour_options
+DROP TABLE IF EXISTS `tour_options`;
+CREATE TABLE IF NOT EXISTS `tour_options` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `option_name` varchar(255) NOT NULL COMMENT 'Tên option (VD: Yêu cầu giường đôi, Phụ thu phòng đơn)',
+  `price` decimal(15,2) DEFAULT 0.00 COMMENT 'Giá cộng thêm (có thể = 0)',
+  `charge_type` enum('per_person','per_booking','quantity') DEFAULT 'quantity' COMMENT 'Cách tính: theo người, theo đơn, hoặc tự chọn số lượng',
+  PRIMARY KEY (`id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `fk_tour_op` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_options: ~21 rows (approximately)
+DELETE FROM `tour_options`;
+INSERT INTO `tour_options` (`id`, `tour_id`, `option_name`, `price`, `charge_type`) VALUES
+	(1, 1, 'Phòng đơn', 500000.00, 'per_person'),
+	(2, 1, 'Ăn VIP', 300000.00, 'per_person'),
+	(3, 2, 'Xe đưa đón sân bay', 200000.00, 'per_booking'),
+	(4, 2, 'Tour cano', 700000.00, 'per_person'),
+	(5, 3, 'Buffet tối', 400000.00, 'per_person'),
+	(6, 3, 'Xe riêng', 1000000.00, 'per_booking'),
+	(7, 4, 'Visa', 2000000.00, 'per_person'),
+	(8, 4, 'Bảo hiểm', 300000.00, 'per_person'),
+	(9, 5, 'Ăn hải sản', 500000.00, 'per_person'),
+	(10, 5, 'Thuê xe máy', 150000.00, 'quantity'),
+	(11, 6, 'Spa', 600000.00, 'per_person'),
+	(12, 6, 'Massage', 500000.00, 'per_person'),
+	(13, 7, 'Guide riêng', 2000000.00, 'per_booking'),
+	(14, 7, 'VIP lounge', 800000.00, 'per_person'),
+	(15, 8, 'Leo Fansipan', 800000.00, 'per_person'),
+	(16, 8, 'Xe jeep', 300000.00, 'quantity'),
+	(17, 9, 'Thuê đồ trekking', 200000.00, 'quantity'),
+	(18, 10, 'Lặn biển', 1000000.00, 'per_person'),
+	(19, 11, 'Golf', 2000000.00, 'per_person'),
+	(20, 11, 'Ăn tối BBQ', 600000.00, 'per_person'),
+	(37, 13, 'Phòng đôi', 1000000.00, 'per_person');
+
+-- Dumping structure for table db_marketing_tour.tour_pickup_locations
+DROP TABLE IF EXISTS `tour_pickup_locations`;
+CREATE TABLE IF NOT EXISTS `tour_pickup_locations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `location_name` varchar(255) NOT NULL COMMENT 'Tên điểm đón hoặc khu vực',
+  `pickup_time` time DEFAULT NULL COMMENT 'Giờ đón dự kiến',
+  `surcharge_amount` decimal(15,2) DEFAULT 0.00 COMMENT 'Phí phụ thu nếu có (mặc định 0)',
+  PRIMARY KEY (`id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `fk_piclkup_location` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=104 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_pickup_locations: ~23 rows (approximately)
+DELETE FROM `tour_pickup_locations`;
+INSERT INTO `tour_pickup_locations` (`id`, `tour_id`, `location_name`, `pickup_time`, `surcharge_amount`) VALUES
+	(1, 1, 'Hà Nội', '06:00:00', 0.00),
+	(2, 1, 'Sân bay Nội Bài', '07:00:00', 100000.00),
+	(3, 2, 'TP.HCM', '05:00:00', 0.00),
+	(4, 2, 'Sân bay Tân Sơn Nhất', '06:00:00', 100000.00),
+	(5, 3, 'Đà Nẵng', '06:30:00', 0.00),
+	(6, 3, 'Khách sạn', '07:00:00', 50000.00),
+	(7, 4, 'Hà Nội', '08:00:00', 0.00),
+	(8, 5, 'Hội An', '06:00:00', 0.00),
+	(9, 6, 'Đà Nẵng', '06:00:00', 0.00),
+	(10, 7, 'TP.HCM', '05:30:00', 0.00),
+	(11, 8, 'Hà Nội', '06:00:00', 0.00),
+	(12, 9, 'Sapa', '07:00:00', 0.00),
+	(13, 10, 'Phú Quốc', '06:00:00', 0.00),
+	(14, 11, 'Phú Quốc', '06:30:00', 0.00),
+	(15, 2, 'Quận 1', '05:30:00', 50000.00),
+	(16, 3, 'Quận Hải Châu', '06:00:00', 0.00),
+	(17, 4, 'Quận Ba Đình', '06:00:00', 0.00),
+	(18, 5, 'Biển An Bàng', '07:00:00', 0.00),
+	(19, 6, 'Ngũ Hành Sơn', '06:00:00', 0.00),
+	(20, 7, 'Quận 7', '05:30:00', 0.00),
+	(101, 13, 'Hà Nội', '19:05:00', 1111.00),
+	(102, 13, 'Bắc Giang', '21:05:00', 200000.00),
+	(103, 13, 'Sài Gòn', '09:50:00', 100000.00);
+
+-- Dumping structure for table db_marketing_tour.tour_translations
+DROP TABLE IF EXISTS `tour_translations`;
+CREATE TABLE IF NOT EXISTS `tour_translations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tour_id` int(11) NOT NULL,
+  `language` varchar(10) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `summary` text DEFAULT NULL,
+  `highlights` text DEFAULT NULL,
+  `price_includes` text DEFAULT NULL,
+  `price_excludes` text DEFAULT NULL,
+  `terms_and_notes` text DEFAULT NULL,
+  `cancellation_policy` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tour_translations_tour_id_language` (`tour_id`,`language`),
+  CONSTRAINT `fk_tour_translations_tour` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.tour_translations: ~19 rows (approximately)
+DELETE FROM `tour_translations`;
+INSERT INTO `tour_translations` (`id`, `tour_id`, `language`, `title`, `slug`, `summary`, `highlights`, `price_includes`, `price_excludes`, `terms_and_notes`, `cancellation_policy`) VALUES
+	(1, 1, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 3', 'tour-kham-pha-sapa-chinh-phuc-fansipan', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
+	(2, 2, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 1', 'nghi-duong-phu-quoc-hon-thom', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
+	(3, 3, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 1', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
+	(4, 4, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 2', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na1', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
+	(5, 5, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 3', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na2', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
+	(6, 6, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 4', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na3', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
+	(7, 7, 'vi', 'Hành trình di sản: Đà Nẵng - Hội An - Bà Nà Hills 5', 'hanh-trinh-di-san-da-nang-hoi-an-ba-na4', 'Tham quan các điểm đến nổi tiếng nhất miền Trung: Cầu Vàng, phố cổ Hội An, biển Mỹ Khê.', NULL, NULL, NULL, NULL, NULL),
+	(8, 8, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 1', 'tour-kham-pha-sapa-chinh-phuc-fansipan1', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
+	(9, 9, 'vi', 'Tour Khám Phá Sapa - Chinh Phục Đỉnh Fansipan 2', 'tour-kham-pha-sapa-chinh-phuc-fansipan2', 'Hành trình đến với thị trấn trong sương, khám phá bản Cát Cát và chinh phục nóc nhà Đông Dương.', NULL, NULL, NULL, NULL, NULL),
+	(10, 10, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 2', 'nghi-duong-phu-quoc-hon-thom1', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
+	(11, 11, 'vi', 'Nghỉ dưỡng Phú Quốc - Khám phá Hòn Thơm Nature Park 3', 'nghi-duong-phu-quoc-hon-thom2', 'Tận hưởng nắng vàng biển xanh tại đảo ngọc Phú Quốc, đi cáp treo vượt biển dài nhất thế giới.', NULL, NULL, NULL, NULL, NULL),
+	(14, 13, 'en', 'Malaysia - Singapore 5D4N Tour: Explore Southeast Asian Culture', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', 'Explore Gardens by the Bay: Singapore\'s iconic ecological garden.', 'Deposit 50% of the Tour amount immediately after registering for the tour. \nCancel after registration, deposit will be lost 50% of total tour value.\nCancel tour 10 – 15 days before departure will be penalized 80% of total contract value.\nCancel tour 9 The day before the departure date will be penalized 100% of the contract value.\nIn cases of arriving late and missing the trip, you will not refund the tour money.\nIn case p If you are refused to get a Chinese visa, please pay a non-refundable fee of 3,500,000 VND/person/set of rejected Chinese visa medicine (this cost includes costs that the company has paid such as translation, letters of guarantee, visa application fees, airline ticket deposits, services booking fees overseas...)', '<p><strong>Transportation</strong></p><p>-&nbsp;Round-trip&nbsp;airline&nbsp;ticket&nbsp;by&nbsp;Vietnam&nbsp;Airline&nbsp;(23kg&nbsp;checked&nbsp;luggage&nbsp;+&nbsp;10kg&nbsp;hand-carried).</p><p>-&nbsp;Air-conditioned&nbsp;vehicles&nbsp;serve&nbsp;during&nbsp;the&nbsp;route.</p><p>-&nbsp;Airport&nbsp;security&nbsp;fees,&nbsp;aviation&nbsp;insurance,&nbsp;airport&nbsp;taxes&nbsp;in&nbsp;2&nbsp;countries&nbsp;(according&nbsp;to&nbsp;rules&nbsp;y&nbsp;determined&nbsp;at&nbsp;the&nbsp;time&nbsp;of&nbsp;ticket&nbsp;issuance).</p><p><strong>Accommodation</strong></p><p>-&nbsp;Standard&nbsp;3-4*&nbsp;local&nbsp;hotel&nbsp;(2&nbsp;guests/room;&nbsp;Male/female&nbsp;individual&nbsp;customers&nbsp;can&nbsp;arrange&nbsp;suitable&nbsp;rooms).</p><p><strong>Other&nbsp;services</strong></p><p>-&nbsp;Sightseeing&nbsp;tickets&nbsp;in&nbsp;the&nbsp;program.&nbsp;</p><p>-&nbsp;Meals&nbsp;according&nbsp;to&nbsp;the&nbsp;program.&nbsp;(ensure&nbsp;equivalent&nbsp;quantity&nbsp;&amp;&nbsp;quality&nbsp;if&nbsp;adjustable).</p><p>-&nbsp;Spring&nbsp;water&nbsp;01&nbsp;bottle/person/day.</p><p>-&nbsp;International&nbsp;travel&nbsp;insurance.&nbsp;</p><p>-&nbsp;Group&nbsp;leader&nbsp;and&nbsp;local&nbsp;guide&nbsp;serve&nbsp;during&nbsp;the&nbsp;journey.</p><p>-&nbsp;Gifted&nbsp;tourist&nbsp;hats.&nbsp;</p><p>-&nbsp;VAT.</p>', '<p>-&nbsp;Single&nbsp;room&nbsp;surcharge&nbsp;(if&nbsp;any):&nbsp;4,300,000&nbsp;VND/person/tour&nbsp;–&nbsp;4,800,000&nbsp;VND/person/tour.&nbsp;</p><p>-&nbsp;Tips&nbsp;for&nbsp;driver&nbsp;and&nbsp;guide:&nbsp;25&nbsp;USD/person/tour.</p><p>-&nbsp;Surcharge&nbsp;for&nbsp;customers&nbsp;of&nbsp;foreign&nbsp;nationality:&nbsp;660,000&nbsp;VND/person.</p><p>-&nbsp;Visa&nbsp;to&nbsp;re-enter&nbsp;Vietnam&nbsp;o&nbsp;foreign&nbsp;national&nbsp;guests&nbsp;according&nbsp;to&nbsp;current&nbsp;regulations&nbsp;(if&nbsp;any).</p><p>-&nbsp;Personal&nbsp;expenses:&nbsp;excess&nbsp;luggage,&nbsp;telephone,&nbsp;laundry,&nbsp;sightseeing,&nbsp;spending&nbsp;outside&nbsp;the&nbsp;program.</p>', '<p>Children&nbsp;policy</p><p><strong>1.&nbsp;General&nbsp;rules:</strong></p><p>-&nbsp;Each&nbsp;02&nbsp;adults&nbsp;can&nbsp;accompany&nbsp;01&nbsp;child.</p><p>-&nbsp;From&nbsp;the&nbsp;2nd&nbsp;child&nbsp;onwards,&nbsp;applicable&nbsp;Use&nbsp;the&nbsp;price&nbsp;according&nbsp;to&nbsp;the&nbsp;regulations&nbsp;for&nbsp;each&nbsp;age&nbsp;group&nbsp;(stated&nbsp;below).</p><p>-&nbsp;Children&nbsp;sleep&nbsp;in&nbsp;the&nbsp;bed&nbsp;with&nbsp;their&nbsp;parents.&nbsp;→&nbsp;If&nbsp;a&nbsp;own&nbsp;bed&nbsp;is&nbsp;needed:&nbsp;Charged&nbsp;as&nbsp;an&nbsp;adult.</p><p>-&nbsp;Expenses&nbsp;outside&nbsp;the&nbsp;program&nbsp;(if&nbsp;any)&nbsp;are&nbsp;paid&nbsp;by&nbsp;the&nbsp;family.</p><p><strong>2.&nbsp;Regulations&nbsp;by&nbsp;age:</strong></p><p>-&nbsp;Children&nbsp;under&nbsp;2&nbsp;years&nbsp;old:&nbsp;Prices&nbsp;as&nbsp;on&nbsp;the&nbsp;website,&nbsp;included&nbsp;airline&nbsp;tickets,&nbsp;no&nbsp;seats&nbsp;alone,&nbsp;sleeping&nbsp;with&nbsp;parents.</p><p>-&nbsp;Children&nbsp;from&nbsp;2&nbsp;-&nbsp;10&nbsp;years&nbsp;old:&nbsp;Prices&nbsp;as&nbsp;on&nbsp;the&nbsp;website,&nbsp;includes&nbsp;full&nbsp;services&nbsp;in&nbsp;the&nbsp;program.&nbsp;Sleeping&nbsp;with&nbsp;parents.&nbsp;From&nbsp;2nd&nbsp;child&nbsp;onwards:&nbsp;charged&nbsp;100%&nbsp;of&nbsp;adult&nbsp;price.</p><p>-&nbsp;Children&nbsp;from&nbsp;11&nbsp;years&nbsp;old&nbsp;and&nbsp;over:&nbsp;charged&nbsp;as&nbsp;adults.</p><p>-&nbsp;In&nbsp;case&nbsp;there&nbsp;is&nbsp;only&nbsp;1&nbsp;guest&nbsp;(adult)&nbsp;traveling&nbsp;with&nbsp;1&nbsp;child&nbsp;(under&nbsp;12&nbsp;years&nbsp;old),&nbsp;the&nbsp;child&nbsp;is&nbsp;charged&nbsp;the&nbsp;adult&nbsp;ticket&nbsp;price&nbsp;large&nbsp;to&nbsp;ensure&nbsp;services&nbsp;according&nbsp;to&nbsp;regulations.</p><p><strong>ID&nbsp;documents&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour</strong></p><p>-&nbsp;Household&nbsp;Original&nbsp;passport&nbsp;and&nbsp;necessary&nbsp;documents.</p><p>-&nbsp;Children&nbsp;under&nbsp;14&nbsp;years&nbsp;old&nbsp;are&nbsp;required&nbsp;to&nbsp;bring&nbsp;birth&nbsp;certificate.&nbsp;</p><p>-&nbsp;Children&nbsp;need&nbsp;to&nbsp;be&nbsp;accompanied&nbsp;by&nbsp;parents&nbsp;or&nbsp;relatives&nbsp;over&nbsp;18&nbsp;years&nbsp;old;&nbsp;In&nbsp;case&nbsp;of&nbsp;traveling&nbsp;with&nbsp;relatives,&nbsp;a&nbsp;valid&nbsp;authorization&nbsp;is&nbsp;required.</p><p>Cancellation&nbsp;&amp;&nbsp;change&nbsp;policy</p><p>-&nbsp;From&nbsp;the&nbsp;time&nbsp;of&nbsp;posting&nbsp;Signed&nbsp;up&nbsp;to&nbsp;30&nbsp;days&nbsp;of&nbsp;departure:&nbsp;Cancellation&nbsp;fee&nbsp;50%&nbsp;of&nbsp;deposit.</p><p>-&nbsp;From&nbsp;15&nbsp;before&nbsp;departure&nbsp;date:&nbsp;Cancellation&nbsp;fee&nbsp;70%&nbsp;of&nbsp;total&nbsp;tour&nbsp;price.&nbsp;</p><p>-&nbsp;After&nbsp;the&nbsp;above&nbsp;time:&nbsp;Cancellation&nbsp;fee&nbsp;100%&nbsp;of&nbsp;total&nbsp;tour&nbsp;price.</p><p>-&nbsp;Tour&nbsp;cancellation/change&nbsp;time&nbsp;is&nbsp;recorded&nbsp;in&nbsp;business&nbsp;hours&nbsp;and&nbsp;calculated&nbsp;on&nbsp;business&nbsp;day&nbsp;(excluding&nbsp;Saturday,&nbsp;Sunday&nbsp;and&nbsp;Holidays/Tet).&nbsp;Requests&nbsp;submitted&nbsp;outside&nbsp;business&nbsp;hours&nbsp;will&nbsp;be&nbsp;counted&nbsp;from&nbsp;the&nbsp;beginning&nbsp;of&nbsp;business&nbsp;hours&nbsp;of&nbsp;the&nbsp;next&nbsp;day.</p><p>-&nbsp;Please&nbsp;send&nbsp;a&nbsp;cancellation&nbsp;request&nbsp;via&nbsp;email&nbsp;or&nbsp;the&nbsp;company&#39;s&nbsp;official&nbsp;contact&nbsp;channel&nbsp;to&nbsp;be&nbsp;recorded.&nbsp;Telephone&nbsp;notification&nbsp;will&nbsp;not&nbsp;be&nbsp;considered&nbsp;a&nbsp;basis&nbsp;for&nbsp;cancellation&nbsp;policy.</p><p>Visa&nbsp;Information</p><p>-&nbsp;Visa&nbsp;exemption&nbsp;for&nbsp;The&nbsp;customer&nbsp;holds&nbsp;Vietnamese&nbsp;nationality.</p><p>-&nbsp;Passport&nbsp;intact&nbsp;and&nbsp;still&nbsp;valid&nbsp;6&nbsp;months&nbsp;from&nbsp;the&nbsp;end&nbsp;date&nbsp;of&nbsp;the&nbsp;tour.&nbsp;</p><p><strong>Note&nbsp;about&nbsp;residency&nbsp;status</strong></p><p>-&nbsp;You&nbsp;hold&nbsp;dual&nbsp;nationality,&nbsp;Travel&nbsp;Document&nbsp;or&nbsp;residency&nbsp;status&nbsp;please&nbsp;inform&nbsp;when&nbsp;registering&nbsp;and&nbsp;provide&nbsp;full&nbsp;relevant&nbsp;documents.</p><p>-&nbsp;Guests&nbsp;only&nbsp;have&nbsp;a&nbsp;green&nbsp;card&nbsp;but&nbsp;not&nbsp;A&nbsp;valid&nbsp;Vietnamese&nbsp;passport&nbsp;will&nbsp;not&nbsp;be&nbsp;eligible&nbsp;to&nbsp;register&nbsp;for&nbsp;a&nbsp;tour&nbsp;to&nbsp;a&nbsp;third&nbsp;country.</p><p>-&nbsp;Guests&nbsp;are&nbsp;overseas&nbsp;Vietnamese&nbsp;or&nbsp;nationals&nbsp;c&nbsp;foreign&nbsp;nationals&nbsp;with&nbsp;visas&nbsp;to&nbsp;enter&nbsp;Vietnam&nbsp;need&nbsp;to&nbsp;bring&nbsp;with&nbsp;them&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour.</p><p>-&nbsp;In&nbsp;case&nbsp;of&nbsp;using&nbsp;ABTC&nbsp;(APEC),&nbsp;h&nbsp;For&nbsp;official,&nbsp;diplomatic&nbsp;passports&nbsp;or&nbsp;self-applying&nbsp;a&nbsp;visa,&nbsp;please&nbsp;notify&nbsp;in&nbsp;advance&nbsp;to&nbsp;receive&nbsp;appropriate&nbsp;advice.</p><p>Conditions&nbsp;for&nbsp;participation&nbsp;in&nbsp;the&nbsp;tour&nbsp;r</p><p><strong>Age&nbsp;and&nbsp;health:</strong></p><p>-&nbsp;Tour&nbsp;applies&nbsp;to&nbsp;guests&nbsp;under&nbsp;70&nbsp;years&nbsp;old.</p><p>-&nbsp;Guests&nbsp;from&nbsp;70&nbsp;years&nbsp;old&nbsp;and&nbsp;above&nbsp;You&nbsp;need&nbsp;to&nbsp;pay&nbsp;an&nbsp;additional&nbsp;premium&nbsp;insurance&nbsp;according&nbsp;to&nbsp;regulations.</p><p>-&nbsp;From&nbsp;75&nbsp;years&nbsp;old&nbsp;or&nbsp;older,&nbsp;you&nbsp;need&nbsp;to&nbsp;provide&nbsp;a&nbsp;certificate&nbsp;of&nbsp;good&nbsp;health&nbsp;due&nbsp;to&nbsp;An&nbsp;authorized&nbsp;medical&nbsp;facility&nbsp;and&nbsp;a&nbsp;relative&nbsp;under&nbsp;60&nbsp;years&nbsp;old&nbsp;accompanying.</p><p>-&nbsp;Pregnant&nbsp;guests&nbsp;please&nbsp;inform&nbsp;when&nbsp;registering;&nbsp;Need&nbsp;to&nbsp;consult&nbsp;a&nbsp;doctor&nbsp;before&nbsp;joining&nbsp;the&nbsp;tour.</p><p>-&nbsp;Do&nbsp;not&nbsp;accept&nbsp;pregnant&nbsp;customers&nbsp;of&nbsp;5&nbsp;months&nbsp;or&nbsp;more&nbsp;for&nbsp;safety&nbsp;reasons.</p><p>-&nbsp;You&nbsp;need&nbsp;to&nbsp;ensure&nbsp;your&nbsp;health&nbsp;be&nbsp;fit&nbsp;to&nbsp;participate&nbsp;in&nbsp;the&nbsp;activities&nbsp;in&nbsp;the&nbsp;tour.</p><p>-&nbsp;If&nbsp;you&nbsp;have&nbsp;special&nbsp;health&nbsp;conditions,&nbsp;please&nbsp;inform&nbsp;the&nbsp;consultant&nbsp;before&nbsp;booking&nbsp;the&nbsp;tour.&nbsp;You&nbsp;may&nbsp;be&nbsp;required&nbsp;to&nbsp;provide&nbsp;a&nbsp;health&nbsp;certificate&nbsp;or&nbsp;sign&nbsp;a&nbsp;commitment&nbsp;in&nbsp;some&nbsp;necessary&nbsp;cases.</p><p><strong>Regulations&nbsp;by&nbsp;group:&nbsp;&lt;&nbsp;/strong&gt;</strong></p><p><strong>-&nbsp;The&nbsp;program&nbsp;can&nbsp;adjust&nbsp;the&nbsp;order&nbsp;of&nbsp;tours&nbsp;according&nbsp;to&nbsp;the&nbsp;actual&nbsp;situation&nbsp;but&nbsp;still&nbsp;ensures&nbsp;full&nbsp;points.</strong></p><p><strong>-&nbsp;Tour&nbsp;departs&nbsp;when&nbsp;enough&nbsp;15&nbsp;adult&nbsp;customers,&nbsp;if&nbsp;the&nbsp;number&nbsp;is&nbsp;not&nbsp;sufficient,&nbsp;the&nbsp;company&nbsp;will&nbsp;notify&nbsp;and&nbsp;re-arrange&nbsp;the&nbsp;departure&nbsp;date&nbsp;or&nbsp;refund.</strong></p><p><strong>-&nbsp;Due&nbsp;to&nbsp;the&nbsp;nature&nbsp;of&nbsp;joint&nbsp;tours,&nbsp;You&nbsp;need&nbsp;to&nbsp;follow&nbsp;the&nbsp;group&nbsp;throughout&nbsp;the&nbsp;journey&nbsp;and&nbsp;return&nbsp;on&nbsp;the&nbsp;end&nbsp;of&nbsp;the&nbsp;tour.</strong></p><p><strong>-&nbsp;The&nbsp;services&nbsp;in&nbsp;the&nbsp;program&nbsp;have&nbsp;been&nbsp;arranged&nbsp;in&nbsp;advance&nbsp;by&nbsp;the&nbsp;group;&nbsp;In&nbsp;case&nbsp;of&nbsp;non-use&nbsp;for&nbsp;personal&nbsp;reasons,&nbsp;there&nbsp;will&nbsp;be&nbsp;no&nbsp;refund.</strong></p><p><strong>Exit&nbsp;and&nbsp;exit:</strong></p><p><strong>-&nbsp;You&nbsp;need&nbsp;to&nbsp;ensure&nbsp;your&nbsp;personal&nbsp;documents&nbsp;are&nbsp;valid&nbsp;according&nbsp;to&nbsp;import/exit&nbsp;regulations,&nbsp;when&nbsp;joining&nbsp;the&nbsp;tour.&nbsp;In&nbsp;case&nbsp;of&nbsp;not&nbsp;being&nbsp;allowed&nbsp;to&nbsp;exit/enter&nbsp;the&nbsp;country,&nbsp;the&nbsp;trip&nbsp;cannot&nbsp;be&nbsp;performed&nbsp;due&nbsp;to&nbsp;disapproval&nbsp;by&nbsp;the&nbsp;authorities&nbsp;(for&nbsp;any&nbsp;reason),&nbsp;the&nbsp;tour&nbsp;cost&nbsp;will&nbsp;not&nbsp;be&nbsp;refundable.&nbsp;The&nbsp;company&nbsp;will&nbsp;support&nbsp;guidance&nbsp;to&nbsp;the&nbsp;extent&nbsp;possible&nbsp;to&nbsp;solve&nbsp;for&nbsp;you.&nbsp;Any&nbsp;incurred&nbsp;costs&nbsp;you&nbsp;must&nbsp;actively&nbsp;arrange.</strong></p><p><strong>-&nbsp;For&nbsp;customers&nbsp;with&nbsp;significant&nbsp;changes&nbsp;in&nbsp;characteristics&nbsp;facial&nbsp;deformation,&nbsp;for&nbsp;example,&nbsp;cosmetic&nbsp;surgery,&nbsp;please&nbsp;renew&nbsp;your&nbsp;passport&nbsp;according&nbsp;to&nbsp;regulations&nbsp;before&nbsp;departure.&nbsp;In&nbsp;case&nbsp;the&nbsp;passport&nbsp;no&nbsp;longer&nbsp;suits&nbsp;the&nbsp;current&nbsp;appearance&nbsp;and&nbsp;problems&nbsp;arise&nbsp;when&nbsp;exiting&nbsp;the&nbsp;entry,&nbsp;you&nbsp;please&nbsp;bear&nbsp;your&nbsp;responsibility.&nbsp;Service&nbsp;cancellation&nbsp;costs&nbsp;(if&nbsp;any)&nbsp;will&nbsp;be&nbsp;applied&nbsp;according&nbsp;to&nbsp;regulations.</strong></p><p><strong>-&nbsp;For&nbsp;customers&nbsp;who&nbsp;have&nbsp;transformed,&nbsp;the&nbsp;information&nbsp;on&nbsp;the&nbsp;Passport&nbsp;and&nbsp;CCCD&nbsp;must&nbsp;be&nbsp;consistent&nbsp;and&nbsp;match.&nbsp;The&nbsp;image&nbsp;on&nbsp;the&nbsp;passport&nbsp;needs&nbsp;to&nbsp;be&nbsp;taken&nbsp;after&nbsp;gender&nbsp;transition/cosmetic&nbsp;surgery,&nbsp;ensuring&nbsp;clear&nbsp;identification&nbsp;according&nbsp;to&nbsp;the&nbsp;actual&nbsp;status&nbsp;Yes,&nbsp;the&nbsp;same&nbsp;as&nbsp;the&nbsp;passport&nbsp;currently&nbsp;in&nbsp;use.</strong></p><p><strong>Force&nbsp;majeure:</strong></p><p><strong>-&nbsp;Flight&nbsp;times&nbsp;may&nbsp;change&nbsp;according&nbsp;to&nbsp;the&nbsp;dry&nbsp;cargo&nbsp;carrier&nbsp;ng.</strong></p><p><strong>-&nbsp;In&nbsp;situations&nbsp;beyond&nbsp;control&nbsp;such&nbsp;as&nbsp;weather,&nbsp;natural&nbsp;disasters,&nbsp;epidemics,&nbsp;security&nbsp;incidents,&nbsp;war,&nbsp;airports&nbsp;y&nbsp;closure&nbsp;or&nbsp;change&nbsp;from&nbsp;transportation&nbsp;unit,&nbsp;…&nbsp;the&nbsp;schedule&nbsp;may&nbsp;be&nbsp;adjusted&nbsp;to&nbsp;ensure&nbsp;your&nbsp;safety&nbsp;and&nbsp;benefits.&nbsp;The&nbsp;company&nbsp;will&nbsp;make&nbsp;maximum&nbsp;efforts&nbsp;to&nbsp;support&nbsp;and&nbsp;coordinate&nbsp;with&nbsp;customers&nbsp;to&nbsp;handle&nbsp;arising&nbsp;issues.&nbsp;However,&nbsp;related&nbsp;expenses&nbsp;such&nbsp;as&nbsp;food,&nbsp;travel,&nbsp;stay,&nbsp;changing/rebooking&nbsp;tickets...&nbsp;(if&nbsp;any),&nbsp;please&nbsp;pay&nbsp;according&nbsp;to&nbsp;actuality.&nbsp;The&nbsp;company&nbsp;will&nbsp;accompany&nbsp;and&nbsp;support&nbsp;so&nbsp;that&nbsp;you&nbsp;have&nbsp;the&nbsp;most&nbsp;suitable&nbsp;and&nbsp;convenient&nbsp;plan.</strong></p><p><strong>Instructor</strong></p><p><strong>-&nbsp;Guide&nbsp;Guide&nbsp;(HDV)&nbsp;The&nbsp;will&nbsp;contact&nbsp;you&nbsp;approximately&nbsp;2&nbsp;days&nbsp;before&nbsp;departure&nbsp;to&nbsp;arrange&nbsp;a&nbsp;pickup&nbsp;time&nbsp;and&nbsp;provide&nbsp;the&nbsp;necessary&nbsp;information&nbsp;for&nbsp;transfer.</strong></p>', '<p>None</p>'),
+	(15, 13, 'zh', '马来西亚-新加坡5天4夜游：探索东南亚文化', 'tour-malaysia-singapore-5n4d-kham-pha-van-hoa-dong-nam-a', '探索滨海湾花园：新加坡标志性的生态花园。', '<p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">探索滨海湾花园：新加坡标志性的生态花园。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">参观滨海湾金沙和鱼尾狮公园：狮子岛图标。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">参观神秘的黑风洞并征服 272 个彩色楼梯。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">体验云顶高原：云端娱乐之城。</span></p><p><span style="color: rgb(63, 59, 59); background-color: rgb(255, 255, 255);">报到布特拉清真寺和吉隆坡独立广场。</span></p>', '<p><strong>交通</strong></p><p>-越南航空公司往返机票（23公斤托运行李+10公斤手提行李）。 </p><p>- 沿途提供空调车辆。</p><p>- 2 个国家的机场安检费、航空保险、机场税（根据规定） y 在出票时确定）。</p><p><strong>住宿</strong></p><p>- 标准 3-4* 当地酒店（2 位客人/房间；男/女个人客户可安排合适的房间）。</p><p><strong>其他服务</strong></p><p>- 计划内的观光门票。 </p><p>- 根据计划膳食。 （如果可调节，请确保同等数量和质量）。</p><p>- 矿泉水 01 瓶/人/天。</p><p>- 国际旅行保险。 </p><p>- 团队领队和当地导游在旅途中提供服务。</p><p>- 赠送游客帽子。 </p><p>- 增值税。</p>', '<p>- 单间附加费（如有）：4,300,000 越南盾/人/旅游 – 4,800,000 越南盾/人/旅游。 </p><p>- 司机和导游小费：25 美元/人/团。</p><p>- 外籍游客附加费：660,000 越南盾/人。</p><p>- 根据外籍游客重新进入越南的签证遵守现行规定（如果有）。</p><p>- 个人费用：超重行李、电话、洗衣、观光、计划外的支出。</p>', '<p>儿童政策</p><p><strong>1. 一般规则：</strong></p><p>- 每 02 名成人可陪同 01 名儿童。</p><p>- 从第二个儿童开始，适用。遵守每个年龄段的规定（如下所述）。</p><p>- 孩子们与父母一起睡在床上。 → 如果需要自己的床：按成人收费。</p><p>- 计划外的费用（如有）由家庭支付。</p><p><strong>2. 按年龄划分的规定：</strong></p><p>- 2 岁以下儿童：以网站上显示的价格为准，包括机票、不单独座位、与父母同睡。</p><p>- 2 - 10 岁儿童：以网站上显示的价格为准，包括计划中的全套服务。 和父母一起睡觉。 第 2 个儿童起：按成人价格的 100% 收费。</p><p>- 11 岁及以上儿童：按成人收费。</p><p>- 如果只有 1 名客人（成人）与 1 名儿童（12 岁以下）一起旅行），儿童按成人票价收取较高费用，以确保服务按规定进行。</p><p><strong>参团时的身份证件</strong></p><p>-家庭护照原件和必要文件。</p><p>- 14 岁以下儿童需携带出生证明。 </p><p>-儿童需要由父母或年满18岁的亲戚陪同； 如果与亲戚一起旅行，则需要有效授权。</p><p>取消和更改政策</p><p>- 自发布签名之日起至出发前 30 天：取消费用押金的 50%。</p><p>- 出发日期前 15 点起：取消费用为旅游总价的 70%。 </p><p>- 在上述时间之后：取消费用为旅游总价的 100%。</p><p>- 旅游取消/更改时间按营业时间记录，并在工作日计算（不包括星期六、星期日和节假日/春节）。 营业时间外提交的请求将从次日营业时间开始计算。</p><p>- 请通过电子邮件或公司官方联系渠道发送取消请求以进行记录。 电话通知不会被视为取消政策的依据。</p><p>签证信息</p><p>-持有越南国籍的客户可免签证。</p><p>-护照完好无损，且自旅行结束之日起 6 个月内仍然有效。 </p><p><strong>有关居住身份的说明</strong></p><p>-您拥有双重国籍、旅行证件或居住身份请在注册时告知，并提供完整的相关文件。</p><p>- 客人只有绿卡，但没有有效的越南护照，将没有资格报名参加第三国旅游。</p><p>- 客人是海外越南人或国民c 持有越南签证的外国人参加旅游时需要携带。</p><p>- 如果使用 ABTC (APEC)，h 适用于官方、外交护照或自行申请护照签证，请提前通知以获得适当的建议。</p><p>参加旅游的条件</p><p><strong>年龄和健康状况：</strong></p><p>-旅游适用于70岁以下的游客。</p><p>-70岁及以上的游客您需要按照规定缴纳额外的保险费。</p><p>- 75岁或以上，您需要提供在授权医疗机构的健康状况证明和60岁以下的亲属老伴。</p><p>- 怀孕客人请在登记时告知； 参加行程前需咨询医生。</p><p>-出于安全考虑，请勿接待怀孕5个月或以上的游客。</p><p>-您需要确保自己的健康状况适合参加行程中的活动。</p><p>-如果您有特殊的健康状况，请在预订旅游之前告知顾问。 某些必要情况下，您可能需要提供健康证明或签署承诺书。</p><p><strong>按群体规定：< /strong></p><p>- 程序可根据实际情况调整行程顺序，但仍能保证满分。</p><p>- 当达到 15 名成年顾客时，如人数不足，行程将出发，公司将通知并重新安排出发日期或退款。</p><p>- 由于联合旅游的性质，您需要全程跟随团队，并在行程结束时返回。</p><p>- 项目中的服务已由团队提前安排； 如因个人原因未使用，将不予退款。</p><p><strong>退出与退出：</strong></p><p>-您在参团时，需要根据进出境规定确保您的个人证件有效。 如果不被允许出/入境，由于当局不批准（出于任何原因）而无法进行旅行，旅游费用将不予退还。 公司将在可能的范围内支持指导，为您解决问题。 任何产生的费用您必须积极安排。</p><p>-对于面部变形特征发生重大变化的顾客，例如整容手术，请在出发前按规定更新护照。 如果护照不再符合现在的外观，并在出境时出现问题，请您自行承担责任。 取消服务费用（如有）将按照规定收取。</p><p>- 对于已转换的客户，护照和 CCCD 上的信息必须一致且匹配。 护照上的图像需要在变性/整容手术后拍摄，确保根据实际状况清晰识别是的，与当前使用的护照相同。</p><p><strong>不可抗力：</strong></p><p>-航班时间可能会根据干货承运商的情况而变化。</p><p>- 无法控制的情况，例如天气、自然灾害、流行病、安全事件、战争、机场如果运输单位关闭或发生变化，……时间表可能会进行调整，以确保您的安全和利益。 公司将尽最大努力支持并与客户协调处理出现的问题。 但相关费用如餐饮、交通、住宿、改签/重新预订机票……（如有），请按实际支付。 公司将全程陪同和支持，以便您拥有最合适、最方便的计划。</p><p>教练</p><p>- 导游指南 (HDV)我们将在出发前大约 2 天与您联系，安排接机时间并提供转机所需的信息。</p>', '<p>无</p>'),
+	(18, 1, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 3', 'sapa-discovery-tour-conquer-fansipan-peak-3', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
+	(19, 1, 'zh', '沙巴探索之旅 - 征服番西邦峰 3', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-3', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL),
+	(20, 8, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 1', 'sapa-discovery-tour-conquer-fansipan-peak-1', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
+	(21, 8, 'zh', '沙巴探索之旅 - 征服番西邦峰 1', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-1', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL),
+	(22, 9, 'en', 'Sapa Discovery Tour - Conquer Fansipan Peak 2', 'sapa-discovery-tour-conquer-fansipan-peak-2', 'Journey to the misty mountain town, explore Cat Cat village, and conquer the roof of Indochina.', NULL, NULL, NULL, NULL, NULL),
+	(23, 9, 'zh', '沙巴探索之旅 - 征服番西邦峰 2', 'sha-ba-tan-suo-zhi-lv-zheng-fu-fan-xi-bang-feng-2', '前往云雾缭绕的山城，探索猫猫村，并征服印度支那屋脊。', NULL, NULL, NULL, NULL, NULL);
 
 -- Dumping structure for table db_marketing_tour.translations
 DROP TABLE IF EXISTS `translations`;
@@ -740,7 +727,7 @@ CREATE TABLE IF NOT EXISTS `translations` (
   UNIQUE KEY `translation_key` (`translation_key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.translations: ~279 rows (approximately)
+-- Dumping data for table db_marketing_tour.translations: ~372 rows (approximately)
 DELETE FROM `translations`;
 INSERT INTO `translations` (`id`, `translation_key`, `description`, `vi`, `en`, `zh`, `created_at`, `updated_at`) VALUES
 	(1, 'admin.menu.banners', 'quan ly banner', 'Quan ly banner', 'Banner Management', 'Banner Management', '2026-07-21 21:41:05', '2026-07-23 22:04:40'),
@@ -1144,7 +1131,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Dumping data for table db_marketing_tour.users: ~17 rows (approximately)
 DELETE FROM `users`;
 INSERT INTO `users` (`id`, `role_id`, `full_name`, `email`, `password`, `phone_number`, `avatar_url`, `is_active`, `last_login`, `created_at`, `updated_at`, `language`) VALUES
-	(1, 1, 'Quản Trị Viên', '1@gmail.com', '$2a$12$9PTNubZ9YiqLA0fE4dKvROIcct3pSzRG0JZx7UVL8y9lhVQBJeDw.', '0901234567', '/uploads/avatars/avatar-1-1774261565350-737873517.jpg', 1, '2026-09-09 16:59:19', '2026-03-02 09:21:46', '2026-04-01 16:10:10', 'vi'),
+	(1, 1, 'Quản Trị Viên', '1@gmail.com', '$2a$12$9PTNubZ9YiqLA0fE4dKvROIcct3pSzRG0JZx7UVL8y9lhVQBJeDw.', '0901234567', '/uploads/avatars/avatar-1-1774261565350-737873517.jpg', 1, '2026-11-14 09:02:55', '2026-03-02 09:21:46', '2026-04-01 16:10:10', 'vi'),
 	(2, 2, 'Nguyễn Văn A', 'nguyenvana@gmail.com', '$2y$10$abcdefghijklmnopqrstuv', '0912345678', 'https://ui-avatars.com/api/?name=Nguyễn+A', 1, NULL, '2026-03-02 09:21:46', '2026-03-02 09:21:46', 'vi'),
 	(3, 2, 'Trần Thị B', 'tranthib@gmail.com', '$2y$10$abcdefghijklmnopqrstuv', '0987654321', 'https://ui-avatars.com/api/?name=Trần+B', 1, NULL, '2026-03-02 09:21:46', '2026-03-02 09:21:46', 'vi'),
 	(7, 1, 'minhtuyen', 'minhtuyenk201@gmail.com', '$2a$12$y7JNSGrtvndiRqNAx2fN9eomoC0x/eCCKIpggIyfwhiReTGr3LZjC', NULL, '/uploads/avatars/avatar-7-1777293312005-679122399.jpg', 1, '2026-07-05 11:38:03', '2026-03-11 22:11:21', '2026-04-27 19:35:12', 'vi'),
@@ -1161,23 +1148,6 @@ INSERT INTO `users` (`id`, `role_id`, `full_name`, `email`, `password`, `phone_n
 	(26, 2, 'Ngô Đức Anh', 'ngoanh26@example.com', '$2a$12$6oMYBhFSAyLPNrCtxFF.X.1bwtpjZ/YVupyTjOGULcJ907svk.5nC', '0901000026', NULL, 1, NULL, '2026-09-09 16:58:22', '2026-09-09 16:58:22', 'en'),
 	(27, 2, 'Đặng Minh Khoa', 'dangkhoa27@example.com', '$2a$12$6oMYBhFSAyLPNrCtxFF.X.1bwtpjZ/YVupyTjOGULcJ907svk.5nC', '0901000027', NULL, 1, NULL, '2026-09-09 16:58:22', '2026-09-09 16:58:22', 'en'),
 	(28, 2, 'Nguyễn Văn An', 'nguyenan18@example.com', '$2a$12$6oMYBhFSAyLPNrCtxFF.X.1bwtpjZ/YVupyTjOGULcJ907svk.5nC', '0901000018', NULL, 1, NULL, '2026-09-09 16:58:22', '2026-09-09 16:58:22', 'en');
-
--- Dumping structure for table db_marketing_tour.vote_likes
-DROP TABLE IF EXISTS `vote_likes`;
-CREATE TABLE IF NOT EXISTS `vote_likes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `vote_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_like` (`vote_id`,`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Dumping data for table db_marketing_tour.vote_likes: ~2 rows (approximately)
-DELETE FROM `vote_likes`;
-INSERT INTO `vote_likes` (`id`, `vote_id`, `user_id`, `created_at`) VALUES
-	(2, 8, 8, '2026-06-13 09:27:34'),
-	(3, 19, 8, '2026-06-13 09:27:36');
 
 -- Dumping structure for table db_marketing_tour.votes
 DROP TABLE IF EXISTS `votes`;
@@ -1201,7 +1171,7 @@ CREATE TABLE IF NOT EXISTS `votes` (
   CONSTRAINT `fk_vote` FOREIGN KEY (`tour_id`) REFERENCES `tours` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table db_marketing_tour.votes: ~22 rows (approximately)
+-- Dumping data for table db_marketing_tour.votes: ~27 rows (approximately)
 DELETE FROM `votes`;
 INSERT INTO `votes` (`id`, `tour_id`, `customer_name`, `customer_email`, `rating`, `comment`, `is_approved`, `created_at`, `images`, `likes_count`, `admin_reply`, `admin_reply_at`, `parent_id`, `user_id`) VALUES
 	(1, 1, 'A', 'a@mail.com', 5, 'Rất tốt', 1, '2026-04-02 18:56:57', NULL, 0, NULL, NULL, NULL, NULL),
@@ -1231,6 +1201,23 @@ INSERT INTO `votes` (`id`, `tour_id`, `customer_name`, `customer_email`, `rating
 	(26, 13, 'minhtuyen', 'minhtuyenk201@gmail.com', 0, 'aaaaaaa\r\n', 1, '2026-04-27 17:09:55', NULL, 0, NULL, NULL, 23, 7),
 	(27, 13, 'minhtuyen', 'minhtuyenk201@gmail.com', 0, '@minhtuyen \naaaaa', 1, '2026-04-27 19:37:27', NULL, 0, NULL, NULL, 23, 7),
 	(28, 13, 'minhtuyen', 'minhtuyenk201@gmail.com', 5, 'nice', 1, '2026-04-27 19:38:06', NULL, 0, NULL, NULL, NULL, 7);
+
+-- Dumping structure for table db_marketing_tour.vote_likes
+DROP TABLE IF EXISTS `vote_likes`;
+CREATE TABLE IF NOT EXISTS `vote_likes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vote_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_like` (`vote_id`,`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table db_marketing_tour.vote_likes: ~2 rows (approximately)
+DELETE FROM `vote_likes`;
+INSERT INTO `vote_likes` (`id`, `vote_id`, `user_id`, `created_at`) VALUES
+	(2, 8, 8, '2026-06-13 09:27:34'),
+	(3, 19, 8, '2026-06-13 09:27:36');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

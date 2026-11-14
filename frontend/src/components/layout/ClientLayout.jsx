@@ -434,7 +434,7 @@ const ClientLayout = ({ children }) => {
                             aria-label={t('common.scrollToTop', 'Cuộn về đầu trang')}
                             className="relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-white text-primary hover:bg-[#EEF4FC] border border-[#C2D8F0] shadow-xl hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary animate-fade-in group cursor-pointer"
                         >
-                            <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-200 group-hover:-translate-y-1 text-primary stroke-[2.5]" />
+                            <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6 transition-transform duration-200 text-primary stroke-[2.5]" />
                         </button>
                     )}
 

@@ -97,6 +97,11 @@ const Booking = sequelize.define('Booking', {
         allowNull: true,
         comment: 'Snapshot giá người lớn tại thời điểm đặt',
     },
+    original_adult_price_snapshot: {
+        type: DataTypes.DECIMAL(15, 2),
+        allowNull: true,
+        comment: 'Snapshot giá gốc người lớn tại thời điểm đặt',
+    },
     child_price_snapshot: {
         type: DataTypes.DECIMAL(12, 2),
         allowNull: true,

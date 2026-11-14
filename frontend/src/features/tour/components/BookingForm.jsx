@@ -170,11 +170,16 @@ const DepartureSelect = ({ departures, value, onChange, placeholder, t }) => {
 };
 
 // ─── PassengerCounter ─────────────────────────────────────────────────────────
-const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99, price }) => (
+const PassengerCounter = ({ label, ageDesc, count, onChange, min = 0, max = 99, price, originalPrice }) => (
     <div className="flex items-center justify-between py-2.5">
         <div>
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                 <p className="text-sm font-semibold text-text">{label}</p>
+                {originalPrice && originalPrice > price && (
+                    <span className="text-[10px] text-text-muted line-through font-normal">
+                        {formatPrice(originalPrice)}
+                    </span>
+                )}
                 {price > 0 && (
                     <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                         {formatPrice(price)}
@@ -265,7 +270,9 @@ const BookingForm = ({ tour }) => {
     );
 
     const maxSeats = selectedDeparture?.available_seats || 99;
+    const isPromotion = tour.tour_badge === 'promotion';
     const adultPrice = selectedDeparture ? parseFloat(selectedDeparture.price_adult) : 0;
+    const originalAdultPrice = isPromotion && selectedDeparture?.original_price_adult ? parseFloat(selectedDeparture.original_price_adult) : null;
     const childPrice = selectedDeparture ? parseFloat(selectedDeparture.price_child || 0) : 0;
     const infantPrice = selectedDeparture ? parseFloat(selectedDeparture.price_infant || 0) : 0;
 
@@ -371,13 +378,23 @@ const BookingForm = ({ tour }) => {
             <div className="bg-white rounded-2xl border-2 border-primary/20 shadow-lg p-5">
                 <h3 className="text-lg font-bold text-text mb-1">{t('booking.bookNow')}</h3>
                 {departures.length > 0 ? (
-                    <p className="text-sm text-text-muted mb-5">
-                        {t('booking.priceFrom')}{' '}
+                    <div className="text-sm text-text-muted mb-5 flex items-center gap-1.5 flex-wrap">
+                        <span>{t('booking.priceFrom')}</span>
+                        {isPromotion && (() => {
+                            const cheapest = departures.reduce((min, d) => (!min || parseFloat(d.price_adult) < parseFloat(min.price_adult)) ? d : min, null);
+                            const orig = cheapest?.original_price_adult ? parseFloat(cheapest.original_price_adult) : null;
+                            const sale = cheapest ? parseFloat(cheapest.price_adult) : null;
+                            return orig && sale && orig > sale ? (
+                                <span className="line-through text-xs text-text-muted">
+                                    {formatPrice(orig)}
+                                </span>
+                            ) : null;
+                        })()}
                         <span className="font-bold text-primary">
                             {formatPrice(Math.min(...departures.map(d => parseFloat(d.price_adult))))}
                         </span>
-                        {t('booking.perAdult')}
-                    </p>
+                        <span>{t('booking.perAdult')}</span>
+                    </div>
                 ) : (
                     <p className="text-sm text-warning mb-5">{t('booking.noDepartures')}</p>
                 )}
@@ -445,7 +462,7 @@ const BookingForm = ({ tour }) => {
                             {t('booking.passengers')}
                         </label>
                         <div className="bg-surface-alt rounded-lg border border-border p-3 divide-y divide-border">
-                            <PassengerCounter label={t('booking.adult')} ageDesc={t('booking.adultAge')} count={adults} onChange={setAdults} min={1} max={maxSeats} price={adultPrice} />
+                            <PassengerCounter label={t('booking.adult')} ageDesc={t('booking.adultAge')} count={adults} onChange={setAdults} min={1} max={maxSeats} price={adultPrice} originalPrice={originalAdultPrice} />
                             <PassengerCounter label={t('booking.child')} ageDesc={t('booking.childAge')} count={children} onChange={setChildren} max={Math.max(0, maxSeats - adults)} price={childPrice} />
                             <PassengerCounter label={t('booking.infant')} ageDesc={t('booking.infantAge')} count={infants} onChange={setInfants} max={Math.max(0, maxSeats - adults - children)} price={infantPrice} />
                         </div>

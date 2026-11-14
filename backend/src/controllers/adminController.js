@@ -195,6 +195,9 @@ const getBookingPassengerCount = (booking) =>
 
 const buildDeparturePayload = (item, index) => {
   const capacity = getDepartureCapacity(item, index);
+  const rawOriginalPrice = item.original_price_adult !== undefined && item.original_price_adult !== null && item.original_price_adult !== ''
+    ? Number(item.original_price_adult)
+    : null;
 
   return {
     departure_date: ensureValidDepartureDate(item.departure_date, index),
@@ -203,6 +206,7 @@ const buildDeparturePayload = (item, index) => {
       `Giá người lớn của lịch khởi hành #${index + 1}`,
       { min: 1 }
     ),
+    original_price_adult: rawOriginalPrice && rawOriginalPrice > 0 ? rawOriginalPrice : null,
     price_child: normalizeMoneyValue(
       item.price_child,
       `Giá trẻ em của lịch khởi hành #${index + 1}`,
@@ -439,6 +443,7 @@ const getAllTours = catchAsync(async (req, res) => {
           'id',
           'departure_date',
           'price_adult',
+          'original_price_adult',
           'capacity',
           'available_seats',
           'status',
@@ -941,6 +946,10 @@ const updateTour = catchAsync(async (req, res, next) => {
               `Giá người lớn của lịch khởi hành #${index + 1}`,
               { min: 1 }
             ),
+            original_price_adult:
+              item.original_price_adult !== undefined
+                ? (item.original_price_adult && Number(item.original_price_adult) > 0 ? Number(item.original_price_adult) : null)
+                : existing.original_price_adult,
             price_child: normalizeMoneyValue(
               item.price_child,
               `Giá trẻ em của lịch khởi hành #${index + 1}`,
