@@ -341,6 +341,63 @@ button {
     outline-offset: 3px !important;
 }
 
+/* Quill toolbar styling for custom Word-style tools */
+.ql-snow.ql-toolbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 4px;
+}
+
+/* Word-style fixed toolbar and document container with scroll */
+.rich-text-editor .ql-toolbar.ql-snow {
+    background-color: #ffffff !important;
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+    border-color: #C2D8F0 !important;
+    border-bottom: 1px solid #C2D8F0 !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.rich-text-editor .ql-container.ql-snow {
+    border-color: #C2D8F0 !important;
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+    background-color: #ffffff !important;
+    max-height: 380px !important;
+    overflow-y: auto !important;
+}
+
+.rich-text-editor .ql-editor {
+    min-height: 160px !important;
+}
+
+.rich-text-editor.is-invalid .ql-toolbar.ql-snow,
+.rich-text-editor.is-invalid .ql-container.ql-snow {
+    border-color: #ef4444 !important;
+}
+
+.rich-text-editor .ql-editor {
+    min-height: 180px !important;
+}
+
+.ql-snow.ql-toolbar .custom-tool-btn,
+.ql-snow .ql-toolbar .custom-tool-btn {
+    width: auto !important;
+    height: auto !important;
+    float: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+}
+
+.ql-snow.ql-toolbar .custom-toolbar-panel,
+.ql-snow .ql-toolbar .custom-toolbar-panel {
+    float: none !important;
+    clear: both !important;
+}
+
 @media (max-width: 640px) {
     .prose-content img[style*="float"] {
         max-width: 100% !important;

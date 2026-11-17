@@ -6,13 +6,31 @@ import ClientLayout from '@/components/layout/ClientLayout';
 import {
     ArrowLeft,
     CalendarDays,
-    ChevronDown,
-    ChevronUp,
+    ChevronRight,
     Loader2,
     Sparkles,
+    BookOpen,
+    FileText,
+    MapPin,
+    ShieldCheck,
+    Headphones,
+    Star,
+    Gift,
+    Compass,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import tokyoImg from '@/assets/images/tokyo.webp';
+
+const GUIDE_CARD_THEMES = [
+    { icon: BookOpen, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { icon: MapPin, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-100' },
+    { icon: ShieldCheck, color: 'text-indigo-500', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { icon: Headphones, color: 'text-cyan-600', bg: 'bg-cyan-50', border: 'border-cyan-100' },
+    { icon: Star, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100' },
+    { icon: Gift, color: 'text-teal-600', bg: 'bg-teal-50', border: 'border-teal-100' },
+    { icon: Compass, color: 'text-purple-500', bg: 'bg-purple-50', border: 'border-purple-100' },
+];
 
 const getDateLocale = (language) => {
     if (language?.startsWith('zh')) return 'zh-CN';
@@ -88,12 +106,12 @@ const GuidePage = () => {
 
                             {/* Main Title in Navy tone with drop shadow for clarity */}
                             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#1A3566] tracking-tight mt-4 drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
-                                {t('guide.title', 'Blog & Cẩm Nang Du Lịch')}
+                                Blog & Cẩm Nang <span className="text-primary">Du Lịch</span>
                             </h1>
 
                             {/* Subtitle */}
-                            <p className="mt-3 text-[#224370] text-sm sm:text-base max-w-lg mx-auto leading-relaxed font-semibold drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
-                                {t('guide.subtitle', 'Mẹo và thông tin hữu ích cho chuyến đi của bạn')}
+                            <p className="mt-3 text-[#224370] text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-semibold drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]">
+                                {t('guide.subtitle', 'Khám phá những kinh nghiệm du lịch hữu ích, mẹo hay và thông tin mới nhất để chuyến đi của bạn thêm trọn vẹn!')}
                             </p>
 
                             {/* CTA Button */}
@@ -127,37 +145,42 @@ const GuidePage = () => {
                         </div>
                     </div>
 
-                    {/* Bottom Section: Danh sách các bài viết dạng thẻ có mũi tên */}
-                    <div id="guide-list" className="max-w-2xl sm:max-w-3xl mx-auto px-4 py-12 sm:py-16">
+                    {/* Bottom Section: Danh sách các bài viết dạng thẻ chuẩn theo form ảnh mẫu (bỏ phần ngày cập nhật) */}
+                    <div id="guide-list" className="max-w-3xl sm:max-w-4xl mx-auto px-4 py-10 sm:py-14">
                         {loading ? (
                             <div className="space-y-3 sm:space-y-3.5">
-                                {[1, 2, 3, 4, 5].map((i) => (
+                                {[1, 2, 3, 4, 5, 6].map((i) => (
                                     <div
                                         key={i}
-                                        className="h-14 bg-white/70 rounded-2xl border border-[#C2D8F0]/60 animate-pulse"
+                                        className="h-16 bg-white/70 rounded-2xl border border-[#C2D8F0]/60 animate-pulse"
                                     />
                                 ))}
                             </div>
                         ) : guides.length > 0 ? (
                             <div className="space-y-3 sm:space-y-3.5">
-                                {guides.map((g, index) => (
-                                    <Link
-                                        key={g.id || g.slug}
-                                        to={`/guides/${g.slug}`}
-                                        className="group flex items-center gap-3.5 px-5 py-4 sm:py-4.5 bg-white/95 backdrop-blur-sm border border-[#C2D8F0]/80 rounded-2xl shadow-[0_2px_10px_rgba(30,111,191,0.04)] hover:border-primary hover:shadow-md hover:bg-white transition-all duration-200"
-                                    >
-                                        <div className="text-primary/60 group-hover:text-primary transition-colors shrink-0">
-                                            {index === 0 ? (
-                                                <ChevronUp className="w-4 h-4 transition-transform" />
-                                            ) : (
-                                                <ChevronDown className="w-4 h-4 transition-transform" />
-                                            )}
-                                        </div>
-                                        <span className="text-sm sm:text-base font-semibold text-[#1A3566] group-hover:text-primary transition-colors flex-1">
-                                            {g.title}
-                                        </span>
-                                    </Link>
-                                ))}
+                                {guides.map((g, index) => {
+                                    const theme = GUIDE_CARD_THEMES[index % GUIDE_CARD_THEMES.length];
+                                    const IconComponent = theme.icon;
+                                    return (
+                                        <Link
+                                            key={g.id || g.slug}
+                                            to={`/guides/${g.slug}`}
+                                            className="group flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 sm:py-4 bg-white/95 backdrop-blur-sm border border-[#C2D8F0]/80 rounded-2xl shadow-[0_2px_8px_rgba(30,111,191,0.04)] hover:border-primary/60 hover:shadow-md hover:-translate-y-0.5 hover:bg-white transition-all duration-200"
+                                        >
+                                            <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${theme.bg} ${theme.color} ${theme.border} shadow-2xs`}>
+                                                    <IconComponent className="w-5 h-5" />
+                                                </div>
+                                                <span className="text-base sm:text-lg font-bold text-[#1A3566] group-hover:text-primary transition-colors truncate">
+                                                    {g.title}
+                                                </span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-[#EEF4FC] group-hover:bg-primary text-primary group-hover:text-white flex items-center justify-center shrink-0 transition-colors duration-200 shadow-2xs">
+                                                <ChevronRight className="w-4 h-4" />
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="text-center py-16 text-text-muted">
@@ -223,7 +246,7 @@ const GuidePage = () => {
 
                             {/* Content Body */}
                             <div
-                                className="prose prose-zinc max-w-none text-text-secondary leading-relaxed text-base sm:text-lg [&_a]:text-primary [&_a]:underline [&_img]:rounded-2xl [&_img]:my-6 [&_img]:shadow-sm [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-[#1A3566] [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-[#1A3566] [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                                className="prose prose-zinc prose-content max-w-none text-text-secondary leading-relaxed text-base sm:text-lg [&_a]:text-primary [&_a]:underline [&_img]:rounded-2xl [&_img]:my-6 [&_img]:shadow-sm [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-[#1A3566] [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-[#1A3566] [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
                                 dangerouslySetInnerHTML={{ __html: contentWithoutHeroImage || sanitizedContent }}
                             />
 

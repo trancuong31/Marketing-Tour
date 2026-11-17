@@ -36,7 +36,11 @@
         "loadError": "无法加载联系信息。",
         "retry": "重试",
         "language": "内容语言",
-        "languages": { "vi": "越南语", "en": "英语", "zh": "中文" },
+        "languages": {
+            "vi": "越南语",
+            "en": "英语",
+            "zh": "中文"
+        },
         "general": "常规联系信息",
         "generalDescription": "为每种语言设置帮助标题、营业时间和可选简介。",
         "heading": "帮助区域标题",
@@ -44,7 +48,14 @@
         "description": "简短联系说明",
         "methods": "联系渠道",
         "methodsDescription": "启用渠道，选择显示位置并设置显示顺序。",
-        "methodsById": { "hotline": "页脚热线", "email": "电子邮件", "facebook": "Facebook", "zalo": "Zalo", "wechat": "微信", "quick_call": "快捷拨号按钮" },
+        "methodsById": {
+            "hotline": "页脚热线",
+            "email": "电子邮件",
+            "facebook": "Facebook",
+            "zalo": "Zalo",
+            "wechat": "微信",
+            "quick_call": "快捷拨号按钮"
+        },
         "enabled": "已启用",
         "accessibleLabel": "无障碍标签",
         "email": "电子邮件地址",
@@ -105,30 +116,30 @@
         }
     },
     "reviews": {
-        "title": "\u8bc4\u8bba\u5217\u8868",
-        "deletedTour": "\u5df2\u5220\u9664",
-        "noComment": "- \u6682\u65e0\u8bc4\u8bba -",
-        "yourReply": "\u60a8\u7684\u56de\u590d\uff1a",
-        "imageAlt": "\u8bc4\u4ef7\u56fe\u7247",
-        "empty": "\u6ca1\u6709\u5339\u914d\u7684\u8bc4\u8bba",
-        "pagination": "\u7b2c {{current}} / {{total}} \u9875",
+        "title": "评论列表",
+        "deletedTour": "已删除",
+        "noComment": "- 暂无评论 -",
+        "yourReply": "您的回复：",
+        "imageAlt": "评价图片",
+        "empty": "没有匹配的评论",
+        "pagination": "第 {{current}} / {{total}} 页",
         "columns": {
-            "customer": "\u5ba2\u6237",
-            "tour": "\u884c\u7a0b",
-            "ratingComment": "\u8bc4\u5206\u4e0e\u8bc4\u8bba",
-            "createdAt": "\u53d1\u5e03\u65f6\u95f4",
-            "actions": "\u64cd\u4f5c"
+            "customer": "客户",
+            "tour": "行程",
+            "ratingComment": "评分与评论",
+            "createdAt": "发布时间",
+            "actions": "操作"
         },
         "filters": {
-            "all": "\u5168\u90e8",
-            "approved": "\u5df2\u901a\u8fc7",
-            "pending": "\u5f85\u5ba1\u6838"
+            "all": "全部",
+            "approved": "已通过",
+            "pending": "待审核"
         },
         "actions": {
-            "reply": "\u56de\u590d\u8bc4\u4ef7",
-            "approve": "\u901a\u8fc7",
-            "unapprove": "\u53d6\u6d88\u901a\u8fc7",
-            "delete": "\u6c38\u4e45\u5220\u9664"
+            "reply": "回复评价",
+            "approve": "通过",
+            "unapprove": "取消通过",
+            "delete": "永久删除"
         }
     },
     "votes": {
@@ -157,5 +168,36 @@
             "approve": "Approve",
             "reject": "Reject"
         }
+    },
+    "editor": {
+        "title": "编辑器",
+        "bulletLibrary": "项目符号库",
+        "designImage": "图片排版",
+        "alignRight": "靠右环绕",
+        "alignRightTitle": "向右浮动环绕",
+        "alignLeft": "靠左环绕",
+        "alignLeftTitle": "向左浮动环绕",
+        "alignCenter": "居中",
+        "alignCenterTitle": "居中对齐",
+        "alignInline": "默认",
+        "alignInlineTitle": "默认行内",
+        "size": "尺寸",
+        "frame": "画框",
+        "frameTitle": "切换艺术边框与投影",
+        "deleteImage": "删除图片",
+        "close": "关闭",
+        "selectImagePrompt": "请选择或插入图片以应用排版",
+        "noImageToDelete": "没有可删除的图片",
+        "uploadSuccess": "图片上传成功",
+        "uploadError": "上传图片失败",
+        "placeholder": "请输入详细内容...",
+        "bulletNone": "清除符号",
+        "bulletDash": "破折号",
+        "bulletDot": "圆点",
+        "bulletCircle": "空心圆",
+        "bulletSquare": "方块",
+        "bulletDiamond": "菱形",
+        "bulletArrow": "箭头",
+        "bulletCheck": "勾选"
     }
 }

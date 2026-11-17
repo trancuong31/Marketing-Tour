@@ -36,7 +36,11 @@
         "loadError": "Could not load contact settings.",
         "retry": "Try again",
         "language": "Content language",
-        "languages": { "vi": "Vietnamese", "en": "English", "zh": "Chinese" },
+        "languages": {
+            "vi": "Vietnamese",
+            "en": "English",
+            "zh": "Chinese"
+        },
         "general": "General contact information",
         "generalDescription": "Set the support heading, business hours, and optional short description for each language.",
         "heading": "Support section heading",
@@ -44,7 +48,14 @@
         "description": "Short contact description",
         "methods": "Contact methods",
         "methodsDescription": "Enable methods, choose where they appear, and set their display order.",
-        "methodsById": { "hotline": "Footer hotline", "email": "Email", "facebook": "Facebook", "zalo": "Zalo", "wechat": "WeChat", "quick_call": "Quick call button" },
+        "methodsById": {
+            "hotline": "Footer hotline",
+            "email": "Email",
+            "facebook": "Facebook",
+            "zalo": "Zalo",
+            "wechat": "WeChat",
+            "quick_call": "Quick call button"
+        },
         "enabled": "Enabled",
         "accessibleLabel": "Accessible label",
         "email": "Email address",
@@ -157,5 +168,36 @@
             "approve": "Approve",
             "reject": "Reject"
         }
+    },
+    "editor": {
+        "title": "Editor",
+        "bulletLibrary": "Bullet Library",
+        "designImage": "Design image",
+        "alignRight": "Float right",
+        "alignRightTitle": "Float right",
+        "alignLeft": "Float left",
+        "alignLeftTitle": "Float left",
+        "alignCenter": "Center",
+        "alignCenterTitle": "Center",
+        "alignInline": "Inline",
+        "alignInlineTitle": "Default inline",
+        "size": "Size",
+        "frame": "Frame",
+        "frameTitle": "Toggle artistic white border & shadow",
+        "deleteImage": "Delete image",
+        "close": "Close",
+        "selectImagePrompt": "Please select or insert an image to apply layout",
+        "noImageToDelete": "No image to delete",
+        "uploadSuccess": "Image uploaded successfully",
+        "uploadError": "Failed to upload image",
+        "placeholder": "Enter detailed content...",
+        "bulletNone": "Remove bullet",
+        "bulletDash": "Dash",
+        "bulletDot": "Round dot",
+        "bulletCircle": "Open circle",
+        "bulletSquare": "Square",
+        "bulletDiamond": "Diamond",
+        "bulletArrow": "Arrow",
+        "bulletCheck": "Checkmark"
     }
 }

@@ -3,6 +3,7 @@ import { adminService } from '@/services/tourService';
 import AdminLayout from '@/components/layout/AdminLayout';
 import GuideGrid from '@/features/admin/components/GuideGrid';
 import FooterLinkManager from '@/features/admin/components/FooterLinkManager';
+import { RichTextEditor } from '@/components/ui';
 import { Languages, Loader2, X, FileText, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -71,72 +72,6 @@ const ContentManagementPage = () => {
     const [currentGuideLang, setCurrentGuideLang] = useState('vi');
     const [submitting, setSubmitting] = useState(false);
     const [translating, setTranslating] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [ReactQuill, setReactQuill] = useState(null);
-    const quillRef = useRef(null);
-
-    useEffect(() => {
-        import('react-quill-new').then(mod => setReactQuill(() => mod.default));
-        import('react-quill-new/dist/quill.snow.css');
-    }, []);
-    const handleEditorImageUpload = useCallback(() => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-
-        input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            setUploadingImage(true);
-            try {
-                const res = await adminService.uploadGuideImage(formData);
-                const imageUrl = getImageUrl(res.data.data.image_url);
-                const editor = quillRef.current?.getEditor();
-                const range = editor?.getSelection(true);
-
-                if (editor && range) {
-                    editor.insertEmbed(range.index, 'image', imageUrl, 'user');
-                    editor.setSelection(range.index + 1);
-                }
-            } catch (err) {
-                toast.error(err.response?.data?.message || ADMIN_GUIDE_TEXT.uploadImageError);
-            } finally {
-                setUploadingImage(false);
-            }
-        };
-
-        input.click();
-    }, []);
-
-    const editorModules = useMemo(() => ({
-        toolbar: {
-            container: [
-                [{ header: [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline'],
-                ['link', 'image'],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                ['clean'],
-            ],
-            handlers: {
-                image: handleEditorImageUpload,
-            },
-        },
-    }), [handleEditorImageUpload]);
-
-    const editorFormats = [
-        'header',
-        'bold',
-        'italic',
-        'underline',
-        'link',
-        'image',
-        'list',
-        'bullet',
-    ];
 
     const currentTranslationIndex = guideForm.translations.findIndex(item => item.language === currentGuideLang);
     const isVietnameseGuide = currentGuideLang === 'vi';
@@ -404,28 +339,12 @@ const ContentManagementPage = () => {
                                 <label className="text-sm font-semibold text-text mb-1.5 block">
                                     Nội dung {currentGuideLang === 'vi' && <span className="text-error">*</span>}
                                 </label>
-                                {ReactQuill ? (
-                                    <ReactQuill
-                                        ref={quillRef}
-                                        theme="snow"
-                                        value={currentGuideContent}
-                                        onChange={val => updateGuideLanguageField('content', val)}
-                                        modules={editorModules}
-                                        formats={editorFormats}
-                                        className="bg-surface rounded-lg [&_.ql-toolbar]:rounded-t-xl [&_.ql-container]:rounded-b-xl [&_.ql-editor]:min-h-[240px] [&_.ql-toolbar]:border-border [&_.ql-container]:border-border"
-                                    />
-                                ) : (
-                                    <textarea
-                                        value={currentGuideContent}
-                                        onChange={e => updateGuideLanguageField('content', e.target.value)}
-                                        rows={10}
-                                        placeholder="Viết nội dung bài hướng dẫn..."
-                                        className="w-full px-4 py-3 bg-surface-alt border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition resize-none"
-                                    />
-                                )}
-                                {uploadingImage && (
-                                    <p className="mt-2 text-xs font-medium text-primary">Đang tải ảnh lên...</p>
-                                )}
+                                <RichTextEditor
+                                    value={currentGuideContent}
+                                    onChange={val => updateGuideLanguageField('content', val)}
+                                    placeholder="Viết nội dung bài hướng dẫn..."
+                                    minHeight="240px"
+                                />
                             </div>
 
                             {/* Active toggle */}
